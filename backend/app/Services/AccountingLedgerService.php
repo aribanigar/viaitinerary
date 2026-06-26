@@ -15,9 +15,7 @@ class AccountingLedgerService
 {
     public function isReady(): bool
     {
-        // MongoDB collections are created on first write, so they're always
-        // "ready" — no relational table check is needed.
-        return true;
+        return Schema::hasTable('accounting_obligations') && Schema::hasTable('accounting_settlements');
     }
 
     public function syncTrip(Trip $trip, ?int $fallbackUserId = null, ?int $fallbackTeamId = null): void

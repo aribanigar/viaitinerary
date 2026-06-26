@@ -6,8 +6,8 @@ use App\Models\Trip;
 use App\Models\User;
 use App\Notifications\ItineraryFollowUpNotification;
 use Carbon\Carbon;
-use App\Models\Team;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -31,46 +31,52 @@ class ProcessTripFollowUps extends Command
     {
         $cutoff = Carbon::now()->subHours(24);
 
-        // Unnotified trips older than the cutoff. MongoDB has no joins, so the
-        // notifiable (team member or admin) is resolved in PHP:
+        // Single query: get all unnotified trips with the correct notifiable user id.
         //   - Team trips  → notify the team member (teams.user_id)
-        //   - Admin trips → notify the trip owner  (trips.user_id)
-        $trips = Trip::where('follow_up_sent', false)
-            ->where('created_at', '<=', $cutoff)
+        //   - Admin trips → notify the admin     (trips.user_id)
+        $rows = DB::table('trips')
+            ->leftJoin('teams', 'trips.team_id', '=', 'teams.id')
+            ->where('trips.follow_up_sent', false)
+            ->where('trips.created_at', '<=', $cutoff)
+            ->select([
+                'trips.id',
+                'trips.trip_id',
+                'trips.client_name',
+                'trips.client_phone',
+                'trips.client_email',
+                DB::raw('COALESCE(teams.user_id, trips.user_id) AS notifiable_user_id'),
+            ])
             ->get();
 
-        if ($trips->isEmpty()) {
+        if ($rows->isEmpty()) {
             $this->info('No trips need follow-up notifications.');
             return self::SUCCESS;
         }
 
-        $teamIds = $trips->pluck('team_id')->filter()->unique()->values();
-        $teams   = Team::whereIn('_id', $teamIds->all())->get()->keyBy('id');
+        // Load only the User models we actually need (one query)
+        $userIds    = $rows->pluck('notifiable_user_id')->unique()->values();
+        $users      = User::whereIn('id', $userIds)->get()->keyBy('id');
 
-        $notifiableIdByTrip = [];
-        foreach ($trips as $trip) {
-            $team = $trip->team_id ? $teams->get($trip->team_id) : null;
-            $notifiableIdByTrip[$trip->id] = $team->user_id ?? $trip->user_id;
-        }
-
-        $userIds = collect($notifiableIdByTrip)->filter()->unique()->values();
-        $users   = User::whereIn('_id', $userIds->all())->get()->keyBy('id');
+        // Load full Trip models for the notification (needed by ItineraryFollowUpNotification)
+        $tripIds    = $rows->pluck('id')->all();
+        $tripModels = Trip::whereIn('id', $tripIds)->get()->keyBy('id');
 
         $processedTripIds = [];
 
-        foreach ($trips as $trip) {
-            $notifiable = $users->get($notifiableIdByTrip[$trip->id] ?? null);
+        foreach ($rows as $row) {
+            $notifiable = $users->get($row->notifiable_user_id);
+            $trip       = $tripModels->get($row->id);
 
-            if (!$notifiable) {
-                Log::warning("ProcessTripFollowUps: skipping trip {$trip->trip_id} — notifiable user not found.");
+            if (!$notifiable || !$trip) {
+                Log::warning("ProcessTripFollowUps: skipping trip {$row->trip_id} — user or trip not found.");
                 continue;
             }
 
             try {
                 $notifiable->notify(new ItineraryFollowUpNotification($trip));
-                $processedTripIds[] = $trip->id;
+                $processedTripIds[] = $row->id;
             } catch (\Throwable $e) {
-                Log::error("ProcessTripFollowUps: notification failed for trip {$trip->trip_id}: " . $e->getMessage());
+                Log::error("ProcessTripFollowUps: notification failed for trip {$row->trip_id}: " . $e->getMessage());
             }
         }
 

@@ -81,15 +81,13 @@ class RazorpayController extends Controller
         $planQuery = Plan::where('key', $plan)->where('is_active', true);
 
         if ($country) {
-            $planConfig = $planQuery->where(function ($query) use ($country) {
+            $planQuery->where(function ($query) use ($country) {
                 $query->where('country', $country)
                     ->orWhereNull('country');
-            })->get()
-                ->sortBy(fn ($p) => $p->country === $country ? 0 : 1)
-                ->first();
-        } else {
-            $planConfig = $planQuery->first();
+            })->orderByRaw('CASE WHEN country = ? THEN 0 ELSE 1 END', [$country]);
         }
+
+        $planConfig = $planQuery->first();
 
         if (!$planConfig) {
             return response()->json(['error' => 'Invalid plan.'], 400)

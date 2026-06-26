@@ -10,7 +10,6 @@ use App\Models\Destination;
 use App\Models\Vehicle;
 use App\Models\Hotel;
 use App\Models\User;
-use App\Models\Team;
 use App\Services\SubscriptionService;
 use App\Services\AccountingLedgerService;
 use Illuminate\Http\Request;
@@ -95,68 +94,44 @@ class TripController extends Controller
         $currentUserId = $user->id;
 
         // BelongsToAdmin global scope already handles user_id/team isolation.
-        $query = Trip::query();
+        // We just need to join the creator info for the UI.
+        $query = Trip::leftJoin('users as creators', 'trips.user_id', '=', 'creators.id')
+            ->leftJoin('teams', 'trips.team_id', '=', 'teams.id')
+            ->leftJoin('users as team_users', 'teams.user_id', '=', 'team_users.id')
+            ->selectRaw('
+            trips.id, 
+            trips.trip_id, 
+            trips.trip_title, 
+            trips.client_name, 
+            trips.client_phone,
+            trips.start_date, 
+            trips.duration, 
+            trips.cost, 
+            trips.paid_amount,
+            trips.refunded_amount,
+            trips.currency, 
+            trips.image_path, 
+            trips.status, 
+            trips.updated_at,
+            CASE 
+                WHEN trips.team_id IS NOT NULL AND teams.user_id = ? THEN \'You\'
+                WHEN trips.team_id IS NOT NULL THEN team_users.name
+                WHEN trips.team_id IS NULL AND trips.user_id = ? THEN \'You\'
+                ELSE creators.name
+            END as created_by
+        ', [$currentUserId, $currentUserId]);
 
         $search = $request->input('search');
         if ($search) {
-            // laravel-mongodb translates the `like` operator to a regex match.
             $query->where(function ($q) use ($search) {
-                $q->where('trip_title', 'like', "%{$search}%")
-                    ->orWhere('client_name', 'like', "%{$search}%")
-                    ->orWhere('trip_id', 'like', "%{$search}%");
+                $q->where('trips.trip_title', 'like', "%{$search}%")
+                    ->orWhere('trips.client_name', 'like', "%{$search}%")
+                    ->orWhere('trips.trip_id', 'like', "%{$search}%");
             });
         }
 
         $perPage = $request->input('per_page', 25);
-        $trips = $query->latest('created_at')->paginate($perPage);
-
-        // Resolve "created_by" labels in PHP (MongoDB has no joins). For team
-        // trips the creator is the team member (teams.user_id); otherwise it's
-        // the trip's own user. "You" when that resolves to the current user.
-        $items = collect($trips->items());
-        $teams = Team::whereIn('_id', $items->pluck('team_id')->filter()->unique()->values()->all())
-            ->get()->keyBy('id');
-
-        $creatorIds = $items->map(function (Trip $trip) use ($teams) {
-            if ($trip->team_id) {
-                return optional($teams->get($trip->team_id))->user_id;
-            }
-            return $trip->user_id;
-        })->filter()->unique()->values();
-        $creators = User::whereIn('_id', $creatorIds->all())->get()->keyBy('id');
-
-        $trips->getCollection()->transform(function (Trip $trip) use ($currentUserId, $teams, $creators) {
-            if ($trip->team_id) {
-                $memberId = optional($teams->get($trip->team_id))->user_id;
-                $createdBy = ((string) $memberId === (string) $currentUserId)
-                    ? 'You'
-                    : optional($creators->get($memberId))->name;
-            } else {
-                $createdBy = ((string) $trip->user_id === (string) $currentUserId)
-                    ? 'You'
-                    : optional($creators->get($trip->user_id))->name;
-            }
-
-            return [
-                'id' => $trip->id,
-                'trip_id' => $trip->trip_id,
-                'trip_title' => $trip->trip_title,
-                'client_name' => $trip->client_name,
-                'client_phone' => $trip->client_phone,
-                'start_date' => $trip->start_date,
-                'duration' => $trip->duration,
-                'cost' => $trip->cost,
-                'paid_amount' => $trip->paid_amount,
-                'refunded_amount' => $trip->refunded_amount,
-                'currency' => $trip->currency,
-                'currency_symbol' => $trip->currency_symbol,
-                'image_path' => $trip->image_path,
-                'image_url' => $trip->image_url,
-                'status' => $trip->status,
-                'updated_at' => $trip->updated_at,
-                'created_by' => $createdBy,
-            ];
-        });
+        $trips = $query->latest('trips.created_at')->paginate($perPage);
 
         return response()->json($trips);
     }
