@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+:root {
+  font-family:
+    "Plus Jakarta Sans",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  line-height: 1.5;
+  background-color: #ffffff;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  color: #111827;
+}
+
+::selection {
+  background-color: #2563eb;
+  color: white;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+button,
+a,
+[role="button"] {
+  cursor: pointer;
+}
+
+/* Chrome, Safari, Edge, Opera - Remove arrows from number inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Custom Scrollbar for Sidebar and other dark elements */
+.custom-sidebar-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-sidebar-scrollbar::-webkit-scrollbar-track {
+  background: #0b1120;
+}
+
+.custom-sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: #475569; /* slate-500, similar to the text color */
+  border-radius: 10px;
+  border: 1px solid #0b1120; /* added small border for better definition */
+}
+
+.custom-sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #64748b; /* slate-400 */
+}
+
+/* For Firefox */
+.custom-sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #0b1120;
+}
+
+/* Typography Styles for Blog Content */
+.prose h2 {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 800;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.prose h3 {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.prose li {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose blockquote {
+  border-left-width: 4px;
+  border-color: #3b82f6;
+  padding-left: 1rem;
+  font-style: italic;
+  color: #4b5563;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.prose p {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Phone Input Custom Styles */
+.phone-input-container .react-international-phone-input-container {
+  width: 100% !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 0.5rem !important;
+  background-color: white !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.phone-input-container .react-international-phone-input-container:focus-within {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+.phone-input-container .react-international-phone-input {
+  width: 100% !important;
+  border: none !important;
+  height: 48px !important;
+  font-size: 15px !important;
+  background: transparent !important;
+}
+
+.phone-input-container .react-international-phone-country-selector-button {
+  border: none !important;
+  height: 48px !important;
+  background: transparent !important;
+  padding-left: 10px !important;
+}
