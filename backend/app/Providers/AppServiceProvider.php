@@ -13,6 +13,8 @@ use App\Policies\BlogTagPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Sanctum\Sanctum;
+use App\Models\PersonalAccessToken;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Use the MongoDB-backed Sanctum token model.
+        Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+
         // Register blog policies
         Gate::policy(BlogPost::class, BlogPostPolicy::class);
         Gate::policy(BlogCategory::class, BlogCategoryPolicy::class);
