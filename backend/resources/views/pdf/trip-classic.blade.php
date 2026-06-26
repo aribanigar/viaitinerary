@@ -682,7 +682,7 @@
             @if (isset($logoBase64) && $logoBase64)
                 <img src="{{ $logoBase64 }}" class="br-header-logo" alt="Logo">
             @else
-                <h1>{{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</h1>
+                <h1>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h1>
                 <p>TRAVEL SIMPLIFIED</p>
             @endif
         </div>
@@ -697,7 +697,7 @@
                     {{ $trip->duration ?? 0 }} NIGHTS {{ (int) ($trip->duration ?? 0) + 1 }} DAYS
                 </h1>
                 <p class="classic-subtitle">
-                    TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}
+                    TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}
                 </p>
             </div>
         </div>
@@ -745,7 +745,7 @@
                     Dear {{ $trip->client_name ?? 'Guest' }},
                 </p>
                 <p style="font-size: 15px; color: #666; line-height: 1.5; margin-bottom: 15px;">
-                    {{ str_replace('{agencyName}', strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR'), $agencySettings?->greeting_message ?? 'Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.') }}
+                    {{ str_replace('{agencyName}', strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY'), $agencySettings?->greeting_message ?? 'Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.') }}
                 </p>
 
                 <div class="quote-card">
@@ -767,8 +767,8 @@
                 <tr>
                     <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                     <td style="width: 34%; text-align: center; font-weight: 600;">
-                        {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
-                    <td style="width: 33%; text-align: right;">{{ $agencySettings?->website ?? 'www.viakashmir.com' }}
+                        {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
+                    <td style="width: 33%; text-align: right;">{{ $agencySettings?->website ?? 'www.viaitinerary.com' }}
                     </td>
                 </tr>
             </table>
@@ -816,9 +816,9 @@
                         <tr>
                             <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                             <td style="width: 34%; text-align: center; font-weight: 600;">
-                                {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                                {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                             <td style="width: 33%; text-align: right;">
-                                {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                                {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -913,9 +913,9 @@
                     <tr>
                         <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                         <td style="width: 34%; text-align: center; font-weight: 600;">
-                            {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                            {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                         <td style="width: 33%; text-align: right;">
-                            {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                            {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                     </tr>
                 </table>
             </div>
@@ -1053,9 +1053,9 @@
                         <tr>
                             <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                             <td style="width: 34%; text-align: center; font-weight: 600;">
-                                {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                                {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                             <td style="width: 33%; text-align: right;">
-                                {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                                {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -1090,9 +1090,9 @@
                     <tr>
                         <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                         <td style="width: 34%; text-align: center; font-weight: 600;">
-                            {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                            {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                         <td style="width: 33%; text-align: right;">
-                            {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                            {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                     </tr>
                 </table>
             </div>
@@ -1172,9 +1172,9 @@
                     <tr>
                         <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                         <td style="width: 34%; text-align: center; font-weight: 600;">
-                            {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                            {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                         <td style="width: 33%; text-align: right;">
-                            {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                            {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                     </tr>
                 </table>
             </div>
@@ -1208,9 +1208,9 @@
                     <tr>
                         <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                         <td style="width: 34%; text-align: center; font-weight: 600;">
-                            {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                            {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                         <td style="width: 33%; text-align: right;">
-                            {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                            {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                     </tr>
                 </table>
             </div>
@@ -1290,9 +1290,9 @@
                         <tr>
                             <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                             <td style="width: 34%; text-align: center; font-weight: 600;">
-                                {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                                {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                             <td style="width: 33%; text-align: right;">
-                                {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                                {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                         </tr>
                     </table>
                 </div>
@@ -1331,9 +1331,9 @@
                     <tr>
                         <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                         <td style="width: 34%; text-align: center; font-weight: 600;">
-                            {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                            {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                         <td style="width: 33%; text-align: right;">
-                            {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                            {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                     </tr>
                 </table>
             </div>
@@ -1495,9 +1495,9 @@
                     <tr>
                         <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                         <td style="width: 34%; text-align: center; font-weight: 600;">
-                            {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                            {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                         <td style="width: 33%; text-align: right;">
-                            {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                            {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                     </tr>
                 </table>
             </div>
@@ -1600,9 +1600,9 @@
                 <tr>
                     <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                     <td style="width: 34%; text-align: center; font-weight: 600;">
-                        {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                        {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                     <td style="width: 33%; text-align: right;">
-                        {{ $agencySettings?->website ?? 'www.viakashmir.com' }}
+                        {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}
                     </td>
                 </tr>
             </table>
@@ -1701,9 +1701,9 @@
                     <tr>
                         <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                         <td style="width: 34%; text-align: center; font-weight: 600;">
-                            {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                            {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                         <td style="width: 33%; text-align: right;">
-                            {{ $agencySettings?->website ?? 'www.viakashmir.com' }}</td>
+                            {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}</td>
                     </tr>
                 </table>
             </div>
@@ -1810,7 +1810,7 @@
                             <div style="font-size: 12px; color: white; opacity: 0.8; margin-bottom: 3px;">Your Travel
                                 Partner</div>
                             <div style="font-size: 24px; font-weight: 900; color: white; text-transform: uppercase;">
-                                {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</div>
+                                {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</div>
                         </td>
                     </tr>
                 </table>
@@ -1822,9 +1822,9 @@
                 <tr>
                     <td style="width: 33%;"> {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                     <td style="width: 34%; text-align: center; font-weight: 600;">
-                        {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</td>
+                        {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</td>
                     <td style="width: 33%; text-align: right;">
-                        {{ $agencySettings?->website ?? 'www.viakashmir.com' }}
+                        {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}
                     </td>
                 </tr>
             </table>
@@ -1835,7 +1835,7 @@
     <div class="classic-page thank-you-page">
         <div class="thank-you-title">THANK YOU!</div>
         <div class="thank-you-line"></div>
-        <div class="thank-you-agency">{{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</div>
+        <div class="thank-you-agency">{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</div>
         @if (filled($agencySettings?->company_address))
             <div
                 style="margin-top: 10px; font-size: 14px; font-weight: 500; color: white; text-align: center; max-width: 70%;">
@@ -1867,7 +1867,7 @@
                     <td style="vertical-align: middle; white-space: nowrap;"><b>WA:</b>
                         {{ $agencySettings?->whatsapp ?? 'N/A' }}</td>
                     <td align="right" style="vertical-align: middle; white-space: nowrap;">
-                        {{ $agencySettings?->website ?? 'www.viakashmir.com' }}
+                        {{ $agencySettings?->website ?? 'www.viaitinerary.com' }}
                     </td>
                 </tr>
             </table>

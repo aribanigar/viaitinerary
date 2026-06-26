@@ -306,7 +306,7 @@
                 <img src="{{ $agencySettings->logo_url }}" class="header-logo">
             @else
                 <div class="agency-name-fallback">
-                    <h1>{{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</h1>
+                    <h1>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h1>
                     <p>TRAVEL SIMPLIFIED</p>
                 </div>
             @endif
@@ -317,7 +317,7 @@
             <div class="hero-pattern"></div>
             <div class="hero-content">
                 <h1>PAYMENT RECEIVED</h1>
-                <p>TRANSACTION RECEIPT BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</p>
+                <p>TRANSACTION RECEIPT BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</p>
             </div>
         </div>
 

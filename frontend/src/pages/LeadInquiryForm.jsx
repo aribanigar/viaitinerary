@@ -430,7 +430,7 @@ const LeadInquiryForm = () => {
                           ? "border-red-500"
                           : "border-gray-300"
                       } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
-                      placeholder="e.g., Kashmir, Delhi, Shimla"
+                      placeholder="e.g., Paris, Tokyo, Bali"
                     />
                     {errors.destination && (
                       <p className="text-red-500 text-sm mt-1">

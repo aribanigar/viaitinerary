@@ -27,7 +27,7 @@ export const useRazorpay = () => {
         key: orderResponse.key,
         amount: orderResponse.amount,
         currency: orderResponse.currency || "INR",
-        name: "Viakashmir",
+        name: "ViaItinerary",
         description: "Subscription Payment",
         order_id: orderResponse.order_id,
         handler: async function (response) {

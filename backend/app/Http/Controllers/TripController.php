@@ -303,9 +303,9 @@ class TripController extends Controller
         // Process dynamic confirmation message
         $confirmationMessage = $agencySettings->confirmation_pdf_message
             ?? $agencySettings->confirmation_message
-            ?? "Warm greetings from {agencyName},\n\nThank you for choosing {agencyName} for your upcoming journey. We are pleased to confirm your travel arrangements and sincerely appreciate the opportunity to curate your Kashmir experience. Our team looks forward to welcoming you and ensuring a seamless, comfortable, and memorable holiday.";
+            ?? "Warm greetings from {agencyName},\n\nThank you for choosing {agencyName} for your upcoming journey. We are pleased to confirm your travel arrangements and sincerely appreciate the opportunity to curate your travel experience. Our team looks forward to welcoming you and ensuring a seamless, comfortable, and memorable holiday.";
 
-        $agencyName = $agencySettings->agency_name ?? 'Via Kashmir';
+        $agencyName = $agencySettings->agency_name ?? 'ViaItinerary';
         $clientName = $trip->client_name ?? 'Guest';
 
         $confirmationMessage = str_replace(
@@ -411,7 +411,7 @@ class TripController extends Controller
             }
 
             $agencySettings = AgencySetting::with('documentTemplate')->where('user_id', $trip->user_id)->first();
-            $agencyName = $agencySettings->agency_name ?? 'Via Kashmir';
+            $agencyName = $agencySettings->agency_name ?? 'ViaItinerary';
 
             $replacements = [
                 '{agencyName}' => $agencyName,
@@ -475,11 +475,11 @@ class TripController extends Controller
             ], 422);
         }
 
-        $agencyName = $agencySettings->agency_name ?? 'Via Kashmir';
+        $agencyName = $agencySettings->agency_name ?? 'ViaItinerary';
 
         // Build the confirmation message (cheap — just string work, no images)
         $confirmationMessage = $agencySettings->confirmation_message
-            ?? "Warm greetings from {agencyName},\n\nThank you for choosing {agencyName} for your upcoming journey. We are pleased to confirm your travel arrangements and sincerely appreciate the opportunity to curate your Kashmir experience. Our team looks forward to welcoming you and ensuring a seamless, comfortable, and memorable holiday.";
+            ?? "Warm greetings from {agencyName},\n\nThank you for choosing {agencyName} for your upcoming journey. We are pleased to confirm your travel arrangements and sincerely appreciate the opportunity to curate your travel experience. Our team looks forward to welcoming you and ensuring a seamless, comfortable, and memorable holiday.";
 
         $confirmationPdfMessage = $agencySettings->confirmation_pdf_message
             ?? $confirmationMessage;
@@ -753,7 +753,7 @@ class TripController extends Controller
 
                 // Load agency settings for the name
                 $agencySettings = AgencySetting::with('documentTemplate')->where('user_id', $trip->user_id)->first();
-                $agencyName = $agencySettings->agency_name ?? 'Via Kashmir';
+                $agencyName = $agencySettings->agency_name ?? 'ViaItinerary';
 
                 SendPaymentVoucherJob::dispatch(
                     $trip->id,
@@ -790,7 +790,7 @@ class TripController extends Controller
 
                 // Load agency settings for the name
                 $agencySettings = AgencySetting::with('documentTemplate')->where('user_id', $trip->user_id)->first();
-                $agencyName = $agencySettings->agency_name ?? 'Via Kashmir';
+                $agencyName = $agencySettings->agency_name ?? 'ViaItinerary';
 
                 SendPaymentVoucherJob::dispatch(
                     $trip->id,
@@ -849,7 +849,7 @@ class TripController extends Controller
     protected function generatePaymentReceipt(Trip $trip, $paymentAmount)
     {
         $agencySettings = AgencySetting::with('documentTemplate')->where('user_id', $trip->user_id)->first();
-        $agencyName = $agencySettings->agency_name ?? 'Via Kashmir';
+        $agencyName = $agencySettings->agency_name ?? 'ViaItinerary';
 
         $pdf = Pdf::loadView('pdf.receipt', [
             'trip' => $trip,

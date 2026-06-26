@@ -247,7 +247,7 @@ const LeadInquiries = () => {
           "Ayaan Khan",
           "ayaan@example.com",
           "+919876543210",
-          "Kashmir",
+          "Paris",
           2,
           0,
           1,

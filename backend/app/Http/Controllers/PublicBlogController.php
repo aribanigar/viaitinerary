@@ -26,15 +26,15 @@ class PublicBlogController extends Controller
 
         // Generate keywords from active categories and recent posts
         $categoryNames = $categories->pluck('name')->take(5)->implode(', ');
-        $commonKeywords = "Best Travel CRM Agency, travel software, travel agency software, travel agent crm, crm software company, crm Systems, travel itinerary, crm for travel agents, travel website development, software development, VIAKashmir, Kashmir travel packages, Kashmir tours, Best Travel agency in kashmir, Kashmir Honeymoon Packages, Kashmir Family Packages, best tour operator, Hotels In kashmir, Cabs in Kashmir";
+        $commonKeywords = "Best Travel CRM Agency, travel software, travel agency software, travel agent crm, crm software company, crm Systems, travel itinerary, crm for travel agents, travel website development, software development, ViaItinerary, travel packages, tour packages, honeymoon packages, family packages, best tour operator, hotel booking, cab booking";
         $keywords = $categoryNames ? "$categoryNames, $commonKeywords" : $commonKeywords;
 
         if ($request->has('amp')) {
             return response()->view('blog.amp-index', [
                 'posts' => $posts,
                 'categories' => $categories,
-                'seoTitle' => "VIAKashmir: Travel CRM, Itinerary Builder & Lead Management Software",
-                'seoDescription' => "Automate your travel business with VIAKashmir. Professional itinerary planning, client management, and real-time cost calculation for travel agents.",
+                'seoTitle' => "ViaItinerary: Travel CRM, Itinerary Builder & Lead Management Software",
+                'seoDescription' => "Automate your travel business with ViaItinerary. Professional itinerary planning, client management, and real-time cost calculation for travel agents.",
                 'seoKeywords' => $keywords,
             ])->header('X-Robots-Tag', 'index, follow');
         }
@@ -42,8 +42,8 @@ class PublicBlogController extends Controller
         return response()->view('blog.index', [
             'posts' => $posts,
             'categories' => $categories,
-            'seoTitle' => "VIAKashmir: Travel CRM, Itinerary Builder & Lead Management Software",
-            'seoDescription' => "Automate your travel business with VIAKashmir. Professional itinerary planning, client management, and real-time cost calculation for travel agents.",
+            'seoTitle' => "ViaItinerary: Travel CRM, Itinerary Builder & Lead Management Software",
+            'seoDescription' => "Automate your travel business with ViaItinerary. Professional itinerary planning, client management, and real-time cost calculation for travel agents.",
             'seoKeywords' => $keywords,
             'currentCategory' => null,
             'currentTag' => null,
@@ -124,7 +124,7 @@ class PublicBlogController extends Controller
             'categories' => $categories,
             'currentCategory' => $category,
             'currentTag' => null,
-            'seoTitle' => "{$category->name} - Via Kashmir Blog",
+            'seoTitle' => "{$category->name} - ViaItinerary Blog",
             'seoDescription' => $category->description ?: "Browse {$category->name} articles",
             'seoKeywords' => $category->name,
         ])->header('X-Robots-Tag', 'index, follow');
@@ -154,7 +154,7 @@ class PublicBlogController extends Controller
             'categories' => $categories,
             'currentCategory' => null,
             'currentTag' => $tag,
-            'seoTitle' => "#{$tag->name} - Via Kashmir Blog",
+            'seoTitle' => "#{$tag->name} - ViaItinerary Blog",
             'seoDescription' => "Browse articles tagged with {$tag->name}",
             'seoKeywords' => $tag->name,
         ])->header('X-Robots-Tag', 'index, follow');

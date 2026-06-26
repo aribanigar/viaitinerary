@@ -566,7 +566,7 @@
             @elseif($agencySettings?->logo_url)
                 <img src="{{ $agencySettings->logo_url }}" class="header-logo">
             @else
-                <h1>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h1>
+                <h1>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h1>
                 <p>TRAVEL SIMPLIFIED</p>
             @endif
         </div>
@@ -580,26 +580,26 @@
                 <h1>{{ (int) ($trip->duration ?? 0) }} {{ (int) ($trip->duration ?? 0) == 1 ? 'NIGHT' : 'NIGHTS' }}
                     {{ (int) ($trip->duration ?? 0) + 1 }}
                     {{ (int) ($trip->duration ?? 0) + 1 == 1 ? 'DAY' : 'DAYS' }}</h1>
-                <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</p>
+                <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</p>
             </div>
         </div>
 
         <div
             style="background-color: {{ $agencySettings?->brand_color ?? '#FAA61A' }}; color: white; text-align: center; padding: 8px; font-size: 9px; font-weight: 700;">
-            {{ $trip->tagline ?? ($agencySettings?->tagline ?? 'BOOK VERIFIED HOTELS, CABS, HORSES, SHIKARAS, HOUSEBOATS, TOUR PACKAGES, ACTIVITIES, VISITS') }}
+            {{ $trip->tagline ?? ($agencySettings?->tagline ?? 'BOOK VERIFIED HOTELS, CABS, TOUR PACKAGES, ACTIVITIES & EXPERIENCES') }}
         </div>
 
         <div class="cover-content">
             <h2>Dear <b>{{ $trip->client_name ?? 'Guest' }}</b>,</h2>
             <p style="margin: 10px 0; opacity: 0.8; font-size: 13px;">
-                {{ str_replace('{agencyName}', strtoupper($agencySettings?->agency_name ?? 'Via Kashmir'), $agencySettings?->greeting_message ?? 'Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.') }}
+                {{ str_replace('{agencyName}', strtoupper($agencySettings?->agency_name ?? 'ViaItinerary'), $agencySettings?->greeting_message ?? 'Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.') }}
             </p>
 
             <table class="grid-3">
                 <tr>
                     <td>
                         <div class="grid-label">Destination</div>
-                        <div class="grid-value">{{ $trip->destination ?? 'Jammu & Kashmir' }}</div>
+                        <div class="grid-value">{{ $trip->destination ?? 'Destination' }}</div>
                     </td>
                     <td>
                         <div class="grid-label">Start Date</div>
@@ -688,7 +688,7 @@
                                     {{ (int) ($trip->duration ?? 0) + 1 }}
                                     {{ (int) ($trip->duration ?? 0) + 1 == 1 ? 'DAY' : 'DAYS' }}
                                 </h1>
-                                <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}
+                                <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}
                                 </p>
                             </div>
                         </td>
@@ -699,7 +699,7 @@
                                 @elseif($agencySettings?->logo_url)
                                     <img src="{{ $agencySettings->logo_url }}" class="header-logo">
                                 @else
-                                    <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h2>
+                                    <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h2>
                                     <span>TRAVEL SIMPLIFIED</span>
                                 @endif
                             </div>
@@ -895,7 +895,7 @@
                                 {{ (int) ($trip->duration ?? 0) + 1 }}
                                 {{ (int) ($trip->duration ?? 0) + 1 == 1 ? 'DAY' : 'DAYS' }}
                             </h1>
-                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</p>
+                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</p>
                         </div>
                     </td>
                     <td width="45%" align="right" valign="top">
@@ -905,7 +905,7 @@
                             @elseif($agencySettings?->logo_url)
                                 <img src="{{ $agencySettings->logo_url }}" class="header-logo">
                             @else
-                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h2>
+                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h2>
                                 <span>TRAVEL SIMPLIFIED</span>
                             @endif
                         </div>
@@ -943,7 +943,7 @@
                             {{ (int) ($trip->duration ?? 0) + 1 }}
                             {{ (int) ($trip->duration ?? 0) + 1 == 1 ? 'DAY' : 'DAYS' }}
                         </h1>
-                        <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</p>
+                        <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</p>
                     </div>
                 </td>
                 <td width="45%" align="right" valign="top">
@@ -953,7 +953,7 @@
                         @elseif($agencySettings?->logo_url)
                             <img src="{{ $agencySettings->logo_url }}" class="header-logo">
                         @else
-                            <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h2>
+                            <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h2>
                             <span>TRAVEL SIMPLIFIED</span>
                         @endif
                     </div>
@@ -1045,7 +1045,7 @@
                                 {{ (int) ($trip->duration ?? 0) == 1 ? 'NIGHT' : 'NIGHTS' }}
                                 {{ (int) ($trip->duration ?? 0) + 1 }}
                                 {{ (int) ($trip->duration ?? 0) + 1 == 1 ? 'DAY' : 'DAYS' }}</h1>
-                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</p>
+                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</p>
                         </div>
                     </td>
                     <td width="45%" align="right" valign="top">
@@ -1055,7 +1055,7 @@
                             @elseif($agencySettings?->logo_url)
                                 <img src="{{ $agencySettings->logo_url }}" class="header-logo">
                             @else
-                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h2>
+                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h2>
                                 <span>TRAVEL SIMPLIFIED</span>
                             @endif
                         </div>
@@ -1167,7 +1167,7 @@
                                 {{ (int) ($trip->duration ?? 0) == 1 ? 'NIGHT' : 'NIGHTS' }}
                                 {{ (int) ($trip->duration ?? 0) + 1 }}
                                 {{ (int) ($trip->duration ?? 0) + 1 == 1 ? 'DAY' : 'DAYS' }}</h1>
-                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}
+                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}
                             </p>
                         </div>
                     </td>
@@ -1178,7 +1178,7 @@
                             @elseif($agencySettings?->logo_url)
                                 <img src="{{ $agencySettings->logo_url }}" class="header-logo">
                             @else
-                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h2>
+                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h2>
                                 <span>TRAVEL SIMPLIFIED</span>
                             @endif
                         </div>
@@ -1448,7 +1448,7 @@
                                 {{ (int) ($trip->duration ?? 0) + 1 }}
                                 {{ (int) ($trip->duration ?? 0) + 1 == 1 ? 'DAY' : 'DAYS' }}
                             </h1>
-                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}
+                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}
                             </p>
                         </div>
                     </td>
@@ -1459,7 +1459,7 @@
                             @elseif($agencySettings?->logo_url)
                                 <img src="{{ $agencySettings->logo_url }}" class="header-logo">
                             @else
-                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h2>
+                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h2>
                                 <span>TRAVEL SIMPLIFIED</span>
                             @endif
                         </div>
@@ -1665,7 +1665,7 @@
                                     {{ (int) ($trip->duration ?? 0) + 1 == 1 ? 'DAY' : 'DAYS' }}
                                 </h1>
                                 <p>TRAVEL ITINERARY BY
-                                    {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}
+                                    {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}
                                 </p>
                             </div>
                         </td>
@@ -1676,7 +1676,7 @@
                                 @elseif($agencySettings?->logo_url)
                                     <img src="{{ $agencySettings->logo_url }}" class="header-logo">
                                 @else
-                                    <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h2>
+                                    <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h2>
                                     <span>TRAVEL SIMPLIFIED</span>
                                 @endif
                             </div>
@@ -1780,7 +1780,7 @@
                                 {{ (int) ($trip->duration ?? 0) + 1 }}
                                 {{ (int) ($trip->duration ?? 0) + 1 == 1 ? 'DAY' : 'DAYS' }}
                             </h1>
-                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}
+                            <p>TRAVEL ITINERARY BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}
                             </p>
                         </div>
                     </td>
@@ -1791,7 +1791,7 @@
                             @elseif($agencySettings?->logo_url)
                                 <img src="{{ $agencySettings->logo_url }}" class="header-logo">
                             @else
-                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h2>
+                                <h2>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h2>
                                 <span>TRAVEL SIMPLIFIED</span>
                             @endif
                         </div>
@@ -1813,7 +1813,7 @@
                                 Payment Details:
                             </h3>
                             <p>Beneficiary Name:
-                                <b>{{ $agencySettings?->beneficiary_name ?? 'VIAKASHMIR OPC PRIVATE LIMITED' }}</b>
+                                <b>{{ $agencySettings?->beneficiary_name ?? 'VIAITINERARY OPC PRIVATE LIMITED' }}</b>
                             </p>
                             <p>Bank Name: <b>{{ $agencySettings?->bank_name ?? 'N/A' }}</b></p>
                             <p>Account Number: <b>{{ $agencySettings?->account_number ?? '0013619000005184' }}</b></p>
@@ -1836,7 +1836,7 @@
                                         @elseif($agencySettings?->logo_url)
                                             <img src="{{ $agencySettings->logo_url }}" class="header-logo">
                                         @else
-                                            {{ strtoupper($agencySettings?->agency_name ?? 'Via Kashmir') }}
+                                            {{ strtoupper($agencySettings?->agency_name ?? 'ViaItinerary') }}
                                         @endif
                                     </div>
                                 </td>
@@ -1881,7 +1881,7 @@
             <div style="margin-top: 20px;">
                 <p
                     style="color: white; font-weight: 600; letter-spacing: 5px; margin-top: 10px; text-transform: uppercase;">
-                    {{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</p>
+                    {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</p>
                 @if (filled($agencySettings?->company_address))
                     <p
                         style="color: white; margin-top: 10px; font-size: 14px; font-weight: 500; letter-spacing: 0.4px;">

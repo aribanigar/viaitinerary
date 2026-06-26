@@ -332,7 +332,7 @@ const Destinations = () => {
                 value={formData.name}
                 onChange={handleInputChange}
                 className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
-                placeholder="e.g. Kashmir, Delhi, Shimla"
+                placeholder="e.g. Paris, Tokyo, Bali"
                 required
               />
             </div>

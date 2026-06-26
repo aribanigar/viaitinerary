@@ -1,7 +1,7 @@
 import React from "react";
 import Navbar from "../components/landing/Navbar";
 import Footer from "../components/landing/Footer";
-import pdfFile from "../assets/ViaKashmir-Itinerary-Solutions.pdf";
+import pdfFile from "../assets/itinerary-solutions.pdf";
 
 const Solutions = () => {
   return (
@@ -12,11 +12,11 @@ const Solutions = () => {
           <div className="bg-white rounded-xl shadow-lg overflow-hidden flex-grow flex flex-col border border-gray-200">
             <div className="bg-[#043b36] p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center text-white gap-3 sm:gap-4">
               <h1 className="text-lg sm:text-xl font-bold text-center sm:text-left">
-                ViaKashmir Itinerary Solutions
+                ViaItinerary Itinerary Solutions
               </h1>
               <a
                 href={pdfFile}
-                download="ViaKashmir-Itinerary-Solutions.pdf"
+                download="itinerary-solutions.pdf"
                 className="w-full sm:w-auto bg-[#faa81e] hover:bg-[#e49619] text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex justify-center items-center gap-2 text-sm sm:text-base"
               >
                 Download PDF
@@ -31,7 +31,7 @@ const Solutions = () => {
             <div className="flex-grow relative h-[500px] sm:h-[600px] md:min-h-[70vh]">
               <iframe
                 src={`${pdfFile}#view=FitH`}
-                title="ViaKashmir Itinerary Solutions"
+                title="ViaItinerary Itinerary Solutions"
                 className="absolute inset-0 w-full h-full border-none"
               />
             </div>

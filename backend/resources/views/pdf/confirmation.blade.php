@@ -318,7 +318,7 @@
             @elseif($agencySettings?->logo_url)
                 <img src="{{ $agencySettings->logo_url }}" class="header-logo">
             @else
-                <h1>{{ strtoupper($agencySettings?->agency_name ?? 'VIAKASHMIR') }}</h1>
+                <h1>{{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</h1>
                 <p>TRAVEL SIMPLIFIED</p>
             @endif
         </div>
@@ -339,13 +339,13 @@
             <div class="hero-overlay"></div>
             <div class="hero-label">
                 <h1>BOOKING CONFIRMED</h1>
-                <p>TRAVEL CONFIRMATION RECEIPT BY {{ strtoupper($agencySettings?->agency_name ?? 'VIA KASHMIR') }}</p>
+                <p>TRAVEL CONFIRMATION RECEIPT BY {{ strtoupper($agencySettings?->agency_name ?? 'VIAITINERARY') }}</p>
             </div>
         </div>
 
         <div
             style="background-color: {{ $agencySettings?->brand_color ?? '#FAA61A' }}; color: white; text-align: center; padding: 8px; font-size: 9px; font-weight: 700;">
-            BOOK VERIFIED HOTELS, CABS, HORSES, SHIKARAS, HOUSEBOATS, TOUR PACKAGES, ACTIVITIES, VISITS
+            BOOK VERIFIED HOTELS, CABS, TOUR PACKAGES, ACTIVITIES & EXPERIENCES
         </div>
 
         <div class="cover-content">

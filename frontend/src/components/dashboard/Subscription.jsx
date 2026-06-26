@@ -216,7 +216,7 @@ const Subscription = () => {
         key: orderData.key,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "ViaKashmir",
+        name: "ViaItinerary",
         order_id: orderData.order_id,
         prefill: {
           // Use target member details when subscribing for a member,

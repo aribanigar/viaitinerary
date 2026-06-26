@@ -187,7 +187,7 @@ const ClassicTemplate = ({
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <WhatsAppIcon size={16} /> {agencySettings.whatsapp || "N/A"}
             </div>
-            <div>{agencySettings.website || "www.viakashmir.com"}</div>
+            <div>{agencySettings.website || "www.viaitinerary.com"}</div>
           </div>
         </>
       ) : (
@@ -196,9 +196,9 @@ const ClassicTemplate = ({
             <WhatsAppIcon size={16} /> {agencySettings.whatsapp || "N/A"}
           </div>
           <div style={{ fontWeight: "600" }}>
-            {agencySettings.agencyName || "VIA KASHMIR"}
+            {agencySettings.agencyName || "VIAITINERARY"}
           </div>
-          <div>{agencySettings.website || "www.viakashmir.com"}</div>
+          <div>{agencySettings.website || "www.viaitinerary.com"}</div>
         </>
       )}
     </div>
@@ -645,7 +645,7 @@ const ClassicTemplate = ({
                   whiteSpace: "nowrap",
                 }}
               >
-                {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
               </h1>
               <p
                 style={{
@@ -694,7 +694,7 @@ const ClassicTemplate = ({
               }}
             >
               TRAVEL ITINERARY BY{" "}
-              {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+              {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
             </p>
           </div>
         </div>
@@ -789,7 +789,7 @@ const ClassicTemplate = ({
                 "Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes."
               ).replace(
                 /{agencyName}/g,
-                (agencySettings.agencyName || "VIA KASHMIR").toUpperCase(),
+                (agencySettings.agencyName || "VIAITINERARY").toUpperCase(),
               )}
             </p>
 
@@ -2283,7 +2283,7 @@ const ClassicTemplate = ({
                 Your Travel Partner
               </div>
               <div style={{ fontSize: "24px", fontWeight: "900" }}>
-                {agencySettings.agencyName || "VIA KASHMIR"}
+                {agencySettings.agencyName || "VIAITINERARY"}
               </div>
             </div>
           </div>
@@ -2332,7 +2332,7 @@ const ClassicTemplate = ({
             opacity: "0.9",
           }}
         >
-          {agencySettings.agencyName || "VIA KASHMIR"}
+          {agencySettings.agencyName || "VIAITINERARY"}
         </p>
         {agencySettings.companyAddress?.trim() ? (
           <p

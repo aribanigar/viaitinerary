@@ -73,10 +73,10 @@ class GenerateTripPdfJob implements ShouldQueue
 
             // Checking multiple fallback paths for production (public_html, public, etc.)
             $pathsToTry = [
-                public_path('ViaKashmir-logo-light.png'),
-                base_path('../public_html/ViaKashmir-logo-light.png'),
-                base_path('public/ViaKashmir-logo-light.png'),
-                storage_path('app/public/ViaKashmir-logo-light.png')
+                public_path('logo-light.png'),
+                base_path('../public_html/logo-light.png'),
+                base_path('public/logo-light.png'),
+                storage_path('app/public/logo-light.png')
             ];
 
             $finalWatermarkPath = null;

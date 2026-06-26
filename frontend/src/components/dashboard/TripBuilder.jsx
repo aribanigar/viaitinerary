@@ -77,7 +77,7 @@ const TripBuilder = () => {
     brandColor: "#F4A229",
     logo: null,
     tagline:
-      "BOOK VERIFIED HOTELS, CABS, HORSES, SHIKARAS, HOUSEBOATS, TOUR PACKAGES, ACTIVITIES, VISITS",
+      "BOOK VERIFIED HOTELS, CABS, TOUR PACKAGES, ACTIVITIES & EXPERIENCES",
     greetingMessage:
       "Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.",
     beneficiaryName: "",
@@ -114,7 +114,7 @@ const TripBuilder = () => {
     currency: "INR (₹)",
     image: "",
     tagline:
-      "BOOK VERIFIED HOTELS, CABS, HORSES, SHIKARAS, HOUSEBOATS, TOUR PACKAGES, ACTIVITIES, VISITS",
+      "BOOK VERIFIED HOTELS, CABS, TOUR PACKAGES, ACTIVITIES & EXPERIENCES",
     status: "pending",
     template: "ModernTemplate", // Default template
     useFlight: false,

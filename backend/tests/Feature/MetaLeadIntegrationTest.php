@@ -24,7 +24,7 @@ class MetaLeadIntegrationTest extends TestCase
     /** @test */
     public function it_verifies_meta_webhook_successfully()
     {
-        $verifyToken = 'viakashmir_leadgen_verify_2026';
+        $verifyToken = 'viaitinerary_leadgen_verify_2026';
         config(['services.facebook.verify_token' => $verifyToken]);
         // Mock the env() check in controller if needed or set it in phpunit.xml
         putenv("META_VERIFY_TOKEN=$verifyToken");

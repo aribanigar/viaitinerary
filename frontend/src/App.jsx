@@ -191,21 +191,21 @@ const LandingPage = () => {
     <div className="min-h-screen bg-white">
       <Helmet>
         <title>
-          VIAKashmir: Travel CRM, Itinerary Builder & Lead Management Software
+          ViaItinerary: Travel CRM, Itinerary Builder & Lead Management Software
         </title>
         <meta
           name="description"
-          content="Automate your travel business with VIAKashmir. Professional itinerary planning, client management, and real-time cost calculation for travel agents."
+          content="Automate your travel business with ViaItinerary. Professional itinerary planning, client management, and real-time cost calculation for travel agents."
         />
         <meta
           name="keywords"
-          content="Best Travel CRM Agency, travel software, travel agency software, travel agent crm, crm software company, crm Systems, travel itinerary, crm for travel agents, travel website development, software development, VIAKashmir, Kashmir travel packages, Kashmir tours, Best Travel agency in kashmir, Kashmir Honeymoon Packages, Kashmir Family Packages, best tour operator, Hotels In kashmir, Cabs in Kashmir"
+          content="Best Travel CRM Agency, travel software, travel agency software, travel agent crm, crm software company, crm Systems, travel itinerary, crm for travel agents, travel website development, software development, ViaItinerary, travel packages, tour packages, honeymoon packages, family packages, best tour operator, hotel booking, cab booking"
         />
         <link rel="canonical" href={window.location.href} />
         <meta name="robots" content="index, follow" />
         <meta name="X-Robots-Tag" content="index, follow" />
-        <meta name="author" content="Via Kashmir" />
-        <meta name="publisher" content="Via Kashmir" />
+        <meta name="author" content="ViaItinerary" />
+        <meta name="publisher" content="ViaItinerary" />
         <link rel="publisher" href={window.location.href} />
       </Helmet>
       <Navbar />

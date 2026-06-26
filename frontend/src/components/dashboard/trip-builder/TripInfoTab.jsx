@@ -110,7 +110,7 @@ const TripInfoTab = ({
         </label>
         <input
           type="text"
-          placeholder="e.g. Kashmir, Delhi, Shimla"
+          placeholder="e.g. Paris, Tokyo, Bali"
           value={tripInfo.destination}
           onChange={(e) =>
             setTripInfo({

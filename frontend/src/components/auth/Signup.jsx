@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Loader from "../common/Loader";
 import { toast } from "react-toastify";
-import logoLight from "../../assets/ViaKashmir logo for light bg.png";
+import logoLight from "../../assets/logo-light.png";
 
 const Signup = () => {
   const { signup, sendOtp } = useAuth();
@@ -114,7 +114,7 @@ const Signup = () => {
       <Link to="/" className="mb-4">
         <img
           src={logoLight}
-          alt="VIAKashmir"
+          alt="ViaItinerary"
           className="h-20 w-auto object-contain"
         />
       </Link>
@@ -125,7 +125,7 @@ const Signup = () => {
               Create Account
             </h2>
             <p className="text-slate-500 mt-2">
-              Join VIAKashmir and start managing your travel business
+              Join ViaItinerary and start managing your travel business
             </p>
           </div>
 

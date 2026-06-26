@@ -3,4 +3,4 @@ Disallow: /admin
 Disallow: /dashboard
 Disallow: /api
 
-Sitemap: https://viakashmiritinerary.in/sitemap.xml
+Sitemap: https://viaitinerary.in/sitemap.xml

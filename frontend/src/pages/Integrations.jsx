@@ -479,11 +479,11 @@ const Integrations = () => {
                               window.location.href = response.url;
                             } else {
                               // Fallback if it actually redirects directly (though request() might catch it)
-                              window.location.href = `https://viakashmiritinerary.in/api/auth/${platform.db_key}/redirect?token=${token}`;
+                              window.location.href = `https://viaitinerary.in/api/auth/${platform.db_key}/redirect?token=${token}`;
                             }
                           } catch (err) {
                             // Fallback: Use direct link with token if the request() wrapper behaves unexpectedly
-                            window.location.href = `https://viakashmiritinerary.in/api/auth/${platform.db_key}/redirect?token=${token}`;
+                            window.location.href = `https://viaitinerary.in/api/auth/${platform.db_key}/redirect?token=${token}`;
                           }
                         }}
                         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-sm text-white transition-all"

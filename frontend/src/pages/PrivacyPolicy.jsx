@@ -21,8 +21,8 @@ const PrivacyPolicy = () => {
               1. Introduction
             </h2>
             <p>
-              Via Kashmir (“Company”, “We”, “Us”, “Our”) operates the Via
-              Kashmir Itinerary Builder & CRM SaaS Platform (“Platform”,
+              ViaItinerary (“Company”, “We”, “Us”, “Our”) operates ViaItinerary,
+              an itinerary builder & CRM SaaS platform (“Platform”,
               “Service”).
             </p>
             <p className="mt-2">
@@ -75,7 +75,7 @@ const PrivacyPolicy = () => {
                 behalf of controller.
               </li>
             </ul>
-            <p className="mt-4">Via Kashmir typically acts as:</p>
+            <p className="mt-4">ViaItinerary typically acts as:</p>
             <ul className="list-disc ml-6 mt-2 space-y-1">
               <li>Data Controller for account and billing information.</li>
               <li>
@@ -154,7 +154,7 @@ const PrivacyPolicy = () => {
               </li>
             </ul>
             <p className="mt-4 italic">
-              Via Kashmir processes such data strictly under user instruction.
+              ViaItinerary processes such data strictly under user instruction.
               We are not responsible for incorrect data entered by users, legal
               violations by travel agencies, or end-customer disputes.
             </p>
@@ -216,10 +216,10 @@ const PrivacyPolicy = () => {
               correct, delete, or restrict processing of your data. Requests may
               be sent to:{" "}
               <a
-                href="mailto:contact@viakashmir.com"
+                href="mailto:contact@viaitinerary.com"
                 className="text-blue-600 hover:underline"
               >
-                contact@viakashmir.com
+                contact@viaitinerary.com
               </a>
             </p>
           </section>
@@ -260,7 +260,7 @@ const PrivacyPolicy = () => {
               15. Limitation of Liability
             </h2>
             <p>
-              Via Kashmir shall not be liable for user mishandling of client
+              ViaItinerary shall not be liable for user mishandling of client
               data, regulatory penalties caused by user non-compliance, or
               indirect damages/data loss caused by user negligence.
             </p>
@@ -272,7 +272,7 @@ const PrivacyPolicy = () => {
             </h2>
             <p>
               This Privacy Policy shall be governed by the laws of India.
-              Disputes shall be subject to jurisdiction in Jammu & Kashmir,
+              Disputes shall be subject to jurisdiction in India,
               India.
             </p>
           </section>
@@ -282,23 +282,23 @@ const PrivacyPolicy = () => {
               17. Contact Information
             </h2>
             <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="font-bold text-[#10182A]">Via Kashmir</p>
+              <p className="font-bold text-[#10182A]">ViaItinerary</p>
               <p>
                 Website:{" "}
                 <a
-                  href="https://www.viakashmiritinerary.in"
+                  href="https://www.viaitinerary.in"
                   className="text-blue-600 hover:underline"
                 >
-                  https://www.viakashmiritinerary.in
+                  https://www.viaitinerary.in
                 </a>
               </p>
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:contact@viakashmir.com"
+                  href="mailto:contact@viaitinerary.com"
                   className="text-blue-600 hover:underline"
                 >
-                  contact@viakashmir.com
+                  contact@viaitinerary.com
                 </a>
               </p>
             </div>

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Home, ArrowLeft } from "lucide-react";
-import logoLight from "../assets/ViaKashmir logo for light bg.png";
+import logoLight from "../assets/logo-light.png";
 
 const NotFound = () => {
   return (
@@ -9,7 +9,7 @@ const NotFound = () => {
       <Link to="/" className="mb-8">
         <img
           src={logoLight}
-          alt="VIAKashmir"
+          alt="ViaItinerary"
           className="h-20 w-auto object-contain"
         />
       </Link>
@@ -48,7 +48,7 @@ const NotFound = () => {
       </div>
 
       <div className="mt-16 text-slate-400 text-sm">
-        &copy; {new Date().getFullYear()} VIAKashmir. All rights reserved.
+        &copy; {new Date().getFullYear()} ViaItinerary. All rights reserved.
       </div>
     </div>
   );

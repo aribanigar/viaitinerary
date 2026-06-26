@@ -8,7 +8,7 @@ import {
   Youtube,
   MapPin,
 } from "lucide-react";
-import logoDark from "../../assets/ViaKashmir logo for dark bg.png";
+import logoDark from "../../assets/logo-dark.png";
 
 const Footer = () => {
   return (
@@ -20,7 +20,7 @@ const Footer = () => {
             <div className="flex items-center">
               <img
                 src={logoDark}
-                alt="Viakashmir"
+                alt="ViaItinerary"
                 className="h-26 w-auto object-contain block"
               />
             </div>
@@ -32,22 +32,22 @@ const Footer = () => {
               {[
                 {
                   Icon: Facebook,
-                  href: "https://www.facebook.com/people/Via-Kashmir/61581764279006/",
+                  href: "#",
                   label: "Facebook",
                 },
                 {
                   Icon: Instagram,
-                  href: "https://www.instagram.com/viakashmir_official/",
+                  href: "https://www.instagram.com/viaitinerary_official/",
                   label: "Instagram",
                 },
                 {
                   Icon: Linkedin,
-                  href: "https://www.linkedin.com/company/via-kashmir",
+                  href: "#",
                   label: "LinkedIn",
                 },
                 {
                   Icon: Youtube,
-                  href: "https://www.youtube.com/@ViaKashmir_official",
+                  href: "https://www.youtube.com/@ViaItinerary_official",
                   label: "YouTube",
                 },
               ].map((social, i) => (
@@ -87,10 +87,10 @@ const Footer = () => {
                         +91 9186051499
                       </a>
                       <a
-                        href="mailto:contact@viakashmir.com"
+                        href="mailto:contact@viaitinerary.com"
                         className="hover:text-[#faa81e] transition-colors"
                       >
-                        contact@viakashmir.com
+                        contact@viaitinerary.com
                       </a>
                     </div>
                   </div>
@@ -145,7 +145,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="pt-12 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6">
           <p className="text-white/70 text-sm">
-            © {new Date().getFullYear()} Via Kashmir. All rights reserved.
+            © {new Date().getFullYear()} ViaItinerary. All rights reserved.
           </p>
           <div className="flex gap-8">
             <Link

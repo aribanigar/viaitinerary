@@ -22,7 +22,7 @@ const RefundPolicy = () => {
             </h2>
             <p>
               This Refund & Cancellation Policy governs subscription payments
-              made for access to the Via Kashmir Itinerary Builder & CRM SaaS
+              made for access to the ViaItinerary Itinerary Builder & CRM SaaS
               Platform (“Platform”, “Service”).
             </p>
             <p className="mt-2">
@@ -138,7 +138,7 @@ const RefundPolicy = () => {
             <p className="mt-2">
               Refund requests must be submitted within 7 days of the charge.
             </p>
-            <p>Approval is at the sole discretion of Via Kashmir.</p>
+            <p>Approval is at the sole discretion of ViaItinerary.</p>
           </section>
 
           <section>
@@ -203,7 +203,7 @@ const RefundPolicy = () => {
               11. Policy Updates
             </h2>
             <p>
-              Via Kashmir reserves the right to modify this Policy at any time.
+              ViaItinerary reserves the right to modify this Policy at any time.
             </p>
             <p>
               Continued use of the Platform constitutes acceptance of updates.
@@ -216,23 +216,23 @@ const RefundPolicy = () => {
             </h2>
             <p>All refund requests must be submitted in writing to:</p>
             <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="font-bold text-[#10182A]">Via Kashmir</p>
+              <p className="font-bold text-[#10182A]">ViaItinerary</p>
               <p>
                 Website:{" "}
                 <a
-                  href="https://www.viakashmiritinerary.in"
+                  href="https://www.viaitinerary.in"
                   className="text-blue-600 hover:underline"
                 >
-                  https://www.viakashmiritinerary.in
+                  https://www.viaitinerary.in
                 </a>
               </p>
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:contact@viakashmir.com"
+                  href="mailto:contact@viaitinerary.com"
                   className="text-blue-600 hover:underline"
                 >
-                  contact@viakashmir.com
+                  contact@viaitinerary.com
                 </a>
               </p>
             </div>

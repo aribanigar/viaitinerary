@@ -23,8 +23,8 @@ const TermsOfService = () => {
             <p>
               These Terms of Service (“Terms”) constitute a legally binding
               agreement between you (“User”, “Subscriber”, “Company”, “Client”)
-              and Via Kashmir (“Company”, “We”, “Us”, “Our”) governing access to
-              and use of the Via Kashmir Itinerary Builder & CRM SaaS Platform
+              and ViaItinerary (“Company”, “We”, “Us”, “Our”) governing access to
+              and use of the ViaItinerary Itinerary Builder & CRM SaaS Platform
               (“Platform”, “Software”, “Service”).
             </p>
             <p className="mt-2">
@@ -49,12 +49,12 @@ const TermsOfService = () => {
               2. Nature of the Service
             </h2>
             <p>
-              Via Kashmir provides a cloud-based Software-as-a-Service (SaaS)
+              ViaItinerary provides a cloud-based Software-as-a-Service (SaaS)
               solution for itinerary creation, CRM, booking management, team
               reporting, and analytics.
             </p>
             <p className="mt-2">
-              Via Kashmir is a technology provider only and does not act as a
+              ViaItinerary is a technology provider only and does not act as a
               travel agency, handle bookings directly, or assume responsibility
               for end traveler disputes.
             </p>
@@ -96,7 +96,7 @@ const TermsOfService = () => {
             <p>
               Each user seat is licensed to one individual only; account sharing
               is strictly prohibited. You are responsible for maintaining
-              password confidentiality. Via Kashmir is not liable for
+              password confidentiality. ViaItinerary is not liable for
               unauthorized access caused by user negligence.
             </p>
           </section>
@@ -119,7 +119,7 @@ const TermsOfService = () => {
             </h2>
             <p>
               All software code, algorithms, CRM structure, templates, and
-              branding remain the exclusive property of Via Kashmir.
+              branding remain the exclusive property of ViaItinerary.
               Unauthorized duplication may result in legal action.
             </p>
           </section>
@@ -131,7 +131,7 @@ const TermsOfService = () => {
             <p>
               You retain ownership of your uploaded data but are solely
               responsible for its accuracy and compliance with relevant data
-              protection laws (GDPR, Indian IT Act, etc.). Via Kashmir acts as a
+              protection laws (GDPR, Indian IT Act, etc.). ViaItinerary acts as a
               Data Processor where applicable.
             </p>
           </section>
@@ -152,7 +152,7 @@ const TermsOfService = () => {
               10. Limitation of Liability
             </h2>
             <p>
-              To the maximum extent permitted by law, Via Kashmir shall not be
+              To the maximum extent permitted by law, ViaItinerary shall not be
               liable for indirect damages, loss of revenue, or business
               interruption. Total liability shall not exceed the subscription
               fees paid in the preceding three (3) months.
@@ -164,7 +164,7 @@ const TermsOfService = () => {
               11. Indemnification
             </h2>
             <p>
-              You agree to indemnify Via Kashmir from claims arising from your
+              You agree to indemnify ViaItinerary from claims arising from your
               misuse of the platform, violation of laws, or client disputes.
             </p>
           </section>
@@ -207,7 +207,7 @@ const TermsOfService = () => {
             </h2>
             <p>
               These Terms are governed by the laws of India. Unresolved disputes
-              shall be subject to arbitration in Jammu & Kashmir, India.
+              shall be subject to arbitration in India.
             </p>
           </section>
 
@@ -236,25 +236,25 @@ const TermsOfService = () => {
               18. Contact Information
             </h2>
             <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="font-bold text-[#10182A]">Via Kashmir</p>
+              <p className="font-bold text-[#10182A]">ViaItinerary</p>
               <p>
                 Website:{" "}
                 <a
-                  href="https://www.viakashmiritinerary.in"
+                  href="https://www.viaitinerary.in"
                   className="text-blue-600 hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  https://www.viakashmiritinerary.in
+                  https://www.viaitinerary.in
                 </a>
               </p>
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:contact@viakashmir.com"
+                  href="mailto:contact@viaitinerary.com"
                   className="text-blue-600 hover:underline"
                 >
-                  contact@viakashmir.com
+                  contact@viaitinerary.com
                 </a>
               </p>
             </div>

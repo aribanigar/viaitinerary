@@ -53,7 +53,7 @@ return [
     ],
 
     'super_admin' => [
-        'email' => env('SUPER_ADMIN_EMAIL', 'Viakashmir.in@gmail.com'),
+        'email' => env('SUPER_ADMIN_EMAIL', 'viakashmir.in@gmail.com'),
     ],
 
 ];

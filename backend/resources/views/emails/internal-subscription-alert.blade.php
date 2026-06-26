@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet" type="text/css" />
     <!--<![endif]-->
-    <title>New Subscription Alert — ViaKashmir Itinerary</title>
+    <title>New Subscription Alert — ViaItinerary Itinerary</title>
     <style type="text/css">
         body,
         table,
@@ -83,7 +83,7 @@
                                     <td valign="middle">
                                         <p
                                             style="font-family:'Poppins',Arial,sans-serif;font-size:15px;font-weight:800;color:#ffffff;margin:0;padding:0;">
-                                            Via Kashmir
+                                            ViaItinerary
                                         </p>
                                     </td>
                                     <td valign="middle" align="right">
@@ -117,7 +117,7 @@
                             </h1>
                             <p
                                 style="font-family:'Poppins',Arial,sans-serif;font-size:13px;color:rgba(255,255,255,0.5);line-height:1.7;margin:0;padding:0;">
-                                A customer has successfully subscribed to ViaKashmir Itinerary Solutions.<br />
+                                A customer has successfully subscribed to ViaItinerary Itinerary Solutions.<br />
                                 Review the details below and activate the account if not done automatically.
                             </p>
 
@@ -410,7 +410,7 @@
                                 width="100%" style="background-color:#111111;border-radius:12px;">
                                 <tr>
                                     <td align="center" style="padding:26px 24px;">
-                                        <a href="https://viakashmiritinerary.in/admin/subscriptions"
+                                        <a href="https://viaitinerary.in/admin/subscriptions"
                                             style="display:inline-block;font-family:'Poppins',Arial,sans-serif;font-size:13px;font-weight:700;color:#062a1e;text-decoration:none;background-color:#6effc2;padding:12px 24px;border-radius:6px;">View
                                             Subscription Details &rarr;</a>
                                     </td>
@@ -426,15 +426,15 @@
                             style="background-color:#f0ece4;border-top:1px solid #dddad2;padding:20px 32px;">
                             <p
                                 style="font-family:'Poppins',Arial,sans-serif;font-size:14px;font-weight:800;color:#0e3d2f;margin:0 0 4px 0;padding:0;">
-                                Via Kashmir Itinerary</p>
+                                ViaItinerary Itinerary</p>
                             <p
                                 style="font-family:'Poppins',Arial,sans-serif;font-size:11px;color:#aaa;line-height:1.7;margin:0;padding:0;">
                                 This is an automated internal notification. Do not reply to this email.<br />
-                                <a href="https://viakashmiritinerary.in/admin"
+                                <a href="https://viaitinerary.in/admin"
                                     style="color:#1a6649;text-decoration:none;">Admin Panel</a>
                                 &nbsp;&middot;&nbsp;
-                                <a href="https://viakashmiritinerary.in"
-                                    style="color:#1a6649;text-decoration:none;">viakashmiritinerary.in</a>
+                                <a href="https://viaitinerary.in"
+                                    style="color:#1a6649;text-decoration:none;">viaitinerary.in</a>
                             </p>
                         </td>
                     </tr>

@@ -167,7 +167,7 @@ class MetaSheetLeadImporter
         $response = Http::timeout(30)
             ->withHeaders([
                 'Accept' => 'text/csv,text/plain;q=0.9,*/*;q=0.8',
-                'User-Agent' => 'ViaKashmir-CRM/1.0',
+                'User-Agent' => 'ViaItinerary-CRM/1.0',
             ])
             ->get($csvUrl);
 

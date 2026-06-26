@@ -57,7 +57,7 @@ class ProcessSuccessfulSubscriptionJob implements ShouldQueue
         }
 
         // 2. Send alert email to Super Admin
-        $superAdminEmail = config('services.super_admin.email', 'Viakashmir.in@gmail.com');
+        $superAdminEmail = config('services.super_admin.email', 'ViaItinerary.in@gmail.com');
         try {
             Mail::mailer('booking')
                 ->to($superAdminEmail)

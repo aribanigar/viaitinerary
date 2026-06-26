@@ -24,10 +24,10 @@ class PolicyController extends Controller
                     "The travel agency will not be responsible for any additional services taken without informing the agent."
                 ],
                 'must_haves' => [
-                    "Carry postpaid SIM cards to Kashmir.",
-                    "Prepaid SIMs from outside J&K do not work in Kashmir.",
-                    "Prepaid SIMs can be purchased at Srinagar Airport.",
-                    "Carry light woollens up to October end and heavy woollens from November to March.",
+                    "Carry a valid local SIM card or enable roaming for your destination.",
+                    "Mobile coverage can be limited in remote areas; plan accordingly.",
+                    "SIM cards can usually be purchased at the arrival airport.",
+                    "Pack clothing suitable for the season and weather at your destination.",
                     "No AC vehicle will be available on drives to hill areas due to steep slopes.",
                     "Ask your travel agent for government-fixed rates for services not included in the package to avoid being charged extra."
                 ],
@@ -45,18 +45,18 @@ class PolicyController extends Controller
                 ],
                 'additional_expenses' => [
                     "Garden entry tickets: ₹20 – ₹100 per person per garden",
-                    "Pony rides (Gulmarg / Pahalgam / Sonamarg): approx. ₹1500 per person",
-                    "Guide services: approx. ₹900 per day in Gulmarg",
-                    "Snow cab (Tangmarg ↔ Gulmarg): approx. ₹2500 per cab (mandatory during snowfall)",
-                    "ATV rides to Frozen Drung Waterfall: approx. ₹1500 per person",
-                    "Union taxi in Sonamarg to Zero Point: approx. ₹4500 – ₹5000 per cab",
-                    "Union cab in Pahalgam (Aru / Betaab / Chandanwari): approx. ₹2500 – ₹3000 per cab"
+                    "Pony / horse rides: charged locally as per operator rates",
+                    "Guide services: charged per day as per local rates",
+                    "Special local transfers (e.g. during adverse weather): charged as per local rates",
+                    "Adventure activities (e.g. ATV rides): charged locally",
+                    "Local taxis for restricted/special areas: charged as per local rates",
+                    "Local cabs for sightseeing points: charged as per local rates"
                 ],
                 'default_inclusions' => [
                     "Private vehicle for inter-city transfers",
                     "Accommodation as mentioned in the itinerary",
                     "Meal plan as mentioned",
-                    "1-hour Shikara ride",
+                    "1-hour local boat ride (where applicable)",
                     "Driver expenses, including toll tax, parking, fuel, driver night stays, and meals",
                     "Sightseeing as per the itinerary"
                 ],
@@ -64,7 +64,7 @@ class PolicyController extends Controller
                     "Air tickets and train tickets (to be arranged by guests)",
                     "Union cabs as and when required",
                     "Pony rides anywhere",
-                    "Gondola Rides Gulmarg",
+                    "Cable car / gondola rides",
                     "Anti-skid snow cabs (mandatory during or after snowfall)",
                     "Sightseeing by ATVs",
                     "Garden entry tickets",

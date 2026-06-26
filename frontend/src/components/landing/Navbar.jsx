@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, LayoutDashboard } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import logoLight from "../../assets/ViaKashmir logo for light bg.png";
+import logoLight from "../../assets/logo-light.png";
 
 const Navbar = () => {
   const { token, user } = useAuth();
@@ -28,7 +28,7 @@ const Navbar = () => {
             >
               <img
                 src={logoLight}
-                alt="Viakashmir"
+                alt="ViaItinerary"
                 className="h-26 w-auto object-contain block"
               />
             </Link>

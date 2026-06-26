@@ -12,7 +12,7 @@ const AboutUs = () => {
       <Navbar decoration={true} />
       <main className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <h1 className="text-4xl font-bold text-[#043b36] mb-8 uppercase">
-          About Via Kashmir
+          About ViaItinerary
         </h1>
 
         <div className="space-y-8 leading-relaxed">
@@ -54,7 +54,7 @@ const AboutUs = () => {
               Built for Travel Sales Teams
             </h3>
             <p>
-              Via Kashmir is a complete system engineered for serious travel
+              ViaItinerary is a complete system engineered for serious travel
               companies that want structured growth and operational control.
             </p>
             <ul className="list-disc ml-6 mt-4忽视 space-y-2">
@@ -150,23 +150,23 @@ const AboutUs = () => {
               Contact Information
             </h2>
             <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="font-bold text-[#043b36]">Via Kashmir</p>
+              <p className="font-bold text-[#043b36]">ViaItinerary</p>
               <p>
                 Website:{" "}
                 <a
-                  href="https://www.viakashmiritinerary.in"
+                  href="https://www.viaitinerary.in"
                   className="text-blue-600 hover:underline"
                 >
-                  https://www.viakashmiritinerary.in
+                  https://www.viaitinerary.in
                 </a>
               </p>
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:contact@viakashmir.com"
+                  href="mailto:contact@viaitinerary.com"
                   className="text-blue-600 hover:underline"
                 >
-                  contact@viakashmir.com
+                  contact@viaitinerary.com
                 </a>
               </p>
             </div>

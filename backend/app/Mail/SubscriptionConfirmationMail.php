@@ -33,9 +33,9 @@ class SubscriptionConfirmationMail extends Mailable
         return new Envelope(
             from: new Address(
                 config('mail.mailers.booking.username'),
-                'Via Kashmir Itinerary'
+                'ViaItinerary Itinerary'
             ),
-            subject: "You're In! — ViaKashmir Itinerary",
+            subject: "You're In! — ViaItinerary Itinerary",
         );
     }
 

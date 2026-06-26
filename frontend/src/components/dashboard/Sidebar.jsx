@@ -29,7 +29,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import logoDark from "../../assets/ViaKashmir logo for dark bg.png";
+import logoDark from "../../assets/logo-dark.png";
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuth();
@@ -96,7 +96,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         <Link to="/" onClick={onClose} className="px-6 flex items-center group">
           <img
             src={logoDark}
-            alt="Viakashmir"
+            alt="ViaItinerary"
             className="h-26 w-auto object-contain block"
           />
         </Link>

@@ -105,7 +105,7 @@ const ItineraryTab = ({
           <div className="px-6 pb-6 space-y-3">
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
-                Route (e.g. Srinagar to Gulmarg)
+                Route (e.g. City A to City B)
               </label>
               <input
                 type="text"
@@ -125,7 +125,7 @@ const ItineraryTab = ({
 
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
-                Stay Location (e.g. Overnight stay at Srinagar)
+                Stay Location (e.g. Overnight stay in the city)
               </label>
               <input
                 type="text"

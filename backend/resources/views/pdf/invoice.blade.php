@@ -393,7 +393,7 @@
                         @else
                             <div class="agency-name">{{ $agencySettings?->agency_name ?? 'Travel Agency' }}</div>
                         @endif
-                        <div class="agency-info">Kashmir Tour & Travel</div>
+                        <div class="agency-info">Your Tour & Travel</div>
                         <div class="agency-info">{{ $agencySettings?->contact_email }}</div>
                         <div class="agency-info">{{ $agencySettings?->contact_phone }}</div>
                     </td>
@@ -409,7 +409,7 @@
                         </div>
                         <div class="invoice-meta">Date: <strong>{{ date('d M Y') }}</strong></div>
                         <div class="invoice-meta" style="margin-top: 5px;">Powered by <strong
-                                style="color: {{ $agencySettings?->brand_color ?? '#6effc2' }};">ViaKashmir
+                                style="color: {{ $agencySettings?->brand_color ?? '#6effc2' }};">ViaItinerary
                                 Itinerary</strong></div>
                     </td>
                 </tr>

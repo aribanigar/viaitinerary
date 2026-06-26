@@ -361,7 +361,7 @@ const ModernTemplate = ({
           ) : (
             <>
               <h1 style={{ fontSize: "24px" }}>
-                {(agencySettings.agencyName || "VIAKASHMIR").toUpperCase()}
+                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
               </h1>
               <p>TRAVEL SIMPLIFIED</p>
             </>
@@ -383,7 +383,7 @@ const ModernTemplate = ({
             </h1>
             <p>
               TRAVEL ITINERARY BY{" "}
-              {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+              {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
             </p>
           </div>
         </div>
@@ -399,7 +399,7 @@ const ModernTemplate = ({
         >
           {tripInfo.tagline ||
             agencySettings.tagline ||
-            "BOOK VERIFIED HOTELS, CABS, HORSES, SHIKARAS, HOUSEBOATS, TOUR PACKAGES, ACTIVITIES, VISITS"}
+            "BOOK VERIFIED HOTELS, CABS, TOUR PACKAGES, ACTIVITIES & EXPERIENCES"}
         </div>
         <div
           className="cover-content"
@@ -420,7 +420,7 @@ const ModernTemplate = ({
               "Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes."
             ).replace(
               /{agencyName}/g,
-              (agencySettings.agencyName || "Via Kashmir").toUpperCase(),
+              (agencySettings.agencyName || "ViaItinerary").toUpperCase(),
             )}
           </p>
 
@@ -445,7 +445,7 @@ const ModernTemplate = ({
                 Destination
               </label>
               <div style={{ fontSize: "22px", fontWeight: "600" }}>
-                {tripInfo.destination || "Jammu & Kashmir"}
+                {tripInfo.destination || "Destination"}
               </div>
             </div>
             <div>
@@ -693,7 +693,7 @@ const ModernTemplate = ({
               </h1>
               <p>
                 TRAVEL ITINERARY BY{" "}
-                {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
               </p>
             </div>
             <div className="brand-logo-right" style={{ top: "10px" }}>
@@ -706,7 +706,7 @@ const ModernTemplate = ({
               ) : (
                 <>
                   <h2>
-                    {(agencySettings.agencyName || "VIAKASHMIR").toUpperCase()}
+                    {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
                   </h2>
                   <span>TRAVEL SIMPLIFIED</span>
                 </>
@@ -828,7 +828,7 @@ const ModernTemplate = ({
                             }
                             return "1 NIGHT AT ";
                           })()}
-                          <b>{hotel.city || "Srinagar"}</b>
+                          <b>{hotel.city || "City"}</b>
                         </span>
                       </>
                     )}
@@ -944,7 +944,7 @@ const ModernTemplate = ({
           </h1>
           <p>
             TRAVEL ITINERARY BY{" "}
-            {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+            {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
           </p>
         </div>
         <div className="brand-logo-right" style={{ top: "10px" }}>
@@ -957,7 +957,7 @@ const ModernTemplate = ({
           ) : (
             <>
               <h2>
-                {(agencySettings.agencyName || "VIAKASHMIR").toUpperCase()}
+                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
               </h2>
               <span>TRAVEL SIMPLIFIED</span>
             </>
@@ -1068,7 +1068,7 @@ const ModernTemplate = ({
             </h1>
             <p>
               TRAVEL ITINERARY BY{" "}
-              {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+              {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
             </p>
           </div>
           <div className="brand-logo-right" style={{ top: "10px" }}>
@@ -1081,7 +1081,7 @@ const ModernTemplate = ({
             ) : (
               <>
                 <h2>
-                  {(agencySettings.agencyName || "VIAKASHMIR").toUpperCase()}
+                  {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
                 </h2>
                 <span>TRAVEL SIMPLIFIED</span>
               </>
@@ -1203,7 +1203,7 @@ const ModernTemplate = ({
               </h1>
               <p>
                 TRAVEL ITINERARY BY{" "}
-                {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
               </p>
             </div>
             <div className="brand-logo-right">
@@ -1216,7 +1216,7 @@ const ModernTemplate = ({
               ) : (
                 <>
                   <h2>
-                    {(agencySettings.agencyName || "VIAKASHMIR").toUpperCase()}
+                    {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
                   </h2>
                   <span>TRAVEL SIMPLIFIED</span>
                 </>
@@ -1551,7 +1551,7 @@ const ModernTemplate = ({
           </h1>
           <p>
             TRAVEL ITINERARY BY{" "}
-            {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+            {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
           </p>
         </div>
         <div className="brand-logo-right" style={{ top: "10px" }}>
@@ -1564,7 +1564,7 @@ const ModernTemplate = ({
           ) : (
             <>
               <h2>
-                {(agencySettings.agencyName || "VIAKASHMIR").toUpperCase()}
+                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
               </h2>
               <span>TRAVEL SIMPLIFIED</span>
             </>
@@ -1756,7 +1756,7 @@ const ModernTemplate = ({
           </h1>
           <p>
             TRAVEL ITINERARY BY{" "}
-            {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+            {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
           </p>
         </div>
         <div className="brand-logo-right" style={{ top: "10px" }}>
@@ -1769,7 +1769,7 @@ const ModernTemplate = ({
           ) : (
             <>
               <h2>
-                {(agencySettings.agencyName || "VIAKASHMIR").toUpperCase()}
+                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
               </h2>
               <span>TRAVEL SIMPLIFIED</span>
             </>
@@ -1921,7 +1921,7 @@ const ModernTemplate = ({
           </h1>
           <p>
             TRAVEL ITINERARY BY{" "}
-            {(agencySettings.agencyName || "VIA KASHMIR").toUpperCase()}
+            {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
           </p>
         </div>
         <div className="brand-logo-right" style={{ top: "10px" }}>
@@ -1934,7 +1934,7 @@ const ModernTemplate = ({
           ) : (
             <>
               <h2>
-                {(agencySettings.agencyName || "VIAKASHMIR").toUpperCase()}
+                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
               </h2>
               <span>TRAVEL SIMPLIFIED</span>
             </>
@@ -2048,7 +2048,7 @@ const ModernTemplate = ({
               Beneficiary Name:{" "}
               <span style={{ fontWeight: "900" }}>
                 {agencySettings.beneficiaryName ||
-                  "VIAKASHMIR OPC PRIVATE LIMITED"}
+                  "VIAITINERARY OPC PRIVATE LIMITED"}
               </span>
             </p>
             <p
@@ -2154,7 +2154,7 @@ const ModernTemplate = ({
                     className="header-logo"
                   />
                 ) : (
-                  (agencySettings.agencyName || "Via Kashmir").toUpperCase()
+                  (agencySettings.agencyName || "ViaItinerary").toUpperCase()
                 )}
               </div>
             </div>
@@ -2207,7 +2207,7 @@ const ModernTemplate = ({
               textTransform: "uppercase",
             }}
           >
-            {(agencySettings.agencyName || "VIAKASHMIR").toUpperCase()}
+            {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
           </p>
           {agencySettings.companyAddress?.trim() ? (
             <p

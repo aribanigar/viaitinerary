@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap"
         rel="stylesheet" type="text/css" />
     <!--<![endif]-->
-    <title>You're In! — ViaKashmir Itinerary</title>
+    <title>You're In! — ViaItinerary Itinerary</title>
     <style type="text/css">
         body,
         table,
@@ -84,7 +84,7 @@
                         <td align="center" style="background-color:#0e3d2f;padding:18px 40px;">
                             <p
                                 style="font-family:'Poppins',Arial,sans-serif;font-size:18px;font-weight:800;color:#ffffff;margin:0;padding:0;letter-spacing:0.5px;">
-                                Via Kashmir <span style="color:#6effc2;font-weight:500;">Itinerary</span>
+                                ViaItinerary <span style="color:#6effc2;font-weight:500;">Itinerary</span>
                             </p>
                         </td>
                     </tr>
@@ -133,7 +133,7 @@
                             </p>
                             <p
                                 style="font-family:'Poppins',Arial,sans-serif;font-size:14px;color:#555555;line-height:1.8;margin:0;padding:0;">
-                                Thank you for subscribing to <strong style="color:#0e3d2f;">ViaKashmir Itinerary
+                                Thank you for subscribing to <strong style="color:#0e3d2f;">ViaItinerary Itinerary
                                     Solutions</strong>. Your payment has been received and your account is now fully
                                 active. We&rsquo;re excited to have you with us!
                             </p>
@@ -281,8 +281,8 @@
                                             Log in to your dashboard</p>
                                         <p
                                             style="font-family:'Poppins',Arial,sans-serif;font-size:12px;color:#777;line-height:1.5;margin:0;padding:0;">
-                                            Visit <a href="https://viakashmiritinerary.in/login"
-                                                style="color:#1a6649;text-decoration:underline;">viakashmiritinerary.in/login</a>
+                                            Visit <a href="https://viaitinerary.in/login"
+                                                style="color:#1a6649;text-decoration:underline;">viaitinerary.in/login</a>
                                             and sign in with your registered email.</p>
                                     </td>
                                 </tr>
@@ -369,7 +369,7 @@
                                             <tr>
                                                 <td align="center"
                                                     style="border-radius:30px;background-color:#6effc2;">
-                                                    <a href="https://viakashmiritinerary.in/login" class="cta-btn-a"
+                                                    <a href="https://viaitinerary.in/login" class="cta-btn-a"
                                                         style="display:inline-block;font-family:'Poppins',Arial,sans-serif;font-size:14px;font-weight:800;color:#062a1e;text-decoration:none;padding:13px 36px;border-radius:30px;letter-spacing:0.3px;">
                                                         Go to My Dashboard &rarr;
                                                     </a>
@@ -397,8 +397,8 @@
                                         <p
                                             style="font-family:'Poppins',Arial,sans-serif;font-size:12px;color:#777;margin:0;padding:0;line-height:1.6;">
                                             WhatsApp us at <strong style="color:#0e3d2f;">+91 97972 50529</strong> or
-                                            email <a href="mailto:support@viakashmiritinerary.in"
-                                                style="color:#1a6649;text-decoration:underline;">support@viakashmiritinerary.in</a>
+                                            email <a href="mailto:support@viaitinerary.in"
+                                                style="color:#1a6649;text-decoration:underline;">support@viaitinerary.in</a>
                                             — we&rsquo;re happy to help.
                                         </p>
                                     </td>
@@ -414,12 +414,12 @@
                             style="background-color:#f5f3ef;border-top:1px solid #e4e0d8;padding:24px 40px;">
                             <p
                                 style="font-family:'Poppins',Arial,sans-serif;font-size:15px;font-weight:800;color:#0e3d2f;margin:0 0 6px 0;padding:0;">
-                                Via Kashmir Itinerary</p>
+                                ViaItinerary Itinerary</p>
                             <p
                                 style="font-family:'Poppins',Arial,sans-serif;font-size:11px;color:#aaa;line-height:1.8;margin:0;padding:0;">
-                                Built for Kashmir Travel Agencies<br />
-                                <a href="https://viakashmiritinerary.in"
-                                    style="color:#1a6649;text-decoration:none;">viakashmiritinerary.in</a>
+                                Built for Travel Agencies<br />
+                                <a href="https://viaitinerary.in"
+                                    style="color:#1a6649;text-decoration:none;">viaitinerary.in</a>
                                 &nbsp;&middot;&nbsp;
                                 <a href="#" style="color:#1a6649;text-decoration:none;">Unsubscribe</a>
                             </p>

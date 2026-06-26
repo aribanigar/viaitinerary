@@ -151,15 +151,15 @@ const AgencySettings = () => {
           "Price Sections (JSON)",
         ],
         [
-          "Hotel Grand Mumtaz",
-          "Srinagar",
+          "Grand Plaza Hotel",
+          "Paris",
           "grand@example.com",
           "9876543220",
           '[{"room_type":"deluxe","meal_plan":"room_only","price":4500,"cnb":500,"upto_5":1500,"above_12":2000},{"room_type":"super_deluxe","meal_plan":"room_only","price":5500,"cnb":800,"upto_5":1800,"above_12":2500}]',
         ],
         [
-          "Pine N Peak",
-          "Pahalgam",
+          "Riverside Inn",
+          "Rome",
           "pine@example.com",
           "9876543221",
           '[{"room_type":"deluxe","meal_plan":"room_only","price":6500,"cnb":800,"upto_5":2000,"above_12":2500},{"room_type":"suite","meal_plan":"room_only","price":12000,"cnb":1500,"upto_5":3500,"above_12":4500}]',
@@ -172,11 +172,11 @@ const AgencySettings = () => {
       const destinationsData = [
         ["Destination Name", "Activities"],
         [
-          "Srinagar",
-          "Dal Lake Shikara Ride, Mughal Gardens, Shankaracharya Temple",
+          "Paris",
+          "City Sightseeing Tour, Local Museum, Historic Landmark",
         ],
-        ["Pahalgam", "Betaab Valley, Aru Valley, Baisaran Valley"],
-        ["Gulmarg", "Gondola Ride, Skiing, Golf Course"],
+        ["Rome", "Old Town Walk, Riverside Promenade, Local Market"],
+        ["Bali", "Cable Car Ride, Hiking Trail, Local Cuisine Tour"],
       ];
       const wsDest = XLSX.utils.aoa_to_sheet(destinationsData);
       XLSX.utils.book_append_sheet(wb, wsDest, "Destinations");
@@ -491,7 +491,7 @@ const AgencySettings = () => {
                       name="companyAddress"
                       value={formData.companyAddress || ""}
                       onChange={handleInputChange}
-                      placeholder="e.g. 2nd Floor, Main Boulevard, Srinagar, Jammu & Kashmir"
+                      placeholder="e.g. 2nd Floor, Main Street, Your City, Country"
                       rows={2}
                       className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300 resize-y"
                     />

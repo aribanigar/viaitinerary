@@ -163,7 +163,7 @@
 
     <header>
         <a href="{{ route('blog.index') }}" class="back-link">← Back to Blog</a>
-        <h1>Via Kashmir Blog</h1>
+        <h1>ViaItinerary Blog</h1>
     </header>
 
     <main>
@@ -171,7 +171,7 @@
     </main>
 
     <footer>
-        <p>&copy; {{ date('Y') }} Via Kashmir. All rights reserved.</p>
+        <p>&copy; {{ date('Y') }} ViaItinerary. All rights reserved.</p>
     </footer>
 </body>
 

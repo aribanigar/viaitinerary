@@ -111,7 +111,7 @@ export const useTripBuilderData = ({
             logo: initData.settings.logo_url || initData.settings.logo_path,
             tagline:
               initData.settings.tagline ||
-              "BOOK VERIFIED HOTELS, CABS, HORSES, SHIKARAS, HOUSEBOATS, TOUR PACKAGES, ACTIVITIES, VISITS",
+              "BOOK VERIFIED HOTELS, CABS, TOUR PACKAGES, ACTIVITIES & EXPERIENCES",
             greetingMessage: initData.settings.greeting_message,
             beneficiaryName: initData.settings.beneficiary_name,
             bankName: initData.settings.bank_name || initData.settings.bankName,
@@ -174,7 +174,7 @@ export const useTripBuilderData = ({
             tagline:
               savedTrip.tagline ||
               initData.settings?.tagline ||
-              "BOOK VERIFIED HOTELS, CABS, HORSES, SHIKARAS, HOUSEBOATS, TOUR PACKAGES, ACTIVITIES, VISITS",
+              "BOOK VERIFIED HOTELS, CABS, TOUR PACKAGES, ACTIVITIES & EXPERIENCES",
             transportDetails: (savedTrip.transport_details || []).map(
               (transport) => ({
                 ...transport,

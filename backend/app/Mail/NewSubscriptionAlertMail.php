@@ -33,9 +33,9 @@ class NewSubscriptionAlertMail extends Mailable
         return new Envelope(
             from: new Address(
                 config('mail.mailers.booking.username'),
-                'Via Kashmir IT'
+                'ViaItinerary IT'
             ),
-            subject: 'New Subscription Alert — ViaKashmir Itinerary',
+            subject: 'New Subscription Alert — ViaItinerary Itinerary',
         );
     }
 

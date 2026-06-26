@@ -83,7 +83,7 @@ class SubscriptionNotificationTest extends TestCase
         ]);
 
         // Manually set config to avoid null issues during test
-        config(['services.super_admin.email' => 'Viakashmir.in@gmail.com']);
+        config(['services.super_admin.email' => 'ViaItinerary.in@gmail.com']);
 
         $job = new ProcessSuccessfulSubscriptionJob($user->id, $subscription->id);
         $job->handle();

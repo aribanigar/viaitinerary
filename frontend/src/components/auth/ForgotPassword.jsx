@@ -4,7 +4,7 @@ import { forgotPassword } from "../../api/auth";
 import { Mail, ArrowRight, ArrowLeft } from "lucide-react";
 import Loader from "../common/Loader";
 import { toast } from "react-toastify";
-import logoLight from "../../assets/ViaKashmir logo for light bg.png";
+import logoLight from "../../assets/logo-light.png";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -33,7 +33,7 @@ const ForgotPassword = () => {
       <Link to="/" className="mb-4">
         <img
           src={logoLight}
-          alt="VIAKashmir"
+          alt="ViaItinerary"
           className="h-20 w-auto object-contain"
         />
       </Link>
