@@ -1,0 +1,49 @@
+# Render Blueprint — deploys the whole system (Laravel API + React frontend) as
+# ONE Docker web service, using Supabase (Postgres) as the database.
+#
+# Use: push this repo, then on https://render.com → New → Blueprint → pick this
+# repo. Render reads this file; fill in the secret values (marked sync:false)
+# when prompted, then deploy.
+services:
+  - type: web
+    name: viaitinerary
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: ViaItinerary
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      # Set these two in the Render dashboard (secrets):
+      - key: APP_KEY            # run: php artisan key:generate --show
+        sync: false
+      - key: APP_URL            # your Render URL, e.g. https://viaitinerary.onrender.com
+        sync: false
+
+      # Database (Supabase / Postgres)
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        value: db.vbbyztwglyzozoplmweh.supabase.co
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        value: postgres
+      - key: DB_USERNAME
+        value: postgres
+      - key: DB_PASSWORD        # your Supabase database password (set in dashboard)
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+
+      # Laravel infra (Postgres-backed, no extra services needed)
+      - key: SESSION_DRIVER
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: CACHE_STORE
+        value: database
