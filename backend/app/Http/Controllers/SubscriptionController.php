@@ -48,7 +48,7 @@ class SubscriptionController extends Controller
             return $explicitCountry;
         }
 
-        if (!$user || !Schema::hasColumn('agency_settings', 'country')) {
+        if (!$user) {
             return null;
         }
 
@@ -102,7 +102,12 @@ class SubscriptionController extends Controller
             $query->where(function ($inner) use ($country) {
                 $inner->where('country', $country)
                     ->orWhereNull('country');
-            })->orderByRaw('CASE WHEN country = ? THEN 0 ELSE 1 END', [$country]);
+            });
+
+            // Prefer an exact country match over a global (null-country) offer.
+            return $query->get()
+                ->sortBy(fn ($plan) => $plan->country === $country ? 0 : 1)
+                ->first();
         }
 
         return $query->first();

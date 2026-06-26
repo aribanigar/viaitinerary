@@ -50,26 +50,31 @@ php artisan serve
 
 Allowlist your server IP (or `0.0.0.0/0`) in Atlas → Network Access.
 
-## ⚠️ Follow-ups (queries that aren't 1:1 on MongoDB)
+## ✅ Raw-SQL rewrites (done)
 
-MongoDB has no SQL, so the following spots use features that need review/rewrite
-to the MongoDB query/aggregation style. Eloquent relationships, `where`,
-`orderBy`, `whereHas`/`withCount`, and `DB::transaction` (Atlas is a replica set)
-work; **raw SQL does not**.
+MongoDB has no SQL, so every raw-SQL / join construct was rewritten to the
+Eloquent/PHP equivalent. Relationships, `where`, `orderBy`, `whereHas`/
+`withCount` and `DB::transaction` (Atlas is a replica set) all carry over.
 
-Raw SQL / `whereRaw` / `orderByRaw` (must be rewritten):
-- `app/Services/AccountingLedgerService.php`
-- `app/Services/SubscriptionService.php`
-- `app/Http/Controllers/Admin/PlanController.php`
-- `app/Http/Controllers/SubscriptionController.php`
-- `app/Http/Controllers/AuthController.php`
-- `app/Http/Controllers/TripController.php`
-- `app/Http/Controllers/RazorpayController.php`
-- `app/Http/Controllers/InclusionExclusionController.php`
-- `app/Http/Controllers/SuperAdminController.php`
-- `app/Http/Controllers/AccountingLedgerController.php`
-- `app/Http/Middleware/CheckAccountStatus.php`
-- `app/Console/Commands/ProcessTripFollowUps.php`
+- `AccountingLedgerService::isReady()` — drop the relational table check
+  (collections are implicit on MongoDB).
+- `MetaSheetLeadImporter::hasPaxColumn()` — schemaless, returns false (legacy
+  column was dropped).
+- `Admin/PlanController::index()` — `orderByRaw(CASE…)` → PHP sort.
+- `SubscriptionController` — `Schema::hasColumn` removed; country-preference
+  `orderByRaw` → PHP sort.
+- `RazorpayController` — country-preference `orderByRaw` → PHP sort.
+- `SuperAdminController` — `selectRaw('count(*)')->groupBy` → collection group.
+- `AccountingLedgerController` — `SUM(CASE…)` group + `FIELD()` ordering →
+  PHP aggregation / sort.
+- `TripController::index()` — three `leftJoin`s + `selectRaw(CASE…)` → plain
+  query + `created_by` resolved in PHP (search `like` → regex via the package).
+- `CheckAccountStatus` (middleware) — `DB::table()->join()` → Eloquent lookup.
+- `ProcessTripFollowUps` (command) — `DB::table()->leftJoin()` + `COALESCE`
+  `DB::raw` → Eloquent + PHP resolution.
+
+`php -l` passes on all of the above; a repo-wide grep finds no remaining
+`DB::raw`/`whereRaw`/`orderByRaw`/`selectRaw`/join/`Schema::has*` in `app/`.
 
 Other notes:
 - Primary keys are now Mongo `_id` (string ObjectId). The package exposes

@@ -2,10 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Team;
+use App\Models\User;
 use App\Services\SubscriptionService;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -39,10 +40,11 @@ class CheckAccountStatus
             // 2a. Parent admin must be active — single JOIN query instead of
             //     loading teamRecord + User::find() separately (saves 1 query
             //     per request for every team-role API call).
-            $adminStatus = DB::table('teams')
-                ->join('users', 'users.id', '=', 'teams.created_by')
-                ->where('teams.user_id', $user->id)
-                ->value('users.status');
+            // MongoDB has no joins: resolve the member's team, then its admin.
+            $team = Team::where('user_id', $user->id)->first();
+            $adminStatus = $team
+                ? optional(User::find($team->created_by))->status
+                : null;
 
             if ($adminStatus && in_array($adminStatus, ['inactive', 'suspended'])) {
                 return $this->lockOut($user, "your admin's account is " . $adminStatus);

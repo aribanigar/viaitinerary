@@ -481,7 +481,9 @@ class MetaSheetLeadImporter
     private function hasPaxColumn(): bool
     {
         if ($this->hasPaxColumn === null) {
-            $this->hasPaxColumn = Schema::hasColumn('trip_inquiries', 'pax');
+            // The legacy `pax` field was dropped during the schema rework; on a
+            // schemaless store we treat it as absent.
+            $this->hasPaxColumn = false;
         }
 
         return $this->hasPaxColumn;

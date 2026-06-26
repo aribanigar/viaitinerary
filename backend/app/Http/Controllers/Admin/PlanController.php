@@ -25,12 +25,17 @@ class PlanController extends Controller
      */
     public function index()
     {
-        return response()->json(
-            Plan::orderByRaw('CASE WHEN country IS NULL THEN 1 ELSE 0 END')
-                ->orderBy('country')
-                ->orderBy('price')
-                ->get()
-        );
+        // Country-specific plans first, then by country and price. Sorting is
+        // done in PHP since MongoDB has no SQL CASE expression.
+        $plans = Plan::orderBy('price')->get()
+            ->sortBy(fn ($plan) => [
+                $plan->country === null ? 1 : 0,
+                (string) $plan->country,
+                (float) $plan->price,
+            ])
+            ->values();
+
+        return response()->json($plans);
     }
 
     /**

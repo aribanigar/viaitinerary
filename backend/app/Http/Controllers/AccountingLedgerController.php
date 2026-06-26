@@ -49,20 +49,26 @@ class AccountingLedgerController extends Controller
 
         $tripIds = $trips->pluck('id')->values()->all();
 
-        $totalsByTrip = AccountingObligation::query()
-            ->selectRaw("trip_id,
-                SUM(CASE WHEN direction = 'receivable' THEN expected_amount ELSE 0 END) as receivable_expected,
-                SUM(CASE WHEN direction = 'receivable' THEN settled_amount ELSE 0 END) as receivable_settled,
-                SUM(CASE WHEN direction = 'payable' AND party_type = 'hotel' THEN expected_amount ELSE 0 END) as hotel_expected,
-                SUM(CASE WHEN direction = 'payable' AND party_type = 'hotel' THEN settled_amount ELSE 0 END) as hotel_settled,
-                SUM(CASE WHEN direction = 'payable' AND party_type = 'cab' THEN expected_amount ELSE 0 END) as cab_expected,
-                SUM(CASE WHEN direction = 'payable' AND party_type = 'cab' THEN settled_amount ELSE 0 END) as cab_settled,
-                SUM(CASE WHEN direction = 'payable' THEN expected_amount ELSE 0 END) as payable_expected,
-                SUM(CASE WHEN direction = 'payable' THEN settled_amount ELSE 0 END) as payable_settled")
-            ->whereIn('trip_id', $tripIds)
-            ->groupBy('trip_id')
+        // MongoDB has no SQL SUM/CASE — aggregate per trip in PHP.
+        $totalsByTrip = AccountingObligation::whereIn('trip_id', $tripIds)
             ->get()
-            ->keyBy('trip_id');
+            ->groupBy('trip_id')
+            ->map(function ($obligations) {
+                $sum = fn (callable $filter, string $field) => $obligations->filter($filter)->sum($field);
+                $isReceivable = fn ($o) => $o->direction === 'receivable';
+                $isPayable = fn ($o) => $o->direction === 'payable';
+
+                return (object) [
+                    'receivable_expected' => $sum($isReceivable, 'expected_amount'),
+                    'receivable_settled'  => $sum($isReceivable, 'settled_amount'),
+                    'hotel_expected'      => $sum(fn ($o) => $isPayable($o) && $o->party_type === 'hotel', 'expected_amount'),
+                    'hotel_settled'       => $sum(fn ($o) => $isPayable($o) && $o->party_type === 'hotel', 'settled_amount'),
+                    'cab_expected'        => $sum(fn ($o) => $isPayable($o) && $o->party_type === 'cab', 'expected_amount'),
+                    'cab_settled'         => $sum(fn ($o) => $isPayable($o) && $o->party_type === 'cab', 'settled_amount'),
+                    'payable_expected'    => $sum($isPayable, 'expected_amount'),
+                    'payable_settled'     => $sum($isPayable, 'settled_amount'),
+                ];
+            });
 
         $receivableByTrip = AccountingObligation::query()
             ->whereIn('trip_id', $tripIds)
@@ -132,15 +138,22 @@ class AccountingLedgerController extends Controller
 
         $this->ledgerService->syncTrip($trip, (int) $request->user()->getAdminId(), $request->user()->getTeamId());
 
+        // Order direction/party_type by a fixed priority in PHP (no SQL FIELD()).
+        $directionOrder = ['receivable', 'payable'];
+        $partyOrder = ['client', 'hotel', 'cab', 'manual'];
+
         $obligations = AccountingObligation::query()
             ->with(['settlements' => function ($q) {
                 $q->orderByDesc('settlement_date')->orderByDesc('id');
             }])
             ->where('trip_id', $trip->id)
-            ->orderByRaw("FIELD(direction, 'receivable', 'payable')")
-            ->orderByRaw("FIELD(party_type, 'client', 'hotel', 'cab', 'manual')")
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->sortBy([
+                fn ($a, $b) => array_search($a->direction, $directionOrder) <=> array_search($b->direction, $directionOrder),
+                fn ($a, $b) => array_search($a->party_type, $partyOrder) <=> array_search($b->party_type, $partyOrder),
+            ])
+            ->values();
 
         $summary = [
             'receivable_expected' => (float) $obligations->where('direction', 'receivable')->sum('expected_amount'),

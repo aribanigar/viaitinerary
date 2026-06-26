@@ -90,9 +90,9 @@ class SuperAdminController extends Controller
         $pipelineValue  = (float) LeadInquiry::whereNotNull('approximate_budget')
             ->sum('approximate_budget');
 
-        $rawByStatus = LeadInquiry::selectRaw('status, count(*) as total')
+        $rawByStatus = LeadInquiry::get(['status'])
             ->groupBy('status')
-            ->pluck('total', 'status')
+            ->map(fn ($group) => $group->count())
             ->toArray();
 
         $inquiryByStatus = [];
