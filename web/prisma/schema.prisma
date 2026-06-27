@@ -267,6 +267,43 @@ model AgencySetting {
   @@map("agency_settings")
 }
 
+model LeadInquiry {
+  id                Int       @id @default(autoincrement())
+  inquiryId         String    @unique @map("inquiry_id")
+  userId            Int?      @map("user_id")
+  clientName        String    @map("client_name")
+  clientEmail       String?   @map("client_email")
+  clientPhone       String?   @map("client_phone")
+  destination       String?
+  adults            Int       @default(1)
+  kidsCnb           Int       @default(0) @map("kids_cnb")
+  kids5to12         Int       @default(0) @map("kids_5_to_12")
+  startDate         DateTime? @map("start_date")
+  duration          String?
+  approximateBudget Decimal?  @map("approximate_budget") @db.Decimal(12, 2)
+  currency          String?
+  specialRequests   String?   @map("special_requests")
+  status            String    @default("new")
+  sourceUrl         String?   @map("source_url")
+  notes             String?
+  ipAddress         String?   @map("ip_address")
+  isPublic          Boolean   @default(false) @map("is_public")
+  assignedTo        Int?      @map("assigned_to")
+  externalId        String?   @map("external_id")
+  utmSource         String?   @map("utm_source")
+  utmMedium         String?   @map("utm_medium")
+  utmCampaign       String?   @map("utm_campaign")
+  gclid             String?
+  fbLeadId          String?   @map("fb_lead_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([assignedTo])
+  @@index([status])
+  @@map("trip_inquiries")
+}
+
 model Plan {
   id              Int       @id @default(autoincrement())
   key             String
