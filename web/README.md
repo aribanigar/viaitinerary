@@ -30,7 +30,18 @@ phase; the API is built first to match the current REST contract.
       `POST /api/razorpay/create-order`, `POST /api/razorpay/verify-payment`
       (HMAC verify → upgrade). Trip creation now enforces the plan; signup
       starts a trial; seed adds the default plans.
-- [ ] Phase 5 — leads, blog, accounting, super-admin
+- [~] Phase 5 — leads, blog, accounting, super-admin
+  - [x] **5a — leads / inquiries**: LeadInquiry model (→ `trip_inquiries`);
+        `GET/POST /api/lead-inquiries`, public submit / `PATCH` / `DELETE`
+        `/api/lead-inquiries/:id`, `/assignable-members`, `/convert-to-trip`,
+        `POST /api/public-inquiries`.
+  - [x] **5b — accounting ledger**: AccountingObligation + AccountingSettlement
+        models; ledger service (derive receivable from trip cost + payables from
+        accommodations/transportations, settlements feed back into trip
+        paid/refunded totals); `GET /api/accounting/ledger`,
+        `GET /api/accounting/ledger/:tripId`, `POST /api/accounting/settlements`,
+        `PUT`/`DELETE /api/accounting/settlements/:id`.
+  - [ ] 5c — super-admin, blog
 - [ ] Phase 6 — migrate the React frontend in (one app)
 - [ ] Phase 7 — PDF / Excel / email
 

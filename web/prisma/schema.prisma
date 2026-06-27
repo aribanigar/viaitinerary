@@ -92,6 +92,8 @@ model Trip {
   accommodations  Accommodation[]
   transportations Transportation[]
   destinationRef  Destination? @relation(fields: [destinationId], references: [id])
+  obligations     AccountingObligation[]
+  settlements     AccountingSettlement[]
 
   @@index([userId])
   @@index([teamId])
@@ -346,6 +348,57 @@ model Subscription {
   updatedAt              DateTime  @updatedAt @map("updated_at")
 
   @@map("subscriptions")
+}
+
+model AccountingObligation {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  teamId         Int?     @map("team_id")
+  tripId         Int      @map("trip_id")
+  direction      String   // receivable | payable
+  partyType      String   @default("manual") @map("party_type") // client | hotel | cab | manual
+  partyId        Int?     @map("party_id")
+  partyName      String?  @map("party_name")
+  sourceType     String   @default("manual_adjustment") @map("source_type") // trip | accommodation | transportation | manual_adjustment
+  sourceId       Int?     @map("source_id")
+  expectedAmount Decimal  @default(0) @map("expected_amount") @db.Decimal(15, 2)
+  settledAmount  Decimal  @default(0) @map("settled_amount") @db.Decimal(15, 2)
+  status         String   @default("pending") // pending | partial | settled
+  dueDate        DateTime? @map("due_date")
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  trip        Trip                   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  settlements AccountingSettlement[]
+
+  @@unique([tripId, direction, sourceType, sourceId], name: "obligation_source")
+  @@index([userId, tripId])
+  @@index([tripId, direction, partyType])
+  @@index([sourceType, sourceId])
+  @@map("accounting_obligations")
+}
+
+model AccountingSettlement {
+  id             Int      @id @default(autoincrement())
+  obligationId   Int      @map("obligation_id")
+  tripId         Int      @map("trip_id")
+  userId         Int      @map("user_id")
+  createdBy      Int?     @map("created_by")
+  amount         Decimal  @db.Decimal(15, 2)
+  settlementType String   @default("payment") @map("settlement_type") // receipt | payment | refund | adjustment
+  settlementDate DateTime @map("settlement_date")
+  method         String?
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  obligation AccountingObligation @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+  trip       Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([userId, tripId])
+  @@index([obligationId, settlementDate])
+  @@map("accounting_settlements")
 }
 
 model Policy {
