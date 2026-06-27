@@ -41,7 +41,15 @@ phase; the API is built first to match the current REST contract.
         paid/refunded totals); `GET /api/accounting/ledger`,
         `GET /api/accounting/ledger/:tripId`, `POST /api/accounting/settlements`,
         `PUT`/`DELETE /api/accounting/settlements/:id`.
-  - [ ] 5c — super-admin, blog
+  - [x] **5c — super-admin + blog**: super-admin business management
+        (`GET /api/super-admin/dashboard`, businesses CRUD + `/status`,
+        `/bypass-subscription`, `/assign-member`, `/public-inquiries` +
+        `/:id/assign`); blog domain (BlogPost / BlogCategory / BlogTag /
+        BlogPostTag models) with public read endpoints (`/api/blog/posts`,
+        `/api/blog/posts/:slug`, `/api/blog/categories`) and super-admin
+        management (posts CRUD + publish/unpublish, categories CRUD + reorder,
+        tags list/create/delete/merge). Image upload + HTML sanitization are
+        deferred to the storage phase (501 stub).
 - [ ] Phase 6 — migrate the React frontend in (one app)
 - [ ] Phase 7 — PDF / Excel / email
 

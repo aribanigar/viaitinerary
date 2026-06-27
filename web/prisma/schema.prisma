@@ -29,6 +29,7 @@ model User {
   membershipTeam Team?  @relation("TeamMember", fields: [teamId], references: [id])
   teamId         Int?   @map("team_id")
   ownedTeams     Team[] @relation("TeamOwner")
+  authoredPosts  BlogPost[] @relation("PostAuthor")
 
   @@index([role])
   @@index([teamId])
@@ -46,6 +47,10 @@ model Team {
   members   User[]   @relation("TeamMember")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+
+  blogPosts      BlogPost[]
+  blogCategories BlogCategory[]
+  blogTags       BlogTag[]
 
   @@index([ownerId])
   @@map("teams")
@@ -415,4 +420,106 @@ model Policy {
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   @@map("policies")
+}
+
+model DemoRequest {
+  id             Int       @id @default(autoincrement())
+  name           String
+  email          String?
+  contactNumber  String?   @map("contact_number")
+  inviteGuests   String?   @map("invite_guests")
+  companyName    String?   @map("company_name")
+  noOfEmployees  String?   @map("no_of_employees")
+  agencyType     String?   @map("agency_type")
+  destinations   String?
+  processes      Json?
+  officeLocation String?   @map("office_location")
+  referralSource String?   @map("referral_source")
+  scheduledAt    DateTime? @map("scheduled_at")
+  status         String    @default("pending")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@map("demo_requests")
+}
+
+model BlogCategory {
+  id           Int      @id @default(autoincrement())
+  teamId       Int      @map("team_id")
+  name         String
+  slug         String
+  description  String?
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  team  Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  posts BlogPost[]
+
+  @@unique([teamId, slug])
+  @@index([teamId])
+  @@map("blog_categories")
+}
+
+model BlogPost {
+  id              Int       @id @default(autoincrement())
+  teamId          Int       @map("team_id")
+  authorId        Int       @map("author_id")
+  blogCategoryId  Int?      @map("blog_category_id")
+  title           String
+  slug            String
+  excerpt         String?
+  content         String
+  featuredImage   String?   @map("featured_image")
+  status          String    @default("draft") // draft | published | scheduled | archived
+  publishedAt     DateTime? @map("published_at")
+  authorName      String?   @map("author_name")
+  metaTitle       String?   @map("meta_title")
+  metaDescription String?   @map("meta_description")
+  ogImage         String?   @map("og_image")
+  viewsCount      Int       @default(0) @map("views_count")
+  readTimeMinutes Int?      @map("read_time_minutes")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  team     Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  author   User          @relation("PostAuthor", fields: [authorId], references: [id])
+  category BlogCategory? @relation(fields: [blogCategoryId], references: [id])
+  tags     BlogPostTag[]
+
+  @@unique([teamId, slug])
+  @@index([teamId, status, publishedAt])
+  @@index([authorId])
+  @@map("blog_posts")
+}
+
+model BlogTag {
+  id        Int      @id @default(autoincrement())
+  teamId    Int      @map("team_id")
+  name      String
+  slug      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  team  Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  posts BlogPostTag[]
+
+  @@unique([teamId, slug])
+  @@index([teamId])
+  @@map("blog_tags")
+}
+
+model BlogPostTag {
+  id         Int      @id @default(autoincrement())
+  blogPostId Int      @map("blog_post_id")
+  blogTagId  Int      @map("blog_tag_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  post BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  tag  BlogTag  @relation(fields: [blogTagId], references: [id], onDelete: Cascade)
+
+  @@unique([blogPostId, blogTagId])
+  @@map("blog_post_tag")
 }

@@ -68,6 +68,14 @@ async function userFromToken(token) {
   return user;
 }
 
+/** Resolve the user and require the super_admin role; returns {user} or {error}. */
+export async function requireSuperAdmin(request) {
+  const user = await userFromRequest(request);
+  if (!user) return { error: "Unauthenticated.", status: 401 };
+  if (user.role !== "super_admin") return { error: "Forbidden.", status: 403 };
+  return { user };
+}
+
 /** Shape a user for API responses (no password; matches the frontend's needs). */
 export function publicUser(user, team = null) {
   if (!user) return null;
