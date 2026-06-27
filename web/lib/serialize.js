@@ -129,7 +129,7 @@ export function serializeSettings(s) {
     default_trip_image_path: s.defaultTripImagePath,
     default_trip_image_url: s.defaultTripImagePath,
     gst_percentage: num(s.gstPercentage),
-    profit_percentage: num(s.profitPercentage),
+    profit_percentage: num(s.profitMarginPercentage),
     include_gst: s.includeGst,
   };
 }
