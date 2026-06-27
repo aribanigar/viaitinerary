@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { hashPassword, signToken, publicUser, cookieOptions, TOKEN_COOKIE } from "@/lib/auth";
+import { initializeTrial } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,9 @@ export async function POST(request) {
       data: { name: teamName, slug, ownerId: user.id },
     });
     await prisma.user.update({ where: { id: user.id }, data: { teamId: team.id } });
+
+    // Start the admin on a free trial.
+    await initializeTrial(user.id);
 
     const token = signToken({ sub: String(user.id), role: user.role });
     const res = NextResponse.json({

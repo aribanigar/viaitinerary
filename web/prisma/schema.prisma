@@ -267,6 +267,50 @@ model AgencySetting {
   @@map("agency_settings")
 }
 
+model Plan {
+  id              Int       @id @default(autoincrement())
+  key             String
+  country         String?
+  name            String
+  price           Decimal   @default(0) @db.Decimal(12, 2)
+  originalPrice   Decimal?  @map("original_price") @db.Decimal(12, 2)
+  durationMonths  Int       @default(1) @map("duration_months")
+  tripLimit       Int?      @map("trip_limit")
+  features        Json?
+  badgeLabel      String?   @map("badge_label")
+  recommended     Boolean   @default(false)
+  isActive        Boolean   @default(true) @map("is_active")
+  isOffer         Boolean   @default(false) @map("is_offer")
+  offerImage      String?   @map("offer_image")
+  offerStartsAt   DateTime? @map("offer_starts_at")
+  offerExpiresAt  DateTime? @map("offer_expires_at")
+  teamMemberLimit Int       @default(0) @map("team_member_limit")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([key])
+  @@map("plans")
+}
+
+model Subscription {
+  id                     Int       @id @default(autoincrement())
+  userId                 Int       @unique @map("user_id")
+  planKey                String?   @map("plan_key")
+  status                 String    @default("pending") // trialing | active | pending
+  startsAt               DateTime? @map("starts_at")
+  endsAt                 DateTime? @map("ends_at")
+  trialEndsAt            DateTime? @map("trial_ends_at")
+  trialExpiredNotifiedAt DateTime? @map("trial_expired_notified_at")
+  tripLimit              Int?      @map("trip_limit")
+  tripsUsed              Int       @default(0) @map("trips_used")
+  paidAmount             Decimal?  @map("paid_amount") @db.Decimal(12, 2)
+  razorpayPaymentId      String?   @map("razorpay_payment_id")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
+
 model Policy {
   id                    Int      @id @default(autoincrement())
   userId                Int      @unique @map("user_id")

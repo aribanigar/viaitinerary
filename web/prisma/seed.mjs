@@ -40,7 +40,30 @@ async function main() {
     await prisma.user.update({ where: { id: user.id }, data: { teamId: team.id } });
   }
 
-  console.log(`Seeded super admin.\n  email:    ${ADMIN_EMAIL}\n  password: ${ADMIN_PASSWORD}`);
+  // Default subscription plans (from the original config/plans.php).
+  const plans = [
+    { key: "trial", name: "Trial", price: 0, durationMonths: 3, tripLimit: 3, isActive: true },
+    { key: "monthly", name: "Monthly", price: 999, durationMonths: 1, tripLimit: null, isActive: true },
+    { key: "six_months", name: "6 Months", price: 5200, durationMonths: 6, tripLimit: null, isActive: true },
+    { key: "yearly", name: "Yearly", price: 10000, durationMonths: 12, tripLimit: null, isActive: true },
+  ];
+  for (const p of plans) {
+    const existing = await prisma.plan.findFirst({ where: { key: p.key, country: null } });
+    if (existing) await prisma.plan.update({ where: { id: existing.id }, data: p });
+    else await prisma.plan.create({ data: p });
+  }
+
+  // Give the admin an active trial subscription.
+  const existingSub = await prisma.subscription.findUnique({ where: { userId: user.id } });
+  if (!existingSub) {
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 3);
+    await prisma.subscription.create({
+      data: { userId: user.id, planKey: "trial", status: "trialing", startsAt: new Date(), trialEndsAt, tripLimit: 3, tripsUsed: 0 },
+    });
+  }
+
+  console.log(`Seeded super admin + ${plans.length} plans.\n  email:    ${ADMIN_EMAIL}\n  password: ${ADMIN_PASSWORD}`);
 }
 
 main()

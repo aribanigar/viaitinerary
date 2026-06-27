@@ -23,7 +23,13 @@ phase; the API is built first to match the current REST contract.
       (live IFSC lookup); `/api/policies` (GET/PUT with defaults);
       `/api/inclusion-exclusions` CRUD (grouped by type). SMTP-test and bulk
       Excel import/export are stubbed pending the email/Excel phase.
-- [ ] Phase 4 — subscriptions + Razorpay
+- [x] **Phase 4 — subscriptions + Razorpay**: Plan + Subscription models;
+      subscription engine (trial init, upgrade, expiry, trip-limit gating,
+      included seats); `GET /api/subscription/status`, `POST
+      /api/subscription/upgrade`, `POST /api/subscription/assign-member`;
+      `POST /api/razorpay/create-order`, `POST /api/razorpay/verify-payment`
+      (HMAC verify → upgrade). Trip creation now enforces the plan; signup
+      starts a trial; seed adds the default plans.
 - [ ] Phase 5 — leads, blog, accounting, super-admin
 - [ ] Phase 6 — migrate the React frontend in (one app)
 - [ ] Phase 7 — PDF / Excel / email

@@ -4,6 +4,7 @@ import { userFromRequest } from "@/lib/auth";
 import { adminIdOf, teamIdOf } from "@/lib/scope";
 import { serializeTrip, currencySymbol } from "@/lib/serialize";
 import { buildTripScalars, syncTripRelations, TRIP_INCLUDE } from "@/lib/trips";
+import { canCreateTrip, incrementTripsUsed } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +99,10 @@ export async function POST(request) {
     const clash = await prisma.trip.findUnique({ where: { tripId: body.tripId } });
     if (clash) return NextResponse.json({ message: "A trip with this ID already exists." }, { status: 422 });
 
+    // Subscription gate (mirrors the EnsureSubscriptionAllowsTripCreation middleware).
+    const gate = await canCreateTrip(user);
+    if (!gate.allowed) return NextResponse.json({ message: gate.reason }, { status: gate.status });
+
     const trip = await prisma.trip.create({
       data: {
         ...buildTripScalars(body),
@@ -108,6 +113,7 @@ export async function POST(request) {
       },
     });
     await syncTripRelations(trip.id, body);
+    await incrementTripsUsed(adminId);
 
     const full = await prisma.trip.findUnique({ where: { id: trip.id }, include: TRIP_INCLUDE });
     return NextResponse.json(serializeTrip(full), { status: 201 });
