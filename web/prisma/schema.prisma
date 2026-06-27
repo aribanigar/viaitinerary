@@ -1,0 +1,55 @@
+// ViaItinerary — Prisma schema (Supabase / PostgreSQL)
+// Built incrementally as the Laravel backend is ported. Phase 1: auth (User, Team).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// Application users. Roles mirror the original system: super_admin, admin, team.
+model User {
+  id                 Int       @id @default(autoincrement())
+  name               String
+  email              String    @unique
+  password           String
+  role               String    @default("admin") // super_admin | admin | team
+  status             String    @default("active") // active | inactive | suspended
+  profilePicture     String?   @map("profile_picture")
+  embedToken         String?   @map("embed_token")
+  bypassSubscription Boolean   @default(false) @map("bypass_subscription")
+  emailVerifiedAt    DateTime? @map("email_verified_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  // A "team" member belongs to one team; an admin owns teams they created.
+  membershipTeam Team?  @relation("TeamMember", fields: [teamId], references: [id])
+  teamId         Int?   @map("team_id")
+  ownedTeams     Team[] @relation("TeamOwner")
+
+  @@index([role])
+  @@index([teamId])
+  @@map("users")
+}
+
+/// A team/workspace. `ownerId` (created_by) is the admin; `memberId` (user_id)
+/// is the seat holder for a team-role user.
+model Team {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String?  @unique
+  isActive  Boolean  @default(true) @map("is_active")
+  isPaid    Boolean  @default(false) @map("is_paid")
+  ownerId   Int?     @map("created_by")
+  owner     User?    @relation("TeamOwner", fields: [ownerId], references: [id])
+  members   User[]   @relation("TeamMember")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerId])
+  @@map("teams")
+}
