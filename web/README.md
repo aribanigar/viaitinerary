@@ -17,7 +17,12 @@ phase; the API is built first to match the current REST contract.
       `GET/PUT/DELETE /api/trips/:tripId`, `POST /api/trips/:tripId/duplicate` —
       with nested itineraries/logistics and the same snake_case response shape
       the frontend expects.
-- [ ] Phase 3 — catalogs (destinations/hotels/vehicles) + settings
+- [x] **Phase 3 — catalogs + settings + policies**: full CRUD for
+      `/api/destinations`, `/api/hotels`, `/api/vehicles` (paginated, scoped);
+      `/api/settings` (GET/PUT, all fields) + `/api/settings/verify-ifsc`
+      (live IFSC lookup); `/api/policies` (GET/PUT with defaults);
+      `/api/inclusion-exclusions` CRUD (grouped by type). SMTP-test and bulk
+      Excel import/export are stubbed pending the email/Excel phase.
 - [ ] Phase 4 — subscriptions + Razorpay
 - [ ] Phase 5 — leads, blog, accounting, super-admin
 - [ ] Phase 6 — migrate the React frontend in (one app)

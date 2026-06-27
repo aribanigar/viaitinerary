@@ -134,6 +134,7 @@ export function serializeSettings(s) {
   };
 }
 
+// --- Builder/init lite shapes ---
 export function serializeDestination(d) {
   return { id: d.id, name: d.name, activities: d.activities ?? [], image_path: d.imagePath, image_url: d.imagePath };
 }
@@ -141,5 +142,99 @@ export function serializeHotel(h) {
   return { id: h.id, name: h.name, city: h.city, price_sections: h.priceSections ?? [], image_path: h.imagePath, image_url: h.imagePath };
 }
 export function serializeVehicle(v) {
-  return { id: v.id, name: v.name, type: v.type, price: num(v.price) };
+  return { id: v.id, name: v.name, price: num(v.price) };
 }
+
+const userLite = (u) => (u ? { id: u.id, name: u.name, email: u.email } : null);
+
+// --- Management (catalog page) full shapes, including owner + timestamps ---
+export function catalogDestination(d) {
+  return {
+    id: d.id, user_id: d.userId, name: d.name, activities: d.activities ?? [],
+    image_path: d.imagePath, image_url: d.imagePath, user: userLite(d.user),
+    created_at: iso(d.createdAt), updated_at: iso(d.updatedAt),
+  };
+}
+export function catalogHotel(h) {
+  return {
+    id: h.id, user_id: h.userId, name: h.name, city: h.city, email: h.email, phone: h.phone,
+    price_sections: h.priceSections ?? [], image_path: h.imagePath, image_url: h.imagePath,
+    user: userLite(h.user), created_at: iso(h.createdAt), updated_at: iso(h.updatedAt),
+  };
+}
+export function catalogVehicle(v) {
+  return {
+    id: v.id, user_id: v.userId, name: v.name, email: v.email, phone: v.phone, price: num(v.price),
+    user: userLite(v.user), created_at: iso(v.createdAt), updated_at: iso(v.updatedAt),
+  };
+}
+
+// --- /settings camelCase shape (matches AgencySettingsController::show) ---
+export function settingsToCamel(s) {
+  return {
+    agencyName: s.agencyName,
+    phone: s.contactPhone,
+    website: s.website,
+    companyAddress: s.companyAddress,
+    email: s.contactEmail,
+    whatsapp: s.whatsapp,
+    brandColor: s.brandColor,
+    secondaryColor: s.secondaryColor,
+    fontFamily: s.fontFamily,
+    logo: s.logoPath,
+    beneficiaryName: s.beneficiaryName,
+    bankName: s.bankName,
+    accountNumber: s.accountNumber,
+    ifscCode: s.ifscCode,
+    greetingMessage: s.greetingMessage,
+    confirmationMessage: s.confirmationMessage,
+    confirmationPdfMessage: s.confirmationPdfMessage,
+    paymentVoucherEmailMessage: s.paymentVoucherEmailMessage,
+    invoiceEmailMessage: s.invoiceEmailMessage,
+    confirmationHeroImage: s.confirmationHeroImage,
+    defaultTripImage: s.defaultTripImagePath,
+    gstPercentage: num(s.gstPercentage),
+    profitMarginPercentage: num(s.profitMarginPercentage),
+    smtpEmail: s.smtpEmail,
+    smtpHost: s.smtpHost,
+    smtpPort: s.smtpPort,
+    smtpEncryption: s.smtpEncryption || "tls",
+    hasSmtpPassword: !!s.smtpAppPassword,
+  };
+}
+
+export const SETTINGS_DEFAULTS = {
+  agencyName: "TravelAgency",
+  phone: "+1 234 567 890",
+  website: "www.youragency.com",
+  companyAddress: "",
+  email: "contact@agency.com",
+  whatsapp: "+1 234 567 890",
+  brandColor: "#F4A229",
+  secondaryColor: "#0D2D2D",
+  fontFamily: "Montserrat",
+  logo: null,
+  beneficiaryName: "",
+  bankName: "",
+  accountNumber: "",
+  ifscCode: "",
+  greetingMessage:
+    "Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.",
+  confirmationMessage:
+    "Thank you for choosing {agencyName} for your upcoming journey. We are pleased to confirm your travel arrangements and sincerely appreciate the opportunity to curate your travel experience. Our team looks forward to welcoming you and ensuring a seamless, comfortable, and memorable holiday.",
+  confirmationPdfMessage:
+    "Thank you for choosing {agencyName} for your upcoming journey. We are pleased to confirm your travel arrangements and sincerely appreciate the opportunity to curate your travel experience. Our team looks forward to welcoming you and ensuring a seamless, comfortable, and memorable holiday.",
+  paymentVoucherEmailMessage:
+    "Dear {clientName},\n\nThank you for your payment of {currencySymbol}{paymentAmount}. Please find your payment receipt attached below.\n\nRegards,\n{agencyName}",
+  invoiceEmailMessage:
+    "Dear {clientName},\n\nPlease find your invoice attached for trip {tripId}.\n\nRegards,\n{agencyName}",
+  confirmationHeroImage: null,
+  defaultTripImage: null,
+  gstPercentage: 5.0,
+  profitMarginPercentage: 10.0,
+  smtpEmail: null,
+  smtpHost: null,
+  smtpPort: 587,
+  smtpEncryption: "tls",
+  hasSmtpPassword: false,
+};

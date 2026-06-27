@@ -186,9 +186,9 @@ model Hotel {
   userId        Int      @map("user_id")
   name          String
   city          String?
+  email         String?
+  phone         String?
   priceSections Json?    @map("price_sections")
-  contactName   String?  @map("contact_name")
-  contactPhone  String?  @map("contact_phone")
   imagePath     String?  @map("image_path")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -200,20 +200,32 @@ model Hotel {
 }
 
 model Vehicle {
-  id           Int      @id @default(autoincrement())
-  userId       Int      @map("user_id")
-  name         String
-  type         String?
-  price        Decimal? @db.Decimal(12, 2)
-  contactName  String?  @map("contact_name")
-  contactPhone String?  @map("contact_phone")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  name      String
+  email     String?
+  phone     String?
+  price     Decimal? @db.Decimal(12, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   transportations Transportation[]
 
   @@index([userId])
   @@map("vehicles")
+}
+
+model InclusionExclusion {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String // inclusion | exclusion
+  content   String
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("inclusion_exclusions")
 }
 
 model AgencySetting {
@@ -229,19 +241,28 @@ model AgencySetting {
   secondaryColor       String?  @map("secondary_color")
   fontFamily           String?  @map("font_family")
   logoPath             String?  @map("logo_path")
-  tagline              String?
-  greetingMessage      String?  @map("greeting_message")
-  confirmationMessage  String?  @map("confirmation_message")
-  beneficiaryName      String?  @map("beneficiary_name")
-  bankName             String?  @map("bank_name")
-  accountNumber        String?  @map("account_number")
-  ifscCode             String?  @map("ifsc_code")
-  defaultTripImagePath String?  @map("default_trip_image_path")
-  gstPercentage        Decimal? @map("gst_percentage") @db.Decimal(8, 2)
-  profitPercentage     Decimal? @map("profit_percentage") @db.Decimal(8, 2)
-  includeGst           Boolean  @default(true) @map("include_gst")
-  createdAt            DateTime @default(now()) @map("created_at")
-  updatedAt            DateTime @updatedAt @map("updated_at")
+  tagline                   String?
+  greetingMessage           String?  @map("greeting_message")
+  confirmationMessage       String?  @map("confirmation_message")
+  confirmationPdfMessage    String?  @map("confirmation_pdf_message")
+  paymentVoucherEmailMessage String? @map("payment_voucher_email_message")
+  invoiceEmailMessage       String?  @map("invoice_email_message")
+  confirmationHeroImage     String?  @map("confirmation_hero_image")
+  beneficiaryName           String?  @map("beneficiary_name")
+  bankName                  String?  @map("bank_name")
+  accountNumber             String?  @map("account_number")
+  ifscCode                  String?  @map("ifsc_code")
+  defaultTripImagePath      String?  @map("default_trip_image_path")
+  gstPercentage             Decimal? @map("gst_percentage") @db.Decimal(8, 2)
+  profitMarginPercentage    Decimal? @map("profit_margin_percentage") @db.Decimal(8, 2)
+  includeGst                Boolean  @default(true) @map("include_gst")
+  smtpEmail                 String?  @map("smtp_email")
+  smtpHost                  String?  @map("smtp_host")
+  smtpPort                  Int?     @map("smtp_port")
+  smtpEncryption            String?  @map("smtp_encryption")
+  smtpAppPassword           String?  @map("smtp_app_password")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
 
   @@map("agency_settings")
 }
