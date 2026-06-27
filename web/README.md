@@ -11,7 +11,12 @@ phase; the API is built first to match the current REST contract.
       client, JWT/bcrypt auth (verifies existing `$2y$` Laravel hashes),
       endpoints `POST /api/login`, `GET /api/user`, `POST /api/logout`,
       `POST /api/signup`, and a seed for the super admin.
-- [ ] Phase 2 — trips + builder API
+- [x] **Phase 2 — trips + builder API**: Prisma models (Trip, Itinerary,
+      Accommodation, Transportation, Destination, Hotel, Vehicle, AgencySetting,
+      Policy); `GET /api/builder/init`, full `GET/POST /api/trips`,
+      `GET/PUT/DELETE /api/trips/:tripId`, `POST /api/trips/:tripId/duplicate` —
+      with nested itineraries/logistics and the same snake_case response shape
+      the frontend expects.
 - [ ] Phase 3 — catalogs (destinations/hotels/vehicles) + settings
 - [ ] Phase 4 — subscriptions + Razorpay
 - [ ] Phase 5 — leads, blog, accounting, super-admin

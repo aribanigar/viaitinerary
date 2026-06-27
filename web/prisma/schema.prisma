@@ -1,5 +1,6 @@
 // ViaItinerary — Prisma schema (Supabase / PostgreSQL)
-// Built incrementally as the Laravel backend is ported. Phase 1: auth (User, Team).
+// Ported from the Laravel models. JSON columns hold the same array/object data
+// the original casts produced.
 
 generator client {
   provider = "prisma-client-js"
@@ -11,14 +12,13 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-/// Application users. Roles mirror the original system: super_admin, admin, team.
 model User {
   id                 Int       @id @default(autoincrement())
   name               String
   email              String    @unique
   password           String
   role               String    @default("admin") // super_admin | admin | team
-  status             String    @default("active") // active | inactive | suspended
+  status             String    @default("active")
   profilePicture     String?   @map("profile_picture")
   embedToken         String?   @map("embed_token")
   bypassSubscription Boolean   @default(false) @map("bypass_subscription")
@@ -26,7 +26,6 @@ model User {
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
 
-  // A "team" member belongs to one team; an admin owns teams they created.
   membershipTeam Team?  @relation("TeamMember", fields: [teamId], references: [id])
   teamId         Int?   @map("team_id")
   ownedTeams     Team[] @relation("TeamOwner")
@@ -36,8 +35,6 @@ model User {
   @@map("users")
 }
 
-/// A team/workspace. `ownerId` (created_by) is the admin; `memberId` (user_id)
-/// is the seat holder for a team-role user.
 model Team {
   id        Int      @id @default(autoincrement())
   name      String
@@ -52,4 +49,215 @@ model Team {
 
   @@index([ownerId])
   @@map("teams")
+}
+
+model Trip {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @map("user_id")
+  teamId          Int?      @map("team_id")
+  tripId          String    @unique @map("trip_id")
+  tripTitle       String    @map("trip_title")
+  destination     String?
+  destinationId   Int?      @map("destination_id")
+  clientName      String?   @map("client_name")
+  clientPhone     String?   @map("client_phone")
+  clientEmail     String?   @map("client_email")
+  adults          Int       @default(2)
+  kidsCnb         Int       @default(0) @map("kids_cnb")
+  kids5to12       Int       @default(0) @map("kids_5_to_12")
+  startDate       DateTime? @map("start_date")
+  duration        String?
+  cost            Decimal?  @db.Decimal(12, 2)
+  gstAmount       Decimal   @default(0) @map("gst_amount") @db.Decimal(12, 2)
+  paidAmount      Decimal   @default(0) @map("paid_amount") @db.Decimal(12, 2)
+  refundedAmount  Decimal   @default(0) @map("refunded_amount") @db.Decimal(12, 2)
+  currency        String    @default("INR (Rs)")
+  imagePath       String?   @map("image_path")
+  status          String    @default("pending")
+  template        String?   @default("ModernTemplate")
+  slug            String?
+  includeGst      Boolean   @default(true) @map("include_gst")
+  useFlight       Boolean   @default(false) @map("use_flight")
+  tagline         String?
+  inclusions      Json?
+  exclusions      Json?
+  otherCosts      Json?     @map("other_costs")
+  transportDetails Json?    @map("transport_details")
+  followUpSent    Boolean   @default(false) @map("follow_up_sent")
+  confirmationSent Boolean  @default(false) @map("confirmation_sent")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  itineraries     Itinerary[]
+  accommodations  Accommodation[]
+  transportations Transportation[]
+  destinationRef  Destination? @relation(fields: [destinationId], references: [id])
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([status])
+  @@map("trips")
+}
+
+model Itinerary {
+  id          Int      @id @default(autoincrement())
+  tripId      Int      @map("trip_id")
+  dayNumber   Int?     @map("day_number")
+  title       String?
+  location    String?
+  description String?
+  imagePath   String?  @map("image_path")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@map("itineraries")
+}
+
+model Accommodation {
+  id                    Int       @id @default(autoincrement())
+  tripId                Int       @map("trip_id")
+  hotelId               Int?      @map("hotel_id")
+  name                  String
+  city                  String?
+  category              String?
+  rooms                 String?
+  beds                  Int?      @default(0)
+  cnbCount              Int       @default(0) @map("cnb_count")
+  extraBeds5To12Count   Int       @default(0) @map("extra_beds_5_to_12_count")
+  extraBedsAbove12Count Int       @default(0) @map("extra_beds_above_12_count")
+  mealPlan              String?   @map("meal_plan")
+  roomType              String?   @default("Deluxe") @map("room_type")
+  checkIn               DateTime? @map("check_in")
+  checkOut              DateTime? @map("check_out")
+  pricePerRoom          Decimal?  @map("price_per_room") @db.Decimal(12, 2)
+  bedPrices             Json?     @map("bed_prices")
+  imagePath             String?   @map("image_path")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  trip  Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  hotel Hotel? @relation(fields: [hotelId], references: [id])
+
+  @@index([tripId])
+  @@map("accommodations")
+}
+
+model Transportation {
+  id          Int       @id @default(autoincrement())
+  tripId      Int       @map("trip_id")
+  vehicleId   Int?      @map("vehicle_id")
+  tripType    String?   @map("trip_type")
+  destination String?
+  route       String?
+  date        DateTime?
+  vehicleType String?   @map("vehicle_type")
+  quantity    Int       @default(1)
+  remarks     String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  trip    Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  @@index([tripId])
+  @@map("transportations")
+}
+
+model Destination {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  name      String
+  activities Json?
+  imagePath String?  @map("image_path")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  trips Trip[]
+
+  @@index([userId])
+  @@map("destinations")
+}
+
+model Hotel {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @map("user_id")
+  name          String
+  city          String?
+  priceSections Json?    @map("price_sections")
+  contactName   String?  @map("contact_name")
+  contactPhone  String?  @map("contact_phone")
+  imagePath     String?  @map("image_path")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  accommodations Accommodation[]
+
+  @@index([userId])
+  @@map("hotels")
+}
+
+model Vehicle {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  name         String
+  type         String?
+  price        Decimal? @db.Decimal(12, 2)
+  contactName  String?  @map("contact_name")
+  contactPhone String?  @map("contact_phone")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  transportations Transportation[]
+
+  @@index([userId])
+  @@map("vehicles")
+}
+
+model AgencySetting {
+  id                   Int      @id @default(autoincrement())
+  userId               Int      @unique @map("user_id")
+  agencyName           String?  @map("agency_name")
+  contactPhone         String?  @map("contact_phone")
+  contactEmail         String?  @map("contact_email")
+  whatsapp             String?
+  website              String?
+  companyAddress       String?  @map("company_address")
+  brandColor           String?  @map("brand_color")
+  secondaryColor       String?  @map("secondary_color")
+  fontFamily           String?  @map("font_family")
+  logoPath             String?  @map("logo_path")
+  tagline              String?
+  greetingMessage      String?  @map("greeting_message")
+  confirmationMessage  String?  @map("confirmation_message")
+  beneficiaryName      String?  @map("beneficiary_name")
+  bankName             String?  @map("bank_name")
+  accountNumber        String?  @map("account_number")
+  ifscCode             String?  @map("ifsc_code")
+  defaultTripImagePath String?  @map("default_trip_image_path")
+  gstPercentage        Decimal? @map("gst_percentage") @db.Decimal(8, 2)
+  profitPercentage     Decimal? @map("profit_percentage") @db.Decimal(8, 2)
+  includeGst           Boolean  @default(true) @map("include_gst")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("agency_settings")
+}
+
+model Policy {
+  id                    Int      @id @default(autoincrement())
+  userId                Int      @unique @map("user_id")
+  termsConditions       Json?    @map("terms_conditions")
+  mustHaves             Json?    @map("must_haves")
+  rolesResponsibilities Json?    @map("roles_responsibilities")
+  cancellationPolicy    Json?    @map("cancellation_policy")
+  additionalExpenses    Json?    @map("additional_expenses")
+  defaultInclusions     Json?    @map("default_inclusions")
+  defaultExclusions     Json?    @map("default_exclusions")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("policies")
 }
