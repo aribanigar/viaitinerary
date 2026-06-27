@@ -56,7 +56,21 @@ phase; the API is built first to match the current REST contract.
       non-`/api` path to `/index.html` so React Router handles client-side
       routing. One Vercel deploy serves both the UI and the API — no separate
       frontend host.
-- [ ] Phase 7 — PDF / Excel / email
+- [x] **Phase 7 — PDF / Excel / email**
+  - [x] **email** (nodemailer): per-agency SMTP transport; real
+        `/api/settings/smtp/test`; `POST /api/trips/:tripId/send-confirmation`
+        (client / hotel / cab / payment_voucher / invoice) with PDF attachments.
+  - [x] **Excel** (SheetJS): `POST /api/bulk-import`, `GET /api/bulk-export`,
+        `GET /api/bulk-import/template`, `POST /api/lead-inquiries-bulk-import`.
+  - [x] **PDF** (@react-pdf/renderer, no Chromium): `GET /api/trips/:tripId/pdf`,
+        `/confirmation-pdf`, `/payment-voucher-pdf`, `/invoice-pdf` — functional
+        reproductions of the dompdf documents (same content/sections).
+  - [x] **blog images**: `POST /api/super-admin/blog/images` returns an inline
+        data URL (images stored inline, no external object store).
+
+  > Note: emails require each agency to configure SMTP in Agency Settings.
+  > PDFs are functional react-pdf documents (not a pixel match to the original
+  > dompdf Blade templates); refine styling as needed.
 
 ## Architecture (one app)
 

@@ -3,9 +3,12 @@ import prisma from "@/lib/prisma";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
 import { TRIP_INCLUDE } from "@/lib/trips";
+import { currencySymbol } from "@/lib/serialize";
 import { mailerForAdminId, sendMail, hotelBookingHtml, cabBookingHtml, confirmationHtml } from "@/lib/mailer";
+import { renderReceiptPdf, renderInvoicePdf, renderConfirmationPdf } from "@/lib/pdf";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const RECIPIENTS = ["client", "hotel", "cab", "payment_voucher", "invoice"];
 const applyVars = (tpl, vars) => Object.entries(vars).reduce((s, [k, v]) => s.split(k).join(v), tpl);
@@ -60,15 +63,49 @@ export async function POST(request, { params }) {
     });
   }
 
-  // ── Payment voucher / invoice (require the generated PDF document) ──
+  // ── Payment voucher / invoice (emailed to the client with the PDF attached) ──
   if (recipient === "payment_voucher" || recipient === "invoice") {
     if (!trip.clientEmail) {
       return NextResponse.json({ message: "Client email is not set for this trip." }, { status: 422 });
     }
-    return NextResponse.json(
-      { message: "Voucher/invoice PDFs are generated in the document (PDF) phase; this will be enabled there." },
-      { status: 501 }
-    );
+
+    const agencyName = settings?.agencyName || "ViaItinerary";
+    const vars = {
+      "{agencyName}": agencyName,
+      "{clientName}": trip.clientName || "Guest",
+      "{tripId}": trip.tripId,
+      "{paymentAmount}": Number(trip.paidAmount || 0).toFixed(2),
+      "{currencySymbol}": currencySymbol(trip.currency),
+    };
+
+    let subjectTpl, messageTpl, pdf, fileName, successMessage;
+    if (recipient === "payment_voucher") {
+      subjectTpl = "Payment Receipt - Trip #{tripId}";
+      messageTpl = settings?.paymentVoucherEmailMessage ||
+        "Dear {clientName},\n\nThank you for your payment of {currencySymbol}{paymentAmount}. Please find your payment receipt attached below.\n\nRegards,\n{agencyName}";
+      const payments = await prisma.accountingSettlement.findMany({ where: { tripId: trip.id }, orderBy: { settlementDate: "desc" } });
+      pdf = await renderReceiptPdf(trip, settings, payments);
+      fileName = `${trip.tripId}_Payment_Voucher.pdf`;
+      successMessage = "Payment voucher emailed to the client.";
+    } else {
+      subjectTpl = "Trip Invoice - {tripId}";
+      messageTpl = settings?.invoiceEmailMessage ||
+        "Dear {clientName},\n\nPlease find your invoice attached for trip {tripId}.\n\nRegards,\n{agencyName}";
+      pdf = await renderInvoicePdf(trip, settings);
+      fileName = `${trip.tripId}_Invoice.pdf`;
+      successMessage = "Invoice emailed to the client.";
+    }
+
+    const subject = applyVars(subjectTpl, vars);
+    const message = applyVars(messageTpl, vars);
+    await sendMail(mailer, {
+      to: trip.clientEmail,
+      subject,
+      html: confirmationHtml(message, agencyName),
+      text: message,
+      attachments: [{ filename: fileName, content: pdf, contentType: "application/pdf" }],
+    });
+    return NextResponse.json({ message: successMessage });
   }
 
   // ── Client booking confirmation ──
@@ -89,11 +126,13 @@ export async function POST(request, { params }) {
     "{clientName}": trip.clientName || "Guest",
   }).trim();
 
+  const confirmationPdf = await renderConfirmationPdf(trip, settings, message);
   await sendMail(mailer, {
     to: settings.contactEmail,
     subject: `Booking Confirmation - Trip #${trip.tripId}`,
     html: confirmationHtml(message, agencyName),
     text: message,
+    attachments: [{ filename: `${trip.tripId}_Confirmation.pdf`, content: confirmationPdf, contentType: "application/pdf" }],
   });
 
   const response = { message: "Confirmation email sent for the client." };
