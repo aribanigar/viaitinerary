@@ -5,7 +5,8 @@
   "description": "ViaItinerary — Next.js port (one app: UI + API) on Supabase/Postgres via Prisma.",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "npm --prefix ../frontend install && npm --prefix ../frontend run build && prisma generate && next build",
+    "build:next": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",

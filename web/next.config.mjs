@@ -4,6 +4,17 @@ const nextConfig = {
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
+  // Single-app serving: the Vite-built React SPA lives in public/ (index.html +
+  // assets). Static files and /api/* route handlers are matched first; any other
+  // path falls through to the SPA so React Router handles client-side routing.
+  async rewrites() {
+    return {
+      afterFiles: [
+        { source: "/", destination: "/index.html" },
+        { source: "/:path((?!api/).+)", destination: "/index.html" },
+      ],
+    };
+  },
 };
 
 export default nextConfig;

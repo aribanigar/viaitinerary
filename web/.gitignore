@@ -10,3 +10,5 @@ npm-debug.log*
 .vercel
 next-env.d.ts
 /prisma/generated
+# SPA build output — produced by `npm run build` (Vite builds frontend/ into here).
+/public

@@ -1,3 +1,6 @@
+// Inert root layout. The UI is the Vite-built React SPA served from public/
+// (see next.config.mjs rewrites); there are no Next pages, only /api route
+// handlers. App Router still expects a root layout to exist.
 export const metadata = {
   title: "ViaItinerary",
   description: "Travel itinerary builder & CRM",
@@ -6,9 +9,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
