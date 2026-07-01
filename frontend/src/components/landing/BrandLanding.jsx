@@ -1,9 +1,9 @@
 import React from "react";
 
-// EXACT reproduction of the provided brand design (Minimalist Editorial).
-// Markup is verbatim from the design's code.html; only the brand wordmarks and
-// the two CTA buttons (→ /signup) were changed. Tokens + animations live in
-// index.css; Material Symbols + Manrope/Noto Serif fonts load in index.html.
+// ViaItinerary landing — built from the provided brand design (Minimalist
+// Editorial). Structure/classes/animations are verbatim from code.html; copy is
+// ViaItinerary's, and readability fixes were applied (dark overlays on hero/CTA
+// images, a reliable interstitial image, and the light-section heading recolored).
 const BRAND_HTML = `<main class="w-full">
 <!-- Main Title Area -->
 <section class="relative w-full overflow-hidden flex flex-col items-center justify-center pt-[20px] pb-[60px] px-[20px]">
@@ -11,8 +11,9 @@ const BRAND_HTML = `<main class="w-full">
 <div class="text-xl font-bold tracking-tight text-white">ViaItinerary</div>
 </div>
 <img alt="A serene mountain sunrise viewed from an airy, minimalist interior space." class="absolute inset-0 w-full h-full object-cover" src="https://plus.unsplash.com/premium_photo-1669541884772-49c30fdee42c?q=80&amp;w=1675&amp;auto=format&amp;fit=crop&amp;ixlib=rb-4.1.0&amp;ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
+<div class="absolute inset-0 bg-black/45"></div>
 <div class="relative z-10 w-full px-8 text-center py-12 mx-8 rounded-[20px] max-w-4xl">
-<h1 class="text-4xl md:text-6xl font-light leading-tight tracking-tight mb-8 text-white">Master the Art of Minimalist<br>Design in the Modern Era</h1>
+<h1 class="text-4xl md:text-6xl font-light leading-tight tracking-tight mb-8 text-white">Craft Beautiful Itineraries,<br>Effortlessly</h1>
 <a href="/signup" class="inline-block text-xs font-medium px-6 py-2.5 rounded-[100px] hover:bg-primary/90 transition-all duration-300 tracking-wide bg-white text-black">Get Started Today</a>
 </div>
 </div>
@@ -24,12 +25,12 @@ const BRAND_HTML = `<main class="w-full">
 <div class="flex flex-col lg:flex-row gap-8">
 <!-- Label Column (Matches width of icons/spacing below if needed, or just provides offset) -->
 <div class="lg:w-2/5 flex items-start pt-3">
-<span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase whitespace-nowrap">The Course</span>
+<span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase whitespace-nowrap">The Platform</span>
 </div>
 <!-- Heading Column (Aligned with the content/image start below) -->
 <div class="lg:w-3/5">
 <p class="text-primary leading-tight font-light tracking-tight text-[36px] font-sans">
-                    This comprehensive course strips away the unnecessary, focusing on core principles of spatial relationship, typography, and purposeful white space.&nbsp;</p>
+                    ViaItinerary strips away the busywork — so you can build beautiful itineraries, quote clients in minutes, and close more trips.&nbsp;</p>
 </div>
 </div>
 </div>
@@ -60,7 +61,7 @@ const BRAND_HTML = `<main class="w-full">
 <div class="max-w-[1200px] mx-auto">
 <div class="max-w-full">
 <span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
-<h2 class="font-light mt-4 leading-tight text-[42px] text-white">Everything you need to<br>master your workflow</h2>
+<h2 class="font-light mt-4 leading-tight text-[42px] text-primary">Everything you need to<br>run your travel business</h2>
 </div>
 </div>
 </section><section class="pb-12 pt-8 px-[20px]">
@@ -76,7 +77,7 @@ const BRAND_HTML = `<main class="w-full">
 <h2 class="font-light text-primary tracking-tight text-[42px]">Smart Insights</h2>
 </div>
 <p class="text-secondary text-sm mb-10 leading-relaxed font-light">
-            Your environment will surface patterns and uncover root causes, then offer pathways on how to structure your studies to improve retention, based on the academic objectives you choose.
+            ViaItinerary surfaces the numbers that matter — costs, margins, conversions — and guides your next move from quote to confirmed booking.
         </p>
 </div>
 <!-- Interactive Reveal List pushed to bottom -->
@@ -195,9 +196,10 @@ const BRAND_HTML = `<main class="w-full">
 <section class="pt-12 pb-12 px-[20px]">
 <div class="max-w-[1200px] mx-auto">
 <div class="relative w-full h-[400px] md:h-[500px] rounded-[20px] overflow-hidden flex items-center justify-center">
-<img alt="A serene mountain landscape reflecting minimalist design principles." class="absolute inset-0 w-full h-full object-cover" src="https://img.freepik.com/premium-photo/infrared-landscape-showing-rolling-hills-pink-grass-sunset-ar-169-v-7-job-id-872c7588990b4b90b777b14f1339e213_1021802-19434.jpg?semt=ais_hybrid&amp;w=740&amp;q=80">
+<img alt="A serene mountain landscape reflecting minimalist design principles." class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1454496522488-7a8e488e8606?q=80&amp;w=1600&amp;auto=format&amp;fit=crop">
+<div class="absolute inset-0 bg-black/40"></div>
 <div class="relative z-10 w-full px-8 text-center flex flex-col items-center justify-center h-full max-w-3xl mx-auto rounded-[20px]">
-<h2 class="text-3xl md:text-5xl font-light text-primary leading-tight tracking-tight max-w-2xl mx-auto">Embrace the whitespace and find clarity in simplicity.</h2>
+<h2 class="text-3xl md:text-5xl font-light text-white leading-tight tracking-tight max-w-2xl mx-auto">Beautiful itineraries. Effortless workflow.</h2>
 </div>
 </div>
 </div>
@@ -207,7 +209,7 @@ const BRAND_HTML = `<main class="w-full">
 <div class="max-w-[1200px] mx-auto">
 <div class="max-w-full">
 <span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
-<h2 class="font-light text-primary mt-4 leading-tight text-[42px]">Everything you need to<br>master your workflow</h2>
+<h2 class="font-light text-primary mt-4 leading-tight text-[42px]">Everything you need to<br>run your travel business</h2>
 </div>
 </div>
 </section><section class="pb-12 pt-8 px-[20px]">
@@ -223,7 +225,7 @@ const BRAND_HTML = `<main class="w-full">
 <h2 class="font-light text-primary tracking-tight text-[42px]">Smart Insights</h2>
 </div>
 <p class="text-secondary text-sm mb-10 leading-relaxed font-light">
-            Your environment will surface patterns and uncover root causes, then offer pathways on how to structure your studies to improve retention, based on the academic objectives you choose.
+            ViaItinerary surfaces the numbers that matter — costs, margins, conversions — and guides your next move from quote to confirmed booking.
         </p>
 </div>
 <!-- Interactive Reveal List pushed to bottom -->
@@ -332,32 +334,32 @@ const BRAND_HTML = `<main class="w-full">
 <div class="max-w-[1200px] mx-auto">
 <div class="mb-16">
 <span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
-<h2 class="md:text-4xl font-light text-primary mt-4 leading-tight font-sans text-[42px]">Advanced tools for<br>modern scholarship</h2>
+<h2 class="md:text-4xl font-light text-primary mt-4 leading-tight font-sans text-[42px]">Advanced tools for<br>modern agencies</h2>
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pt-[80px]">
 <div class="flex flex-col relative">
 <div class="w-full border-t border-outline-variant"></div>
-<span class="material-symbols-outlined text-primary text-2xl mt-6">library_books</span>
-<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Structured Libraries</h3>
-<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Organize your materials by discipline, methodology, or specific research question with precise control.</p>
+<span class="material-symbols-outlined text-primary text-2xl mt-6">map</span>
+<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Itinerary Builder</h3>
+<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Day-by-day plans with live pricing, hotels, cabs and inclusions.</p>
 </div>
 <div class="flex flex-col relative">
 <div class="w-full border-t border-outline-variant"></div>
-<span class="material-symbols-outlined text-primary text-2xl mt-6">hub</span>
-<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Knowledge Graph</h3>
-<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Visualize connections between concepts and authors across your entire scholarly library.</p>
+<span class="material-symbols-outlined text-primary text-2xl mt-6">groups</span>
+<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Lead CRM</h3>
+<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Capture website inquiries, assign them to your team, and convert to trips.</p>
 </div>
 <div class="flex flex-col relative">
 <div class="w-full border-t border-outline-variant"></div>
-<span class="material-symbols-outlined text-primary text-2xl mt-6">history_edu</span>
-<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Citation Tracking</h3>
-<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Automatically generate and verify citations in any major academic format seamlessly.</p>
+<span class="material-symbols-outlined text-primary text-2xl mt-6">dashboard</span>
+<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Package Templates</h3>
+<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Build once, reuse forever — quote clients in seconds.</p>
 </div>
 <div class="flex flex-col relative">
 <div class="w-full border-t border-outline-variant"></div>
-<span class="material-symbols-outlined text-primary text-2xl mt-6">group_work</span>
-<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Peer Collaboration</h3>
-<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Share annotations and debate interpretations in a shared, focused academic environment.</p>
+<span class="material-symbols-outlined text-primary text-2xl mt-6">receipt_long</span>
+<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">PDF & Invoicing</h3>
+<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Branded itineraries, vouchers and invoices, ready to send.</p>
 </div>
 </div>
 </div>
@@ -368,11 +370,12 @@ const BRAND_HTML = `<main class="w-full">
 <div class="relative w-full h-[400px] md:h-[500px] rounded-[20px] overflow-hidden flex items-center justify-center">
 <!-- Background Image with Overlay for Readability -->
 <img alt="A serene mountain sunrise viewed from an airy, minimalist interior space." class="absolute inset-0 w-full h-full object-cover" src="https://plus.unsplash.com/premium_photo-1669541884772-49c30fdee42c?q=80&amp;w=1675&amp;auto=format&amp;fit=crop&amp;ixlib=rb-4.1.0&amp;ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
+<div class="absolute inset-0 bg-black/45"></div>
 <!-- Centered Content Over Image -->
 <div class="relative z-10 flex flex-col items-center text-center px-8 py-12 rounded-[20px] mx-6">
 <span class="text-xs font-semibold tracking-[0.2em] uppercase mb-6 text-white">Core Capabilities</span>
-<h2 class="text-4xl md:text-5xl font-light leading-tight max-w-2xl text-white">Ready to elevate your digital experience?</h2>
-<a href="/signup" class="inline-block bg-primary text-on-primary text-xs font-medium px-6 py-2.5 rounded-[100px] hover:bg-primary/90 transition-all duration-300 tracking-wide mt-8">Start Learning Now</a>
+<h2 class="text-4xl md:text-5xl font-light leading-tight max-w-2xl text-white">Ready to elevate your<br>travel business?</h2>
+<a href="/signup" class="inline-block bg-primary text-on-primary text-xs font-medium px-6 py-2.5 rounded-[100px] hover:bg-primary/90 transition-all duration-300 tracking-wide mt-8">Start Free</a>
 </div>
 </div>
 </div>
@@ -383,9 +386,9 @@ const BRAND_HTML = `<main class="w-full">
 <div class="max-w-[1200px] mx-auto">
 <div class="w-full h-[400px] md:h-[500px] rounded-[20px] flex flex-col justify-between relative border bg-surface-container-low border-outline-variant p-[20px]">
 <div class="max-w-md">
-<h3 class="text-3xl md:text-4xl font-light text-primary mb-4">Embrace the minimal.</h3>
+<h3 class="text-3xl md:text-4xl font-light text-primary mb-4">Travel, simplified.</h3>
 <p class="text-secondary leading-relaxed font-light">
-            Focus on what matters. Our platform strips away distractions, allowing you to master the core principles of design in a focused environment.
+            Focus on what matters. ViaItinerary strips away the busywork so crafting and closing trips feels effortless.
         </p>
 </div>
 <div class="flex flex-col md:flex-row justify-between items-end w-full gap-8">
