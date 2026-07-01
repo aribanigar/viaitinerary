@@ -172,6 +172,38 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── AI assistant page: recolor the injected geographic SVGs onto the brand
+   (light-gray landmasses, lime highlight for the active country/state). ── */
+.worldmap svg,
+.usmap svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.worldmap svg {
+  height: auto !important;
+}
+.worldmap svg path {
+  fill: #e4e4e5 !important;
+  stroke: #fbfbfb !important;
+  stroke-width: 0.3px !important;
+}
+.worldmap #usa path,
+.worldmap #alaska path,
+.worldmap #hawaii path,
+.worldmap #france path,
+.worldmap #corsica path {
+  fill: #c7f135 !important;
+}
+.usmap svg path {
+  fill: #e4e4e5 !important;
+  stroke: #fbfbfb !important;
+  stroke-width: 0.7px !important;
+}
+.usmap svg .az {
+  fill: #c7f135 !important;
+}
+
 button,
 a,
 [role="button"] {

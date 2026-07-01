@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Plus,
+  Sparkles,
   FileText,
   Package,
   MapPin,
@@ -268,6 +269,19 @@ const Sidebar = ({ isOpen, onClose }) => {
               >
                 <Plus className="w-5 h-5" />
                 <span>Create a trip</span>
+              </Link>
+
+              <Link
+                to="/assistant"
+                onClick={onClose}
+                className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                  isActive("/assistant")
+                    ? "bg-[#c7f135] text-[#10182a] shadow-lg shadow-[#c7f135]/30 font-semibold"
+                    : "hover:bg-white/5 hover:text-white font-medium text-slate-400"
+                }`}
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>AI Assistant</span>
               </Link>
 
               <div className="space-y-0.5 mt-1">
