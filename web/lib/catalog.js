@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
+import { persistImage } from "@/lib/storage";
 
 const unauth = () => NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
 
@@ -48,7 +49,7 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
       const user = await userFromRequest(request);
       if (!user) return unauth();
       const adminId = await adminIdOf(user);
-      const mapped = mapBody(await request.json());
+      const mapped = await mapBody(await request.json());
       if (mapped.error) return NextResponse.json({ message: mapped.error }, { status: 422 });
       const created = await prisma[model].create({ data: { ...mapped.data, userId: adminId } });
       const owner = await prisma.user.findUnique({ where: { id: adminId }, select: { id: true, name: true, email: true } });
@@ -80,7 +81,7 @@ export function catalogItem({ model, mapBody, serialize }) {
     async PUT(request, { params }) {
       const r = await scoped(request, params.id);
       if (r.error) return r.error;
-      const mapped = mapBody(await request.json(), r.item);
+      const mapped = await mapBody(await request.json(), r.item);
       if (mapped.error) return NextResponse.json({ message: mapped.error }, { status: 422 });
       const updated = await prisma[model].update({ where: { id: r.item.id }, data: mapped.data });
       const owner = await prisma.user.findUnique({ where: { id: r.adminId }, select: { id: true, name: true, email: true } });
@@ -97,15 +98,15 @@ export function catalogItem({ model, mapBody, serialize }) {
 
 // --- Per-resource body mappers (mirror the Laravel validation/fields) ---
 
-export function mapDestination(body) {
+export async function mapDestination(body) {
   if (!body.name) return { error: "name is required." };
   if (!Array.isArray(body.activities)) return { error: "activities must be an array." };
   const data = { name: body.name, activities: body.activities };
-  if (body.photo) data.imagePath = String(body.photo);
+  if (body.photo) data.imagePath = await persistImage(String(body.photo), "destinations");
   return { data };
 }
 
-export function mapHotel(body) {
+export async function mapHotel(body) {
   if (!body.name) return { error: "name is required." };
   const data = {
     name: body.name,
@@ -114,7 +115,7 @@ export function mapHotel(body) {
     phone: body.phone ?? null,
     priceSections: body.price_sections ?? [],
   };
-  if (body.photo) data.imagePath = String(body.photo);
+  if (body.photo) data.imagePath = await persistImage(String(body.photo), "hotels");
   return { data };
 }
 

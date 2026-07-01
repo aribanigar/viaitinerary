@@ -27,9 +27,24 @@ export function transportFromSettings(settings) {
   return { transporter, fromEmail: settings.smtpEmail, fromName };
 }
 
+/** Global transport from SMTP_* env vars (fallback / for pre-account emails). */
+export function globalMailer() {
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, SMTP_FROM_NAME } = process.env;
+  if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) return null;
+  const port = Number(SMTP_PORT);
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port,
+    secure: port === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  });
+  return { transporter, fromEmail: SMTP_FROM || SMTP_USER, fromName: SMTP_FROM_NAME || "ViaItinerary" };
+}
+
 export async function mailerForAdminId(adminId) {
-  const settings = await prisma.agencySetting.findUnique({ where: { userId: adminId } });
-  return { settings, mailer: transportFromSettings(settings) };
+  const settings = adminId ? await prisma.agencySetting.findUnique({ where: { userId: adminId } }) : null;
+  // Prefer the agency's own SMTP; fall back to the platform SMTP if configured.
+  return { settings, mailer: transportFromSettings(settings) || globalMailer() };
 }
 
 export async function sendMail(mailer, { to, subject, html, text, attachments }) {

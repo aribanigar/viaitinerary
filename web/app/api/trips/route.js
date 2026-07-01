@@ -103,9 +103,10 @@ export async function POST(request) {
     const gate = await canCreateTrip(user);
     if (!gate.allowed) return NextResponse.json({ message: gate.reason }, { status: gate.status });
 
+    const scalars = await buildTripScalars(body);
     const trip = await prisma.trip.create({
       data: {
-        ...buildTripScalars(body),
+        ...scalars,
         userId: adminId,
         teamId,
         tripId: body.tripId,

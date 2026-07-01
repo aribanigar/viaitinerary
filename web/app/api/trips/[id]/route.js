@@ -36,7 +36,7 @@ export async function PUT(request, { params }) {
     if (!existing) return NextResponse.json({ message: "Not found" }, { status: 404 });
 
     const body = await request.json();
-    await prisma.trip.update({ where: { id: existing.id }, data: buildTripScalars(body) });
+    await prisma.trip.update({ where: { id: existing.id }, data: await buildTripScalars(body) });
     await syncTripRelations(existing.id, body);
 
     const full = await prisma.trip.findUnique({ where: { id: existing.id }, include: TRIP_INCLUDE });

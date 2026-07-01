@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { persistImage } from "@/lib/storage";
 
 /** Parse "YYYY-MM-DD" or "DD-MM-YYYY" (or anything Date understands) to a Date. */
 export function parseDate(value) {
@@ -12,18 +13,24 @@ export function parseDate(value) {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** Normalise an incoming image value (URL or data URL) to a stored string. */
-function imageValue(image) {
-  if (image === undefined) return undefined; // not provided → don't touch
-  if (!image) return null; // explicitly cleared
-  return String(image);
+/**
+ * Normalise an incoming image value and offload data URLs to Supabase Storage.
+ *   undefined → undefined (not provided, don't touch)
+ *   falsy     → null (explicitly cleared)
+ *   data URL  → uploaded, returns public URL
+ *   URL       → unchanged
+ */
+async function imageValue(image, prefix = "trips") {
+  if (image === undefined) return undefined;
+  if (!image) return null;
+  return persistImage(String(image), prefix);
 }
 
 const int = (v, d = 0) => (v === undefined || v === null || v === "" ? d : parseInt(v, 10) || d);
 const dec = (v) => (v === undefined || v === null || v === "" ? null : Number(v));
 
 /** Map the builder payload to Trip scalar columns (excludes user/team/tripId). */
-export function buildTripScalars(body) {
+export async function buildTripScalars(body) {
   const data = {
     tripTitle: body.tripTitle,
     destination: body.destination ?? null,
@@ -49,7 +56,7 @@ export function buildTripScalars(body) {
     otherCosts: body.other_costs ?? [],
     transportDetails: body.transport_details ?? body.transportDetails ?? [],
   };
-  const img = imageValue(body.image);
+  const img = await imageValue(body.image, "trips");
   if (img !== undefined) data.imagePath = img;
   return data;
 }
@@ -69,7 +76,7 @@ export async function syncTripRelations(tripDbId, body) {
         location: item.location ?? null,
         description: item.description ?? null,
       };
-      const img = imageValue(item.image);
+      const img = await imageValue(item.image, "itineraries");
       if (img !== undefined) data.imagePath = img;
       if (typeof item.id === "number") {
         await prisma.itinerary.update({ where: { id: item.id }, data });
@@ -104,7 +111,7 @@ export async function syncTripRelations(tripDbId, body) {
         pricePerRoom: dec(item.price_per_room),
         bedPrices: item.bed_prices ?? [],
       };
-      const img = imageValue(item.image);
+      const img = await imageValue(item.image, "accommodations");
       if (img !== undefined) data.imagePath = img;
       if (typeof item.id === "number") {
         await prisma.accommodation.update({ where: { id: item.id }, data });

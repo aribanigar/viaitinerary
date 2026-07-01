@@ -406,6 +406,19 @@ model AccountingSettlement {
   @@map("accounting_settlements")
 }
 
+model OtpCode {
+  id         Int       @id @default(autoincrement())
+  email      String
+  codeHash   String    @map("code_hash")
+  purpose    String    @default("signup") // signup | reset
+  expiresAt  DateTime  @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([email, purpose])
+  @@map("otp_codes")
+}
+
 model Policy {
   id                    Int      @id @default(autoincrement())
   userId                Int      @unique @map("user_id")

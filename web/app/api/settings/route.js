@@ -3,8 +3,10 @@ import prisma from "@/lib/prisma";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
 import { settingsToCamel, SETTINGS_DEFAULTS } from "@/lib/serialize";
+import { persistImage } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 // camelCase request key -> Prisma column
 const FIELD_MAP = {
@@ -63,6 +65,11 @@ export async function PUT(request) {
       data.smtpPort = parseInt(data.smtpPort, 10);
     }
     if (body.clearSmtpPassword) data.smtpAppPassword = null;
+
+    // Offload any newly-uploaded images (data URLs) to Supabase Storage.
+    for (const col of ["logoPath", "confirmationHeroImage", "defaultTripImagePath"]) {
+      if (data[col]) data[col] = await persistImage(String(data[col]), "agency");
+    }
 
     const settings = await prisma.agencySetting.upsert({
       where: { userId: adminId },
