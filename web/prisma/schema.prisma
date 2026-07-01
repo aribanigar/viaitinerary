@@ -322,6 +322,9 @@ model Plan {
   originalPrice   Decimal?  @map("original_price") @db.Decimal(12, 2)
   durationMonths  Int       @default(1) @map("duration_months")
   tripLimit       Int?      @map("trip_limit")
+  hotelLimit      Int?      @map("hotel_limit")
+  cabLimit        Int?      @map("cab_limit")
+  destinationLimit Int?     @map("destination_limit")
   features        Json?
   badgeLabel      String?   @map("badge_label")
   recommended     Boolean   @default(false)

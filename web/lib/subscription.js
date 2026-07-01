@@ -105,6 +105,31 @@ export function resolveCountry(request) {
   return c ? c.trim().toUpperCase() : null;
 }
 
+/**
+ * Enforce a plan's per-module catalog limit (hotels / cabs / destinations).
+ * kind: "hotel" | "vehicle" | "destination". null limit = unlimited.
+ */
+export async function catalogGate(adminId, kind) {
+  const admin = await prisma.user.findUnique({ where: { id: adminId }, select: { bypassSubscription: true } });
+  if (admin?.bypassSubscription) return { allowed: true };
+
+  const sub = await prisma.subscription.findUnique({ where: { userId: adminId } });
+  if (!sub?.planKey) return { allowed: true };
+  const plan = await prisma.plan.findFirst({ where: { key: sub.planKey } });
+  if (!plan) return { allowed: true };
+
+  const field = kind === "hotel" ? "hotelLimit" : kind === "vehicle" ? "cabLimit" : "destinationLimit";
+  const limit = plan[field];
+  if (limit == null) return { allowed: true };
+
+  const count = await prisma[kind].count({ where: { userId: adminId } });
+  if (count >= limit) {
+    const label = kind === "vehicle" ? "cabs" : `${kind}s`;
+    return { allowed: false, reason: `Your plan allows up to ${limit} ${label}. Upgrade your plan to add more.`, status: 403 };
+  }
+  return { allowed: true };
+}
+
 export function serializePlan(p) {
   return {
     id: p.id,
@@ -115,6 +140,9 @@ export function serializePlan(p) {
     original_price: p.originalPrice == null ? null : Number(p.originalPrice),
     duration_months: p.durationMonths,
     trip_limit: p.tripLimit,
+    hotel_limit: p.hotelLimit,
+    cab_limit: p.cabLimit,
+    destination_limit: p.destinationLimit,
     features: p.features ?? [],
     badge_label: p.badgeLabel,
     recommended: p.recommended,

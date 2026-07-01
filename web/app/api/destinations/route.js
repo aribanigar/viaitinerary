@@ -7,5 +7,6 @@ const { GET, POST } = catalogCollection({
   model: "destination",
   mapBody: mapDestination,
   serialize: catalogDestination,
+  limitKind: "destination",
 });
 export { GET, POST };

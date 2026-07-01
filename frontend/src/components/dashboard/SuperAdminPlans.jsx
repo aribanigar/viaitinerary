@@ -37,6 +37,9 @@ const SuperAdminPlans = () => {
     original_price: "",
     duration_months: "",
     trip_limit: "",
+    hotel_limit: "",
+    cab_limit: "",
+    destination_limit: "",
     features: [""],
     badge_label: "",
     recommended: false,
@@ -153,6 +156,9 @@ const SuperAdminPlans = () => {
       original_price: plan.original_price || "",
       duration_months: plan.duration_months,
       trip_limit: plan.trip_limit || "",
+      hotel_limit: plan.hotel_limit || "",
+      cab_limit: plan.cab_limit || "",
+      destination_limit: plan.destination_limit || "",
       features: parsedFeatures.length > 0 ? parsedFeatures : [""],
       badge_label: plan.badge_label || "",
       recommended: plan.recommended || false,
@@ -266,6 +272,9 @@ const SuperAdminPlans = () => {
       form.append("price", formData.price || "");
       form.append("duration_months", formData.duration_months);
       form.append("trip_limit", formData.trip_limit || "");
+      form.append("hotel_limit", formData.hotel_limit || "");
+      form.append("cab_limit", formData.cab_limit || "");
+      form.append("destination_limit", formData.destination_limit || "");
       form.append("badge_label", formData.badge_label || "");
       form.append("recommended", formData.recommended ? "1" : "0");
       form.append("is_active", formData.is_active ? "1" : "0");
@@ -317,6 +326,9 @@ const SuperAdminPlans = () => {
           original_price: "",
           duration_months: "",
           trip_limit: "",
+          hotel_limit: "",
+          cab_limit: "",
+          destination_limit: "",
           features: [""],
           badge_label: "",
           recommended: false,
@@ -387,6 +399,9 @@ const SuperAdminPlans = () => {
                 original_price: "",
                 duration_months: "",
                 trip_limit: "",
+                hotel_limit: "",
+                cab_limit: "",
+                destination_limit: "",
                 features: [""],
                 badge_label: "",
                 recommended: false,
@@ -769,6 +784,39 @@ const SuperAdminPlans = () => {
                     setFormData({ ...formData, badge_label: e.target.value })
                   }
                 />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block pb-1">
+                Module Limits
+              </label>
+              <p className="text-[11px] text-slate-400 -mt-0.5 mb-1">
+                Numeric caps per plan. Leave blank for unlimited.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { key: "trip_limit", label: "Itineraries" },
+                  { key: "hotel_limit", label: "Hotels" },
+                  { key: "cab_limit", label: "Cabs" },
+                  { key: "destination_limit", label: "Destinations" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="space-y-1">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      {label}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Unlimited"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                      value={formData[key]}
+                      onChange={(e) =>
+                        setFormData({ ...formData, [key]: e.target.value })
+                      }
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 

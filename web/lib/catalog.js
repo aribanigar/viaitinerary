@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
 import { persistImage } from "@/lib/storage";
+import { catalogGate } from "@/lib/subscription";
 
 const unauth = () => NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
 
@@ -10,7 +11,7 @@ const unauth = () => NextResponse.json({ message: "Unauthenticated." }, { status
  * Build paginated list + create handlers for a catalog model (destinations,
  * hotels, vehicles). `mapBody(body)` returns { data } or { error }.
  */
-export function catalogCollection({ model, mapBody, serialize, searchField = "name" }) {
+export function catalogCollection({ model, mapBody, serialize, searchField = "name", limitKind }) {
   return {
     async GET(request) {
       const user = await userFromRequest(request);
@@ -49,6 +50,10 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
       const user = await userFromRequest(request);
       if (!user) return unauth();
       const adminId = await adminIdOf(user);
+      if (limitKind) {
+        const gate = await catalogGate(adminId, limitKind);
+        if (!gate.allowed) return NextResponse.json({ message: gate.reason }, { status: gate.status });
+      }
       const mapped = await mapBody(await request.json());
       if (mapped.error) return NextResponse.json({ message: mapped.error }, { status: 422 });
       const created = await prisma[model].create({ data: { ...mapped.data, userId: adminId } });
