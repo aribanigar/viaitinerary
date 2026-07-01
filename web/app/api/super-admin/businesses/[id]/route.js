@@ -22,9 +22,9 @@ export async function GET(request, { params }) {
   const [subscription, teams, tripAgg, recentTrips] = await Promise.all([
     prisma.subscription.findUnique({ where: { userId: id } }),
     prisma.team.findMany({ where: { ownerId: id }, select: { id: true } }),
-    prisma.trip.aggregate({ where: { userId: id }, _count: { _all: true }, _sum: { paidAmount: true } }),
+    prisma.trip.aggregate({ where: { userId: id, isPackage: false }, _count: { _all: true }, _sum: { paidAmount: true } }),
     prisma.trip.findMany({
-      where: { userId: id },
+      where: { userId: id, isPackage: false },
       orderBy: { createdAt: "desc" },
       take: 5,
       select: { id: true, tripTitle: true, destination: true, createdAt: true, status: true, paidAmount: true },

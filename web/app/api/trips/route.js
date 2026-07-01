@@ -28,7 +28,7 @@ export async function GET(request) {
   const perPage = Math.max(1, parseInt(searchParams.get("per_page") || "25", 10));
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
 
-  const where = { userId: adminId };
+  const where = { userId: adminId, isPackage: false };
   if (search) {
     where.OR = [
       { tripTitle: { contains: search, mode: "insensitive" } },

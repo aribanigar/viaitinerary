@@ -22,7 +22,7 @@ export async function GET(request) {
   const [totalAdmins, totalTeams, totalTrips, activeTeams, adminUsers, plans] = await Promise.all([
     prisma.user.count({ where: { role: "admin" } }),
     prisma.team.count(),
-    prisma.trip.count(),
+    prisma.trip.count({ where: { isPackage: false } }),
     prisma.team.count({ where: { isActive: true } }),
     prisma.user.findMany({ where: { role: "admin" }, select: { id: true } }),
     prisma.plan.findMany(),
@@ -32,9 +32,9 @@ export async function GET(request) {
 
   const [newAdminsThisMonth, tripsThisMonth, subscriptions, platformRevenueAgg] = await Promise.all([
     prisma.user.count({ where: { role: "admin", createdAt: { gte: monthStart(y, m), lt: monthEnd(y, m) } } }),
-    prisma.trip.count({ where: { createdAt: { gte: monthStart(y, m), lt: monthEnd(y, m) } } }),
+    prisma.trip.count({ where: { isPackage: false, createdAt: { gte: monthStart(y, m), lt: monthEnd(y, m) } } }),
     prisma.subscription.findMany({ where: { userId: { in: adminIds } } }),
-    prisma.trip.aggregate({ _sum: { paidAmount: true } }),
+    prisma.trip.aggregate({ where: { isPackage: false }, _sum: { paidAmount: true } }),
   ]);
 
   const planBreakdown = {
@@ -93,7 +93,7 @@ export async function GET(request) {
     const end = monthEnd(gy, gmonth);
     const [admins, trips, inquiries] = await Promise.all([
       prisma.user.count({ where: { role: "admin", createdAt: { gte: start, lt: end } } }),
-      prisma.trip.count({ where: { createdAt: { gte: start, lt: end } } }),
+      prisma.trip.count({ where: { isPackage: false, createdAt: { gte: start, lt: end } } }),
       prisma.leadInquiry.count({ where: { createdAt: { gte: start, lt: end } } }),
     ]);
     growth.push({ month: `${MONTHS[gmonth]} ${gy}`, admins, trips, inquiries });

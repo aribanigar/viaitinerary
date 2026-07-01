@@ -90,6 +90,8 @@ model Trip {
   transportDetails Json?    @map("transport_details")
   followUpSent    Boolean   @default(false) @map("follow_up_sent")
   confirmationSent Boolean  @default(false) @map("confirmation_sent")
+  isPackage       Boolean   @default(false) @map("is_package")
+  locked          Boolean   @default(false)
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 

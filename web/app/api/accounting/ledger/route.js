@@ -22,7 +22,7 @@ export async function GET(request) {
   const status = searchParams.get("status");
   const query = (searchParams.get("query") || "").trim();
 
-  const where = { userId: adminId };
+  const where = { userId: adminId, isPackage: false };
   if (query) {
     where.OR = [
       { tripId: { contains: query, mode: "insensitive" } },

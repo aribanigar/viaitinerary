@@ -27,7 +27,7 @@ export async function businessAggregates(adminIds) {
 
   const tripGroups = await prisma.trip.groupBy({
     by: ["userId"],
-    where: { userId: { in: adminIds } },
+    where: { userId: { in: adminIds }, isPackage: false },
     _count: { _all: true },
     _sum: { paidAmount: true },
   });

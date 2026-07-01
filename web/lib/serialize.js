@@ -89,6 +89,8 @@ export function serializeTrip(trip) {
     status: trip.status,
     template: trip.template,
     slug: trip.slug,
+    is_package: trip.isPackage ?? false,
+    locked: trip.locked ?? false,
     include_gst: trip.includeGst,
     use_flight: trip.useFlight,
     tagline: trip.tagline,

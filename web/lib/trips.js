@@ -154,3 +154,50 @@ const TRIP_INCLUDE = {
 };
 
 export { TRIP_INCLUDE };
+
+/** Nested `create` payload to clone a trip's children (itineraries/logistics). */
+export function cloneTripChildren(src) {
+  return {
+    itineraries: {
+      create: (src.itineraries || []).map((i) => ({
+        dayNumber: i.dayNumber,
+        title: i.title,
+        location: i.location,
+        description: i.description,
+        imagePath: i.imagePath,
+      })),
+    },
+    accommodations: {
+      create: (src.accommodations || []).map((a) => ({
+        hotelId: a.hotelId,
+        name: a.name,
+        city: a.city,
+        category: a.category,
+        rooms: a.rooms,
+        beds: a.beds,
+        cnbCount: a.cnbCount,
+        extraBeds5To12Count: a.extraBeds5To12Count,
+        extraBedsAbove12Count: a.extraBedsAbove12Count,
+        mealPlan: a.mealPlan,
+        roomType: a.roomType,
+        checkIn: a.checkIn,
+        checkOut: a.checkOut,
+        pricePerRoom: a.pricePerRoom,
+        bedPrices: a.bedPrices ?? [],
+        imagePath: a.imagePath,
+      })),
+    },
+    transportations: {
+      create: (src.transportations || []).map((t) => ({
+        vehicleId: t.vehicleId,
+        tripType: t.tripType,
+        destination: t.destination,
+        route: t.route,
+        date: t.date,
+        vehicleType: t.vehicleType,
+        quantity: t.quantity,
+        remarks: t.remarks,
+      })),
+    },
+  };
+}
