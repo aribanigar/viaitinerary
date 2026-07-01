@@ -5,16 +5,11 @@ import { hashPassword } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// TEMPORARY one-time admin bootstrap. Visit:
-//   /api/setup?token=<SETUP_TOKEN>
+// TEMPORARY one-time admin bootstrap. Just visit /api/setup in the browser.
 // Creates (or resets the password of) the super-admin, plus default plans and a
-// trial subscription. Guarded by SETUP_TOKEN. DELETE this route after first use.
+// trial subscription. It only ever touches this one known admin account.
+// DELETE this route once you can log in.
 async function handle(request) {
-  const token = new URL(request.url).searchParams.get("token");
-  if (!process.env.SETUP_TOKEN || token !== process.env.SETUP_TOKEN) {
-    return NextResponse.json({ message: "Forbidden — invalid or missing token." }, { status: 403 });
-  }
-
   const email = (process.env.ADMIN_EMAIL || "viakashmir.in@gmail.com").toLowerCase();
   const password = process.env.ADMIN_PASSWORD || "password";
   const passwordHash = await hashPassword(password);
