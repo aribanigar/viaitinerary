@@ -5,7 +5,7 @@ import logoLight from "../assets/logo-light.png";
 
 const NotFound = () => {
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-[#f9f9f9] flex flex-col items-center justify-center px-4 py-8">
       <Link to="/" className="mb-8">
         <img
           src={logoLight}
@@ -16,12 +16,12 @@ const NotFound = () => {
 
       <div className="w-full max-w-lg text-center">
         <div className="relative mb-8">
-          <h1 className="text-[12rem] font-black text-[#143B36]/5 leading-none select-none">
+          <h1 className="text-[12rem] font-black text-[#1a1c1c]/5 leading-none select-none">
             404
           </h1>
         </div>
 
-        <h2 className="text-3xl font-bold text-[#143B36] mb-4">
+        <h2 className="text-3xl font-bold text-[#1a1c1c] mb-4">
           Oops! Page not found
         </h2>
         <p className="text-slate-500 text-lg mb-10 max-w-md mx-auto">
@@ -32,14 +32,14 @@ const NotFound = () => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={() => window.history.back()}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-white border border-slate-200 text-[#143B36] font-semibold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-white border border-slate-200 text-[#1a1c1c] font-semibold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
           >
             <ArrowLeft className="h-5 w-5" />
             Go Back
           </button>
           <Link
             to="/"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-[#143B36] text-white font-semibold rounded-xl hover:bg-[#143B36]/90 transition-all shadow-lg shadow-[#143B36]/20"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-[#1a1c1c] text-white font-semibold rounded-xl hover:bg-[#1a1c1c]/90 transition-all shadow-lg shadow-[#1a1c1c]/20"
           >
             <Home className="h-5 w-5" />
             Back to Home

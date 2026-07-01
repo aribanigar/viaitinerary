@@ -153,7 +153,7 @@ const Vehicles = () => {
               setFormData({ name: "", price: "" });
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-[#2563EB] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all text-sm w-fit"
+            className="flex items-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all text-sm w-fit"
           >
             <Plus className="w-4 h-4" />
             Add New Car

@@ -66,7 +66,7 @@ const Packages = () => {
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-[#143B36] flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-[#1a1c1c] flex items-center gap-2">
               <Package className="w-6 h-6 text-blue-600" /> Packages
             </h1>
             <p className="text-slate-500 text-sm mt-1">Reusable templates — build once, quote clients in seconds.</p>
@@ -149,7 +149,7 @@ const Packages = () => {
             <button onClick={() => setUseTarget(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
               <X className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold text-[#143B36]">Create trip from package</h2>
+            <h2 className="text-lg font-bold text-[#1a1c1c]">Create trip from package</h2>
             <p className="text-sm text-slate-500 mb-4">{useTarget.trip_title}</p>
             <form onSubmit={submitUse} className="space-y-3">
               <input

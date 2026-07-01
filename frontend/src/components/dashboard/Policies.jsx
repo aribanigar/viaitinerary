@@ -297,7 +297,7 @@ const Policies = () => {
               <DynamicPolicyList
                 title="Terms and Conditions"
                 icon={FileText}
-                color="text-[#2563EB]"
+                color="text-[#1b1b1b]"
                 fieldName="termsConditions"
                 values={formData.termsConditions}
                 onChange={handleListChange}
@@ -336,7 +336,7 @@ const Policies = () => {
               <DynamicPolicyList
                 title="Must Haves"
                 icon={CheckCircle}
-                color="text-[#2563EB]"
+                color="text-[#1b1b1b]"
                 fieldName="mustHaves"
                 values={formData.mustHaves}
                 onChange={handleListChange}
@@ -349,7 +349,7 @@ const Policies = () => {
               <DynamicPolicyList
                 title="Your Roles and Responsibilities"
                 icon={Users}
-                color="text-[#2563EB]"
+                color="text-[#1b1b1b]"
                 fieldName="rolesResponsibilities"
                 values={formData.rolesResponsibilities}
                 onChange={handleListChange}
@@ -362,7 +362,7 @@ const Policies = () => {
               <DynamicPolicyList
                 title="Cancellation Policy"
                 icon={Clock}
-                color="text-[#2563EB]"
+                color="text-[#1b1b1b]"
                 fieldName="cancellationPolicy"
                 values={formData.cancellationPolicy}
                 onChange={handleListChange}
@@ -375,7 +375,7 @@ const Policies = () => {
               <DynamicPolicyList
                 title="Additional Expenses (Indicative)"
                 icon={IndianRupee}
-                color="text-[#2563EB]"
+                color="text-[#1b1b1b]"
                 fieldName="additionalExpenses"
                 values={formData.additionalExpenses}
                 onChange={handleListChange}

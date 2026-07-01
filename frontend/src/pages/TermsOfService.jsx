@@ -11,13 +11,13 @@ const TermsOfService = () => {
     <div className="min-h-screen bg-white">
       <Navbar decoration={true} />
       <main className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto font-sans text-gray-700 leading-relaxed">
-        <h1 className="text-4xl font-bold text-[#10182A] mb-8">
+        <h1 className="text-4xl font-bold text-[#1a1c1c] mb-8">
           TERMS OF SERVICE
         </h1>
 
         <div className="space-y-8">
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               1. Acceptance of Terms
             </h2>
             <p>
@@ -45,7 +45,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               2. Nature of the Service
             </h2>
             <p>
@@ -61,7 +61,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               3. 3-Day Free Trial
             </h2>
             <ul className="list-disc ml-6 mt-2 space-y-1">
@@ -78,7 +78,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               4. Subscription & Payment Terms
             </h2>
             <p>
@@ -90,7 +90,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               5. Account & Access Control
             </h2>
             <p>
@@ -102,7 +102,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               6. License Grant & Restrictions
             </h2>
             <p>
@@ -114,7 +114,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               7. Intellectual Property
             </h2>
             <p>
@@ -125,7 +125,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               8. User Data & Compliance
             </h2>
             <p>
@@ -137,7 +137,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               9. Data Security & Availability
             </h2>
             <p>
@@ -148,7 +148,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               10. Limitation of Liability
             </h2>
             <p>
@@ -160,7 +160,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               11. Indemnification
             </h2>
             <p>
@@ -170,7 +170,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               12. Suspension & Termination
             </h2>
             <p>
@@ -181,7 +181,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               13. Force Majeure
             </h2>
             <p>
@@ -192,7 +192,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               14. Confidentiality
             </h2>
             <p>
@@ -202,7 +202,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               15. Governing Law & Dispute Resolution
             </h2>
             <p>
@@ -212,7 +212,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               16. Modifications
             </h2>
             <p>
@@ -222,7 +222,7 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               17. Severability & Entire Agreement
             </h2>
             <p>
@@ -232,11 +232,11 @@ const TermsOfService = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               18. Contact Information
             </h2>
             <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="font-bold text-[#10182A]">ViaItinerary</p>
+              <p className="font-bold text-[#1a1c1c]">ViaItinerary</p>
               <p>
                 Website:{" "}
                 <a

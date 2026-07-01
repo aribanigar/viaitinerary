@@ -11,13 +11,13 @@ const RefundPolicy = () => {
     <div className="min-h-screen bg-white">
       <Navbar decoration={true} />
       <main className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-[#10182A] mb-8">
+        <h1 className="text-4xl font-bold text-[#1a1c1c] mb-8">
           REFUND & CANCELLATION POLICY
         </h1>
 
         <div className="space-y-8 text-gray-700 leading-relaxed">
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               1. Overview
             </h2>
             <p>
@@ -31,7 +31,7 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               2. Free Trial – 3 Days
             </h2>
             <p>
@@ -55,13 +55,13 @@ const RefundPolicy = () => {
                 Trial data may be deleted without notice after expiration.
               </li>
             </ul>
-            <p className="mt-2 font-medium text-[#10182A]">
+            <p className="mt-2 font-medium text-[#1a1c1c]">
               No refund applies to free trial access.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               3. Subscription Payments
             </h2>
             <p>All subscription fees:</p>
@@ -78,7 +78,7 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               4. No Refund Policy (Standard Rule)
             </h2>
             <p>
@@ -105,7 +105,7 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               5. Early Cancellation
             </h2>
             <p>You may cancel your subscription at any time.</p>
@@ -123,7 +123,7 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               6. Exceptional Refund Circumstances
             </h2>
             <p>Refunds may be considered only if:</p>
@@ -142,7 +142,7 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               7. Chargebacks & Payment Disputes
             </h2>
             <p>
@@ -159,7 +159,7 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               8. Subscription Downgrades
             </h2>
             <p>If you downgrade your plan:</p>
@@ -173,7 +173,7 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               9. Enterprise & Custom Contracts
             </h2>
             <p>
@@ -184,7 +184,7 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               10. Currency & International Payments
             </h2>
             <p>Refunds (if approved) will be processed:</p>
@@ -199,7 +199,7 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               11. Policy Updates
             </h2>
             <p>
@@ -211,12 +211,12 @@ const RefundPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               12. Contact for Refund Requests
             </h2>
             <p>All refund requests must be submitted in writing to:</p>
             <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="font-bold text-[#10182A]">ViaItinerary</p>
+              <p className="font-bold text-[#1a1c1c]">ViaItinerary</p>
               <p>
                 Website:{" "}
                 <a

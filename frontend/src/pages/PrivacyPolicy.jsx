@@ -11,13 +11,13 @@ const PrivacyPolicy = () => {
     <div className="min-h-screen bg-white">
       <Navbar decoration={true} />
       <main className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto font-sans">
-        <h1 className="text-4xl font-bold text-[#10182A] mb-8">
+        <h1 className="text-4xl font-bold text-[#1a1c1c] mb-8">
           PRIVACY POLICY
         </h1>
 
         <div className="space-y-8 text-gray-700 leading-relaxed">
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               1. Introduction
             </h2>
             <p>
@@ -50,7 +50,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               2. Definitions
             </h2>
             <ul className="list-disc ml-6 mt-2 space-y-2">
@@ -85,10 +85,10 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               3. Information We Collect
             </h2>
-            <h3 className="text-xl font-medium text-[#10182A] mt-4 mb-2">
+            <h3 className="text-xl font-medium text-[#1a1c1c] mt-4 mb-2">
               3.1 Information You Provide
             </h3>
             <p>When you register or subscribe:</p>
@@ -101,7 +101,7 @@ const PrivacyPolicy = () => {
               <li>Itinerary details, Client names and travel data</li>
               <li>Booking records and Team performance data</li>
             </ul>
-            <h3 className="text-xl font-medium text-[#10182A] mt-6 mb-2">
+            <h3 className="text-xl font-medium text-[#1a1c1c] mt-6 mb-2">
               3.2 Automatically Collected Information
             </h3>
             <ul className="list-disc ml-6 mt-2 space-y-1">
@@ -111,7 +111,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               4. How We Use Your Information
             </h2>
             <p>We process data to:</p>
@@ -123,13 +123,13 @@ const PrivacyPolicy = () => {
               </li>
               <li>Comply with legal obligations</li>
             </ul>
-            <p className="mt-4 font-semibold text-[#10182A]">
+            <p className="mt-4 font-semibold text-[#1a1c1c]">
               We do NOT sell your personal data.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               5. Legal Basis for Processing (GDPR Compliance)
             </h2>
             <p>For EU/UK users, processing is based on:</p>
@@ -142,7 +142,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               6. Client Data Responsibility
             </h2>
             <p>Users who upload traveler or customer data:</p>
@@ -161,7 +161,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               7. Data Sharing & Third Parties
             </h2>
             <p>
@@ -169,13 +169,13 @@ const PrivacyPolicy = () => {
               analytics providers, or legal authorities when required by law.
               All third-party partners are bound by confidentiality.
             </p>
-            <p className="mt-4 font-semibold text-[#10182A]">
+            <p className="mt-4 font-semibold text-[#1a1c1c]">
               We do NOT sell or rent data to advertisers.
             </p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               8. International Data Transfers
             </h2>
             <p>
@@ -186,7 +186,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               9. Data Retention
             </h2>
             <p>
@@ -197,7 +197,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               10. Data Security
             </h2>
             <p>
@@ -208,7 +208,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               11. Your Rights
             </h2>
             <p>
@@ -225,7 +225,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               12. Cookies & Tracking
             </h2>
             <p>
@@ -236,7 +236,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               13. Children's Privacy
             </h2>
             <p>
@@ -246,7 +246,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               14. Changes to This Policy
             </h2>
             <p>
@@ -256,7 +256,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               15. Limitation of Liability
             </h2>
             <p>
@@ -267,7 +267,7 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               16. Governing Law
             </h2>
             <p>
@@ -278,11 +278,11 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#10182A] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               17. Contact Information
             </h2>
             <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="font-bold text-[#10182A]">ViaItinerary</p>
+              <p className="font-bold text-[#1a1c1c]">ViaItinerary</p>
               <p>
                 Website:{" "}
                 <a

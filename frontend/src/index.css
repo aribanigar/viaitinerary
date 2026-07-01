@@ -54,6 +54,57 @@
   --color-inverse-on-surface: #f0f1f1;
 }
 
+/* ── Brand remap: neutralize the legacy blue/indigo accent scales onto a
+   monochrome graphite ramp so the whole app inherits the "Minimalist
+   Editorial" look without touching every utility class. ── */
+@theme {
+  --color-blue-50: #f3f3f4;
+  --color-blue-100: #e8e8e8;
+  --color-blue-200: #d4d4d4;
+  --color-blue-300: #b0b0b0;
+  --color-blue-400: #8a8a8a;
+  --color-blue-500: #5e5e5e;
+  --color-blue-600: #1b1b1b;
+  --color-blue-700: #111111;
+  --color-blue-800: #0a0a0a;
+  --color-blue-900: #050505;
+  --color-blue-950: #000000;
+
+  --color-indigo-50: #f3f3f4;
+  --color-indigo-100: #e8e8e8;
+  --color-indigo-200: #d4d4d4;
+  --color-indigo-300: #b0b0b0;
+  --color-indigo-400: #8a8a8a;
+  --color-indigo-500: #5e5e5e;
+  --color-indigo-600: #1b1b1b;
+  --color-indigo-700: #111111;
+  --color-indigo-800: #0a0a0a;
+  --color-indigo-900: #050505;
+  --color-indigo-950: #000000;
+
+  --color-sky-50: #f3f3f4;
+  --color-sky-100: #e8e8e8;
+  --color-sky-200: #d4d4d4;
+  --color-sky-300: #b0b0b0;
+  --color-sky-400: #8a8a8a;
+  --color-sky-500: #5e5e5e;
+  --color-sky-600: #1b1b1b;
+  --color-sky-700: #111111;
+  --color-sky-800: #0a0a0a;
+  --color-sky-900: #050505;
+
+  --color-cyan-50: #f3f3f4;
+  --color-cyan-100: #e8e8e8;
+  --color-cyan-200: #d4d4d4;
+  --color-cyan-300: #b0b0b0;
+  --color-cyan-400: #8a8a8a;
+  --color-cyan-500: #5e5e5e;
+  --color-cyan-600: #1b1b1b;
+  --color-cyan-700: #111111;
+  --color-cyan-800: #0a0a0a;
+  --color-cyan-900: #050505;
+}
+
 :root {
   font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
   line-height: 1.6;
@@ -132,13 +183,13 @@ input[type="number"] {
 }
 
 .custom-sidebar-scrollbar::-webkit-scrollbar-track {
-  background: #0b1120;
+  background: #1b1b1b;
 }
 
 .custom-sidebar-scrollbar::-webkit-scrollbar-thumb {
   background: #475569; /* slate-500, similar to the text color */
   border-radius: 10px;
-  border: 1px solid #0b1120; /* added small border for better definition */
+  border: 1px solid #1b1b1b; /* added small border for better definition */
 }
 
 .custom-sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -148,7 +199,7 @@ input[type="number"] {
 /* For Firefox */
 .custom-sidebar-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #475569 #0b1120;
+  scrollbar-color: #475569 #1b1b1b;
 }
 
 /* Typography Styles for Blog Content */
@@ -189,7 +240,7 @@ input[type="number"] {
 
 .prose blockquote {
   border-left-width: 4px;
-  border-color: #3b82f6;
+  border-color: #5e5e5e;
   padding-left: 1rem;
   font-style: italic;
   color: #4b5563;
@@ -213,8 +264,8 @@ input[type="number"] {
 }
 
 .phone-input-container .react-international-phone-input-container:focus-within {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+  border-color: #5e5e5e !important;
+  box-shadow: 0 0 0 2px rgba(94, 94, 94, 0.25) !important;
 }
 
 .phone-input-container .react-international-phone-input {

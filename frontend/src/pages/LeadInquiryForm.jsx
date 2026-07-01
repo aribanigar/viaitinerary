@@ -203,7 +203,7 @@ const LeadInquiryForm = () => {
         className="min-h-screen flex items-center justify-center"
         style={{ backgroundColor: "#f7f3ec" }}
       >
-        <Loader2 className="w-12 h-12 text-[#0f3f3f] animate-spin" />
+        <Loader2 className="w-12 h-12 text-[#2f3131] animate-spin" />
       </div>
     );
   }
@@ -248,7 +248,7 @@ const LeadInquiryForm = () => {
     >
       {!isIframe && <Navbar />}
 
-      <div className="flex-grow py-8 px-4" style={{ color: "#0f3f3f" }}>
+      <div className="flex-grow py-8 px-4" style={{ color: "#2f3131" }}>
         <div className="max-w-2xl mx-auto">
           {/* Hero Banner */}
           <div
@@ -270,7 +270,7 @@ const LeadInquiryForm = () => {
           <div className="mb-12 relative px-4">
             <div className="absolute top-[calc(100%-20px)] left-0 w-full h-1 bg-gray-200 -translate-y-1/2 rounded-full" />
             <div
-              className="absolute top-[calc(100%-20px)] left-0 h-1 bg-[#0f3f3f] -translate-y-1/2 transition-all duration-500 rounded-full"
+              className="absolute top-[calc(100%-20px)] left-0 h-1 bg-[#2f3131] -translate-y-1/2 transition-all duration-500 rounded-full"
               style={{
                 width: `${((currentStep - 1) / 2) * 100}%`,
               }}
@@ -281,7 +281,7 @@ const LeadInquiryForm = () => {
                 <div key={step} className="flex flex-col items-center">
                   <p
                     className={`text-sm mb-3 font-bold transition-colors ${
-                      currentStep === step ? "text-[#0f3f3f]" : "text-gray-500"
+                      currentStep === step ? "text-[#2f3131]" : "text-gray-500"
                     }`}
                   >
                     {step === 1 && "Contact"}
@@ -291,7 +291,7 @@ const LeadInquiryForm = () => {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all border-4 z-10 ${
                       currentStep >= step
-                        ? "bg-white border-[#0f3f3f] text-[#0f3f3f] shadow-md"
+                        ? "bg-white border-[#2f3131] text-[#2f3131] shadow-md"
                         : "bg-gray-100 border-gray-200 text-gray-400"
                     }`}
                   >
@@ -400,7 +400,7 @@ const LeadInquiryForm = () => {
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="bg-[#faa81e] text-white px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all flex items-center gap-2"
+                      className="bg-[#1b1b1b] text-white px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all flex items-center gap-2"
                     >
                       Next →
                     </button>
@@ -639,14 +639,14 @@ const LeadInquiryForm = () => {
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="bg-gray-100 text-[#0f3f3f] px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-all flex items-center gap-2"
+                      className="bg-gray-100 text-[#2f3131] px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-all flex items-center gap-2"
                     >
                       ← Back
                     </button>
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="bg-[#faa81e] text-white px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all flex items-center gap-2"
+                      className="bg-[#1b1b1b] text-white px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all flex items-center gap-2"
                     >
                       Next →
                     </button>
@@ -698,14 +698,14 @@ const LeadInquiryForm = () => {
                     <button
                       type="button"
                       onClick={handleBack}
-                      className="bg-gray-100 text-[#0f3f3f] px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-all flex items-center gap-2"
+                      className="bg-gray-100 text-[#2f3131] px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-all flex items-center gap-2"
                     >
                       ← Back
                     </button>
                     <button
                       type="submit"
                       disabled={loading}
-                      className="bg-[#faa81e] text-white px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+                      className="bg-[#1b1b1b] text-white px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
                     >
                       {loading ? (
                         <>

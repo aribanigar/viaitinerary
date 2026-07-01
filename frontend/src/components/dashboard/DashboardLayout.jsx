@@ -11,7 +11,7 @@ const DashboardLayout = ({ children, noPadding = false }) => {
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden">
+    <div className="flex h-screen bg-[#f9f9f9] overflow-hidden">
       {/* Sidebar - Mobile: Fixed Drawer, Desktop: Sidebar */}
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
 

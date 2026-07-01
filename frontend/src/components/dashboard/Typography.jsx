@@ -79,7 +79,7 @@ const Typography = () => {
     return (
       <div className="max-w-5xl">
         <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-center gap-2 mb-8 text-[#2563EB]">
+          <div className="flex items-center gap-2 mb-8 text-[#1b1b1b]">
             <Palette className="w-5 h-5" />
             <h2 className="text-lg font-bold text-slate-900">Brand Colors</h2>
           </div>
@@ -123,7 +123,7 @@ const Typography = () => {
           </div>
 
           <div className="mt-8 pt-8 border-t border-slate-100">
-            <div className="flex items-center gap-2 mb-8 text-[#2563EB]">
+            <div className="flex items-center gap-2 mb-8 text-[#1b1b1b]">
               <Type className="w-5 h-5" />
               <h2 className="text-lg font-bold text-slate-900">Font Family</h2>
             </div>
@@ -183,12 +183,12 @@ const Typography = () => {
                 <style>{`
                   .font-picker-container .font-picker-display {
                     width: 100% !important;
-                    background-color: #f8fafc !important;
+                    background-color: #f9f9f9 !important;
                     border: 1px solid #e2e8f0 !important;
                     border-radius: 0.75rem !important;
                     padding: 0.75rem 1rem !important;
                     font-weight: 700 !important;
-                    color: #0f172a !important;
+                    color: #1b1b1b !important;
                   }
                   .font-picker-container .font-picker-dropdown {
                     z-index: 50 !important;
@@ -205,7 +205,7 @@ const Typography = () => {
           </div>
 
           <div className="mt-8 pt-8 border-t border-slate-100">
-            <div className="flex items-center gap-2 mb-8 text-[#2563EB]">
+            <div className="flex items-center gap-2 mb-8 text-[#1b1b1b]">
               <MessageCircle className="w-5 h-5" />
               <h2 className="text-lg font-bold text-slate-900">
                 Communication
@@ -249,7 +249,7 @@ const Typography = () => {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#2563EB] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <>

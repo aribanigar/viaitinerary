@@ -291,7 +291,7 @@ const AgencySettings = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 transition-all duration-500 ease-in-out items-stretch">
             <div className="lg:col-span-1 flex flex-col gap-6">
               <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col">
-                <div className="flex items-center gap-2 mb-6 text-[#2563EB]">
+                <div className="flex items-center gap-2 mb-6 text-[#1b1b1b]">
                   <ImageIcon className="w-5 h-5" />
                   <h2 className="text-base font-bold text-slate-900">
                     Company Logo
@@ -299,7 +299,7 @@ const AgencySettings = () => {
                 </div>
 
                 <div
-                  className="border-2 border-dashed border-slate-100 rounded-xl flex flex-col items-center justify-center p-4 mb-4 relative overflow-hidden group hover:border-[#2563EB] transition-all cursor-pointer"
+                  className="border-2 border-dashed border-slate-100 rounded-xl flex flex-col items-center justify-center p-4 mb-4 relative overflow-hidden group hover:border-[#1b1b1b] transition-all cursor-pointer"
                   onClick={() => document.getElementById("logoInput").click()}
                 >
                   {formData.logo ? (
@@ -354,7 +354,7 @@ const AgencySettings = () => {
               </div>
 
               <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col">
-                <div className="flex items-center gap-2 mb-6 text-[#2563EB]">
+                <div className="flex items-center gap-2 mb-6 text-[#1b1b1b]">
                   <ImageIcon className="w-5 h-5" />
                   <h2 className="text-base font-bold text-slate-900">
                     Default Itinerary Cover
@@ -362,7 +362,7 @@ const AgencySettings = () => {
                 </div>
 
                 <div
-                  className="border-2 border-dashed border-slate-100 rounded-xl flex flex-col items-center justify-center p-4 mb-4 relative overflow-hidden group hover:border-[#2563EB] transition-all cursor-pointer"
+                  className="border-2 border-dashed border-slate-100 rounded-xl flex flex-col items-center justify-center p-4 mb-4 relative overflow-hidden group hover:border-[#1b1b1b] transition-all cursor-pointer"
                   onClick={() =>
                     document.getElementById("defaultTripImageInput").click()
                   }
@@ -425,7 +425,7 @@ const AgencySettings = () => {
             {/* Right Column - Agency Details */}
             <div className="lg:col-span-2 flex flex-col gap-6">
               <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col flex-1">
-                <div className="flex items-center gap-2 mb-8 text-[#2563EB]">
+                <div className="flex items-center gap-2 mb-8 text-[#1b1b1b]">
                   <Building className="w-5 h-5" />
                   <h2 className="text-base font-bold text-slate-900">
                     Agency Details
@@ -536,7 +536,7 @@ const AgencySettings = () => {
               {/* Bulk Data Management Section - Moved here for more width */}
               <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col flex-1">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
-                  <div className="flex items-center gap-2 text-[#2563EB]">
+                  <div className="flex items-center gap-2 text-[#1b1b1b]">
                     <FileSpreadsheet className="w-5 h-5" />
                     <h2 className="text-base font-bold text-slate-900">
                       Bulk Data Management
@@ -546,7 +546,7 @@ const AgencySettings = () => {
                     <button
                       onClick={handleDownloadTemplate}
                       disabled={downloading}
-                      className="text-[10px] font-black uppercase tracking-widest text-[#2563EB] bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg flex items-center gap-2 transition-all disabled:opacity-50"
+                      className="text-[10px] font-black uppercase tracking-widest text-[#1b1b1b] bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg flex items-center gap-2 transition-all disabled:opacity-50"
                     >
                       {downloading ? (
                         <Loader2 className="w-3 h-3 animate-spin" />
@@ -598,12 +598,12 @@ const AgencySettings = () => {
                           document.getElementById("bulkImportInput").click()
                         }
                         disabled={importing}
-                        className="w-full flex flex-col items-center justify-center gap-2 bg-slate-50/50 hover:bg-blue-50/50 border-2 border-dashed border-slate-100 hover:border-[#2563EB] text-slate-300 hover:text-[#2563EB] py-8 rounded-xl transition-all group"
+                        className="w-full flex flex-col items-center justify-center gap-2 bg-slate-50/50 hover:bg-blue-50/50 border-2 border-dashed border-slate-100 hover:border-[#1b1b1b] text-slate-300 hover:text-[#1b1b1b] py-8 rounded-xl transition-all group"
                       >
                         {importing ? (
                           <div className="flex flex-col items-center gap-2">
-                            <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
-                            <span className="text-xs font-bold text-[#2563EB]">
+                            <Loader2 className="w-8 h-8 animate-spin text-[#1b1b1b]" />
+                            <span className="text-xs font-bold text-[#1b1b1b]">
                               Processing File...
                             </span>
                           </div>
@@ -628,7 +628,7 @@ const AgencySettings = () => {
                     </h3>
                     <div className="space-y-5">
                       <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 shrink-0 flex items-center justify-center text-[11px] font-bold text-[#2563EB]">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 shrink-0 flex items-center justify-center text-[11px] font-bold text-[#1b1b1b]">
                           01
                         </div>
                         <div>
@@ -641,7 +641,7 @@ const AgencySettings = () => {
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 shrink-0 flex items-center justify-center text-[11px] font-bold text-[#2563EB]">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 shrink-0 flex items-center justify-center text-[11px] font-bold text-[#1b1b1b]">
                           02
                         </div>
                         <div>
@@ -655,7 +655,7 @@ const AgencySettings = () => {
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 shrink-0 flex items-center justify-center text-[11px] font-bold text-[#2563EB]">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 shrink-0 flex items-center justify-center text-[11px] font-bold text-[#1b1b1b]">
                           03
                         </div>
                         <div>
@@ -693,7 +693,7 @@ const AgencySettings = () => {
         <button
           onClick={handleSave}
           disabled={loading || saving}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#2563EB] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <>

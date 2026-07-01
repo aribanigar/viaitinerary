@@ -489,7 +489,7 @@ const AccommodationForm = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:w-auto bg-[#2563EB] text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+                className="w-full sm:w-auto bg-[#1b1b1b] text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
               >
                 {submitting ? "Saving..." : "Save Accommodation"}
               </button>

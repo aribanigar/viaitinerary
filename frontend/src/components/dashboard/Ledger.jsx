@@ -302,7 +302,7 @@ const Ledger = () => {
           </select>
           <button
             onClick={handleFilterApply}
-            className="w-full md:w-auto px-6 py-3 rounded-xl bg-[#2563EB] text-white text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all"
+            className="w-full md:w-auto px-6 py-3 rounded-xl bg-[#1b1b1b] text-white text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all"
           >
             Apply Filters
           </button>

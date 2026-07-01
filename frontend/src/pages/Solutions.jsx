@@ -10,14 +10,14 @@ const Solutions = () => {
       <main className="flex-grow pt-24 md:pt-28 flex flex-col items-center">
         <div className="w-full max-w-7xl px-2 sm:px-4 py-4 md:py-8 flex-grow flex flex-col">
           <div className="bg-white rounded-xl shadow-lg overflow-hidden flex-grow flex flex-col border border-gray-200">
-            <div className="bg-[#043b36] p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center text-white gap-3 sm:gap-4">
+            <div className="bg-[#1a1c1c] p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center text-white gap-3 sm:gap-4">
               <h1 className="text-lg sm:text-xl font-bold text-center sm:text-left">
                 ViaItinerary Itinerary Solutions
               </h1>
               <a
                 href={pdfFile}
                 download="itinerary-solutions.pdf"
-                className="w-full sm:w-auto bg-[#faa81e] hover:bg-[#e49619] text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex justify-center items-center gap-2 text-sm sm:text-base"
+                className="w-full sm:w-auto bg-[#1b1b1b] hover:bg-[#0a0a0a] text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex justify-center items-center gap-2 text-sm sm:text-base"
               >
                 Download PDF
               </a>

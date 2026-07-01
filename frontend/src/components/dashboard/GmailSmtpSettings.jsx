@@ -102,7 +102,7 @@ const GmailSmtpSettings = () => {
         <button
           onClick={handleSave}
           disabled={loading || saving}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#2563EB] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <>
@@ -125,7 +125,7 @@ const GmailSmtpSettings = () => {
       ) : (
         <div className="max-w-4xl">
           <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col">
-            <div className="flex items-center gap-2 mb-6 text-[#2563EB]">
+            <div className="flex items-center gap-2 mb-6 text-[#1b1b1b]">
               <KeyRound className="w-5 h-5" />
               <h2 className="text-base font-bold text-slate-900">
                 SMTP Configuration
@@ -253,7 +253,7 @@ const GmailSmtpSettings = () => {
           </div>
 
           <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col mt-6">
-            <div className="flex items-center gap-2 mb-4 text-[#2563EB]">
+            <div className="flex items-center gap-2 mb-4 text-[#1b1b1b]">
               <Send className="w-5 h-5" />
               <h2 className="text-base font-bold text-slate-900">
                 Send Test Email

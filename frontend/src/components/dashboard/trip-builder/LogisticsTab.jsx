@@ -60,7 +60,7 @@ const LogisticsTab = ({
           {groupedAccommodations.map((hotel) => (
             <div
               key={hotel.id}
-              className="bg-[#F8FAFC]/50 border border-slate-100 rounded-xl p-6 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 group"
+              className="bg-[#f9f9f9]/50 border border-slate-100 rounded-xl p-6 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 group"
             >
               <div className="flex justify-between items-start mb-5">
                 <div>
@@ -309,7 +309,7 @@ const LogisticsTab = ({
             return (
               <div
                 key={item.id}
-                className="group relative bg-[#F8FAFC]/50 border border-slate-100 rounded-xl p-5 transition-all hover:bg-white hover:shadow-lg hover:shadow-slate-200/40"
+                className="group relative bg-[#f9f9f9]/50 border border-slate-100 rounded-xl p-5 transition-all hover:bg-white hover:shadow-lg hover:shadow-slate-200/40"
               >
                 <div className="flex justify-between items-start">
                   <div>

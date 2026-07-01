@@ -1000,7 +1000,7 @@ const TripBuilder = ({ mode }) => {
                     <button
                       onClick={handleExport}
                       disabled={loading || saving || exporting}
-                      className="flex-1 sm:flex-none bg-[#10182A] text-white px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center"
+                      className="flex-1 sm:flex-none bg-[#1a1c1c] text-white px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center"
                     >
                       {exporting ? (
                         <>
@@ -1028,7 +1028,7 @@ const TripBuilder = ({ mode }) => {
                   </div>
                 </div>
 
-                <div className="bg-[#F8FAFC] p-1 rounded-lg mb-6 border border-slate-100 shadow-sm shadow-slate-200/20 overflow-x-auto">
+                <div className="bg-[#f9f9f9] p-1 rounded-lg mb-6 border border-slate-100 shadow-sm shadow-slate-200/20 overflow-x-auto">
                   <div className="flex min-w-max sm:min-w-0">
                     {["Trip Info", "Itinerary", "Logistics", "Pricing"].map(
                       (tab, i) => (
@@ -1186,7 +1186,7 @@ const TripBuilder = ({ mode }) => {
             </div>
 
             {/* Right Preview */}
-            <div className="flex-1 lg:h-full overflow-y-auto overflow-x-hidden bg-[#EEF2F6] custom-scrollbar min-h-screen lg:min-h-0">
+            <div className="flex-1 lg:h-full overflow-y-auto overflow-x-hidden bg-[#eeeeee] custom-scrollbar min-h-screen lg:min-h-0">
               {loading ? null : (
                 <div className="flex flex-col items-center py-8 px-2 sm:px-4 md:px-6">
                   <div className="w-[210mm] shrink-0 transition-all origin-top transform [zoom:0.35] sm:[zoom:0.4] md:[zoom:0.5] lg:[zoom:0.6] xl:[zoom:0.75] 2xl:[zoom:0.9] shadow-2xl">
@@ -1207,7 +1207,7 @@ const TripBuilder = ({ mode }) => {
               )}
 
               {/* Live Preview Badge */}
-              <div className="absolute bottom-10 right-10 flex items-center gap-2 bg-[#10182A]/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-50">
+              <div className="absolute bottom-10 right-10 flex items-center gap-2 bg-[#1a1c1c]/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-50">
                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                 <span className="text-[10px] font-black text-white uppercase tracking-widest">
                   Live Preview

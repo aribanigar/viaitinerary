@@ -730,7 +730,7 @@ const TripInfoTab = ({
           </label>
           <button
             onClick={() => navigate("/settings")}
-            className="bg-[#F0F5FF] text-[#2563EB] px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-blue-100/50 transition-all"
+            className="bg-[#f3f3f4] text-[#1b1b1b] px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-blue-100/50 transition-all"
           >
             <SettingsIcon className="w-3 h-3 text-blue-400" />
             Manage Branding
@@ -764,7 +764,7 @@ const TripInfoTab = ({
                 onClick={() =>
                   document.getElementById("coverImageInput").click()
                 }
-                className="bg-[#F0F5FF] text-[#2563EB] px-5 py-2.5 rounded-full font-black hover:bg-blue-100/80 transition-all"
+                className="bg-[#f3f3f4] text-[#1b1b1b] px-5 py-2.5 rounded-full font-black hover:bg-blue-100/80 transition-all"
               >
                 Choose File
               </button>
@@ -781,7 +781,7 @@ const TripInfoTab = ({
             </p>
           </div>
 
-          <div className="bg-[#F8FAFC] border border-slate-100 rounded-lg p-4">
+          <div className="bg-[#f9f9f9] border border-slate-100 rounded-lg p-4">
             <h4 className="text-xs font-black text-slate-800 mb-0.5">
               TravelAgency
             </h4>

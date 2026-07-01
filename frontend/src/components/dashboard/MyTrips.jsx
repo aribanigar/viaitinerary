@@ -335,7 +335,7 @@ const MyTrips = () => {
               toast.error("Upgrade required to create more trips");
             }
           }}
-          className={`${subscription?.can_create_trip ? "bg-[#2563EB] hover:bg-blue-700" : "bg-slate-400 cursor-not-allowed"} text-white px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-xl transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
+          className={`${subscription?.can_create_trip ? "bg-[#1b1b1b] hover:bg-blue-700" : "bg-slate-400 cursor-not-allowed"} text-white px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-xl transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
         >
           <Plus className="w-5 h-5" />
           CREATE NEW TRIP

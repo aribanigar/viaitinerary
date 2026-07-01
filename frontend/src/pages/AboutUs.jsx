@@ -11,13 +11,13 @@ const AboutUs = () => {
     <div className="min-h-screen bg-white text-gray-700 font-sans">
       <Navbar decoration={true} />
       <main className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-[#043b36] mb-8 uppercase">
+        <h1 className="text-4xl font-bold text-[#1a1c1c] mb-8 uppercase">
           About ViaItinerary
         </h1>
 
         <div className="space-y-8 leading-relaxed">
           <section>
-            <h2 className="text-2xl font-semibold text-[#043b36] mb-4">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
               Enterprise-Grade CRM & Itinerary Automation
             </h2>
             <p className="text-xl font-medium text-gray-900 mb-6">
@@ -31,7 +31,7 @@ const AboutUs = () => {
           </section>
 
           <section>
-            <h3 className="text-xl font-bold text-[#043b36] mb-4">
+            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
               The Problem We Solve
             </h3>
             <p>
@@ -50,7 +50,7 @@ const AboutUs = () => {
           </section>
 
           <section>
-            <h3 className="text-xl font-bold text-[#043b36] mb-4">
+            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
               Built for Travel Sales Teams
             </h3>
             <p>
@@ -68,15 +68,15 @@ const AboutUs = () => {
           </section>
 
           <section>
-            <h3 className="text-xl font-bold text-[#043b36] mb-4">
+            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
               Engineered for Scale
             </h3>
-            <p className="italic border-l-4 border-[#faa81e] pl-4 py-2 bg-gray-50">
+            <p className="italic border-l-4 border-[#1b1b1b] pl-4 py-2 bg-gray-50">
               "Travel businesses don’t fail due to lack of inquiries. They fail
               due to lack of structure."
             </p>
             <div className="mt-6">
-              <p className="font-semibold mb-2 text-[#043b36]">
+              <p className="font-semibold mb-2 text-[#1a1c1c]">
                 Core Capabilities:
               </p>
               <ul className="list-disc ml-6 space-y-1">
@@ -91,7 +91,7 @@ const AboutUs = () => {
           </section>
 
           <section>
-            <h3 className="text-xl font-bold text-[#043b36] mb-4">
+            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
               Itinerary Automation Engine
             </h3>
             <p>
@@ -107,7 +107,7 @@ const AboutUs = () => {
           </section>
 
           <section>
-            <h3 className="text-xl font-bold text-[#043b36] mb-4">
+            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
               Who is it for?
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -121,7 +121,7 @@ const AboutUs = () => {
               ].map((item) => (
                 <div
                   key={item}
-                  className="p-4 border border-gray-100 rounded-lg bg-gray-50 font-medium text-[#043b36]"
+                  className="p-4 border border-gray-100 rounded-lg bg-gray-50 font-medium text-[#1a1c1c]"
                 >
                   {item}
                 </div>
@@ -129,8 +129,8 @@ const AboutUs = () => {
             </div>
           </section>
 
-          <section className="bg-[#043b36] text-white p-8 rounded-2xl shadow-sm">
-            <h3 className="text-2xl font-bold mb-4 text-[#faa81e]">
+          <section className="bg-[#1a1c1c] text-white p-8 rounded-2xl shadow-sm">
+            <h3 className="text-2xl font-bold mb-4 text-[#1b1b1b]">
               Operate like a modern travel brand.
             </h3>
             <p className="mb-6 opacity-90">
@@ -139,18 +139,18 @@ const AboutUs = () => {
             </p>
             <a
               href="/signup"
-              className="inline-block bg-[#faa81e] text-[#043b36] px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-transform shadow-md"
+              className="inline-block bg-[#1b1b1b] text-[#1a1c1c] px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-transform shadow-md"
             >
               Start Your Free Trial
             </a>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-[#043b36] mb-4 border-t pt-8">
+            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4 border-t pt-8">
               Contact Information
             </h2>
             <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="font-bold text-[#043b36]">ViaItinerary</p>
+              <p className="font-bold text-[#1a1c1c]">ViaItinerary</p>
               <p>
                 Website:{" "}
                 <a

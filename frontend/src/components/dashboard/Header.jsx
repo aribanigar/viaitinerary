@@ -40,7 +40,7 @@ const Header = ({ onMenuClick }) => {
           />
         </div>
       </div>
-      <div className="flex items-center gap-2 md:gap-4 text-[#10182A]">
+      <div className="flex items-center gap-2 md:gap-4 text-[#1a1c1c]">
         <div className="flex items-center gap-3 mr-2 md:mr-4 hidden xs:flex">
           <div className="text-right">
             <p className="text-sm font-semibold truncate max-w-[100px] md:max-w-none">

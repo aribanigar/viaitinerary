@@ -63,7 +63,7 @@ const ResetPassword = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center px-4 py-8">
+      <div className="min-h-screen bg-[#f9f9f9] flex flex-col items-center justify-center px-4 py-8">
         <Link to="/" className="mb-4">
           <img
             src={logoLight}
@@ -76,14 +76,14 @@ const ResetPassword = () => {
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-3xl font-bold text-[#143B36]">Success!</h2>
+            <h2 className="text-3xl font-bold text-[#1a1c1c]">Success!</h2>
             <p className="mt-4 text-slate-500">
               Your password has been reset successfully. Redirecting you to
               login...
             </p>
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 mt-8 text-[#143B36] font-bold hover:underline underline-offset-4"
+              className="inline-flex items-center gap-2 mt-8 text-[#1a1c1c] font-bold hover:underline underline-offset-4"
             >
               Go to Login now
               <ArrowRight className="w-4 h-4" />
@@ -95,7 +95,7 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-[#f9f9f9] flex flex-col items-center justify-center px-4 py-8">
       <Link to="/" className="mb-4">
         <img
           src={logoLight}
@@ -106,7 +106,7 @@ const ResetPassword = () => {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 p-8">
           <div className="mb-6 text-center">
-            <h2 className="text-3xl font-bold text-[#143B36]">
+            <h2 className="text-3xl font-bold text-[#1a1c1c]">
               Reset Password
             </h2>
             <p className="text-slate-500 mt-2">
@@ -122,7 +122,7 @@ const ResetPassword = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-[#143B36] mb-1.5">
+              <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
                 Email Address
               </label>
               <div className="relative">
@@ -135,7 +135,7 @@ const ResetPassword = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="name@company.com"
-                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#143B36]/5 focus:border-[#143B36] transition-all text-[15px] cursor-not-allowed opacity-70"
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px] cursor-not-allowed opacity-70"
                   required
                   readOnly={!!emailFromState}
                 />
@@ -143,7 +143,7 @@ const ResetPassword = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#143B36] mb-1.5">
+              <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
                 6-Digit Reset Code
               </label>
               <div className="relative">
@@ -157,14 +157,14 @@ const ResetPassword = () => {
                   onChange={handleChange}
                   placeholder="123456"
                   maxLength="6"
-                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#143B36]/5 focus:border-[#143B36] transition-all text-[15px]"
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px]"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#143B36] mb-1.5">
+              <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
                 New Password
               </label>
               <div className="relative">
@@ -177,7 +177,7 @@ const ResetPassword = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#143B36]/5 focus:border-[#143B36] transition-all text-[15px]"
+                  className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px]"
                   required
                 />
                 <button
@@ -195,7 +195,7 @@ const ResetPassword = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#143B36] mb-1.5">
+              <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
                 Confirm New Password
               </label>
               <div className="relative">
@@ -208,7 +208,7 @@ const ResetPassword = () => {
                   value={formData.password_confirmation}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#143B36]/5 focus:border-[#143B36] transition-all text-[15px]"
+                  className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px]"
                   required
                 />
                 <button
@@ -233,7 +233,7 @@ const ResetPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#143B36] text-white py-3.5 rounded-xl text-[15px] font-bold hover:opacity-90 transition-all shadow-lg shadow-slate-200 disabled:opacity-70 flex items-center justify-center gap-2 group mt-4"
+              className="w-full bg-[#1a1c1c] text-white py-3.5 rounded-xl text-[15px] font-bold hover:opacity-90 transition-all shadow-lg shadow-slate-200 disabled:opacity-70 flex items-center justify-center gap-2 group mt-4"
             >
               {loading ? (
                 <>

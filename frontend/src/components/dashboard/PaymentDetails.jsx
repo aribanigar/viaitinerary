@@ -138,7 +138,7 @@ const PaymentDetails = () => {
     return (
       <div className="max-w-5xl">
         <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
-          <div className="flex items-center gap-2 mb-8 text-[#2563EB]">
+          <div className="flex items-center gap-2 mb-8 text-[#1b1b1b]">
             <CreditCard className="w-5 h-5" />
             <h2 className="text-lg font-bold text-slate-900">
               Bank Account Information
@@ -260,7 +260,7 @@ const PaymentDetails = () => {
             Boolean(ifscError) ||
             (formData.ifscCode.trim() && !ifscData)
           }
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#2563EB] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <>
