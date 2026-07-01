@@ -5,13 +5,16 @@
   "description": "ViaItinerary — Next.js port (one app: UI + API) on Supabase/Postgres via Prisma.",
   "scripts": {
     "dev": "next dev",
-    "build": "npm --prefix ../frontend install --include=dev && npm --prefix ../frontend run build && prisma generate && (prisma db push --skip-generate && node prisma/seed.mjs || echo 'DB setup skipped (check APP_DATABASE_URL/region)') && next build",
+    "build": "npm --prefix ../frontend install --include=dev && npm --prefix ../frontend run build && prisma generate && (prisma db push --skip-generate && prisma db seed || echo 'DB setup skipped (check APP_DATABASE_URL/region)') && next build",
     "build:next": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
+    "seed": "node prisma/seed.mjs"
+  },
+  "prisma": {
     "seed": "node prisma/seed.mjs"
   },
   "dependencies": {
