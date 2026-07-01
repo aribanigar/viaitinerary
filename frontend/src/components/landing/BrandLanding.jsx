@@ -4,23 +4,36 @@ import React from "react";
 // Editorial). Structure/classes/animations are verbatim from code.html; copy is
 // ViaItinerary's, and readability fixes were applied (dark overlays on hero/CTA
 // images, a reliable interstitial image, and the light-section heading recolored).
-const BRAND_HTML = `<main class="w-full">
+const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-outline-variant">
+<div class="max-w-[1200px] mx-auto px-[20px] h-16 flex items-center justify-between">
+<a href="/" class="text-lg font-bold tracking-tight text-primary">ViaItinerary</a>
+<nav class="hidden md:flex items-center gap-8">
+<a href="#features" class="text-sm font-light text-secondary hover:text-primary transition-colors">Features</a>
+<a href="#platform" class="text-sm font-light text-secondary hover:text-primary transition-colors">Platform</a>
+<a href="#insights" class="text-sm font-light text-secondary hover:text-primary transition-colors">Insights</a>
+<a href="/login" class="text-sm font-light text-secondary hover:text-primary transition-colors">Sign in</a>
+</nav>
+<a href="/signup" class="inline-block text-xs font-medium px-5 py-2.5 rounded-[100px] bg-primary text-on-primary hover:bg-primary/90 transition-all duration-300 tracking-wide">Get Started</a>
+</div>
+</header>
+<main class="w-full">
 <!-- Main Title Area -->
 <section class="relative w-full overflow-hidden flex flex-col items-center justify-center pt-[20px] pb-[60px] px-[20px]">
 <div class="relative w-full max-w-[1200px] mx-auto rounded-[20px] overflow-hidden flex items-center justify-center min-h-[600px] pt-32 pb-12"><div class="absolute top-10 left-0 right-0 flex justify-center z-20">
-<div class="text-xl font-bold tracking-tight text-white">ViaItinerary</div>
+<div class="text-xs font-semibold tracking-[0.2em] uppercase text-white/80">Travel CRM &amp; Itinerary Software</div>
 </div>
 <img alt="A serene mountain sunrise viewed from an airy, minimalist interior space." class="absolute inset-0 w-full h-full object-cover" src="https://plus.unsplash.com/premium_photo-1669541884772-49c30fdee42c?q=80&amp;w=1675&amp;auto=format&amp;fit=crop&amp;ixlib=rb-4.1.0&amp;ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
 <div class="absolute inset-0 bg-black/45"></div>
 <div class="relative z-10 w-full px-8 text-center py-12 mx-8 rounded-[20px] max-w-4xl">
-<h1 class="text-4xl md:text-6xl font-light leading-tight tracking-tight mb-8 text-white">Craft Beautiful Itineraries,<br>Effortlessly</h1>
-<a href="/signup" class="inline-block text-xs font-medium px-6 py-2.5 rounded-[100px] hover:bg-primary/90 transition-all duration-300 tracking-wide bg-white text-black">Get Started Today</a>
+<h1 class="text-4xl md:text-6xl font-light leading-tight tracking-tight mb-6 text-white">Run your entire travel<br>business on one platform</h1>
+<p class="text-base md:text-lg font-light text-white/85 mb-8 max-w-2xl mx-auto leading-relaxed">Travel CRM, itinerary builder and lead management for tour operators and travel agencies — capture enquiries, build quotes in minutes, and close more bookings.</p>
+<a href="/signup" class="inline-block text-xs font-medium px-6 py-2.5 rounded-[100px] hover:bg-primary/90 transition-all duration-300 tracking-wide bg-white text-black">Start Free Today</a>
 </div>
 </div>
 </section>
 <!-- Parallax Hero Image -->
 <!-- Intro Text -->
-<section class="pt-8 px-[20px] pb-[80px]">
+<section id="platform" class="pt-8 px-[20px] pb-[80px] scroll-mt-20">
 <div class="max-w-[1200px] mx-auto">
 <div class="flex flex-col lg:flex-row gap-8">
 <!-- Label Column (Matches width of icons/spacing below if needed, or just provides offset) -->
@@ -30,7 +43,7 @@ const BRAND_HTML = `<main class="w-full">
 <!-- Heading Column (Aligned with the content/image start below) -->
 <div class="lg:w-3/5">
 <p class="text-primary leading-tight font-light tracking-tight text-[36px] font-sans">
-                    ViaItinerary strips away the busywork — so you can build beautiful itineraries, quote clients in minutes, and close more trips.&nbsp;</p>
+                    One platform for your leads, itineraries, quotes and invoices — so your team can spend less time on admin and more time closing trips.&nbsp;</p>
 </div>
 </div>
 </div>
@@ -40,24 +53,24 @@ const BRAND_HTML = `<main class="w-full">
 <div class="logo-track opacity-60">
 <!-- Group 1 -->
 <div class="flex items-center gap-32 pr-32">
-<div class="text-xl text-primary font-bold tracking-tight">VOGUE</div>
-<div class="text-xl text-primary tracking-widest font-light">MONOCLE</div>
-<div class="text-xl text-primary italic font-medium">Kinfolk</div>
-<div class="text-xl text-primary uppercase font-semibold">Cereal</div>
-<div class="text-xl text-primary tracking-wide">MUSEUM</div>
+<div class="text-xl text-primary font-bold tracking-tight">WANDERLUST</div>
+<div class="text-xl text-primary tracking-widest font-light">NOMAD</div>
+<div class="text-xl text-primary italic font-medium">Voyage&amp;Co</div>
+<div class="text-xl text-primary uppercase font-semibold">Summit</div>
+<div class="text-xl text-primary tracking-wide">TRAILS</div>
 </div>
 <!-- Group 2 -->
 <div class="flex items-center gap-32 pr-32">
-<div class="text-xl text-primary font-bold tracking-tight">VOGUE</div>
-<div class="text-xl text-primary tracking-widest font-light">MONOCLE</div>
-<div class="text-xl text-primary italic font-medium">Kinfolk</div>
-<div class="text-xl text-primary uppercase font-semibold">Cereal</div>
-<div class="text-xl text-primary tracking-wide">MUSEUM</div>
+<div class="text-xl text-primary font-bold tracking-tight">WANDERLUST</div>
+<div class="text-xl text-primary tracking-widest font-light">NOMAD</div>
+<div class="text-xl text-primary italic font-medium">Voyage&amp;Co</div>
+<div class="text-xl text-primary uppercase font-semibold">Summit</div>
+<div class="text-xl text-primary tracking-wide">TRAILS</div>
 </div>
 </div>
 </section>
 <!-- Smart Insights Section (Replicated & Adjusted) -->
-<section class="pt-32 pb-12 px-[20px]">
+<section id="insights" class="pt-32 pb-12 px-[20px] scroll-mt-20">
 <div class="max-w-[1200px] mx-auto">
 <div class="max-w-full">
 <span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
@@ -86,10 +99,10 @@ const BRAND_HTML = `<main class="w-full">
 <div class="group cursor-pointer">
 <div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
 <div class="absolute top-0 left-0 h-[2px] bg-primary w-1/3 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-primary mb-2 transition-colors">Choose an objective</h3>
+<h3 class="text-lg font-medium text-primary mb-2 transition-colors">Capture every enquiry</h3>
 <div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
 <p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Select a focus area like theoretical foundations, empirical analysis, or historical context review.
+                        Pull website leads, WhatsApp and referrals into one inbox, then assign them to the right agent automatically.
                     </p>
 </div>
 </div>
@@ -98,10 +111,10 @@ const BRAND_HTML = `<main class="w-full">
 <div class="group cursor-pointer">
 <div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
 <div class="absolute top-0 left-0 h-[2px] bg-primary w-0 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Generate insights</h3>
+<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Build &amp; quote in minutes</h3>
 <div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
 <p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Our system correlates data across multiple texts to provide you with unique perspectives and hidden linkages.
+                        Turn a saved package into a day-by-day quote with live hotel, cab and inclusion pricing — ready to send.
                     </p>
 </div>
 </div>
@@ -110,10 +123,10 @@ const BRAND_HTML = `<main class="w-full">
 <div class="group cursor-pointer">
 <div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
 <div class="absolute top-0 left-0 h-[2px] bg-primary w-0 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Validate at scale</h3>
+<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Confirm &amp; invoice</h3>
 <div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
 <p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Test your hypotheses against extensive academic databases to confirm the validity of your conclusions.
+                        Lock the booking, send branded vouchers and invoices, and track payments — all from one place.
                     </p>
 </div>
 </div>
@@ -234,10 +247,10 @@ const BRAND_HTML = `<main class="w-full">
 <div class="group cursor-pointer">
 <div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
 <div class="absolute top-0 left-0 h-[2px] bg-primary w-1/3 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-primary mb-2 transition-colors">Choose an objective</h3>
+<h3 class="text-lg font-medium text-primary mb-2 transition-colors">Capture every enquiry</h3>
 <div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
 <p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Select a focus area like theoretical foundations, empirical analysis, or historical context review.
+                        Pull website leads, WhatsApp and referrals into one inbox, then assign them to the right agent automatically.
                     </p>
 </div>
 </div>
@@ -246,10 +259,10 @@ const BRAND_HTML = `<main class="w-full">
 <div class="group cursor-pointer">
 <div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
 <div class="absolute top-0 left-0 h-[2px] bg-primary w-0 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Generate insights</h3>
+<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Build &amp; quote in minutes</h3>
 <div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
 <p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Our system correlates data across multiple texts to provide you with unique perspectives and hidden linkages.
+                        Turn a saved package into a day-by-day quote with live hotel, cab and inclusion pricing — ready to send.
                     </p>
 </div>
 </div>
@@ -258,10 +271,10 @@ const BRAND_HTML = `<main class="w-full">
 <div class="group cursor-pointer">
 <div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
 <div class="absolute top-0 left-0 h-[2px] bg-primary w-0 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Validate at scale</h3>
+<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Confirm &amp; invoice</h3>
 <div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
 <p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Test your hypotheses against extensive academic databases to confirm the validity of your conclusions.
+                        Lock the booking, send branded vouchers and invoices, and track payments — all from one place.
                     </p>
 </div>
 </div>
@@ -330,7 +343,7 @@ const BRAND_HTML = `<main class="w-full">
 </div>
 </section>
 <!-- Features Grid Section -->
-<section class="pb-12 pt-8 px-[20px] pb-[80px]">
+<section id="features" class="pb-12 pt-8 px-[20px] pb-[80px] scroll-mt-20">
 <div class="max-w-[1200px] mx-auto">
 <div class="mb-16">
 <span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
