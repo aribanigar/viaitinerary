@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import Navbar from "./components/landing/Navbar";
 import Hero from "./components/landing/Hero";
+import BrandLanding from "./components/landing/BrandLanding";
 import Modal from "./components/common/Modal";
 
 // Lazy load almost everything else to optimize initial bundle
@@ -209,22 +210,7 @@ const LandingPage = () => {
         <meta name="publisher" content="ViaItinerary" />
         <link rel="publisher" href={window.location.href} />
       </Helmet>
-      <Navbar />
-      <main>
-        <Hero />
-        {renderBelowFold && (
-          <Suspense fallback={<div className="h-24" />}>
-            <TrustedBy />
-            <Features />
-            <Showcase />
-          </Suspense>
-        )}
-      </main>
-      {renderBelowFold && (
-        <Suspense fallback={<div className="h-24" />}>
-          <Footer />
-        </Suspense>
-      )}
+      <BrandLanding />
 
       {/* Offer Popup Modal */}
       {showOffer && offerData && (

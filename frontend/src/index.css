@@ -1,24 +1,47 @@
 @import "tailwindcss";
 
+/* ── Brand: "Minimalist Editorial" design tokens ──────────────────────────
+   Monochrome, airy, editorial. Noto Serif headlines + Manrope body.
+   Exposed as Tailwind theme so utilities like bg-surface / text-on-surface /
+   font-serif / rounded-media are available app-wide. */
+@theme {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Serif", ui-serif, Georgia, serif;
+
+  --color-brand: #000000;
+  --color-brand-fg: #ffffff;
+  --color-surface: #f9f9f9;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f3f4;
+  --color-surface-container: #eeeeee;
+  --color-surface-container-high: #e8e8e8;
+  --color-on-surface: #1a1c1c;
+  --color-on-surface-variant: #4c4546;
+  --color-secondary: #5e5e5e;
+  --color-outline: #7e7576;
+  --color-outline-variant: #cfc4c5;
+  --color-inverse-surface: #2f3131;
+  --color-inverse-on-surface: #f0f1f1;
+
+  --radius-media: 20px;
+}
+
 :root {
-  font-family:
-    "Plus Jakarta Sans",
-    system-ui,
-    -apple-system,
-    sans-serif;
-  line-height: 1.5;
-  background-color: #ffffff;
+  font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  background-color: #f9f9f9;
 }
 
 body {
   margin: 0;
   overflow-x: hidden;
-  color: #111827;
+  color: #1a1c1c;
+  background-color: #f9f9f9;
 }
 
 ::selection {
-  background-color: #2563eb;
-  color: white;
+  background-color: #000000;
+  color: #ffffff;
 }
 
 html {
