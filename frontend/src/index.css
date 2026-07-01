@@ -1,29 +1,57 @@
 @import "tailwindcss";
 
-/* ── Brand: "Minimalist Editorial" design tokens ──────────────────────────
-   Monochrome, airy, editorial. Noto Serif headlines + Manrope body.
-   Exposed as Tailwind theme so utilities like bg-surface / text-on-surface /
-   font-serif / rounded-media are available app-wide. */
+/* ── Brand: "Minimalist Editorial" — exact tokens from the provided design ── */
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Noto Serif", ui-serif, Georgia, serif;
 
-  --color-brand: #000000;
-  --color-brand-fg: #ffffff;
-  --color-surface: #f9f9f9;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f3f3f4;
-  --color-surface-container: #eeeeee;
-  --color-surface-container-high: #e8e8e8;
+  --color-inverse-primary: #c6c6c6;
+  --color-surface-bright: #f9f9f9;
+  --color-on-secondary: #ffffff;
+  --color-on-primary-container: #848484;
+  --color-error: #ba1a1a;
+  --color-on-primary-fixed: #1b1b1b;
+  --color-tertiary: #000000;
   --color-on-surface: #1a1c1c;
-  --color-on-surface-variant: #4c4546;
-  --color-secondary: #5e5e5e;
-  --color-outline: #7e7576;
+  --color-on-secondary-fixed-variant: #464747;
+  --color-on-error-container: #93000a;
+  --color-on-secondary-container: #646464;
+  --color-surface-container: #eeeeee;
+  --color-primary-fixed: #e2e2e2;
+  --color-on-tertiary-container: #838484;
+  --color-surface: #f9f9f9;
+  --color-secondary-fixed-dim: #c7c6c6;
+  --color-secondary-fixed: #e3e2e2;
+  --color-error-container: #ffdad6;
+  --color-on-tertiary: #ffffff;
   --color-outline-variant: #cfc4c5;
+  --color-on-surface-variant: #4c4546;
+  --color-secondary-container: #e3e2e2;
+  --color-surface-container-high: #e8e8e8;
+  --color-surface-dim: #dadada;
+  --color-surface-variant: #e2e2e2;
+  --color-on-tertiary-fixed: #1a1c1c;
+  --color-surface-tint: #5e5e5e;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-tertiary-fixed-variant: #454747;
+  --color-on-error: #ffffff;
+  --color-surface-container-low: #f3f3f4;
+  --color-secondary: #5e5e5e;
+  --color-tertiary-container: #1a1c1c;
+  --color-primary: #000000;
+  --color-on-primary: #ffffff;
+  --color-on-background: #1a1c1c;
+  --color-outline: #7e7576;
+  --color-surface-container-highest: #e2e2e2;
+  --color-background: #f9f9f9;
   --color-inverse-surface: #2f3131;
+  --color-primary-fixed-dim: #c6c6c6;
+  --color-on-primary-fixed-variant: #474747;
+  --color-on-secondary-fixed: #1b1c1c;
+  --color-tertiary-fixed: #e2e2e2;
+  --color-tertiary-fixed-dim: #c6c6c7;
+  --color-primary-container: #1b1b1b;
   --color-inverse-on-surface: #f0f1f1;
-
-  --radius-media: 20px;
 }
 
 :root {
@@ -39,9 +67,42 @@ body {
   background-color: #f9f9f9;
 }
 
-::selection {
-  background-color: #000000;
-  color: #ffffff;
+/* ── Exact animations from the provided design's <style> block ── */
+@keyframes scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.logo-track {
+  display: flex;
+  width: max-content;
+  animation: scroll 30s linear infinite;
+}
+@keyframes panImage {
+  0% { transform: translateX(-10%); }
+  50% { transform: translateX(0%); }
+  100% { transform: translateX(-10%); }
+}
+.pan-image { animation: panImage 15s ease-in-out infinite; }
+@keyframes liquidFlow {
+  0% { border-radius: 50%; transform: rotate(0deg) scale(1); }
+  50% { border-radius: 50%; transform: rotate(180deg) scale(1.05); }
+  100% { border-radius: 50%; transform: rotate(360deg) scale(1); }
+}
+.liquid-orb {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  background: linear-gradient(45deg, #2196f3, #e91e63, #ffeb3b, #4caf50, #9c27b0);
+  background-size: 300% 300%;
+  animation: liquidFlow 6s ease-in-out infinite, gradientShift 8s ease infinite;
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  overflow: hidden;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 html {
