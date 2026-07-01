@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+/* Minimalist Editorial rebrand — applied across landing + internal app. */
+
 /* ── Brand: "Minimalist Editorial" — exact tokens from the provided design ── */
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
