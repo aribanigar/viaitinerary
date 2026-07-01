@@ -172,7 +172,7 @@ const PublicInquiries = () => {
             <input
               type="text"
               placeholder="Search by client, email, phone or destination..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -202,7 +202,7 @@ const PublicInquiries = () => {
                   onChange={(e) =>
                     setFilters({ ...filters, status: e.target.value })
                   }
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135]"
                 >
                   <option value="all">All Status</option>
                   <option value="new">New</option>
@@ -221,7 +221,7 @@ const PublicInquiries = () => {
                   onChange={(e) =>
                     setFilters({ ...filters, assigned: e.target.value })
                   }
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135]"
                 >
                   <option value="all">All Leads</option>
                   <option value="unassigned">Unassigned</option>
@@ -330,7 +330,7 @@ const PublicInquiries = () => {
                   ) : (
                     <button
                       onClick={() => handleAssignClick(inquiry)}
-                      className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/10"
+                      className="inline-flex items-center gap-2 bg-[#c7f135] text-[#10182a] px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#b0dc00] transition-all shadow-md shadow-blue-500/10"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
                       Assign Lead
@@ -383,7 +383,7 @@ const PublicInquiries = () => {
                   <select
                     value={selectedAdminId}
                     onChange={(e) => setSelectedAdminId(e.target.value)}
-                    className="w-full pl-4 pr-10 py-4 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+                    className="w-full pl-4 pr-10 py-4 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
                   >
                     <option value="">-- Select an admin --</option>
                     {admins.map((admin) => (
@@ -405,7 +405,7 @@ const PublicInquiries = () => {
                 <button
                   onClick={handleAssignSubmit}
                   disabled={assigning || !selectedAdminId}
-                  className="flex-1 px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all font-bold text-sm shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-4 bg-[#c7f135] text-[#10182a] rounded-xl hover:bg-[#b0dc00] disabled:opacity-50 transition-all font-bold text-sm shadow-lg shadow-[#c7f135]/40 flex items-center justify-center gap-2"
                 >
                   {assigning ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

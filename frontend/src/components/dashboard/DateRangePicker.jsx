@@ -275,7 +275,7 @@ const DateRangePicker = ({ onApply, className }) => {
                   className={`py-2 cursor-pointer text-sm rounded px-2 ${
                     selectedPreset === p.key
                       ? p.key === "Custom"
-                        ? "font-medium bg-blue-600 text-white"
+                        ? "font-medium bg-[#c7f135] text-[#10182a]"
                         : "font-medium text-blue-600"
                       : "text-neutral-700"
                   }`}
@@ -327,7 +327,7 @@ const DateRangePicker = ({ onApply, className }) => {
                             !day
                               ? "text-neutral-300 cursor-default"
                               : isDateSelected(day, calendarMonth)
-                                ? "bg-blue-600 text-white"
+                                ? "bg-[#c7f135] text-[#10182a]"
                                 : isDateInRange(day, calendarMonth)
                                   ? "bg-blue-100 text-neutral-900"
                                   : "text-neutral-600 hover:bg-neutral-100 cursor-pointer"
@@ -377,7 +377,7 @@ const DateRangePicker = ({ onApply, className }) => {
                             !day
                               ? "text-neutral-300 cursor-default"
                               : isDateSelected(day, nextMonthDate)
-                                ? "bg-blue-600 text-white"
+                                ? "bg-[#c7f135] text-[#10182a]"
                                 : isDateInRange(day, nextMonthDate)
                                   ? "bg-blue-100 text-neutral-900"
                                   : "text-neutral-600 hover:bg-neutral-100 cursor-pointer"
@@ -406,7 +406,7 @@ const DateRangePicker = ({ onApply, className }) => {
                     <button
                       type="button"
                       onClick={handleSubmit}
-                      className="px-3 py-1 rounded bg-blue-600 text-white text-sm"
+                      className="px-3 py-1 rounded bg-[#c7f135] text-[#10182a] text-sm"
                     >
                       Submit
                     </button>

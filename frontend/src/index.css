@@ -107,6 +107,16 @@
   --color-cyan-900: #050505;
 }
 
+/* ── Lime accent (from the AI-assistant reference): vivid chartreuse used
+   for primary actions, active nav, focus rings and chart fills. Always
+   pairs with near-black text/icons for contrast. ── */
+@theme {
+  --color-accent: #c7f135;
+  --color-accent-hover: #b0dc00;
+  --color-accent-soft: #eef9c2;
+  --color-on-accent: #10182a;
+}
+
 :root {
   font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
   line-height: 1.6;

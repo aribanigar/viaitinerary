@@ -84,7 +84,7 @@ export const HotelModal = ({
               City
             </label>
             <select
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
               value={hotelForm.city}
               onChange={(e) =>
                 setHotelForm({ ...hotelForm, city: e.target.value, name: "" })
@@ -104,7 +104,7 @@ export const HotelModal = ({
               Hotel Name
             </label>
             <select
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
               value={hotelForm.hotelId || ""}
               onChange={(e) => {
                 const selectedHotel = masterHotels.find(
@@ -168,7 +168,7 @@ export const HotelModal = ({
               Hotel Category
             </label>
             <select
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
               value={hotelForm.category}
               onChange={(e) =>
                 setHotelForm({ ...hotelForm, category: e.target.value })
@@ -186,7 +186,7 @@ export const HotelModal = ({
               Room Type
             </label>
             <select
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
               value={resolvedRoomType}
               onChange={(e) => {
                 const newRoomType = e.target.value;
@@ -392,7 +392,7 @@ export const HotelModal = ({
             Meal Plan
           </label>
           <select
-            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
             value={hotelForm.mealPlan}
             onChange={(e) =>
               setHotelForm({ ...hotelForm, mealPlan: e.target.value })
@@ -481,7 +481,7 @@ export const TransportModal = ({
               Trip Type
             </label>
             <select
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
               value={transportForm.tripType}
               onChange={(e) =>
                 setTransportForm({
@@ -503,7 +503,7 @@ export const TransportModal = ({
             <input
               type="text"
               placeholder="e.g. Airport -> Hotel"
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
               value={transportForm.route}
               onChange={(e) =>
                 setTransportForm({
@@ -522,7 +522,7 @@ export const TransportModal = ({
           <input
             type="text"
             placeholder="e.g. Manali"
-            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
             value={transportForm.destination || ""}
             onChange={(e) =>
               setTransportForm({
@@ -558,7 +558,7 @@ export const TransportModal = ({
               Vehicle
             </label>
             <select
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-4 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
               value={transportForm.vehicleId || ""}
               onChange={(e) => {
                 const selectedVehicle = availableVehicles.find(
@@ -628,7 +628,7 @@ export const TransportModal = ({
           </label>
           <textarea
             placeholder="e.g. Private Transfer, Meet & Greet"
-            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 min-h-20 resize-none"
+            className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 min-h-20 resize-none"
             value={transportForm.remarks}
             onChange={(e) =>
               setTransportForm({

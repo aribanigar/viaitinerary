@@ -138,7 +138,7 @@ const Profile = () => {
             {/* Profile Picture */}
             <div className="flex items-center gap-6">
               <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-2xl ring-4 ring-white shadow-lg">
+                <div className="w-24 h-24 rounded-full bg-[#c7f135] flex items-center justify-center text-white font-bold text-2xl ring-4 ring-white shadow-lg">
                   {preview ? (
                     <img
                       src={preview}
@@ -152,7 +152,7 @@ const Profile = () => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
+                  className="absolute -bottom-2 -right-2 w-8 h-8 bg-[#c7f135] hover:bg-[#c7f135] text-[#10182a] rounded-full flex items-center justify-center transition-colors"
                 >
                   <svg
                     className="w-4 h-4"
@@ -201,7 +201,7 @@ const Profile = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#c7f135] focus:border-[#c7f135]"
                 placeholder="Enter your full name"
               />
             </div>
@@ -224,7 +224,7 @@ const Profile = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#c7f135] focus:border-[#c7f135]"
                   placeholder="Enter new password (leave blank to keep current)"
                 />
               </div>
@@ -241,7 +241,7 @@ const Profile = () => {
                   name="password_confirmation"
                   value={formData.password_confirmation}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#c7f135] focus:border-[#c7f135]"
                   placeholder="Confirm new password"
                 />
               </div>
@@ -256,7 +256,7 @@ const Profile = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-[#c7f135] hover:bg-[#c7f135] text-[#10182a] rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Updating..." : "Update Profile"}
               </button>

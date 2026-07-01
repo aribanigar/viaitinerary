@@ -93,7 +93,7 @@ const Accommodation = () => {
       >
         <button
           onClick={() => navigate("/accommodation/add")}
-          className="flex items-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all text-sm w-fit"
+          className="flex items-center gap-2 bg-[#c7f135] text-[#10182a] px-6 py-3 rounded-xl font-bold shadow-lg shadow-[#c7f135]/40 hover:bg-[#b0dc00] transition-all text-sm w-fit"
         >
           <Plus className="w-4 h-4" />
           Add New Accommodation
@@ -107,7 +107,7 @@ const Accommodation = () => {
             <input
               type="text"
               placeholder="Search by name or city..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

@@ -281,7 +281,7 @@ const ConfirmationEmailTemplate = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#1b1b1b] text-white rounded-xl font-bold transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed group min-w-[180px]"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#c7f135] text-[#10182a] rounded-xl font-bold transition-all hover:bg-[#b0dc00] hover:shadow-lg hover:shadow-[#c7f135]/40 disabled:opacity-50 disabled:cursor-not-allowed group min-w-[180px]"
               >
                 {saving ? (
                   <>

@@ -102,7 +102,7 @@ const GmailSmtpSettings = () => {
         <button
           onClick={handleSave}
           disabled={loading || saving}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#c7f135] text-[#10182a] px-6 py-3 rounded-xl font-bold shadow-lg shadow-[#c7f135]/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <>
@@ -144,7 +144,7 @@ const GmailSmtpSettings = () => {
                   onChange={handleInputChange}
                   placeholder="name@provider.com"
                   autoComplete="off"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                 />
               </div>
 
@@ -159,7 +159,7 @@ const GmailSmtpSettings = () => {
                   onChange={handleInputChange}
                   placeholder="smtp.provider.com"
                   autoComplete="off"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                 />
               </div>
 
@@ -176,7 +176,7 @@ const GmailSmtpSettings = () => {
                   min="1"
                   max="65535"
                   autoComplete="off"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                 />
               </div>
 
@@ -188,7 +188,7 @@ const GmailSmtpSettings = () => {
                   name="smtpEncryption"
                   value={formData.smtpEncryption || "tls"}
                   onChange={handleInputChange}
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all"
                 >
                   <option value="tls">TLS</option>
                   <option value="ssl">SSL</option>
@@ -214,7 +214,7 @@ const GmailSmtpSettings = () => {
                     }}
                     placeholder="16-character app password"
                     autoComplete="new-password"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 pr-10 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 pr-10 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                   />
                   <button
                     type="button"
@@ -271,7 +271,7 @@ const GmailSmtpSettings = () => {
                   onChange={(e) => setTestEmail(e.target.value)}
                   placeholder="test@example.com"
                   autoComplete="off"
-                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                 />
               </div>
 

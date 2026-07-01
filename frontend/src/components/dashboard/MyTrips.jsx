@@ -335,7 +335,7 @@ const MyTrips = () => {
               toast.error("Upgrade required to create more trips");
             }
           }}
-          className={`${subscription?.can_create_trip ? "bg-[#1b1b1b] hover:bg-blue-700" : "bg-slate-400 cursor-not-allowed"} text-white px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-xl transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
+          className={`${subscription?.can_create_trip ? "bg-[#c7f135] text-[#10182a] hover:bg-[#b0dc00]" : "bg-slate-400 text-white cursor-not-allowed"} px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-xl transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
         >
           <Plus className="w-5 h-5" />
           CREATE NEW TRIP
@@ -349,7 +349,7 @@ const MyTrips = () => {
             <input
               type="text"
               placeholder="Search by title, client or duration..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -375,7 +375,7 @@ const MyTrips = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135]"
                 >
                   <option value="">All Statuses</option>
                   <option value="pending">Pending</option>
@@ -391,7 +391,7 @@ const MyTrips = () => {
                 <select
                   value={createdByFilter}
                   onChange={(e) => setCreatedByFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135]"
                 >
                   <option value="">All Creators</option>
                   {[
@@ -480,7 +480,7 @@ const MyTrips = () => {
                             e.target.value,
                           )
                         }
-                        className="px-2 py-1 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md uppercase tracking-wider border-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
+                        className="px-2 py-1 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md uppercase tracking-wider border-none focus:ring-2 focus:ring-[#c7f135]/20 cursor-pointer"
                       >
                         <option value="pending">Pending</option>
                         <option value="rejected">Rejected</option>

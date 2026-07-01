@@ -104,7 +104,7 @@ const TipTapEditor = ({ content, onChange }) => {
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={`px-3 py-1.5 rounded text-sm font-medium transition ${
             editor.isActive("bold")
-              ? "bg-blue-500 text-white"
+              ? "bg-[#c7f135] text-white"
               : "bg-white text-gray-700 hover:bg-gray-100 border"
           }`}
         >
@@ -116,7 +116,7 @@ const TipTapEditor = ({ content, onChange }) => {
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={`px-3 py-1.5 rounded text-sm font-medium transition ${
             editor.isActive("italic")
-              ? "bg-blue-500 text-white"
+              ? "bg-[#c7f135] text-white"
               : "bg-white text-gray-700 hover:bg-gray-100 border"
           }`}
         >
@@ -130,7 +130,7 @@ const TipTapEditor = ({ content, onChange }) => {
           }
           className={`px-3 py-1.5 rounded text-sm font-medium transition ${
             editor.isActive("heading", { level: 2 })
-              ? "bg-blue-500 text-white"
+              ? "bg-[#c7f135] text-white"
               : "bg-white text-gray-700 hover:bg-gray-100 border"
           }`}
         >
@@ -144,7 +144,7 @@ const TipTapEditor = ({ content, onChange }) => {
           }
           className={`px-3 py-1.5 rounded text-sm font-medium transition ${
             editor.isActive("heading", { level: 3 })
-              ? "bg-blue-500 text-white"
+              ? "bg-[#c7f135] text-white"
               : "bg-white text-gray-700 hover:bg-gray-100 border"
           }`}
         >
@@ -156,7 +156,7 @@ const TipTapEditor = ({ content, onChange }) => {
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={`px-3 py-1.5 rounded text-sm font-medium transition ${
             editor.isActive("bulletList")
-              ? "bg-blue-500 text-white"
+              ? "bg-[#c7f135] text-white"
               : "bg-white text-gray-700 hover:bg-gray-100 border"
           }`}
         >
@@ -168,7 +168,7 @@ const TipTapEditor = ({ content, onChange }) => {
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           className={`px-3 py-1.5 rounded text-sm font-medium transition ${
             editor.isActive("orderedList")
-              ? "bg-blue-500 text-white"
+              ? "bg-[#c7f135] text-white"
               : "bg-white text-gray-700 hover:bg-gray-100 border"
           }`}
         >
@@ -180,7 +180,7 @@ const TipTapEditor = ({ content, onChange }) => {
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           className={`px-3 py-1.5 rounded text-sm font-medium transition ${
             editor.isActive("blockquote")
-              ? "bg-blue-500 text-white"
+              ? "bg-[#c7f135] text-white"
               : "bg-white text-gray-700 hover:bg-gray-100 border"
           }`}
         >
@@ -217,7 +217,7 @@ const TipTapEditor = ({ content, onChange }) => {
           }}
           className={`px-3 py-1.5 rounded text-sm font-medium transition ${
             editor.isActive("link")
-              ? "bg-blue-500 text-white"
+              ? "bg-[#c7f135] text-white"
               : "bg-white text-gray-700 hover:bg-gray-100 border"
           }`}
         >

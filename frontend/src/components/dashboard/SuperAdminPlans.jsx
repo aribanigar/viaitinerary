@@ -414,7 +414,7 @@ const SuperAdminPlans = () => {
               });
               setIsModalOpen(true);
             }}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm shadow-blue-200"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#c7f135] text-[#10182a] rounded-lg hover:bg-[#b0dc00] transition-colors font-medium shadow-sm shadow-[#c7f135]/40"
           >
             <Plus className="w-4 h-4" />
             <span>Add New Plan</span>
@@ -447,10 +447,10 @@ const SuperAdminPlans = () => {
                   plan.is_active
                     ? "border-slate-100 hover:border-blue-200"
                     : "border-slate-100 opacity-75"
-                } ${plan.recommended ? "ring-2 ring-blue-500 ring-offset-2" : ""}`}
+                } ${plan.recommended ? "ring-2 ring-[#c7f135] ring-offset-2" : ""}`}
               >
                 {plan.badge_label && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-blue-200">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#c7f135] text-[#10182a] text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-[#c7f135]/40">
                     {plan.badge_label}
                   </div>
                 )}
@@ -552,7 +552,7 @@ const SuperAdminPlans = () => {
                   className={`mt-auto w-full py-2.5 rounded-xl font-bold transition-all border-2 ${
                     plan.is_active
                       ? "border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
-                      : "border-blue-600 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                      : "border-blue-600 bg-[#c7f135] text-[#10182a] hover:bg-[#b0dc00] shadow-sm"
                   }`}
                 >
                   {plan.is_active ? "Deactivate Plan" : "Activate Plan"}
@@ -580,7 +580,7 @@ const SuperAdminPlans = () => {
                 type="text"
                 required
                 placeholder="e.g., Premium Monthly"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -604,7 +604,7 @@ const SuperAdminPlans = () => {
                   <input
                     type="text"
                     placeholder="Search and select country"
-                    className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                    className="w-full px-4 py-3 pr-11 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                     value={countrySearch}
                     onFocus={() => setIsCountryDropdownOpen(true)}
                     onChange={(e) => {
@@ -718,7 +718,7 @@ const SuperAdminPlans = () => {
                     required
                     min="0"
                     placeholder="3000"
-                    className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                    className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                     value={formData.original_price}
                     onChange={(e) =>
                       setFormData({
@@ -741,7 +741,7 @@ const SuperAdminPlans = () => {
                     type="number"
                     min="0"
                     placeholder="2500"
-                    className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                    className="w-full pl-8 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                     value={formData.price}
                     onChange={(e) =>
                       setFormData({ ...formData, price: e.target.value })
@@ -761,7 +761,7 @@ const SuperAdminPlans = () => {
                   required
                   min="1"
                   placeholder="1"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                   value={formData.duration_months}
                   onChange={(e) =>
                     setFormData({
@@ -778,7 +778,7 @@ const SuperAdminPlans = () => {
                 <input
                   type="text"
                   placeholder="Optional"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                   value={formData.badge_label}
                   onChange={(e) =>
                     setFormData({ ...formData, badge_label: e.target.value })
@@ -809,7 +809,7 @@ const SuperAdminPlans = () => {
                       type="number"
                       min="0"
                       placeholder="Unlimited"
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                       value={formData[key]}
                       onChange={(e) =>
                         setFormData({ ...formData, [key]: e.target.value })
@@ -828,7 +828,7 @@ const SuperAdminPlans = () => {
                 type="number"
                 min="0"
                 placeholder="e.g., 5"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                 value={formData.team_member_limit}
                 onChange={(e) =>
                   setFormData({
@@ -852,7 +852,7 @@ const SuperAdminPlans = () => {
                     <input
                       type="text"
                       placeholder="e.g., Priority Support"
-                      className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-medium text-slate-900"
+                      className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-medium text-slate-900"
                       value={feature}
                       onChange={(e) =>
                         handleFeatureChange(index, e.target.value)
@@ -870,7 +870,7 @@ const SuperAdminPlans = () => {
                 <button
                   type="button"
                   onClick={handleAddFeature}
-                  className="w-full py-2 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-xs font-bold text-slate-400 hover:border-blue-500 hover:text-blue-500 transition-all"
+                  className="w-full py-2 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-xs font-bold text-slate-400 hover:border-[#c7f135] hover:text-blue-500 transition-all"
                 >
                   <Plus className="w-4 h-4 inline-block mr-1" /> Add Feature
                 </button>
@@ -882,7 +882,7 @@ const SuperAdminPlans = () => {
                 <input
                   type="checkbox"
                   id="recommended"
-                  className="w-5 h-5 text-blue-600 rounded-lg border-slate-200 focus:ring-blue-500 transition-all cursor-pointer"
+                  className="w-5 h-5 text-blue-600 rounded-lg border-slate-200 focus:ring-[#c7f135] transition-all cursor-pointer"
                   checked={formData.recommended}
                   onChange={(e) =>
                     setFormData({
@@ -903,7 +903,7 @@ const SuperAdminPlans = () => {
                 <input
                   type="checkbox"
                   id="is_active"
-                  className="w-5 h-5 text-blue-600 rounded-lg border-slate-200 focus:ring-blue-500 transition-all cursor-pointer"
+                  className="w-5 h-5 text-blue-600 rounded-lg border-slate-200 focus:ring-[#c7f135] transition-all cursor-pointer"
                   checked={formData.is_active}
                   onChange={(e) =>
                     setFormData({ ...formData, is_active: e.target.checked })
@@ -921,7 +921,7 @@ const SuperAdminPlans = () => {
                 <input
                   type="checkbox"
                   id="is_offer"
-                  className="w-5 h-5 text-blue-600 rounded-lg border-slate-200 focus:ring-blue-500 transition-all cursor-pointer"
+                  className="w-5 h-5 text-blue-600 rounded-lg border-slate-200 focus:ring-[#c7f135] transition-all cursor-pointer"
                   checked={formData.is_offer}
                   onChange={(e) =>
                     setFormData({ ...formData, is_offer: e.target.checked })
@@ -945,7 +945,7 @@ const SuperAdminPlans = () => {
                     </label>
                     <input
                       type="date"
-                      className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                      className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                       value={formData.offer_starts_at}
                       onChange={(e) =>
                         setFormData({
@@ -961,7 +961,7 @@ const SuperAdminPlans = () => {
                     </label>
                     <input
                       type="date"
-                      className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all text-sm font-bold text-slate-900"
+                      className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all text-sm font-bold text-slate-900"
                       value={formData.offer_expires_at}
                       onChange={(e) =>
                         setFormData({

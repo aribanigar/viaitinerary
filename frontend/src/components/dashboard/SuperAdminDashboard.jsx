@@ -68,17 +68,17 @@ const planLabels = {
 
 // ── Modern Chart Colors ──────────────────────────────────────────────────────
 const CHART_COLORS = {
-  blue: "#3b82f6",
+  blue: "#c7f135",
   purple: "#a855f7",
   orange: "#f97316",
   emerald: "#10b981",
-  indigo: "#6366f1",
+  indigo: "#10182a",
   pink: "#ec4899",
   yellow: "#eab308",
   teal: "#14b8a6",
 };
 
-const PLAN_COLORS = ["#6366f1", "#0ea5e9", "#8b5cf6", "#10b981"];
+const PLAN_COLORS = ["#10182a", "#0ea5e9", "#8b5cf6", "#10b981"];
 
 // ── Custom Tooltip Components ────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }) => {
@@ -319,7 +319,7 @@ const SuperAdminDashboard = () => {
                   </h2>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span className="w-2 h-2 rounded-full bg-[#c7f135]" />
                       <span className="text-[10px] font-bold text-slate-500 uppercase">
                         Agencies
                       </span>
@@ -345,12 +345,12 @@ const SuperAdminDashboard = () => {
                       >
                         <stop
                           offset="5%"
-                          stopColor="#6366f1"
+                          stopColor="#10182a"
                           stopOpacity={0.1}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#6366f1"
+                          stopColor="#10182a"
                           stopOpacity={0}
                         />
                       </linearGradient>
@@ -376,7 +376,7 @@ const SuperAdminDashboard = () => {
                     <Area
                       type="monotone"
                       dataKey="admins"
-                      stroke="#3b82f6"
+                      stroke="#c7f135"
                       strokeWidth={2}
                       fillOpacity={0}
                       name="Agencies"
@@ -384,7 +384,7 @@ const SuperAdminDashboard = () => {
                     <Area
                       type="monotone"
                       dataKey="trips"
-                      stroke="#6366f1"
+                      stroke="#10182a"
                       strokeWidth={2}
                       fill="url(#colorGrowth)"
                       name="Trips"

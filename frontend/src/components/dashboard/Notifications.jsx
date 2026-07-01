@@ -171,7 +171,7 @@ const Notifications = () => {
           {unreadCount > 0 && (
             <button
               onClick={handleMarkAllAsRead}
-              className="flex items-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all text-sm w-fit"
+              className="flex items-center gap-2 bg-[#c7f135] text-[#10182a] px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#c7f135]/40 hover:bg-[#b0dc00] transition-all text-sm w-fit"
             >
               <Check className="w-4 h-4" />
               Mark All as Read
@@ -187,7 +187,7 @@ const Notifications = () => {
             <input
               type="text"
               placeholder="Search notifications..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
               value={searchQuery}
               onChange={handleSearchChange}
             />

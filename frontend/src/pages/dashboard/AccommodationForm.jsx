@@ -278,7 +278,7 @@ const AccommodationForm = () => {
                     onChange={(phone) =>
                       setFormData((prev) => ({ ...prev, phone }))
                     }
-                    inputClassName="!w-full !pr-4 !py-3.5 !bg-slate-50 !border-none !rounded-xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-blue-500/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium"
+                    inputClassName="!w-full !pr-4 !py-3.5 !bg-slate-50 !border-none !rounded-xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-[#c7f135]/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium"
                     containerClassName="!border-none"
                     buttonClassName="!bg-transparent !border-none !rounded-l-xl !pl-4 !mr-[-48px] !z-10"
                   />
@@ -489,7 +489,7 @@ const AccommodationForm = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:w-auto bg-[#1b1b1b] text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+                className="w-full sm:w-auto bg-[#c7f135] text-[#10182a] px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-[#c7f135]/40 active:scale-[0.98] transition-all"
               >
                 {submitting ? "Saving..." : "Save Accommodation"}
               </button>

@@ -983,7 +983,7 @@ const TripBuilder = ({ mode }) => {
                     <button
                       onClick={handleSaveTrip}
                       disabled={loading || saving || exporting}
-                      className="flex-1 sm:flex-none bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-blue-700 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center shadow-sm shadow-blue-200"
+                      className="flex-1 sm:flex-none bg-[#c7f135] text-[#10182a] px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-[#b0dc00] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center shadow-sm shadow-[#c7f135]/40"
                     >
                       {saving ? (
                         <>
@@ -1000,7 +1000,7 @@ const TripBuilder = ({ mode }) => {
                     <button
                       onClick={handleExport}
                       disabled={loading || saving || exporting}
-                      className="flex-1 sm:flex-none bg-[#1a1c1c] text-white px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center"
+                      className="flex-1 sm:flex-none bg-[#c7f135] text-[#10182a] px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center"
                     >
                       {exporting ? (
                         <>

@@ -147,7 +147,7 @@ const SubscriptionBanner = ({ subscription }) => {
         </div>
         <Link
           to="/subscription"
-          className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-blue-600 text-white shrink-0 hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider bg-[#c7f135] text-[#10182a] shrink-0 hover:bg-[#b0dc00] transition-colors"
         >
           Upgrade
         </Link>

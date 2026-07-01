@@ -432,7 +432,7 @@ const CalculatorForm = () => {
                 placeholder="Enter client or trip name"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
               />
             </div>
           </div>
@@ -528,7 +528,7 @@ const CalculatorForm = () => {
                     </div>
                     <div className="space-y-6">
                       <select
-                        className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none"
+                        className="w-full px-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none"
                         value={item.hotel?.id || ""}
                         onChange={(e) => {
                           const hotel = hotels.find(

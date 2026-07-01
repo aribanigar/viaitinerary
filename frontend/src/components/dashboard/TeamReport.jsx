@@ -125,7 +125,7 @@ const TeamReport = () => {
               <select
                 value={selectedMember}
                 onChange={(e) => setSelectedMember(e.target.value)}
-                className="pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all shadow-sm appearance-none cursor-pointer min-w-[220px]"
+                className="pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:ring-4 focus:ring-[#c7f135]/5 focus:border-[#c7f135] transition-all shadow-sm appearance-none cursor-pointer min-w-[220px]"
               >
                 <option value="all">Organization Wide</option>
                 {teamMembers.map((member) => (
@@ -192,7 +192,7 @@ const TeamReport = () => {
                   <input
                     type="text"
                     placeholder="Search by name or role..."
-                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
+                    className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -219,7 +219,7 @@ const TeamReport = () => {
                     >
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-blue-500 flex items-center justify-center text-white font-black text-lg border-4 border-white shadow-sm shrink-0">
+                          <div className="w-12 h-12 rounded-2xl bg-[#c7f135] flex items-center justify-center text-white font-black text-lg border-4 border-white shadow-sm shrink-0">
                             {(member.user?.name || "U").charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -280,7 +280,7 @@ const TeamReport = () => {
                       <ChevronRight className="w-6 h-6 rotate-180" />
                     </button>
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-[1.5rem] bg-blue-600 flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-blue-500/10">
+                      <div className="w-16 h-16 rounded-[1.5rem] bg-[#c7f135] flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-blue-500/10">
                         {(() => {
                           const m = teamMembers.find(
                             (x) => x.id === parseInt(selectedMember),
@@ -384,7 +384,7 @@ const TeamReport = () => {
                         label="Confirmed"
                         count={stats.confirmedTrips}
                         total={stats.totalTrips}
-                        color="bg-blue-500"
+                        color="bg-[#c7f135]"
                       />
                       <StatusItem
                         label="Completed"

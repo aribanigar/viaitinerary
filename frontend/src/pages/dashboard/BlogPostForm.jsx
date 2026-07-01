@@ -226,7 +226,7 @@ const BlogPostForm = () => {
               <button
                 type="button"
                 onClick={(e) => handleSubmit(e, "published")}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-md"
+                className="px-6 py-2 bg-[#c7f135] text-[#10182a] rounded-lg hover:bg-[#b0dc00] disabled:opacity-50 transition-colors shadow-md"
                 disabled={saving}
               >
                 {saving ? "Publishing..." : "Publish Post"}
@@ -243,7 +243,7 @@ const BlogPostForm = () => {
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#c7f135]"
               placeholder="Enter blog post title"
               required
             />
@@ -260,7 +260,7 @@ const BlogPostForm = () => {
               onChange={(e) =>
                 setFormData({ ...formData, slug: e.target.value })
               }
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#c7f135]"
               placeholder="custom-url-slug (leave blank for auto-generation)"
             />
           </div>
@@ -273,7 +273,7 @@ const BlogPostForm = () => {
               onChange={(e) =>
                 setFormData({ ...formData, blog_category_id: e.target.value })
               }
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#c7f135]"
             >
               <option value="">Select a category</option>
               {categories.map((cat) => (
@@ -292,7 +292,7 @@ const BlogPostForm = () => {
               onChange={(e) =>
                 setFormData({ ...formData, excerpt: e.target.value })
               }
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#c7f135]"
               rows="3"
               placeholder="Short summary of the post (used in listings and meta description)"
             />
@@ -316,7 +316,7 @@ const BlogPostForm = () => {
               type="file"
               accept=".jpg,.jpeg,.png,.webp"
               onChange={handleFeaturedImageUpload}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#c7f135]"
               disabled={uploadingFeaturedImage}
             />
             <p className="text-sm text-gray-500 mt-2">
@@ -360,7 +360,7 @@ const BlogPostForm = () => {
                   tags: formData.tags.map((tag) => tag.trim()).filter(Boolean),
                 });
               }}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#c7f135]"
               placeholder="travel, destinations, tips (comma-separated)"
             />
           </div>
@@ -380,7 +380,7 @@ const BlogPostForm = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, meta_title: e.target.value })
                   }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#c7f135]"
                   placeholder="Custom SEO title (defaults to post title)"
                   maxLength="160"
                 />
@@ -398,7 +398,7 @@ const BlogPostForm = () => {
                       meta_description: e.target.value,
                     })
                   }
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#c7f135]"
                   rows="2"
                   placeholder="Custom SEO description (defaults to excerpt)"
                   maxLength="300"

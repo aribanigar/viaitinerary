@@ -81,7 +81,7 @@ const TripInfoTab = ({
               template: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
         >
           <option value="ModernTemplate">Modern Elegant</option>
           <option value="ClassicTemplate">Classic Professional</option>
@@ -101,7 +101,7 @@ const TripInfoTab = ({
               tripTitle: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
         />
       </div>
       <div>
@@ -118,7 +118,7 @@ const TripInfoTab = ({
               destination: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
         />
       </div>
       <div>
@@ -135,7 +135,7 @@ const TripInfoTab = ({
               clientName: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
         />
       </div>
       <div>
@@ -153,7 +153,7 @@ const TripInfoTab = ({
               })
             }
             className="w-full"
-            inputClassName="!w-full !bg-white !border-slate-200 !rounded-lg !py-5 !px-3.5 !text-xs !font-bold !text-slate-900 !focus:outline-none !focus:ring-2 !focus:ring-blue-500/20 !transition-all !placeholder:text-slate-300"
+            inputClassName="!w-full !bg-white !border-slate-200 !rounded-lg !py-5 !px-3.5 !text-xs !font-bold !text-slate-900 !focus:outline-none !focus:ring-2 !focus:ring-[#c7f135]/20 !transition-all !placeholder:text-slate-300"
           />
         </div>
       </div>
@@ -171,7 +171,7 @@ const TripInfoTab = ({
               clientEmail: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
         />
       </div>
 
@@ -312,7 +312,7 @@ const TripInfoTab = ({
                   duration: e.target.value,
                 })
               }
-              className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
+              className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
             />
           </div>
         </div>
@@ -343,7 +343,7 @@ const TripInfoTab = ({
                     cost: e.target.value,
                   })
                 }
-                className="w-full bg-white border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
+                className="w-full bg-white border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
               />
             </div>
           </div>
@@ -360,7 +360,7 @@ const TripInfoTab = ({
                   currency: e.target.value,
                 })
               }
-              className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
+              className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
             />
           </div>
         </div>
@@ -380,7 +380,7 @@ const TripInfoTab = ({
                 })
               }
               placeholder="e.g. BOOK VERIFIED HOTELS, CABS..."
-              className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm min-h-21 resize-none"
+              className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm min-h-21 resize-none"
             />
           </div>
         )}
@@ -392,7 +392,7 @@ const TripInfoTab = ({
           id="includeGST"
           checked={includeGST}
           onChange={(e) => setIncludeGST(e.target.checked)}
-          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-[#c7f135] focus:ring-2"
         />
         <label
           htmlFor="includeGST"
@@ -413,7 +413,7 @@ const TripInfoTab = ({
               useFlight: e.target.checked,
             })
           }
-          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-[#c7f135] focus:ring-2"
         />
         <label
           htmlFor="useFlight"
@@ -494,7 +494,7 @@ const TripInfoTab = ({
                           transportDetails: newDetails,
                         });
                       }}
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
+                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
                     >
                       <option value="Flight">Flight</option>
                       <option value="Bus">Bus</option>
@@ -567,7 +567,7 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="e.g. Indigo"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
                   <div>
@@ -588,7 +588,7 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="Number"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
                   <div>
@@ -607,7 +607,7 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="ABC"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
                   <div>
@@ -626,7 +626,7 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="XYZ"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
                   <div className="col-span-2">
@@ -645,7 +645,7 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="PNR"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
                   <div className="col-span-2 pt-2 border-t border-blue-50">
@@ -687,7 +687,7 @@ const TripInfoTab = ({
                               });
                             }}
                             placeholder="Name"
-                            className="flex-1 bg-white border border-slate-200 rounded-md py-1.5 px-3 text-[10px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                            className="flex-1 bg-white border border-slate-200 rounded-md py-1.5 px-3 text-[10px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                           />
                           <button
                             type="button"
@@ -818,7 +818,7 @@ const TripInfoTab = ({
                 }
                 e.target.value = "";
               }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/10 transition-all cursor-pointer"
             >
               <option value="">+ Add standard inclusion...</option>
               {standardInclusions.map((item, idx) => (
@@ -841,11 +841,11 @@ const TripInfoTab = ({
               value={newInclusion}
               onChange={(e) => setNewInclusion(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && addInclusion()}
-              className="flex-1 bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+              className="flex-1 bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
             />
             <button
               onClick={addInclusion}
-              className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-all shadow-sm"
+              className="bg-[#c7f135] text-[#10182a] p-2 rounded-lg hover:bg-[#b0dc00] transition-all shadow-sm"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -872,7 +872,7 @@ const TripInfoTab = ({
                     <div className="flex gap-1 ml-2 shrink-0">
                       <button
                         onClick={() => saveInclusionEdit(index)}
-                        className="text-white bg-blue-600 hover:bg-blue-700 p-1 rounded-md transition-colors"
+                        className="text-white bg-[#c7f135] hover:bg-[#b0dc00] p-1 rounded-md transition-colors"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                       </button>
@@ -968,7 +968,7 @@ const TripInfoTab = ({
               value={newExclusion}
               onChange={(e) => setNewExclusion(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && addExclusion()}
-              className="flex-1 bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+              className="flex-1 bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
             />
             <button
               onClick={addExclusion}
@@ -999,7 +999,7 @@ const TripInfoTab = ({
                     <div className="flex gap-1 ml-2 shrink-0">
                       <button
                         onClick={() => saveExclusionEdit(index)}
-                        className="text-white bg-blue-600 hover:bg-blue-700 p-1 rounded-md transition-colors"
+                        className="text-white bg-[#c7f135] hover:bg-[#b0dc00] p-1 rounded-md transition-colors"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                       </button>

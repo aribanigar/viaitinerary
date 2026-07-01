@@ -86,7 +86,7 @@ const CreateLead = () => {
                 type="submit"
                 form="create-lead-form"
                 disabled={isSubmitting}
-                className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all text-sm w-fit shadow-lg shadow-blue-500/20 disabled:opacity-50"
+                className="flex items-center gap-2 bg-[#c7f135] text-[#10182a] px-6 py-3 rounded-xl font-bold hover:bg-[#b0dc00] transition-all text-sm w-fit shadow-lg shadow-[#c7f135]/40 disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

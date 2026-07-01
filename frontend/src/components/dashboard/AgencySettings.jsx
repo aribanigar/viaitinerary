@@ -443,7 +443,7 @@ const AgencySettings = () => {
                       name="agencyName"
                       value={formData.agencyName}
                       onChange={handleInputChange}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                     />
                   </div>
 
@@ -461,7 +461,7 @@ const AgencySettings = () => {
                           setFormData({ ...formData, phone })
                         }
                         className="w-full"
-                        inputClassName="!w-full !bg-slate-50 !border-slate-100 !rounded-xl !px-4 !py-6 !text-slate-900 !text-sm !font-bold !focus:ring-2 !focus:ring-blue-500/20 !focus:border-blue-500 !outline-none !transition-all"
+                        inputClassName="!w-full !bg-slate-50 !border-slate-100 !rounded-xl !px-4 !py-6 !text-slate-900 !text-sm !font-bold !focus:ring-2 !focus:ring-[#c7f135]/20 !focus:border-[#c7f135] !outline-none !transition-all"
                       />
                     </div>
                   </div>
@@ -477,7 +477,7 @@ const AgencySettings = () => {
                       value={formData.website}
                       onChange={handleInputChange}
                       placeholder="e.g. www.travellagency.com"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                     />
                   </div>
 
@@ -493,7 +493,7 @@ const AgencySettings = () => {
                       onChange={handleInputChange}
                       placeholder="e.g. 2nd Floor, Main Street, Your City, Country"
                       rows={2}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300 resize-y"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all placeholder:font-medium placeholder:text-slate-300 resize-y"
                     />
                   </div>
 
@@ -509,7 +509,7 @@ const AgencySettings = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="e.g. contact@agency.com"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                     />
                   </div>
 
@@ -526,7 +526,7 @@ const AgencySettings = () => {
                           setFormData({ ...formData, whatsapp: phone })
                         }
                         className="w-full"
-                        inputClassName="!w-full !bg-slate-50 !border-slate-100 !rounded-xl !px-4 !py-6 !text-slate-900 !text-sm !font-bold !focus:ring-2 !focus:ring-blue-500/20 !focus:border-blue-500 !outline-none !transition-all"
+                        inputClassName="!w-full !bg-slate-50 !border-slate-100 !rounded-xl !px-4 !py-6 !text-slate-900 !text-sm !font-bold !focus:ring-2 !focus:ring-[#c7f135]/20 !focus:border-[#c7f135] !outline-none !transition-all"
                       />
                     </div>
                   </div>
@@ -693,7 +693,7 @@ const AgencySettings = () => {
         <button
           onClick={handleSave}
           disabled={loading || saving}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#c7f135] text-[#10182a] px-6 py-3 rounded-xl font-bold shadow-lg shadow-[#c7f135]/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <>

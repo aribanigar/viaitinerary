@@ -266,7 +266,7 @@ const Team = () => {
               });
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all text-sm w-fit"
+            className="flex items-center gap-2 bg-[#c7f135] text-[#10182a] px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#c7f135]/40 hover:bg-[#b0dc00] transition-all text-sm w-fit"
           >
             <Plus className="w-4 h-4" />
             Add Team Member
@@ -281,7 +281,7 @@ const Team = () => {
             <input
               type="text"
               placeholder="Search by name or email..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -461,7 +461,7 @@ const Team = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
+                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
                 placeholder="e.g. John Doe"
                 required
               />
@@ -479,7 +479,7 @@ const Team = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
+                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
                 placeholder="e.g. john@agency.com"
                 required
               />
@@ -496,7 +496,7 @@ const Team = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-4 pr-12 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
+                className="w-full px-4 pr-12 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
                 placeholder={
                   editingId
                     ? "Leave blank to keep current password"
@@ -529,7 +529,7 @@ const Team = () => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className="w-full px-4 pr-12 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
+                className="w-full px-4 pr-12 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
                 placeholder="Confirm password"
                 required={!editingId}
               />
@@ -562,7 +562,7 @@ const Team = () => {
                 value={formData.phone}
                 onChange={(phone) => setFormData({ ...formData, phone })}
                 className="w-full"
-                inputClassName="!w-full !px-4 !py-7 !bg-slate-50 !border-none !rounded-2xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-blue-500/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium"
+                inputClassName="!w-full !px-4 !py-7 !bg-slate-50 !border-none !rounded-2xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-[#c7f135]/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium"
               />
             </div>
           </div>

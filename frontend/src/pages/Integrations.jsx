@@ -365,7 +365,7 @@ const Integrations = () => {
                               value={metaSheetUrl}
                               onChange={(e) => setMetaSheetUrl(e.target.value)}
                               placeholder="https://docs.google.com/spreadsheets/d/..."
-                              className="flex-1 px-3 py-2.5 rounded-lg bg-white border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="flex-1 px-3 py-2.5 rounded-lg bg-white border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#c7f135]"
                             />
                             <button
                               onClick={saveMetaSettings}
@@ -453,7 +453,7 @@ const Integrations = () => {
                           value={metaSheetUrl}
                           onChange={(e) => setMetaSheetUrl(e.target.value)}
                           placeholder="https://docs.google.com/spreadsheets/d/..."
-                          className="w-full px-3 py-2.5 rounded-lg bg-white border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2.5 rounded-lg bg-white border border-slate-200 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#c7f135]"
                         />
                         <button
                           onClick={saveMetaSettings}

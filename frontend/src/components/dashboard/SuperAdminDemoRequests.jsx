@@ -167,7 +167,7 @@ const SuperAdminDemoRequests = () => {
             <input
               type="text"
               placeholder="Search by name, company or email..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -251,7 +251,7 @@ const SuperAdminDemoRequests = () => {
                   onChange={(e) =>
                     handleStatusUpdate(request.id, e.target.value)
                   }
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer ${getStatusColor(request.status)}`}
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all cursor-pointer ${getStatusColor(request.status)}`}
                 >
                   <option value="pending">Pending</option>
                   <option value="contacted">Contacted</option>

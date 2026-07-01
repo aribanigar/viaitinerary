@@ -30,7 +30,7 @@ const ItineraryTab = ({
                 }
                 e.target.value = "";
               }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all cursor-pointer"
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/10 transition-all cursor-pointer"
             >
               <option value="">+ Add Day from Destination</option>
               {availableDestinations.map((dest) => (
@@ -82,7 +82,7 @@ const ItineraryTab = ({
                     }
                   }
                 }}
-                className="flex-1 bg-slate-50 border border-slate-200 rounded-md py-1 px-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 transition-all cursor-pointer hover:border-slate-300"
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-md py-1 px-2 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/10 transition-all cursor-pointer hover:border-slate-300"
               >
                 {!day.destinationId && (
                   <option value="">Select Destination</option>
@@ -119,7 +119,7 @@ const ItineraryTab = ({
                     setItinerary(newItinerary);
                   }
                 }}
-                className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 shadow-sm"
+                className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 shadow-sm"
               />
             </div>
 
@@ -139,11 +139,11 @@ const ItineraryTab = ({
                     setItinerary(newItinerary);
                   }
                 }}
-                className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 shadow-sm"
+                className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 shadow-sm"
               />
             </div>
 
-            <div className="bg-white rounded-lg p-4 min-h-24 border border-slate-200 transition-all duration-300 shadow-sm group/text focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500/30">
+            <div className="bg-white rounded-lg p-4 min-h-24 border border-slate-200 transition-all duration-300 shadow-sm group/text focus-within:ring-2 focus-within:ring-[#c7f135]/20 focus-within:border-[#c7f135]/30">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Activities (one per line)

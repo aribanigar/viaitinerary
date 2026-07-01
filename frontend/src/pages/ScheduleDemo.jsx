@@ -140,7 +140,7 @@ const ScheduleDemo = () => {
                 </p>
                 <Link
                   to="/"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/25"
+                  className="bg-[#c7f135] hover:bg-[#b0dc00] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/25"
                 >
                   Return to Home
                 </Link>
@@ -174,7 +174,7 @@ const ScheduleDemo = () => {
                         required
                         name="name"
                         type="text"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all"
                         placeholder="Your Name"
                         value={formData.name}
                         onChange={handleInputChange}
@@ -189,7 +189,7 @@ const ScheduleDemo = () => {
                         required
                         name="email"
                         type="email"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all"
                         placeholder="work@company.com"
                         value={formData.email}
                         onChange={handleInputChange}
@@ -230,7 +230,7 @@ const ScheduleDemo = () => {
                       <input
                         name="invite_guests"
                         type="text"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all"
                         placeholder="Add guest emails"
                         value={formData.invite_guests}
                         onChange={handleInputChange}
@@ -279,7 +279,7 @@ const ScheduleDemo = () => {
                         required
                         name="company_name"
                         type="text"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all"
                         placeholder="Company Name"
                         value={formData.company_name}
                         onChange={handleInputChange}
@@ -294,7 +294,7 @@ const ScheduleDemo = () => {
                         required
                         name="no_of_employees"
                         type="number"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all"
                         placeholder="e.g. 10"
                         value={formData.no_of_employees}
                         onChange={handleInputChange}
@@ -311,7 +311,7 @@ const ScheduleDemo = () => {
                       <select
                         required
                         name="agency_type"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all appearance-none cursor-pointer"
                         value={formData.agency_type}
                         onChange={handleInputChange}
                       >
@@ -348,7 +348,7 @@ const ScheduleDemo = () => {
                     <textarea
                       required
                       name="destinations"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-h-[120px] resize-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all min-h-[120px] resize-none"
                       placeholder="Enter destinations..."
                       value={formData.destinations}
                       onChange={handleInputChange}
@@ -368,7 +368,7 @@ const ScheduleDemo = () => {
                         >
                           <input
                             type="checkbox"
-                            className="w-5 h-5 border-slate-300 rounded-md bg-white text-blue-600 focus:ring-blue-500/20 transition-all"
+                            className="w-5 h-5 border-slate-300 rounded-md bg-white text-blue-600 focus:ring-[#c7f135]/20 transition-all"
                             checked={formData.processes.includes(process)}
                             onChange={() => handleCheckboxChange(process)}
                           />
@@ -389,7 +389,7 @@ const ScheduleDemo = () => {
                       required
                       name="office_location"
                       type="text"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all"
                       placeholder="City, Country"
                       value={formData.office_location}
                       onChange={handleInputChange}
@@ -405,7 +405,7 @@ const ScheduleDemo = () => {
                       <select
                         required
                         name="referral_source"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all appearance-none cursor-pointer"
                         value={formData.referral_source}
                         onChange={handleInputChange}
                       >
@@ -439,7 +439,7 @@ const ScheduleDemo = () => {
                     whileTap={{ scale: 0.99 }}
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-black text-lg py-4.5 rounded-2xl flex items-center justify-center gap-3 transition-all mt-8 shadow-xl shadow-blue-600/25"
+                    className="w-full bg-[#c7f135] hover:bg-[#b0dc00] disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-black text-lg py-4.5 rounded-2xl flex items-center justify-center gap-3 transition-all mt-8 shadow-xl shadow-blue-600/25"
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />

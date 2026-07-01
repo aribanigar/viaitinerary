@@ -39,7 +39,7 @@ const NotFound = () => {
           </button>
           <Link
             to="/"
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-[#1a1c1c] text-white font-semibold rounded-xl hover:bg-[#1a1c1c]/90 transition-all shadow-lg shadow-[#1a1c1c]/20"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-[#c7f135] text-[#10182a] font-semibold rounded-xl hover:bg-[#1a1c1c]/90 transition-all shadow-lg shadow-[#1a1c1c]/20"
           >
             <Home className="h-5 w-5" />
             Back to Home

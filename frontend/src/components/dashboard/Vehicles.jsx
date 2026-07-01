@@ -153,7 +153,7 @@ const Vehicles = () => {
               setFormData({ name: "", price: "" });
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all text-sm w-fit"
+            className="flex items-center gap-2 bg-[#c7f135] text-[#10182a] px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#c7f135]/40 hover:bg-[#b0dc00] transition-all text-sm w-fit"
           >
             <Plus className="w-4 h-4" />
             Add New Car
@@ -168,7 +168,7 @@ const Vehicles = () => {
             <input
               type="text"
               placeholder="Search cars..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -304,7 +304,7 @@ const Vehicles = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
                 placeholder="e.g. Toyota Innova, Swift Dzire"
                 required
               />
@@ -322,7 +322,7 @@ const Vehicles = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
                 placeholder="driver@example.com"
               />
             </div>
@@ -337,7 +337,7 @@ const Vehicles = () => {
                 defaultCountry="in"
                 value={formData.phone}
                 onChange={(phone) => setFormData({ ...formData, phone })}
-                inputClassName="!w-full !pr-4 !py-3 !bg-slate-50 !border-none !rounded-2xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-blue-500/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium !h-[44px]"
+                inputClassName="!w-full !pr-4 !py-3 !bg-slate-50 !border-none !rounded-2xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-[#c7f135]/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium !h-[44px]"
                 containerClassName="!border-none"
                 buttonClassName="!bg-transparent !border-none !rounded-l-2xl !pl-4 !mr-[-48px] !z-10"
               />
@@ -355,7 +355,7 @@ const Vehicles = () => {
                 type="number"
                 value={formData.price}
                 onChange={handleInputChange}
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
                 placeholder="0.00"
                 required
                 min="0"

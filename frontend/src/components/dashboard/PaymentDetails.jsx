@@ -156,7 +156,7 @@ const PaymentDetails = () => {
                 value={formData.bankName}
                 onChange={handleInputChange}
                 placeholder="Enter bank name"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all"
               />
             </div>
             <div className="space-y-2">
@@ -169,7 +169,7 @@ const PaymentDetails = () => {
                 value={formData.beneficiaryName}
                 onChange={handleInputChange}
                 placeholder="Enter beneficiary name"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all"
               />
             </div>
 
@@ -183,7 +183,7 @@ const PaymentDetails = () => {
                 value={formData.accountNumber}
                 onChange={handleInputChange}
                 placeholder="Enter account number"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] outline-none transition-all"
               />
             </div>
 
@@ -204,7 +204,7 @@ const PaymentDetails = () => {
                       ? "border-emerald-300 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
                       : ifscError
                         ? "border-red-300 focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-                        : "border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        : "border-slate-200 focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135]"
                   }`}
                 />
                 <button
@@ -260,7 +260,7 @@ const PaymentDetails = () => {
             Boolean(ifscError) ||
             (formData.ifscCode.trim() && !ifscData)
           }
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#1b1b1b] text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#c7f135] text-[#10182a] px-6 py-3 rounded-xl font-bold shadow-lg shadow-[#c7f135]/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <>

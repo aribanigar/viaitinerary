@@ -74,7 +74,7 @@ const EmbedSettings = () => {
               </code>
               <button
                 onClick={handleOpenPreview}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all font-semibold text-sm flex items-center gap-2 whitespace-nowrap"
+                className="bg-[#c7f135] text-white px-4 py-2 rounded-lg hover:bg-[#b0dc00] transition-all font-semibold text-sm flex items-center gap-2 whitespace-nowrap"
               >
                 <Eye className="w-4 h-4" />
                 Preview
@@ -95,8 +95,8 @@ const EmbedSettings = () => {
             <button
               onClick={handleCopy}
               className={`${
-                copied ? "bg-green-500" : "bg-blue-500"
-              } text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all font-semibold text-sm flex items-center gap-2`}
+                copied ? "bg-green-500" : "bg-[#c7f135]"
+              } text-white px-4 py-2 rounded-lg hover:bg-[#b0dc00] transition-all font-semibold text-sm flex items-center gap-2`}
             >
               {copied ? (
                 <>
@@ -124,7 +124,7 @@ const EmbedSettings = () => {
           <h2 className="text-xl font-bold text-gray-800 mb-4">How to Embed</h2>
           <div className="space-y-4">
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
+              <div className="flex-shrink-0 w-8 h-8 bg-[#c7f135] text-white rounded-full flex items-center justify-center font-bold">
                 1
               </div>
               <div>
@@ -139,7 +139,7 @@ const EmbedSettings = () => {
             </div>
 
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
+              <div className="flex-shrink-0 w-8 h-8 bg-[#c7f135] text-white rounded-full flex items-center justify-center font-bold">
                 2
               </div>
               <div>
@@ -155,7 +155,7 @@ const EmbedSettings = () => {
             </div>
 
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
+              <div className="flex-shrink-0 w-8 h-8 bg-[#c7f135] text-white rounded-full flex items-center justify-center font-bold">
                 3
               </div>
               <div>
@@ -267,7 +267,7 @@ const EmbedSettings = () => {
         )}
 
         {/* Tips */}
-        <div className="mt-6 bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6">
+        <div className="mt-6 bg-blue-50 border-l-4 border-[#c7f135] rounded-lg p-6">
           <h3 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
             💡 Pro Tips
           </h3>

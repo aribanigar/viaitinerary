@@ -36,7 +36,7 @@ const Header = ({ onMenuClick }) => {
           <input
             type="text"
             placeholder="Search trips, clients..."
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all font-medium"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all font-medium"
           />
         </div>
       </div>

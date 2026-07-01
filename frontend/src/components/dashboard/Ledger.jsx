@@ -285,13 +285,13 @@ const Ledger = () => {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleFilterApply()}
               placeholder="Search by Trip ID, title, or client..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full md:w-auto px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="w-full md:w-auto px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20"
           >
             <option value="">All Statuses</option>
             {STATUS_OPTIONS.map((opt) => (
@@ -302,7 +302,7 @@ const Ledger = () => {
           </select>
           <button
             onClick={handleFilterApply}
-            className="w-full md:w-auto px-6 py-3 rounded-xl bg-[#1b1b1b] text-white text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all"
+            className="w-full md:w-auto px-6 py-3 rounded-xl bg-[#c7f135] text-[#10182a] text-sm font-bold shadow-lg shadow-[#c7f135]/40 hover:bg-[#b0dc00] transition-all"
           >
             Apply Filters
           </button>
@@ -413,7 +413,7 @@ const Ledger = () => {
                                           onClick={() =>
                                             openSettlementModal(ob)
                                           }
-                                          className="text-xs inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-white font-bold"
+                                          className="text-xs inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#c7f135] text-[#10182a] font-bold"
                                         >
                                           <Plus className="w-3 h-3" /> Add
                                           Receipt
@@ -653,7 +653,7 @@ const Ledger = () => {
                   amount: e.target.value,
                 }))
               }
-              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
               placeholder="0.00"
             />
           </div>
@@ -670,7 +670,7 @@ const Ledger = () => {
                   settlement_type: e.target.value,
                 }))
               }
-              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
             >
               {targetObligation?.direction === "receivable" ? (
                 <option value="receipt">Receipt (Got from Client)</option>
@@ -712,7 +712,7 @@ const Ledger = () => {
                   method: e.target.value,
                 }))
               }
-              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
             >
               <option value="cash">Cash</option>
               <option value="bank_transfer">Bank Transfer</option>
@@ -736,7 +736,7 @@ const Ledger = () => {
                 }))
               }
               rows={3}
-              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300 shadow-sm"
+              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 shadow-sm"
               placeholder="Description for this transaction..."
             />
           </div>

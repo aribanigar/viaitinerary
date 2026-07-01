@@ -405,7 +405,7 @@ const Subscription = () => {
         {memberUserId && (
           <div className="mb-8 flex items-center justify-between bg-blue-50 border border-blue-100 p-6 rounded-xl">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+              <div className="w-12 h-12 rounded-2xl bg-[#c7f135] flex items-center justify-center text-white shadow-lg shadow-[#c7f135]/40">
                 <User className="w-6 h-6" />
               </div>
               <div>
@@ -472,13 +472,13 @@ const Subscription = () => {
               key={plan.key}
               className={`relative bg-white rounded-xl border-2 ${
                 plan.recommended
-                  ? "border-blue-500 shadow-2xl shadow-blue-200"
+                  ? "border-[#c7f135] shadow-2xl shadow-[#c7f135]/40"
                   : "border-slate-100 shadow-xl shadow-slate-200/50"
               } p-8 flex flex-col transition-all hover:scale-[1.02]`}
             >
               {(plan.recommended || plan.badge_label) && (
                 <div className="absolute top-0 right-8 transform -translate-y-1/2">
-                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-blue-500 text-white shadow-lg">
+                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-[#c7f135] text-white shadow-lg">
                     {plan.badge_label || (plan.recommended ? "BEST VALUE" : "")}
                   </span>
                 </div>

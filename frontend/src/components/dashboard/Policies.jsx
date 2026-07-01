@@ -57,7 +57,7 @@ const PolicyListItem = ({ value, onChange, placeholder, onRemove }) => {
           <button
             onClick={handleSave}
             title="Save Edit"
-            className="text-white bg-blue-600 hover:bg-blue-700 p-1.5 rounded-lg transition-colors shrink-0 shadow-sm"
+            className="text-white bg-[#c7f135] hover:bg-[#b0dc00] p-1.5 rounded-lg transition-colors shrink-0 shadow-sm"
           >
             <CheckCircle className="w-4 h-4" />
           </button>
@@ -149,7 +149,7 @@ const DynamicPolicyList = ({
               value={newValue}
               onChange={(e) => setNewValue(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && handleAdd()}
-              className="flex-1 bg-white border border-slate-200 rounded-xl py-2.5 px-4 text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
+              className="flex-1 bg-white border border-slate-200 rounded-xl py-2.5 px-4 text-[13px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 focus:border-[#c7f135] transition-all placeholder:text-slate-400 placeholder:font-medium shadow-sm"
             />
             <button
               onClick={handleAdd}
