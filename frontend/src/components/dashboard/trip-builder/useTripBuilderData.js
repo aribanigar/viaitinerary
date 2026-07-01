@@ -152,6 +152,7 @@ export const useTripBuilderData = ({
             clientName: savedTrip.client_name || savedTrip.clientName,
             clientPhone: savedTrip.client_phone || savedTrip.clientPhone || "",
             clientEmail: savedTrip.client_email || savedTrip.clientEmail || "",
+            locked: savedTrip.locked ?? false,
             adults: savedTrip.adults || 2,
             kidsUpto5: savedTrip.kids_cnb || 0,
             kids5to12: savedTrip.kids_5_to_12 || 0,

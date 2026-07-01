@@ -24,6 +24,7 @@ const FilteredTrips = lazy(
 );
 const TripBuilder = lazy(() => import("./components/dashboard/TripBuilder"));
 const MyTrips = lazy(() => import("./components/dashboard/MyTrips"));
+const Packages = lazy(() => import("./components/dashboard/Packages"));
 const AgencySettings = lazy(
   () => import("./components/dashboard/AgencySettings"),
 );
@@ -263,6 +264,8 @@ const PublicWhatsAppCTA = () => {
     "/dashboard",
     "/trip-builder",
     "/my-trips",
+    "/packages",
+    "/package-builder",
     "/profile",
     "/subscription",
     "/notifications",
@@ -363,6 +366,12 @@ function App() {
                       element={<TripBuilder />}
                     />
                     <Route path="/my-trips" element={<MyTrips />} />
+                    <Route path="/packages" element={<Packages />} />
+                    <Route path="/package-builder" element={<TripBuilder mode="package" />} />
+                    <Route
+                      path="/package-builder/:tripId"
+                      element={<TripBuilder mode="package" />}
+                    />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/subscription" element={<Subscription />} />
                     <Route path="/notifications" element={<Notifications />} />

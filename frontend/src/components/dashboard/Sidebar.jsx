@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Plus,
   FileText,
+  Package,
   MapPin,
   Hotel,
   Car,
@@ -308,6 +309,19 @@ const Sidebar = ({ isOpen, onClose }) => {
                     >
                       <FileText className="w-5 h-5" />
                       <span>Trips</span>
+                    </Link>
+
+                    <Link
+                      to="/packages"
+                      onClick={onClose}
+                      className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                        isActive("/packages") || isActive("/package-builder")
+                          ? "bg-[#2563EB] text-white shadow-lg shadow-blue-900/20 font-bold"
+                          : "hover:bg-white/5 hover:text-white font-medium text-slate-400"
+                      }`}
+                    >
+                      <Package className="w-5 h-5" />
+                      <span>Packages</span>
                     </Link>
 
                     {(user?.role === "admin" || user?.role === "team") && (

@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { createTrip, updateTrip, downloadTripPdf } from "../../api/trips";
+import { createPackage, updatePackage } from "../../api/packages";
 import Loader from "../common/Loader";
 import ModernTemplate from "./ModernTemplate";
 import { toast } from "react-toastify";
@@ -40,7 +41,8 @@ import {
   useTripBuilderData,
 } from "./trip-builder/useTripBuilderData";
 
-const TripBuilder = () => {
+const TripBuilder = ({ mode }) => {
+  const isPackageMode = mode === "package";
   const { token } = useAuth();
   const { tripId: urlTripId } = useParams();
   const navigate = useNavigate();
@@ -720,17 +722,24 @@ const TripBuilder = () => {
   };
 
   const handleSaveTrip = async () => {
-    if (!tripInfo.clientName) {
-      toast.error("Client Name is required");
-      return;
-    }
-    if (!tripInfo.clientPhone || tripInfo.clientPhone.length < 5) {
-      toast.error("Client Phone is required");
-      return;
-    }
-    if (!tripInfo.clientEmail) {
-      toast.error("Client Email is required");
-      return;
+    if (isPackageMode) {
+      if (!tripInfo.tripTitle) {
+        toast.error("Package name is required");
+        return;
+      }
+    } else {
+      if (!tripInfo.clientName) {
+        toast.error("Client Name is required");
+        return;
+      }
+      if (!tripInfo.clientPhone || tripInfo.clientPhone.length < 5) {
+        toast.error("Client Phone is required");
+        return;
+      }
+      if (!tripInfo.clientEmail) {
+        toast.error("Client Email is required");
+        return;
+      }
     }
 
     // Format data for backend (plural names and snake_case for items)
@@ -809,7 +818,20 @@ const TripBuilder = () => {
 
     try {
       setSaving(true);
-      if (urlTripId) {
+      if (isPackageMode) {
+        const packageData = { ...fullTripData, locked: !!tripInfo.locked };
+        if (urlTripId) {
+          await updatePackage(token, urlTripId, packageData);
+          toast.success("Package updated successfully!");
+        } else {
+          const created = await createPackage(token, packageData);
+          toast.success("Package saved successfully!");
+          localStorage.removeItem(DRAFT_KEY);
+          if (created && created.trip_id) {
+            navigate(`/package-builder/${created.trip_id}`, { replace: true });
+          }
+        }
+      } else if (urlTripId) {
         // If we have a URL tripId, we are updating.
         await updateTrip(token, urlTripId, fullTripData);
         toast.success("Trip updated successfully!");
@@ -946,7 +968,18 @@ const TripBuilder = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap gap-1.5">
+                  <div className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap gap-1.5 items-center">
+                    {isPackageMode && (
+                      <label className="flex items-center gap-1.5 px-2 py-2 text-xs font-semibold text-slate-600 select-none cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!tripInfo.locked}
+                          onChange={(e) => setTripInfo((prev) => ({ ...prev, locked: e.target.checked }))}
+                          className="accent-blue-600 w-3.5 h-3.5"
+                        />
+                        Locked
+                      </label>
+                    )}
                     <button
                       onClick={handleSaveTrip}
                       disabled={loading || saving || exporting}
