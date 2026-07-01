@@ -5,7 +5,7 @@
 .DS_Store
 *.pem
 npm-debug.log*
-.env
+# .env is committed on purpose for this dev deploy (see web/.env). Local overrides stay ignored.
 .env*.local
 .vercel
 next-env.d.ts
