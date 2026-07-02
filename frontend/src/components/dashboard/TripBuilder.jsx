@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import DashboardLayout from "./DashboardLayout";
+import AssistantFrame from "./AssistantFrame";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import {
@@ -939,95 +939,75 @@ const TripBuilder = ({ mode }) => {
     toast.info("Draft cleared and form reset");
   };
 
+  const builderActions = (
+    <>
+      {isPackageMode && (
+        <label className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-[#5b6472] select-none cursor-pointer">
+          <input
+            type="checkbox"
+            checked={!!tripInfo.locked}
+            onChange={(e) =>
+              setTripInfo((prev) => ({ ...prev, locked: e.target.checked }))
+            }
+            className="accent-[#c7f135] w-3.5 h-3.5"
+          />
+          Locked
+        </label>
+      )}
+      {hasDraft && (
+        <button
+          onClick={clearForm}
+          disabled={loading || saving || exporting}
+          title="Clear draft and reset form"
+          className="px-3.5 py-2 rounded-full text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Trash2 className="w-3.5 h-3.5" /> Clear
+        </button>
+      )}
+      <button
+        onClick={handleExport}
+        disabled={loading || saving || exporting}
+        className="px-4 py-2 rounded-full text-xs font-semibold text-[#10182a] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {exporting ? (
+          <>
+            <Loader size="sm" text="" inline color="text-[#10182a]" />
+            <span>Exporting…</span>
+          </>
+        ) : (
+          <>
+            <Download className="w-3.5 h-3.5" /> Export
+          </>
+        )}
+      </button>
+      <button
+        onClick={handleSaveTrip}
+        disabled={loading || saving || exporting}
+        className="px-4 py-2 rounded-full text-xs font-semibold bg-[#c7f135] text-[#10182a] hover:bg-[#b0dc00] transition-colors flex items-center gap-1.5 shadow-sm shadow-[#c7f135]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {saving ? (
+          <>
+            <Loader size="sm" text="" inline color="text-[#10182a]" />
+            <span>Saving…</span>
+          </>
+        ) : (
+          <>
+            <Save className="w-3.5 h-3.5" /> Save
+          </>
+        )}
+      </button>
+    </>
+  );
+
   return (
     <>
-      <DashboardLayout noPadding>
+      <AssistantFrame title="Trip Builder" actions={builderActions}>
         <div className="flex flex-col lg:h-full overflow-hidden">
           {/* Builder Area — two rounded panels (builder + live preview) */}
           <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden p-3 lg:p-4 gap-3 lg:gap-4">
             {/* Left Form — builder panel */}
             <div className="w-full lg:w-[45%] lg:h-full flex flex-col bg-white rounded-[20px] border border-black/5 shadow-sm overflow-hidden shrink-0 lg:shrink">
               <div className="p-6 pb-0 shrink-0">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#c7f135] text-[#10182a] rounded-xl flex items-center justify-center">
-                      <LayoutDashboard className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h1 className="text-lg font-black text-[#10182a] leading-tight">
-                        Trip Builder
-                      </h1>
-                      <p className="text-[10px] text-[#9aa3b2] font-extrabold uppercase tracking-widest">
-                        {loading ? (
-                          <span className="text-[#10182a] animate-pulse">
-                            Syncing...
-                          </span>
-                        ) : (
-                          "Draft Mode"
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap gap-1.5 items-center">
-                    {isPackageMode && (
-                      <label className="flex items-center gap-1.5 px-2 py-2 text-xs font-semibold text-[#5b6472] select-none cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={!!tripInfo.locked}
-                          onChange={(e) => setTripInfo((prev) => ({ ...prev, locked: e.target.checked }))}
-                          className="accent-[#c7f135] w-3.5 h-3.5"
-                        />
-                        Locked
-                      </label>
-                    )}
-                    <button
-                      onClick={handleSaveTrip}
-                      disabled={loading || saving || exporting}
-                      className="flex-1 sm:flex-none bg-[#c7f135] text-[#10182a] px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-[#b0dc00] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center shadow-sm shadow-[#c7f135]/40"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader size="sm" text="" inline color="text-white" />
-                          <span>Saving...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-3.5 h-3.5" />
-                          Save
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={handleExport}
-                      disabled={loading || saving || exporting}
-                      className="flex-1 sm:flex-none bg-[#c7f135] text-[#10182a] px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-[#b0dc00] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center"
-                    >
-                      {exporting ? (
-                        <>
-                          <Loader size="sm" text="" inline color="text-white" />
-                          <span>Exporting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-3.5 h-3.5" />
-                          Export
-                        </>
-                      )}
-                    </button>
-                    {hasDraft && (
-                      <button
-                        onClick={clearForm}
-                        disabled={loading || saving || exporting}
-                        title="Clear draft and reset form"
-                        className="flex-1 sm:flex-none bg-red-50 text-red-600 px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-red-100 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Clear
-                      </button>
-                    )}
-                  </div>
-                </div>
-
                 <div className="bg-[#f3f3f4] p-1 rounded-xl mb-6 border border-black/5 overflow-x-auto">
                   <div className="flex min-w-max sm:min-w-0">
                     {["Trip Info", "Itinerary", "Logistics", "Pricing"].map(
@@ -1216,7 +1196,7 @@ const TripBuilder = ({ mode }) => {
             </div>
           </div>
         </div>
-      </DashboardLayout>
+      </AssistantFrame>
 
       <HotelModal
         isOpen={isHotelModalOpen}
