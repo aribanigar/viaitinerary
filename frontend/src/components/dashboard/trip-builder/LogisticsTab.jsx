@@ -46,12 +46,12 @@ const LogisticsTab = ({
 }) => {
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-      <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+      <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center border border-blue-100">
+          <div className="w-10 h-10 bg-[#f3f3f4] text-[#10182a] rounded-lg flex items-center justify-center border border-black/5">
             <MapPin className="w-5 h-5" />
           </div>
-          <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">
+          <h3 className="text-xs font-semibold text-[#10182a] uppercase tracking-[0.2em]">
             Accommodation
           </h3>
         </div>
@@ -60,7 +60,7 @@ const LogisticsTab = ({
           {groupedAccommodations.map((hotel) => (
             <div
               key={hotel.id}
-              className="bg-[#f9f9f9]/50 border border-slate-100 rounded-xl p-6 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 group"
+              className="bg-[#f9f9f9]/50 border border-black/5 rounded-xl p-6 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 group"
             >
               <div className="flex justify-between items-start mb-5">
                 <div>
@@ -129,49 +129,49 @@ const LogisticsTab = ({
                         return (
                           <span
                             key={stayIdx}
-                            className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-tighter"
+                            className="text-[10px] font-semibold text-[#10182a] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter"
                           >
                             {label}
                           </span>
                         );
                       })}
                   </div>
-                  <h4 className="text-lg font-black text-slate-900 border-none outline-none focus:ring-0 bg-transparent">
+                  <h4 className="text-lg font-semibold text-[#10182a] border-none outline-none focus:ring-0 bg-transparent">
                     {hotel.name}
                   </h4>
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-[#9aa3b2] uppercase tracking-wider">
                       {hotel.city}
                     </span>
-                    <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-                    <div className="bg-white border border-slate-100 px-3 py-1 rounded-md text-blue-500 text-[10px] font-black uppercase tracking-wider shadow-sm">
+                    <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
+                    <div className="bg-white border border-black/5 px-3 py-1 rounded-md text-[#10182a] text-[10px] font-semibold uppercase tracking-wider shadow-sm">
                       {hotel.category}
                     </div>
                     {hotel.roomType && (
                       <>
-                        <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-                        <div className="bg-blue-50 border border-blue-100 px-3 py-1 rounded-md text-blue-600 text-[10px] font-black uppercase tracking-wider shadow-sm">
+                        <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
+                        <div className="bg-[#f3f3f4] border border-black/5 px-3 py-1 rounded-md text-[#10182a] text-[10px] font-semibold uppercase tracking-wider shadow-sm">
                           {hotel.roomType}
                         </div>
                       </>
                     )}
-                    <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                    <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                      <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-wider">
                         Rooms:
                       </span>
-                      <span className="text-xs font-bold text-slate-600">
+                      <span className="text-xs font-bold text-[#5b6472]">
                         {hotel.rooms || "-"}
                       </span>
                     </div>
                     {parseInt(hotel.extraBeds5To12Count || 0, 10) > 0 && (
                       <>
-                        <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                        <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-wider">
                             Extra Beds:
                           </span>
-                          <span className="text-xs font-bold text-slate-600">
+                          <span className="text-xs font-bold text-[#5b6472]">
                             {hotel.extraBeds5To12Count} (
                             {formatAgeGroupLabel("5_to_12")})
                           </span>
@@ -180,12 +180,12 @@ const LogisticsTab = ({
                     )}
                     {parseInt(hotel.extraBedsAbove12Count || 0, 10) > 0 && (
                       <>
-                        <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                        <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-wider">
                             Extra Beds:
                           </span>
-                          <span className="text-xs font-bold text-slate-600">
+                          <span className="text-xs font-bold text-[#5b6472]">
                             {hotel.extraBedsAbove12Count} (
                             {formatAgeGroupLabel("above_12")})
                           </span>
@@ -194,12 +194,12 @@ const LogisticsTab = ({
                     )}
                     {hotel.cnbCount && parseInt(hotel.cnbCount, 10) > 0 && (
                       <>
-                        <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                        <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-wider">
                             CNB:
                           </span>
-                          <span className="text-xs font-bold text-slate-600">
+                          <span className="text-xs font-bold text-[#5b6472]">
                             {hotel.cnbCount}
                           </span>
                         </div>
@@ -210,7 +210,7 @@ const LogisticsTab = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => openEditHotelModal(hotel)}
-                    className="p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"
+                    className="p-1.5 text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#10182a] rounded-xl transition-all"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
@@ -220,7 +220,7 @@ const LogisticsTab = ({
                         removeAccommodation(id),
                       )
                     }
-                    className="p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+                    className="p-1.5 text-[#9aa3b2] hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -228,7 +228,7 @@ const LogisticsTab = ({
               </div>
 
               <div className="relative">
-                <div className="w-full h-32 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center border-2 border-slate-100 transition-all relative group">
+                <div className="w-full h-32 bg-[#eef0f1] rounded-xl overflow-hidden flex items-center justify-center border-2 border-black/5 transition-all relative group">
                   {hotel.photo ? (
                     <img
                       src={formatImageUrl(hotel.photo)}
@@ -237,8 +237,8 @@ const LogisticsTab = ({
                     />
                   ) : (
                     <div className="flex flex-col items-center gap-2">
-                      <Hotel className="w-6 h-6 text-slate-300" />
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      <Hotel className="w-6 h-6 text-[#c9ced6]" />
+                      <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest">
                         No Photo Available
                       </span>
                     </div>
@@ -270,7 +270,7 @@ const LogisticsTab = ({
               setEditingHotelId(null);
               setIsHotelModalOpen(true);
             }}
-            className="w-full border-2 border-dashed border-slate-200 rounded-xl py-5 flex items-center justify-center gap-2 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/10 transition-all font-bold text-xs"
+            className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-[#10182a] hover:border-[#d7ea9a] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
           >
             <Plus className="w-4 h-4" />
             Add Hotel
@@ -278,12 +278,12 @@ const LogisticsTab = ({
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+      <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center border border-blue-100">
+          <div className="w-10 h-10 bg-[#f3f3f4] text-[#10182a] rounded-lg flex items-center justify-center border border-black/5">
             <Briefcase className="w-5 h-5" />
           </div>
-          <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">
+          <h3 className="text-xs font-semibold text-[#10182a] uppercase tracking-[0.2em]">
             Transportation
           </h3>
         </div>
@@ -309,39 +309,39 @@ const LogisticsTab = ({
             return (
               <div
                 key={item.id}
-                className="group relative bg-[#f9f9f9]/50 border border-slate-100 rounded-xl p-5 transition-all hover:bg-white hover:shadow-lg hover:shadow-slate-200/40"
+                className="group relative bg-[#f9f9f9]/50 border border-black/5 rounded-xl p-5 transition-all hover:bg-white hover:shadow-lg hover:shadow-slate-200/40"
               >
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                      <span className="text-[10px] font-semibold text-[#10182a] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
                         {dayNumber}
                         {dateSuffix(dayNumber)}
                       </span>
-                      <span className="text-[9px] font-black bg-slate-100 text-slate-600 px-2 py-0.5 rounded uppercase tracking-tighter">
+                      <span className="text-[9px] font-semibold bg-[#eef0f1] text-[#5b6472] px-2 py-0.5 rounded uppercase tracking-tighter">
                         {item.tripType || "Transfer"}
                       </span>
-                      <h4 className="text-sm font-black text-slate-900">
+                      <h4 className="text-sm font-semibold text-[#10182a]">
                         {item.route}
                       </h4>
                       {item.destination && (
                         <>
-                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                          <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                          <span className="w-1 h-1 rounded-full bg-[#d4d8dd]"></span>
+                          <span className="text-[10px] font-semibold text-[#10182a] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
                             {item.destination}
                           </span>
                         </>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold text-slate-500">
+                      <span className="text-[11px] font-bold text-[#8a93a2]">
                         {item.quantity > 1 ? `${item.quantity} x ` : ""}
                         {item.vehicleType}
                       </span>
                       {item.remarks && (
                         <>
-                          <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-                          <span className="text-[11px] font-medium text-slate-400">
+                          <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
+                          <span className="text-[11px] font-medium text-[#9aa3b2]">
                             {item.remarks}
                           </span>
                         </>
@@ -349,7 +349,7 @@ const LogisticsTab = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="bg-white border border-slate-100 px-3 py-1.5 rounded-lg text-slate-600 text-[10px] font-bold shadow-sm">
+                    <div className="bg-white border border-black/5 px-3 py-1.5 rounded-lg text-[#5b6472] text-[10px] font-bold shadow-sm">
                       {new Date(item.date).toLocaleDateString("en-GB", {
                         day: "2-digit",
                         month: "short",
@@ -358,13 +358,13 @@ const LogisticsTab = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => openEditTransportModal(item)}
-                        className="p-1.5 text-slate-400 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all"
+                        className="p-1.5 text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#10182a] rounded-xl transition-all"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => removeTransportation(item.id)}
-                        className="p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+                        className="p-1.5 text-[#9aa3b2] hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -386,7 +386,7 @@ const LogisticsTab = ({
               setEditingTransportId(null);
               setIsTransportModalOpen(true);
             }}
-            className="w-full border-2 border-dashed border-slate-200 rounded-xl py-5 flex items-center justify-center gap-2 text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/10 transition-all font-bold text-xs"
+            className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-[#10182a] hover:border-[#d7ea9a] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
           >
             <Plus className="w-4 h-4" />
             Add Transport

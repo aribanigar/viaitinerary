@@ -59,18 +59,18 @@ const TripInfoTab = ({
   return (
     <div className="space-y-4 animate-in fade-in duration-500">
       <div>
-        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+        <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
           Trip ID (Auto)
         </label>
         <input
           type="text"
           value={tripInfo.tripId}
           readOnly
-          className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-400 focus:outline-none transition-all cursor-not-allowed"
+          className="w-full bg-[#f3f3f4] border border-black/10 rounded-lg py-2 px-3.5 text-xs font-bold text-[#9aa3b2] focus:outline-none transition-all cursor-not-allowed"
         />
       </div>
       <div>
-        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">
+        <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
           TEMPLATE STYLE
         </label>
         <select
@@ -81,14 +81,14 @@ const TripInfoTab = ({
               template: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+          className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
         >
           <option value="ModernTemplate">Modern Elegant</option>
           <option value="ClassicTemplate">Classic Professional</option>
         </select>
       </div>
       <div>
-        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+        <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
           Trip Title
         </label>
         <input
@@ -101,11 +101,11 @@ const TripInfoTab = ({
               tripTitle: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
+          className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6]"
         />
       </div>
       <div>
-        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+        <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
           Destination
         </label>
         <input
@@ -118,11 +118,11 @@ const TripInfoTab = ({
               destination: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
+          className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6]"
         />
       </div>
       <div>
-        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+        <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
           Client Name
         </label>
         <input
@@ -135,11 +135,11 @@ const TripInfoTab = ({
               clientName: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
+          className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6]"
         />
       </div>
       <div>
-        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+        <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
           Client Phone <span className="text-red-500">*</span>
         </label>
         <div className="phone-input-container">
@@ -153,12 +153,12 @@ const TripInfoTab = ({
               })
             }
             className="w-full"
-            inputClassName="!w-full !bg-white !border-slate-200 !rounded-lg !py-5 !px-3.5 !text-xs !font-bold !text-slate-900 !focus:outline-none !focus:ring-2 !focus:ring-[#c7f135]/20 !transition-all !placeholder:text-slate-300"
+            inputClassName="!w-full !bg-white !border-black/10 !rounded-lg !py-5 !px-3.5 !text-xs !font-bold !text-[#10182a] !focus:outline-none !focus:ring-2 !focus:ring-[#c7f135]/20 !transition-all !placeholder:text-[#c9ced6]"
           />
         </div>
       </div>
       <div>
-        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+        <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
           Client Email
         </label>
         <input
@@ -171,18 +171,18 @@ const TripInfoTab = ({
               clientEmail: e.target.value,
             })
           }
-          className="w-full bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
+          className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6]"
         />
       </div>
 
       <div>
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-              <Users className="w-3 h-3 text-blue-500" />
+          <div className="bg-[#f3f3f4] p-3 rounded-lg border border-black/5">
+            <label className="text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-2 flex items-center gap-2">
+              <Users className="w-3 h-3 text-[#10182a]" />
               Number of Adults
             </label>
-            <div className="flex items-center justify-between bg-white rounded-md border border-slate-200 p-1">
+            <div className="flex items-center justify-between bg-white rounded-md border border-black/10 p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -192,11 +192,11 @@ const TripInfoTab = ({
                     adults: newVal,
                   });
                 }}
-                className="w-8 h-8 rounded-md bg-slate-50 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-md bg-[#f3f3f4] flex items-center justify-center hover:bg-[#eef0f1] text-[#5b6472] transition-colors"
               >
                 <Minus className="w-3 h-3" />
               </button>
-              <span className="font-bold text-slate-900 text-sm">
+              <span className="font-bold text-[#10182a] text-sm">
                 {tripInfo.adults || 2}
               </span>
               <button
@@ -208,19 +208,19 @@ const TripInfoTab = ({
                     adults: newVal,
                   });
                 }}
-                className="w-8 h-8 rounded-md bg-slate-50 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-md bg-[#f3f3f4] flex items-center justify-center hover:bg-[#eef0f1] text-[#5b6472] transition-colors"
               >
                 <Plus className="w-3 h-3" />
               </button>
             </div>
           </div>
 
-          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+          <div className="bg-[#f3f3f4] p-3 rounded-lg border border-black/5">
+            <label className="text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-2 flex items-center gap-2">
               <Users className="w-3 h-3 text-orange-500" />
               Kids
             </label>
-            <div className="flex items-center justify-between bg-white rounded-md border border-slate-200 p-1">
+            <div className="flex items-center justify-between bg-white rounded-md border border-black/10 p-1">
               <button
                 type="button"
                 onClick={() => {
@@ -230,11 +230,11 @@ const TripInfoTab = ({
                     kids5to12: newVal,
                   });
                 }}
-                className="w-8 h-8 rounded-md bg-slate-50 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-md bg-[#f3f3f4] flex items-center justify-center hover:bg-[#eef0f1] text-[#5b6472] transition-colors"
               >
                 <Minus className="w-3 h-3" />
               </button>
-              <span className="font-bold text-slate-900 text-sm">
+              <span className="font-bold text-[#10182a] text-sm">
                 {tripInfo.kids5to12 || 0}
               </span>
               <button
@@ -246,7 +246,7 @@ const TripInfoTab = ({
                     kids5to12: newVal,
                   });
                 }}
-                className="w-8 h-8 rounded-md bg-slate-50 flex items-center justify-center hover:bg-slate-100 text-slate-600 transition-colors"
+                className="w-8 h-8 rounded-md bg-[#f3f3f4] flex items-center justify-center hover:bg-[#eef0f1] text-[#5b6472] transition-colors"
               >
                 <Plus className="w-3 h-3" />
               </button>
@@ -256,7 +256,7 @@ const TripInfoTab = ({
       </div>
 
       <div>
-        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">
+        <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
           Start Date
         </label>
         <div className="relative">
@@ -295,11 +295,11 @@ const TripInfoTab = ({
 
       <div className="space-y-4">
         <div>
-          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
+          <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
             Duration (Nights)
           </label>
           <div className="relative">
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-400">
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-[#9aa3b2]">
               / {parseInt(tripInfo.duration || 0) + 1} Days
             </span>
             <input
@@ -312,7 +312,7 @@ const TripInfoTab = ({
                   duration: e.target.value,
                 })
               }
-              className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
+              className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
             />
           </div>
         </div>
@@ -320,17 +320,17 @@ const TripInfoTab = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="flex justify-between items-center mb-1.5 ml-1">
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest shrink-0">
+              <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] shrink-0">
                 Trip Cost
               </label>
               {calculatedTotalCost > 0 && (
-                <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-tighter bg-emerald-50 px-1.5 py-0.5 rounded leading-none">
+                <span className="text-[9px] font-bold text-[#6f8f00] uppercase tracking-tighter bg-[#eef9c2] px-1.5 py-0.5 rounded leading-none">
                   Auto-calculated
                 </span>
               )}
             </div>
             <div className="relative group">
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors">
+              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9aa3b2] group-focus-within:text-[#10182a] transition-colors">
                 <IndianRupee className="w-3.5 h-3.5" />
               </div>
               <input
@@ -343,12 +343,12 @@ const TripInfoTab = ({
                     cost: e.target.value,
                   })
                 }
-                className="w-full bg-white border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
+                className="w-full bg-white border border-black/10 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
               />
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
+            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
               Currency
             </label>
             <input
@@ -360,14 +360,14 @@ const TripInfoTab = ({
                   currency: e.target.value,
                 })
               }
-              className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
+              className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
             />
           </div>
         </div>
 
         {isModernTemplate && (
           <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
+            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
               Banner Tagline
             </label>
             <textarea
@@ -380,7 +380,7 @@ const TripInfoTab = ({
                 })
               }
               placeholder="e.g. BOOK VERIFIED HOTELS, CABS..."
-              className="w-full bg-white border border-slate-200 rounded-lg py-2.5 px-4 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm min-h-21 resize-none"
+              className="w-full bg-white border border-black/10 rounded-lg py-2.5 px-4 text-xs font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm min-h-21 resize-none"
             />
           </div>
         )}
@@ -392,11 +392,11 @@ const TripInfoTab = ({
           id="includeGST"
           checked={includeGST}
           onChange={(e) => setIncludeGST(e.target.checked)}
-          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-[#c7f135] focus:ring-2"
+          className="w-4 h-4 text-[#10182a] bg-gray-100 border-gray-300 rounded focus:ring-[#c7f135] focus:ring-2"
         />
         <label
           htmlFor="includeGST"
-          className="text-[10px] font-black text-slate-500 uppercase tracking-widest cursor-pointer"
+          className="text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] cursor-pointer"
         >
           Include GST in Quote
         </label>
@@ -413,20 +413,20 @@ const TripInfoTab = ({
               useFlight: e.target.checked,
             })
           }
-          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-[#c7f135] focus:ring-2"
+          className="w-4 h-4 text-[#10182a] bg-gray-100 border-gray-300 rounded focus:ring-[#c7f135] focus:ring-2"
         />
         <label
           htmlFor="useFlight"
-          className="text-[10px] font-black text-slate-500 uppercase tracking-widest cursor-pointer"
+          className="text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] cursor-pointer"
         >
           Are we using Flight / Bus / Train?
         </label>
       </div>
 
       {tripInfo.useFlight && (
-        <div className="bg-blue-50/50 p-4 rounded-lg space-y-4 border border-blue-100/50">
+        <div className="bg-[#f3f3f4]/50 p-4 rounded-lg space-y-4 border border-black/5/50">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest">
+            <h4 className="text-[10px] font-semibold text-[#10182a] uppercase tracking-widest">
               Transport Logistics
             </h4>
             <button
@@ -451,7 +451,7 @@ const TripInfoTab = ({
                   ],
                 });
               }}
-              className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700 transition-colors flex items-center gap-1.5"
+              className="text-[10px] font-semibold text-[#10182a] uppercase tracking-widest hover:text-[#10182a] transition-colors flex items-center gap-1.5"
             >
               <Plus className="w-3 h-3" />
               Add Ticket
@@ -462,7 +462,7 @@ const TripInfoTab = ({
             {(tripInfo.transportDetails || []).map((transport, index) => (
               <div
                 key={transport.id || index}
-                className="bg-white rounded-lg p-4 border border-blue-100 relative group"
+                className="bg-white rounded-lg p-4 border border-black/5 relative group"
               >
                 <button
                   type="button"
@@ -481,7 +481,7 @@ const TripInfoTab = ({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">
+                    <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
                       Type
                     </label>
                     <select
@@ -494,7 +494,7 @@ const TripInfoTab = ({
                           transportDetails: newDetails,
                         });
                       }}
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
+                      className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all shadow-sm"
                     >
                       <option value="Flight">Flight</option>
                       <option value="Bus">Bus</option>
@@ -502,7 +502,7 @@ const TripInfoTab = ({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">
+                    <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
                       Departure
                     </label>
                     <DatePicker
@@ -524,7 +524,7 @@ const TripInfoTab = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">
+                    <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
                       Arrival
                     </label>
                     <DatePicker
@@ -548,7 +548,7 @@ const TripInfoTab = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">
+                    <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
                       {transport.transportType === "Flight"
                         ? "Airline"
                         : transport.transportType === "Bus"
@@ -567,11 +567,11 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="e.g. Indigo"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+                      className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">
+                    <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
                       {transport.transportType === "Flight"
                         ? "Flight #"
                         : "Number #"}
@@ -588,11 +588,11 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="Number"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+                      className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">
+                    <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
                       From
                     </label>
                     <input
@@ -607,11 +607,11 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="ABC"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+                      className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">
+                    <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
                       To
                     </label>
                     <input
@@ -626,11 +626,11 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="XYZ"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+                      className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 leading-none">
+                    <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
                       PNR Number
                     </label>
                     <input
@@ -645,12 +645,12 @@ const TripInfoTab = ({
                         });
                       }}
                       placeholder="PNR"
-                      className="w-full bg-white border border-slate-200 rounded-md py-1.5 px-3 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+                      className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                     />
                   </div>
-                  <div className="col-span-2 pt-2 border-t border-blue-50">
+                  <div className="col-span-2 pt-2 border-t border-black/5">
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                      <label className="block text-[9px] font-semibold text-[#9aa3b2] uppercase tracking-widest leading-none">
                         Traveler Names
                       </label>
                       <button
@@ -666,7 +666,7 @@ const TripInfoTab = ({
                             transportDetails: newDetails,
                           });
                         }}
-                        className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700"
+                        className="text-[9px] font-semibold text-[#10182a] uppercase tracking-widest hover:text-[#10182a]"
                       >
                         + Add Traveler
                       </button>
@@ -687,7 +687,7 @@ const TripInfoTab = ({
                               });
                             }}
                             placeholder="Name"
-                            className="flex-1 bg-white border border-slate-200 rounded-md py-1.5 px-3 text-[10px] font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+                            className="flex-1 bg-white border border-black/10 rounded-md py-1.5 px-3 text-[10px] font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                           />
                           <button
                             type="button"
@@ -713,8 +713,8 @@ const TripInfoTab = ({
 
             {(!tripInfo.transportDetails ||
               tripInfo.transportDetails.length === 0) && (
-              <div className="text-center py-4 border-2 border-dashed border-blue-100 rounded-lg bg-white/50">
-                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest">
+              <div className="text-center py-4 border-2 border-dashed border-black/5 rounded-lg bg-white/50">
+                <p className="text-[9px] font-bold text-[#9aa3b2] uppercase tracking-widest">
                   No tickets added yet.
                 </p>
               </div>
@@ -725,21 +725,21 @@ const TripInfoTab = ({
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">
+          <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em]">
             Trip Visuals
           </label>
           <button
             onClick={() => navigate("/settings")}
-            className="bg-[#f3f3f4] text-[#1b1b1b] px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 hover:bg-blue-100/50 transition-all"
+            className="bg-[#f3f3f4] text-[#1b1b1b] px-3 py-1.5 rounded-full text-[9px] font-semibold uppercase tracking-widest flex items-center gap-1.5 hover:bg-[#eef9c2]/50 transition-all"
           >
-            <SettingsIcon className="w-3 h-3 text-blue-400" />
+            <SettingsIcon className="w-3 h-3 text-[#9aa3b2]" />
             Manage Branding
           </button>
         </div>
 
         <div className="space-y-3">
           <div className="space-y-2.5">
-            <p className="text-[10px] font-bold text-slate-400">Cover Image</p>
+            <p className="text-[10px] font-bold text-[#9aa3b2]">Cover Image</p>
             <div className="flex items-center gap-3 text-[11px]">
               <input
                 type="file"
@@ -764,11 +764,11 @@ const TripInfoTab = ({
                 onClick={() =>
                   document.getElementById("coverImageInput").click()
                 }
-                className="bg-[#f3f3f4] text-[#1b1b1b] px-5 py-2.5 rounded-full font-black hover:bg-blue-100/80 transition-all"
+                className="bg-[#f3f3f4] text-[#1b1b1b] px-5 py-2.5 rounded-full font-semibold hover:bg-[#eef9c2]/80 transition-all"
               >
                 Choose File
               </button>
-              <span className="text-slate-400 font-bold truncate max-w-37.5">
+              <span className="text-[#9aa3b2] font-bold truncate max-w-37.5">
                 {tripInfo.image
                   ? tripInfo.image.startsWith("data:")
                     ? "Custom image selected"
@@ -776,30 +776,30 @@ const TripInfoTab = ({
                   : "Default image"}
               </span>
             </div>
-            <p className="text-[10px] font-bold text-slate-400">
+            <p className="text-[10px] font-bold text-[#9aa3b2]">
               Accepted formats: JPG, JPEG, PNG, WebP
             </p>
           </div>
 
-          <div className="bg-[#f9f9f9] border border-slate-100 rounded-lg p-4">
-            <h4 className="text-xs font-black text-slate-800 mb-0.5">
+          <div className="bg-[#f9f9f9] border border-black/5 rounded-lg p-4">
+            <h4 className="text-xs font-semibold text-[#10182a] mb-0.5">
               TravelAgency
             </h4>
-            <p className="text-[9px] font-bold text-slate-400">
+            <p className="text-[9px] font-bold text-[#9aa3b2]">
               Branding applied from Global Settings
             </p>
           </div>
         </div>
 
-        <div className="pt-4 space-y-4 border-t border-slate-100">
-          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">
+        <div className="pt-4 space-y-4 border-t border-black/5">
+          <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em]">
             Trip Inclusions
           </label>
-          <p className="text-[10px] text-slate-400">
+          <p className="text-[10px] text-[#9aa3b2]">
             Default inclusions can be managed from the{" "}
             <a
               href="/policies"
-              className="text-blue-500 hover:underline font-semibold"
+              className="text-[#10182a] hover:underline font-semibold"
             >
               Policies page
             </a>
@@ -818,7 +818,7 @@ const TripInfoTab = ({
                 }
                 e.target.value = "";
               }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/10 transition-all cursor-pointer"
+              className="w-full bg-[#f3f3f4] border border-black/10 rounded-lg py-2 px-3 text-[11px] font-bold text-[#3a4250] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/10 transition-all cursor-pointer"
             >
               <option value="">+ Add standard inclusion...</option>
               {standardInclusions.map((item, idx) => (
@@ -841,7 +841,7 @@ const TripInfoTab = ({
               value={newInclusion}
               onChange={(e) => setNewInclusion(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && addInclusion()}
-              className="flex-1 bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
+              className="flex-1 bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6]"
             />
             <button
               onClick={addInclusion}
@@ -854,7 +854,7 @@ const TripInfoTab = ({
             {inclusions.map((item, index) => (
               <div
                 key={index}
-                className="group flex items-center justify-between bg-white border border-slate-100 p-2.5 rounded-lg transition-all hover:border-blue-100 hover:shadow-sm"
+                className="group flex items-center justify-between bg-white border border-black/5 p-2.5 rounded-lg transition-all hover:border-black/5 hover:shadow-sm"
               >
                 {editingInclusionIndex === index ? (
                   <>
@@ -867,7 +867,7 @@ const TripInfoTab = ({
                         if (e.key === "Enter") saveInclusionEdit(index);
                         if (e.key === "Escape") setEditingInclusionIndex(null);
                       }}
-                      className="flex-1 text-[11px] font-medium text-slate-700 bg-transparent border-none focus:ring-0 outline-none"
+                      className="flex-1 text-[11px] font-medium text-[#3a4250] bg-transparent border-none focus:ring-0 outline-none"
                     />
                     <div className="flex gap-1 ml-2 shrink-0">
                       <button
@@ -878,7 +878,7 @@ const TripInfoTab = ({
                       </button>
                       <button
                         onClick={() => setEditingInclusionIndex(null)}
-                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-md transition-colors"
+                        className="text-[#9aa3b2] hover:text-[#5b6472] hover:bg-[#eef0f1] p-1 rounded-md transition-colors"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -886,7 +886,7 @@ const TripInfoTab = ({
                   </>
                 ) : (
                   <>
-                    <span className="text-[11px] font-medium text-slate-600 flex-1">
+                    <span className="text-[11px] font-medium text-[#5b6472] flex-1">
                       {item.content}
                     </span>
                     <div className="flex gap-1 ml-2 shrink-0">
@@ -895,13 +895,13 @@ const TripInfoTab = ({
                           setEditingInclusionIndex(index);
                           setEditingInclusionValue(item.content);
                         }}
-                        className="text-slate-300 hover:text-blue-500 transition-colors"
+                        className="text-[#c9ced6] hover:text-[#10182a] transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => removeInclusion(index)}
-                        className="text-slate-300 hover:text-red-500 transition-colors"
+                        className="text-[#c9ced6] hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -911,22 +911,22 @@ const TripInfoTab = ({
               </div>
             ))}
             {inclusions.length === 0 && (
-              <p className="text-[10px] text-center text-slate-400 italic py-2">
+              <p className="text-[10px] text-center text-[#9aa3b2] italic py-2">
                 No inclusions added yet
               </p>
             )}
           </div>
         </div>
 
-        <div className="pt-4 space-y-4 border-t border-slate-100">
-          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">
+        <div className="pt-4 space-y-4 border-t border-black/5">
+          <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em]">
             Trip Exclusions
           </label>
-          <p className="text-[10px] text-slate-400">
+          <p className="text-[10px] text-[#9aa3b2]">
             Default exclusions can be managed from the{" "}
             <a
               href="/policies"
-              className="text-blue-500 hover:underline font-semibold"
+              className="text-[#10182a] hover:underline font-semibold"
             >
               Policies page
             </a>
@@ -945,7 +945,7 @@ const TripInfoTab = ({
                 }
                 e.target.value = "";
               }}
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-[11px] font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500/10 transition-all cursor-pointer"
+              className="w-full bg-[#f3f3f4] border border-black/10 rounded-lg py-2 px-3 text-[11px] font-bold text-[#3a4250] focus:outline-none focus:ring-2 focus:ring-[#9aa3b2]/10 transition-all cursor-pointer"
             >
               <option value="">+ Add standard exclusion...</option>
               {standardExclusions.map((item, idx) => (
@@ -968,11 +968,11 @@ const TripInfoTab = ({
               value={newExclusion}
               onChange={(e) => setNewExclusion(e.target.value)}
               onKeyPress={(e) => e.key === "Enter" && addExclusion()}
-              className="flex-1 bg-white border border-slate-200 rounded-lg py-2 px-3.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300"
+              className="flex-1 bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6]"
             />
             <button
               onClick={addExclusion}
-              className="bg-slate-600 text-white p-2 rounded-lg hover:bg-slate-700 transition-all shadow-sm"
+              className="bg-[#5b6472] text-white p-2 rounded-lg hover:bg-[#3a4250] transition-all shadow-sm"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -981,7 +981,7 @@ const TripInfoTab = ({
             {exclusions.map((item, index) => (
               <div
                 key={index}
-                className="group flex items-center justify-between bg-white border border-slate-100 p-2.5 rounded-lg transition-all hover:border-slate-200 hover:shadow-sm"
+                className="group flex items-center justify-between bg-white border border-black/5 p-2.5 rounded-lg transition-all hover:border-black/10 hover:shadow-sm"
               >
                 {editingExclusionIndex === index ? (
                   <>
@@ -994,7 +994,7 @@ const TripInfoTab = ({
                         if (e.key === "Enter") saveExclusionEdit(index);
                         if (e.key === "Escape") setEditingExclusionIndex(null);
                       }}
-                      className="flex-1 text-[11px] font-medium text-slate-700 bg-transparent border-none focus:ring-0 outline-none"
+                      className="flex-1 text-[11px] font-medium text-[#3a4250] bg-transparent border-none focus:ring-0 outline-none"
                     />
                     <div className="flex gap-1 ml-2 shrink-0">
                       <button
@@ -1005,7 +1005,7 @@ const TripInfoTab = ({
                       </button>
                       <button
                         onClick={() => setEditingExclusionIndex(null)}
-                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1 rounded-md transition-colors"
+                        className="text-[#9aa3b2] hover:text-[#5b6472] hover:bg-[#eef0f1] p-1 rounded-md transition-colors"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -1013,7 +1013,7 @@ const TripInfoTab = ({
                   </>
                 ) : (
                   <>
-                    <span className="text-[11px] font-medium text-slate-600 flex-1">
+                    <span className="text-[11px] font-medium text-[#5b6472] flex-1">
                       {item.content}
                     </span>
                     <div className="flex gap-1 ml-2 shrink-0">
@@ -1022,13 +1022,13 @@ const TripInfoTab = ({
                           setEditingExclusionIndex(index);
                           setEditingExclusionValue(item.content);
                         }}
-                        className="text-slate-300 hover:text-blue-500 transition-colors"
+                        className="text-[#c9ced6] hover:text-[#10182a] transition-colors"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => removeExclusion(index)}
-                        className="text-slate-300 hover:text-red-500 transition-colors"
+                        className="text-[#c9ced6] hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1038,7 +1038,7 @@ const TripInfoTab = ({
               </div>
             ))}
             {exclusions.length === 0 && (
-              <p className="text-[10px] text-center text-slate-400 italic py-2">
+              <p className="text-[10px] text-center text-[#9aa3b2] italic py-2">
                 No exclusions added yet
               </p>
             )}

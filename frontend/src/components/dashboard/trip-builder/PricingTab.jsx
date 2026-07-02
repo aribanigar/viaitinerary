@@ -14,43 +14,43 @@ const PricingTab = ({
 }) => {
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
-      <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+      <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center border border-blue-100">
+          <div className="w-10 h-10 bg-[#f3f3f4] text-[#10182a] rounded-lg flex items-center justify-center border border-black/5">
             <IndianRupee className="w-5 h-5" />
           </div>
-          <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">
+          <h3 className="text-xs font-semibold text-[#10182a] uppercase tracking-[0.2em]">
             Cost Calculation
           </h3>
         </div>
 
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-6">
-            <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+            <div className="bg-[#f3f3f4]/50 rounded-xl p-5 border border-black/5">
+              <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest block mb-2">
                 Accommodation Total
               </span>
-              <div className="text-xl font-black text-slate-900">
+              <div className="text-xl font-semibold text-[#10182a]">
                 ₹ {totalHotelCost.toLocaleString()}
               </div>
             </div>
-            <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">
+            <div className="bg-[#f3f3f4]/50 rounded-xl p-5 border border-black/5">
+              <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest block mb-2">
                 Transportation Total
               </span>
-              <div className="text-xl font-black text-slate-900">
+              <div className="text-xl font-semibold text-[#10182a]">
                 ₹ {totalVehicleCost.toLocaleString()}
               </div>
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+          <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center border border-blue-100">
+                <div className="w-10 h-10 bg-[#f3f3f4] text-[#10182a] rounded-lg flex items-center justify-center border border-black/5">
                   <Plus className="w-5 h-5" />
                 </div>
-                <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">
+                <h3 className="text-xs font-semibold text-[#10182a] uppercase tracking-[0.2em]">
                   Other Costs
                 </h3>
               </div>
@@ -61,7 +61,7 @@ const PricingTab = ({
                     { id: Date.now(), name: "", price: 0 },
                   ])
                 }
-                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+                className="p-1.5 text-[#10182a] hover:bg-[#f3f3f4] rounded-md transition-all"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -84,7 +84,7 @@ const PricingTab = ({
                           ),
                         )
                       }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-lg py-2 px-4 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 shadow-sm"
+                      className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-4 text-xs font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
                     />
                   </div>
                   <div className="w-32">
@@ -101,35 +101,35 @@ const PricingTab = ({
                           ),
                         )
                       }
-                      className="w-full bg-slate-50 border border-slate-100 rounded-lg py-2 px-4 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 shadow-sm"
+                      className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-4 text-xs font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
                     />
                   </div>
                   <button
                     onClick={() =>
                       setOtherCosts(otherCosts.filter((c) => c.id !== cost.id))
                     }
-                    className="p-2 text-slate-300 hover:text-red-500 transition-colors"
+                    className="p-2 text-[#c9ced6] hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
               {otherCosts.length === 0 && (
-                <p className="text-[10px] text-center text-slate-400 italic py-2">
+                <p className="text-[10px] text-center text-[#9aa3b2] italic py-2">
                   No other costs added yet
                 </p>
               )}
             </div>
           </div>
 
-          <div className="p-6 bg-blue-50/30 rounded-xl border border-blue-100/50 space-y-5">
+          <div className="p-6 bg-[#f3f3f4]/30 rounded-xl border border-black/5/50 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
+                <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
                   GST Percentage (%)
                 </label>
                 <div className="relative">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9aa3b2]">
                     <Percent className="w-3.5 h-3.5" />
                   </div>
                   <input
@@ -138,16 +138,16 @@ const PricingTab = ({
                     onChange={(e) =>
                       setGstPercentage(parseFloat(e.target.value) || 0)
                     }
-                    className="w-full bg-white border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+                    className="w-full bg-white border border-black/10 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 ml-1">
+                <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
                   Profit Margin (%)
                 </label>
                 <div className="relative">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9aa3b2]">
                     <Percent className="w-3.5 h-3.5" />
                   </div>
                   <input
@@ -156,25 +156,25 @@ const PricingTab = ({
                     onChange={(e) =>
                       setProfitMarginPercentage(parseFloat(e.target.value) || 0)
                     }
-                    className="w-full bg-white border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+                    className="w-full bg-white border border-black/10 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-blue-100 flex items-center justify-between">
+            <div className="pt-4 border-t border-black/5 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] block mb-1">
+                <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-[0.2em] block mb-1">
                   Final Estimated Cost
                 </span>
-                <div className="text-3xl font-black text-blue-600">
+                <div className="text-3xl font-semibold text-[#10182a]">
                   ₹ {Math.round(calculatedTotalCost).toLocaleString()}
                 </div>
               </div>
             </div>
           </div>
 
-          <p className="text-[10px] font-bold text-slate-400 italic text-center px-4">
+          <p className="text-[10px] font-bold text-[#9aa3b2] italic text-center px-4">
             * This cost is automatically updated in the "Trip Info" tab and will
             be used for the final quote.
           </p>
