@@ -942,24 +942,24 @@ const TripBuilder = ({ mode }) => {
   return (
     <>
       <DashboardLayout noPadding>
-        <div className="flex flex-col lg:h-full overflow-hidden bg-white">
-          {/* Builder Area */}
-          <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden">
-            {/* Left Form */}
-            <div className="w-full lg:w-[45%] lg:h-full flex flex-col bg-white border-b lg:border-b-0 lg:border-r border-slate-200 shrink-0 lg:shrink">
+        <div className="flex flex-col lg:h-full overflow-hidden">
+          {/* Builder Area — two rounded panels (builder + live preview) */}
+          <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden p-3 lg:p-4 gap-3 lg:gap-4">
+            {/* Left Form — builder panel */}
+            <div className="w-full lg:w-[45%] lg:h-full flex flex-col bg-white rounded-[20px] border border-black/5 shadow-sm overflow-hidden shrink-0 lg:shrink">
               <div className="p-6 pb-0 shrink-0">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center border border-blue-100">
+                    <div className="w-10 h-10 bg-[#c7f135] text-[#10182a] rounded-xl flex items-center justify-center">
                       <LayoutDashboard className="w-5 h-5" />
                     </div>
                     <div>
-                      <h1 className="text-lg font-black text-slate-900 leading-tight">
+                      <h1 className="text-lg font-black text-[#10182a] leading-tight">
                         Trip Builder
                       </h1>
-                      <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">
+                      <p className="text-[10px] text-[#9aa3b2] font-extrabold uppercase tracking-widest">
                         {loading ? (
-                          <span className="text-blue-500 animate-pulse">
+                          <span className="text-[#10182a] animate-pulse">
                             Syncing...
                           </span>
                         ) : (
@@ -970,12 +970,12 @@ const TripBuilder = ({ mode }) => {
                   </div>
                   <div className="w-full sm:w-auto flex flex-wrap sm:flex-nowrap gap-1.5 items-center">
                     {isPackageMode && (
-                      <label className="flex items-center gap-1.5 px-2 py-2 text-xs font-semibold text-slate-600 select-none cursor-pointer">
+                      <label className="flex items-center gap-1.5 px-2 py-2 text-xs font-semibold text-[#5b6472] select-none cursor-pointer">
                         <input
                           type="checkbox"
                           checked={!!tripInfo.locked}
                           onChange={(e) => setTripInfo((prev) => ({ ...prev, locked: e.target.checked }))}
-                          className="accent-blue-600 w-3.5 h-3.5"
+                          className="accent-[#c7f135] w-3.5 h-3.5"
                         />
                         Locked
                       </label>
@@ -1000,7 +1000,7 @@ const TripBuilder = ({ mode }) => {
                     <button
                       onClick={handleExport}
                       disabled={loading || saving || exporting}
-                      className="flex-1 sm:flex-none bg-[#c7f135] text-[#10182a] px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center"
+                      className="flex-1 sm:flex-none bg-[#c7f135] text-[#10182a] px-3 sm:px-4 py-2 rounded-md font-bold text-xs flex items-center gap-1.5 hover:bg-[#b0dc00] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-w-0 sm:min-w-22.5 justify-center"
                     >
                       {exporting ? (
                         <>
@@ -1028,7 +1028,7 @@ const TripBuilder = ({ mode }) => {
                   </div>
                 </div>
 
-                <div className="bg-[#f9f9f9] p-1 rounded-lg mb-6 border border-slate-100 shadow-sm shadow-slate-200/20 overflow-x-auto">
+                <div className="bg-[#f3f3f4] p-1 rounded-xl mb-6 border border-black/5 overflow-x-auto">
                   <div className="flex min-w-max sm:min-w-0">
                     {["Trip Info", "Itinerary", "Logistics", "Pricing"].map(
                       (tab, i) => (
@@ -1041,16 +1041,16 @@ const TripBuilder = ({ mode }) => {
                           disabled={loading || saving || exporting}
                           className={`min-w-27.5 sm:min-w-0 sm:flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[10px] font-black uppercase tracking-widest transition-all outline-none focus:outline-none ${
                             activeTab === tab
-                              ? "bg-white shadow-lg shadow-slate-400/10 text-blue-600"
-                              : "text-slate-400 hover:text-slate-600"
+                              ? "bg-white shadow-sm border border-black/5 text-[#10182a]"
+                              : "text-[#9aa3b2] hover:text-[#10182a]"
                           } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                           {tab === "Trip Info" && (
                             <SettingsIcon
                               className={`w-3.5 h-3.5 ${
                                 activeTab === tab
-                                  ? "text-blue-500"
-                                  : "text-slate-400"
+                                  ? "text-[#10182a]"
+                                  : "text-[#9aa3b2]"
                               }`}
                             />
                           )}
@@ -1058,8 +1058,8 @@ const TripBuilder = ({ mode }) => {
                             <Calendar
                               className={`w-3.5 h-3.5 ${
                                 activeTab === tab
-                                  ? "text-blue-500"
-                                  : "text-slate-400"
+                                  ? "text-[#10182a]"
+                                  : "text-[#9aa3b2]"
                               }`}
                             />
                           )}
@@ -1067,8 +1067,8 @@ const TripBuilder = ({ mode }) => {
                             <Briefcase
                               className={`w-3.5 h-3.5 ${
                                 activeTab === tab
-                                  ? "text-blue-500"
-                                  : "text-slate-400"
+                                  ? "text-[#10182a]"
+                                  : "text-[#9aa3b2]"
                               }`}
                             />
                           )}
@@ -1076,8 +1076,8 @@ const TripBuilder = ({ mode }) => {
                             <IndianRupee
                               className={`w-3.5 h-3.5 stroke-[1.5] ${
                                 activeTab === tab
-                                  ? "text-blue-500"
-                                  : "text-slate-400"
+                                  ? "text-[#10182a]"
+                                  : "text-[#9aa3b2]"
                               }`}
                             />
                           )}
@@ -1185,8 +1185,8 @@ const TripBuilder = ({ mode }) => {
               </div>
             </div>
 
-            {/* Right Preview */}
-            <div className="flex-1 lg:h-full overflow-y-auto overflow-x-hidden bg-[#eeeeee] custom-scrollbar min-h-screen lg:min-h-0">
+            {/* Right Preview — live preview panel */}
+            <div className="relative flex-1 lg:h-full overflow-y-auto overflow-x-hidden bg-[#eef0f1] rounded-[20px] border border-black/5 custom-scrollbar min-h-screen lg:min-h-0">
               {loading ? null : (
                 <div className="flex flex-col items-center py-8 px-2 sm:px-4 md:px-6">
                   <div className="w-[210mm] shrink-0 transition-all origin-top transform [zoom:0.35] sm:[zoom:0.4] md:[zoom:0.5] lg:[zoom:0.6] xl:[zoom:0.75] 2xl:[zoom:0.9] shadow-2xl">
@@ -1208,7 +1208,7 @@ const TripBuilder = ({ mode }) => {
 
               {/* Live Preview Badge */}
               <div className="absolute bottom-10 right-10 flex items-center gap-2 bg-[#1a1c1c]/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-50">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <div className="w-2 h-2 rounded-full bg-[#c7f135]"></div>
                 <span className="text-[10px] font-black text-white uppercase tracking-widest">
                   Live Preview
                 </span>
