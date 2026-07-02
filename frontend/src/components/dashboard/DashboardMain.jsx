@@ -89,9 +89,9 @@ const DashboardMain = () => {
       value: `INR ₹${totalRevenue.toLocaleString()}`,
       change: `${totalTrips} total items`,
       icon: IndianRupee,
-      color: "text-emerald-500",
-      bgColor: "bg-emerald-500",
-      changeColor: "text-slate-400",
+      bgColor: "bg-[#e7f63c]",
+      iconColor: "text-[#181c22]",
+      changeColor: "text-[#9aa3b2]",
       link: "/dashboard/trips?filter=revenue",
     },
     {
@@ -99,9 +99,9 @@ const DashboardMain = () => {
       value: totalTrips.toString(),
       change: `${totalTrips} itineraries created`,
       icon: Briefcase,
-      color: "text-blue-500",
-      bgColor: "bg-[#e7f63c]",
-      changeColor: "text-blue-400",
+      bgColor: "bg-[#181c22]",
+      iconColor: "text-white",
+      changeColor: "text-[#9aa3b2]",
       link: "/dashboard/trips?filter=total",
     },
     {
@@ -109,9 +109,9 @@ const DashboardMain = () => {
       value: confirmedTrips.toString(),
       change: "Ready to go",
       icon: CheckCircle2,
-      color: "text-purple-500",
-      bgColor: "bg-purple-500",
-      changeColor: "text-slate-400",
+      bgColor: "bg-[#181c22]",
+      iconColor: "text-white",
+      changeColor: "text-[#9aa3b2]",
       link: "/dashboard/trips?filter=confirmed",
     },
     {
@@ -119,9 +119,9 @@ const DashboardMain = () => {
       value: completedTrips.toString(),
       change: "Successfully finalized",
       icon: CheckCircle2,
-      color: "text-orange-500",
-      bgColor: "bg-orange-500",
-      changeColor: "text-slate-400",
+      bgColor: "bg-[#181c22]",
+      iconColor: "text-white",
+      changeColor: "text-[#9aa3b2]",
       link: "/dashboard/trips?filter=completed",
     },
   ];
@@ -134,10 +134,10 @@ const DashboardMain = () => {
   return (
     <DashboardLayout>
       <div className="mb-10">
-        <h1 className="text-3xl font-black text-slate-900 leading-tight">
+        <h1 className="text-3xl font-bold text-[#181c22] leading-tight">
           Dashboard
         </h1>
-        <p className="text-slate-400 font-medium mt-1">
+        <p className="text-[#8a93a2] font-medium mt-1">
           Welcome back! Here's what's happening today.
         </p>
       </div>
@@ -154,21 +154,21 @@ const DashboardMain = () => {
               <Link
                 key={i}
                 to={stat.link}
-                className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 no-underline group block"
+                className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 no-underline group block"
               >
                 <div className="flex justify-between items-start mb-6">
                   <div
                     className={`${stat.bgColor} w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
                   >
-                    <stat.icon className="w-5 h-5 text-white" />
+                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-blue-500 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-[#cdd2da] group-hover:text-blue-500 transition-colors" />
                 </div>
                 <div>
-                  <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">
+                  <h3 className="text-[#8a93a2] text-[10px] font-bold uppercase tracking-widest mb-1">
                     {stat.label}
                   </h3>
-                  <p className="text-2xl font-black text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                  <p className="text-2xl font-bold text-[#181c22] mb-2 group-hover:text-blue-600 transition-colors">
                     {stat.value}
                   </p>
                   <p className={`text-[10px] font-bold ${stat.changeColor}`}>
@@ -180,20 +180,20 @@ const DashboardMain = () => {
           </div>
 
           {/* Today's Trips Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+          <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-black/5 flex justify-between items-center bg-[#f3f3f4]/60">
+              <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
                 Ongoing Trips
               </h3>
               <Link
                 to="/my-trips"
-                className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5 hover:gap-2 transition-all no-underline"
+                className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5 hover:gap-2 transition-all no-underline"
               >
                 View All
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-black/5">
               {(() => {
                 const today = new Date().toISOString().split("T")[0];
                 const todaysTrips = trips.filter(
@@ -210,10 +210,10 @@ const DashboardMain = () => {
                       <Link
                         key={trip.trip_id || trip.tripId}
                         to={`/trip-builder/${trip.trip_id || trip.tripId}`}
-                        className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors group cursor-pointer no-underline"
+                        className="p-6 flex items-center justify-between hover:bg-black/[0.02] transition-colors group cursor-pointer no-underline"
                       >
                         <div className="flex items-center gap-5">
-                          <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover:bg-white group-hover:border-blue-100 transition-colors overflow-hidden">
+                          <div className="w-12 h-12 bg-[#f3f3f4] rounded-xl flex items-center justify-center border border-black/5 group-hover:bg-white group-hover:border-black/10 transition-colors overflow-hidden">
                             {trip.image_url || trip.image ? (
                               <img
                                 src={trip.image_url || trip.image}
@@ -221,16 +221,16 @@ const DashboardMain = () => {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <Briefcase className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                              <Briefcase className="w-5 h-5 text-[#8a93a2] group-hover:text-blue-500 transition-colors" />
                             )}
                           </div>
                           <div>
-                            <h4 className="text-sm font-black text-slate-900 mb-0.5">
+                            <h4 className="text-sm font-bold text-[#181c22] mb-0.5">
                               {trip.trip_title ||
                                 trip.tripTitle ||
                                 "Unnamed Trip"}
                             </h4>
-                            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-tight">
+                            <p className="text-[11px] text-[#8a93a2] font-bold uppercase tracking-tight">
                               {trip.client_name ||
                                 trip.clientName ||
                                 "Unknown Client"}{" "}
@@ -239,18 +239,18 @@ const DashboardMain = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-black text-slate-900 mb-0.5 uppercase">
+                          <p className="text-sm font-bold text-[#181c22] mb-0.5 uppercase">
                             {trip.currency?.split(" ")[0] || "INR"}{" "}
                             {parseFloat(trip.cost || 0).toLocaleString()}
                           </p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                          <p className="text-[10px] text-[#8a93a2] font-bold uppercase tracking-tight">
                             {trip.status || "Draft"}
                           </p>
                         </div>
                       </Link>
                     ))
                 ) : (
-                  <div className="p-10 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">
+                  <div className="p-10 text-center text-[#8a93a2] font-bold text-xs uppercase tracking-widest">
                     No trips starting today.
                   </div>
                 );
@@ -259,20 +259,20 @@ const DashboardMain = () => {
           </div>
 
           {/* Upcoming Trips Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mt-8">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+          <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden mt-8">
+            <div className="p-6 border-b border-black/5 flex justify-between items-center bg-[#f3f3f4]/60">
+              <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
                 Upcoming Trips (Next 7 Days)
               </h3>
               <Link
                 to="/my-trips"
-                className="text-[10px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1.5 hover:gap-2 transition-all no-underline"
+                className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1.5 hover:gap-2 transition-all no-underline"
               >
                 View All
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-black/5">
               {(() => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
@@ -296,10 +296,10 @@ const DashboardMain = () => {
                       <Link
                         key={trip.trip_id || trip.tripId}
                         to={`/trip-builder/${trip.trip_id || trip.tripId}`}
-                        className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors group cursor-pointer no-underline"
+                        className="p-6 flex items-center justify-between hover:bg-black/[0.02] transition-colors group cursor-pointer no-underline"
                       >
                         <div className="flex items-center gap-5">
-                          <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 group-hover:bg-white group-hover:border-blue-100 transition-colors overflow-hidden">
+                          <div className="w-12 h-12 bg-[#f3f3f4] rounded-xl flex items-center justify-center border border-black/5 group-hover:bg-white group-hover:border-black/10 transition-colors overflow-hidden">
                             {trip.image_url || trip.image ? (
                               <img
                                 src={trip.image_url || trip.image}
@@ -307,16 +307,16 @@ const DashboardMain = () => {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <Briefcase className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                              <Briefcase className="w-5 h-5 text-[#8a93a2] group-hover:text-blue-500 transition-colors" />
                             )}
                           </div>
                           <div>
-                            <h4 className="text-sm font-black text-slate-900 mb-0.5">
+                            <h4 className="text-sm font-bold text-[#181c22] mb-0.5">
                               {trip.trip_title ||
                                 trip.tripTitle ||
                                 "Unnamed Trip"}
                             </h4>
-                            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-tight">
+                            <p className="text-[11px] text-[#8a93a2] font-bold uppercase tracking-tight">
                               {trip.client_name ||
                                 trip.clientName ||
                                 "Unknown Client"}{" "}
@@ -332,18 +332,18 @@ const DashboardMain = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-black text-slate-900 mb-0.5 uppercase">
+                          <p className="text-sm font-bold text-[#181c22] mb-0.5 uppercase">
                             {trip.currency?.split(" ")[0] || "INR"}{" "}
                             {parseFloat(trip.cost || 0).toLocaleString()}
                           </p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
+                          <p className="text-[10px] text-[#8a93a2] font-bold uppercase tracking-tight">
                             {trip.status || "Draft"}
                           </p>
                         </div>
                       </Link>
                     ))
                 ) : (
-                  <div className="p-10 text-center text-slate-400 font-bold text-xs uppercase tracking-widest">
+                  <div className="p-10 text-center text-[#8a93a2] font-bold text-xs uppercase tracking-widest">
                     No trips scheduled for the next 7 days.
                   </div>
                 );
