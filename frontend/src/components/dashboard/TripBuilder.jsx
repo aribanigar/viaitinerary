@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import AssistantFrame from "./AssistantFrame";
 import { PhoneInput } from "react-international-phone";
@@ -52,6 +52,15 @@ import {
   DRAFT_KEY,
   useTripBuilderData,
 } from "./trip-builder/useTripBuilderData";
+
+const TABS_KEY = "builder_open_tabs";
+const readTabs = () => {
+  try {
+    return JSON.parse(localStorage.getItem(TABS_KEY)) || [];
+  } catch {
+    return [];
+  }
+};
 
 const TripBuilder = ({ mode }) => {
   const isPackageMode = mode === "package";
@@ -733,24 +742,91 @@ const TripBuilder = ({ mode }) => {
     ]);
   };
 
-  const handleSaveTrip = async () => {
+  // ── Open-trip tabs (assistant-style multi-tab workspace) ───────────────
+  const [tabs, setTabs] = useState(() => readTabs());
+  const [autoState, setAutoState] = useState("idle"); // idle | saving | saved
+  const [lastSavedAt, setLastSavedAt] = useState(null);
+
+  const currentTabId = urlTripId || "new";
+  const defaultTabTitle = isPackageMode ? "New Package" : "New Trip";
+  const currentTitle =
+    (tripInfo.tripTitle || tripInfo.clientName || "").trim() || defaultTabTitle;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TABS_KEY, JSON.stringify(tabs));
+    } catch (e) {
+      /* ignore */
+    }
+  }, [tabs]);
+
+  // keep the current trip present in the tab strip with a fresh title
+  useEffect(() => {
+    setTabs((prev) => {
+      const idx = prev.findIndex((t) => t.id === currentTabId);
+      if (idx === -1) return [...prev, { id: currentTabId, title: currentTitle }];
+      if (prev[idx].title === currentTitle) return prev;
+      const next = [...prev];
+      next[idx] = { ...next[idx], title: currentTitle };
+      return next;
+    });
+  }, [currentTabId, currentTitle]);
+
+  const gotoTab = (tab) => {
+    if (tab.id === "new")
+      navigate(isPackageMode ? "/package-builder" : "/trip-builder");
+    else
+      navigate(
+        isPackageMode ? `/package-builder/${tab.id}` : `/trip-builder/${tab.id}`,
+      );
+  };
+
+  const openTab = (tab) => {
+    if (tab.id !== currentTabId) gotoTab(tab);
+  };
+
+  const closeTab = (tab, e) => {
+    if (e) e.stopPropagation();
+    setTabs((prev) => {
+      const next = prev.filter((t) => t.id !== tab.id);
+      if (tab.id === currentTabId) {
+        const fallback = next[next.length - 1];
+        setTimeout(
+          () => (fallback ? gotoTab(fallback) : navigate("/my-trips")),
+          0,
+        );
+      }
+      return next;
+    });
+  };
+
+  // when a brand-new trip is first saved, promote its "new" tab to the real id
+  const replaceNewTab = (newId) => {
+    setTabs((prev) =>
+      prev
+        .filter((t) => t.id !== newId)
+        .map((t) => (t.id === "new" ? { id: newId, title: currentTitle } : t)),
+    );
+  };
+
+  const saveTrip = async ({ silent = false } = {}) => {
     if (isPackageMode) {
       if (!tripInfo.tripTitle) {
-        toast.error("Package name is required");
-        return;
+        if (!silent) toast.error("Package name is required");
+        return false;
       }
     } else {
       if (!tripInfo.clientName) {
-        toast.error("Client Name is required");
-        return;
+        if (!silent) toast.error("Client Name is required");
+        return false;
       }
       if (!tripInfo.clientPhone || tripInfo.clientPhone.length < 5) {
-        toast.error("Client Phone is required");
-        return;
+        if (!silent) toast.error("Client Phone is required");
+        return false;
       }
       if (!tripInfo.clientEmail) {
-        toast.error("Client Email is required");
-        return;
+        if (!silent) toast.error("Client Email is required");
+        return false;
       }
     }
 
@@ -829,43 +905,79 @@ const TripBuilder = ({ mode }) => {
     };
 
     try {
-      setSaving(true);
+      if (silent) setAutoState("saving");
+      else setSaving(true);
       if (isPackageMode) {
         const packageData = { ...fullTripData, locked: !!tripInfo.locked };
         if (urlTripId) {
           await updatePackage(token, urlTripId, packageData);
-          toast.success("Package updated successfully!");
+          if (!silent) toast.success("Package updated successfully!");
         } else {
           const created = await createPackage(token, packageData);
-          toast.success("Package saved successfully!");
+          if (!silent) toast.success("Package saved successfully!");
           localStorage.removeItem(DRAFT_KEY);
           if (created && created.trip_id) {
+            replaceNewTab(created.trip_id);
             navigate(`/package-builder/${created.trip_id}`, { replace: true });
           }
         }
       } else if (urlTripId) {
         // If we have a URL tripId, we are updating.
         await updateTrip(token, urlTripId, fullTripData);
-        toast.success("Trip updated successfully!");
+        if (!silent) toast.success("Trip updated successfully!");
       } else {
         const createdTrip = await createTrip(token, fullTripData);
-        toast.success("Trip saved successfully!");
+        if (!silent) toast.success("Trip saved successfully!");
 
         // Clear draft when successfully saved as a new trip
         localStorage.removeItem(DRAFT_KEY);
 
-        // Navigate to the edit URL so subsequent saves/exports work
+        // Promote the "new" tab and navigate so subsequent saves/exports work
         if (createdTrip && createdTrip.trip_id) {
+          replaceNewTab(createdTrip.trip_id);
           navigate(`/trip-builder/${createdTrip.trip_id}`, { replace: true });
         }
       }
+      setAutoState("saved");
+      setLastSavedAt(Date.now());
+      return true;
     } catch (err) {
       console.error("Save failed:", err);
-      toast.error(err.message || "Failed to save trip to database.");
+      if (!silent)
+        toast.error(err.message || "Failed to save trip to database.");
+      setAutoState("idle");
+      return false;
     } finally {
-      setSaving(false);
+      if (!silent) setSaving(false);
     }
   };
+
+  const handleSaveTrip = () => saveTrip();
+
+  // ── Auto-save: debounced silent save on any change ─────────────────────
+  const saveRef = useRef(saveTrip);
+  saveRef.current = saveTrip;
+  const savingRef = useRef(false);
+  savingRef.current = saving || loading;
+  useEffect(() => {
+    if (loading) return;
+    const t = setTimeout(() => {
+      if (!savingRef.current) saveRef.current?.({ silent: true });
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [
+    tripInfo,
+    itinerary,
+    accommodations,
+    transportation,
+    otherCosts,
+    inclusions,
+    exclusions,
+    includeGST,
+    gstPercentage,
+    profitMarginPercentage,
+    loading,
+  ]);
 
   const handleExport = async () => {
     // If we don't have urlTripId, check if title is entered to warn about saving
@@ -998,22 +1110,72 @@ const TripBuilder = ({ mode }) => {
 
   const handleNewTrip = () => {
     if (busy) return;
-    if (urlTripId) {
-      navigate(isPackageMode ? "/package-builder" : "/trip-builder");
-    } else {
-      clearForm();
-    }
+    if (currentTabId === "new") return; // already on a fresh tab
+    navigate(isPackageMode ? "/package-builder" : "/trip-builder");
   };
 
-  const builderNav = (
-    <>
+  const tabStrip = (
+    <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-[40vw]">
+        {tabs.map((tab) => {
+          const active = tab.id === currentTabId;
+          return (
+            <div
+              key={tab.id}
+              onClick={() => openTab(tab)}
+              className={`group flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-medium whitespace-nowrap cursor-pointer transition-colors ${
+                active
+                  ? "bg-[#10182a] text-white border-transparent"
+                  : "bg-white text-[#10182a]/70 border-black/10 hover:text-[#10182a]"
+              }`}
+            >
+              <span className="max-w-[130px] truncate">{tab.title}</span>
+              <button
+                onClick={(e) => closeTab(tab, e)}
+                className={`grid place-items-center w-4 h-4 rounded-full shrink-0 ${
+                  active ? "hover:bg-white/20" : "hover:bg-black/10"
+                }`}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
       <button
         onClick={handleNewTrip}
         disabled={busy}
-        className="flex items-center gap-2 text-sm font-medium text-[#10182a] hover:opacity-70 transition-opacity disabled:opacity-40"
+        title="New trip"
+        className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-full text-xs font-semibold text-[#10182a] hover:bg-black/[0.05] transition-colors disabled:opacity-40"
       >
-        <Plus className="w-4 h-4" /> New Trip
+        <Plus className="w-3.5 h-3.5" /> New
       </button>
+    </div>
+  );
+
+  const autoSaveChip = (
+    <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-[#9aa3b2] mr-1">
+      {autoState === "saving" ? (
+        <>
+          <span className="w-2 h-2 rounded-full bg-[#c7f135] animate-pulse" />
+          Saving…
+        </>
+      ) : autoState === "saved" ? (
+        <>
+          <span className="w-2 h-2 rounded-full bg-[#c7f135]" />
+          Saved
+        </>
+      ) : (
+        <>
+          <span className="w-2 h-2 rounded-full bg-black/15" />
+          Draft
+        </>
+      )}
+    </span>
+  );
+
+  const builderNav = (
+    <>
       <div className="relative">
         <button
           onClick={() => toggleMenu("history")}
@@ -1133,9 +1295,14 @@ const TripBuilder = ({ mode }) => {
   return (
     <>
       <AssistantFrame
-        title="Trip Builder"
+        title={tabStrip}
         nav={builderNav}
-        actions={builderActions}
+        actions={
+          <>
+            {autoSaveChip}
+            {builderActions}
+          </>
+        }
       >
         <div className="flex flex-col lg:h-full overflow-hidden">
           {/* Builder Area — two rounded panels (builder + live preview) */}

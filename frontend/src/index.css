@@ -172,6 +172,13 @@ html {
   scroll-behavior: smooth;
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ── AI assistant page: recolor the injected geographic SVGs onto the brand
    (light-gray landmasses, lime highlight for the active country/state). ── */
 .worldmap svg,

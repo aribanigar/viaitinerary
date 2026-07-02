@@ -90,12 +90,20 @@ const AssistantFrame = ({ title, nav, actions, children }) => {
 
       {/* Content surface */}
       <main className="flex-1 my-4 mr-4 rounded-[28px] bg-[#fbfbfb] border border-black/5 shadow-[0_20px_60px_-30px_rgba(16,24,42,0.35)] overflow-hidden flex flex-col min-w-0">
-        <header className="flex items-center gap-6 px-8 pt-6 pb-4 border-b border-black/5 shrink-0">
-          <div className="flex items-center gap-2 pr-4">
-            <Sparkles className="w-4 h-4" style={{ color: "#c7f135" }} fill="#c7f135" />
-            <span className="text-[15px] font-semibold tracking-tight">
-              {title}
-            </span>
+        <header className="flex items-center gap-6 px-8 pt-5 pb-4 border-b border-black/5 shrink-0">
+          <div className="flex items-center gap-2 pr-2 min-w-0">
+            <Sparkles
+              className="w-4 h-4 shrink-0"
+              style={{ color: "#c7f135" }}
+              fill="#c7f135"
+            />
+            {typeof title === "string" ? (
+              <span className="text-[15px] font-semibold tracking-tight">
+                {title}
+              </span>
+            ) : (
+              title
+            )}
           </div>
           {nav && (
             <div className="flex items-center gap-6 border-l border-black/10 pl-6">
