@@ -40,7 +40,7 @@ const RailIcon = ({ icon: Icon, active, to }) => {
 // icon rail on the left + a rounded content surface with a minimal top bar.
 // Pass `title` (shown with a lime sparkle), `actions` (right side of the bar),
 // and the two-panel body as `children`.
-const AssistantFrame = ({ title, actions, children }) => {
+const AssistantFrame = ({ title, nav, actions, children }) => {
   const { pathname } = useLocation();
   const { user } = useAuth();
   const is = (p) => pathname.startsWith(p);
@@ -97,6 +97,11 @@ const AssistantFrame = ({ title, actions, children }) => {
               {title}
             </span>
           </div>
+          {nav && (
+            <div className="flex items-center gap-6 border-l border-black/10 pl-6">
+              {nav}
+            </div>
+          )}
           {actions && (
             <div className="ml-auto flex items-center gap-2">{actions}</div>
           )}

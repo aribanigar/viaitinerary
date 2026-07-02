@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import AssistantFrame from "./AssistantFrame";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -23,6 +23,7 @@ import {
   IndianRupee,
   Percent,
   ShieldCheck,
+  Clock,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { createTrip, updateTrip, downloadTripPdf } from "../../api/trips";
@@ -939,6 +940,35 @@ const TripBuilder = ({ mode }) => {
     toast.info("Draft cleared and form reset");
   };
 
+  const busy = loading || saving || exporting;
+
+  const handleNewTrip = () => {
+    if (busy) return;
+    if (urlTripId) {
+      navigate(isPackageMode ? "/package-builder" : "/trip-builder");
+    } else {
+      clearForm();
+    }
+  };
+
+  const builderNav = (
+    <>
+      <button
+        onClick={handleNewTrip}
+        disabled={busy}
+        className="flex items-center gap-2 text-sm font-medium text-[#10182a] hover:opacity-70 transition-opacity disabled:opacity-40"
+      >
+        <Plus className="w-4 h-4" /> New Trip
+      </button>
+      <Link
+        to={isPackageMode ? "/packages" : "/my-trips"}
+        className="flex items-center gap-2 text-sm font-medium text-[#10182a]/50 hover:text-[#10182a] transition-colors"
+      >
+        <Clock className="w-4 h-4" /> History
+      </Link>
+    </>
+  );
+
   const builderActions = (
     <>
       {isPackageMode && (
@@ -1001,71 +1031,41 @@ const TripBuilder = ({ mode }) => {
 
   return (
     <>
-      <AssistantFrame title="Trip Builder" actions={builderActions}>
+      <AssistantFrame
+        title="Trip Builder"
+        nav={builderNav}
+        actions={builderActions}
+      >
         <div className="flex flex-col lg:h-full overflow-hidden">
           {/* Builder Area — two rounded panels (builder + live preview) */}
           <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden p-3 lg:p-4 gap-3 lg:gap-4">
             {/* Left Form — builder panel */}
             <div className="w-full lg:w-[45%] lg:h-full flex flex-col bg-white rounded-[20px] border border-black/5 shadow-sm overflow-hidden shrink-0 lg:shrink">
               <div className="p-6 pb-0 shrink-0">
-                <div className="bg-[#f3f3f4] p-1 rounded-xl mb-6 border border-black/5 overflow-x-auto">
-                  <div className="flex min-w-max sm:min-w-0">
-                    {["Trip Info", "Itinerary", "Logistics", "Pricing"].map(
-                      (tab, i) => (
-                        <button
-                          key={i}
-                          onClick={() =>
-                            !(loading || saving || exporting) &&
-                            setActiveTab(tab)
-                          }
-                          disabled={loading || saving || exporting}
-                          className={`min-w-27.5 sm:min-w-0 sm:flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[10px] font-black uppercase tracking-widest transition-all outline-none focus:outline-none ${
-                            activeTab === tab
-                              ? "bg-white shadow-sm border border-black/5 text-[#10182a]"
-                              : "text-[#9aa3b2] hover:text-[#10182a]"
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        >
-                          {tab === "Trip Info" && (
-                            <SettingsIcon
-                              className={`w-3.5 h-3.5 ${
-                                activeTab === tab
-                                  ? "text-[#10182a]"
-                                  : "text-[#9aa3b2]"
-                              }`}
-                            />
-                          )}
-                          {tab === "Itinerary" && (
-                            <Calendar
-                              className={`w-3.5 h-3.5 ${
-                                activeTab === tab
-                                  ? "text-[#10182a]"
-                                  : "text-[#9aa3b2]"
-                              }`}
-                            />
-                          )}
-                          {tab === "Logistics" && (
-                            <Briefcase
-                              className={`w-3.5 h-3.5 ${
-                                activeTab === tab
-                                  ? "text-[#10182a]"
-                                  : "text-[#9aa3b2]"
-                              }`}
-                            />
-                          )}
-                          {tab === "Pricing" && (
-                            <IndianRupee
-                              className={`w-3.5 h-3.5 stroke-[1.5] ${
-                                activeTab === tab
-                                  ? "text-[#10182a]"
-                                  : "text-[#9aa3b2]"
-                              }`}
-                            />
-                          )}
-                          {tab}
-                        </button>
-                      ),
-                    )}
-                  </div>
+                <div className="flex items-center gap-2 mb-6">
+                  {[
+                    { tab: "Trip Info", icon: SettingsIcon },
+                    { tab: "Itinerary", icon: Calendar },
+                    { tab: "Logistics", icon: Briefcase },
+                    { tab: "Pricing", icon: IndianRupee },
+                  ].map(({ tab, icon: Icon }) => (
+                    <button
+                      key={tab}
+                      onClick={() => !busy && setActiveTab(tab)}
+                      disabled={busy}
+                      title={tab}
+                      className={`grid place-items-center w-11 h-11 rounded-2xl border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        activeTab === tab
+                          ? "border-[#10182a] text-[#10182a] bg-white shadow-sm"
+                          : "border-black/10 text-[#10182a]/45 hover:text-[#10182a] hover:border-black/20 bg-white"
+                      }`}
+                    >
+                      <Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm font-medium text-[#10182a]/60">
+                    {activeTab}
+                  </span>
                 </div>
               </div>
 
