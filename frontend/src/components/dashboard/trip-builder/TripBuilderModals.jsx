@@ -80,11 +80,11 @@ export const HotelModal = ({
       <div className="space-y-6 flex flex-col">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               City
             </label>
             <select
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
               value={hotelForm.city}
               onChange={(e) =>
                 setHotelForm({ ...hotelForm, city: e.target.value, name: "" })
@@ -100,11 +100,11 @@ export const HotelModal = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               Hotel Name
             </label>
             <select
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
               value={hotelForm.hotelId || ""}
               onChange={(e) => {
                 const selectedHotel = masterHotels.find(
@@ -164,11 +164,11 @@ export const HotelModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
               Hotel Category
             </label>
             <select
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
               value={hotelForm.category}
               onChange={(e) =>
                 setHotelForm({ ...hotelForm, category: e.target.value })
@@ -182,11 +182,11 @@ export const HotelModal = ({
             </select>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
               Room Type
             </label>
             <select
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
               value={resolvedRoomType}
               onChange={(e) => {
                 const newRoomType = e.target.value;
@@ -235,7 +235,7 @@ export const HotelModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
               Rooms
             </label>
             <div className="flex items-center gap-3">
@@ -252,7 +252,7 @@ export const HotelModal = ({
               >
                 <Minus className="w-3 h-3 text-[#5b6472]" />
               </button>
-              <span className="font-semibold text-[#10182a] w-4 text-center text-sm">
+              <span className="font-semibold text-[#181c22] w-4 text-center text-sm">
                 {hotelForm.rooms || 1}
               </span>
               <button
@@ -271,7 +271,7 @@ export const HotelModal = ({
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
               CNB
             </label>
             <div className="flex items-center gap-3">
@@ -288,7 +288,7 @@ export const HotelModal = ({
               >
                 <Minus className="w-3 h-3 text-[#5b6472]" />
               </button>
-              <span className="font-semibold text-[#10182a] w-4 text-center text-sm">
+              <span className="font-semibold text-[#181c22] w-4 text-center text-sm">
                 {hotelForm.cnbCount || 0}
               </span>
               <button
@@ -310,7 +310,7 @@ export const HotelModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
               Extra Beds (5 to 12)
             </label>
             <div className="flex items-center gap-3">
@@ -327,7 +327,7 @@ export const HotelModal = ({
               >
                 <Minus className="w-3 h-3 text-[#5b6472]" />
               </button>
-              <span className="font-semibold text-[#10182a] w-4 text-center text-sm">
+              <span className="font-semibold text-[#181c22] w-4 text-center text-sm">
                 {hotelForm.extraBeds5To12Count || 0}
               </span>
               <button
@@ -346,7 +346,7 @@ export const HotelModal = ({
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
               Extra Beds (Above 12 Years)
             </label>
             <div className="flex items-center gap-3">
@@ -365,7 +365,7 @@ export const HotelModal = ({
               >
                 <Minus className="w-3 h-3 text-[#5b6472]" />
               </button>
-              <span className="font-semibold text-[#10182a] w-4 text-center text-sm">
+              <span className="font-semibold text-[#181c22] w-4 text-center text-sm">
                 {hotelForm.extraBedsAbove12Count || 0}
               </span>
               <button
@@ -388,11 +388,11 @@ export const HotelModal = ({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
+          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
             Meal Plan
           </label>
           <select
-            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-3 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
+            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-3 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
             value={hotelForm.mealPlan}
             onChange={(e) =>
               setHotelForm({ ...hotelForm, mealPlan: e.target.value })
@@ -410,7 +410,7 @@ export const HotelModal = ({
 
         <div className="grid grid-cols-2 gap-4 pt-2">
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               Check-in
             </label>
             <DatePicker
@@ -429,7 +429,7 @@ export const HotelModal = ({
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               Check-out
             </label>
             <DatePicker
@@ -477,11 +477,11 @@ export const TransportModal = ({
       <div className="space-y-6 flex flex-col">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               Trip Type
             </label>
             <select
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
               value={transportForm.tripType}
               onChange={(e) =>
                 setTransportForm({
@@ -497,13 +497,13 @@ export const TransportModal = ({
             </select>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               Route (e.g. Airport - Hotel)
             </label>
             <input
               type="text"
               placeholder="e.g. Airport -> Hotel"
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6]"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
               value={transportForm.route}
               onChange={(e) =>
                 setTransportForm({
@@ -516,13 +516,13 @@ export const TransportModal = ({
         </div>
 
         <div className="hidden">
-          <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
             Destination
           </label>
           <input
             type="text"
             placeholder="e.g. Manali"
-            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6]"
+            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
             value={transportForm.destination || ""}
             onChange={(e) =>
               setTransportForm({
@@ -535,7 +535,7 @@ export const TransportModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               Date
             </label>
             <DatePicker
@@ -554,11 +554,11 @@ export const TransportModal = ({
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               Vehicle
             </label>
             <select
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-3 px-4 text-xs font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all appearance-none cursor-pointer"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-3 px-4 text-xs font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
               value={transportForm.vehicleId || ""}
               onChange={(e) => {
                 const selectedVehicle = availableVehicles.find(
@@ -585,7 +585,7 @@ export const TransportModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               Number of Vehicles
             </label>
             <div className="flex items-center gap-3">
@@ -602,7 +602,7 @@ export const TransportModal = ({
               >
                 <Minus className="w-3 h-3 text-[#5b6472]" />
               </button>
-              <span className="font-semibold text-[#10182a] w-4 text-center text-sm">
+              <span className="font-semibold text-[#181c22] w-4 text-center text-sm">
                 {transportForm.quantity || 1}
               </span>
               <button
@@ -623,12 +623,12 @@ export const TransportModal = ({
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-[#10182a]/45 uppercase tracking-[0.12em] mb-1.5">
+          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
             Any remarks?
           </label>
           <textarea
             placeholder="e.g. Private Transfer, Meet & Greet"
-            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#10182a] focus:outline-none focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-[#c9ced6] min-h-20 resize-none"
+            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6] min-h-20 resize-none"
             value={transportForm.remarks}
             onChange={(e) =>
               setTransportForm({

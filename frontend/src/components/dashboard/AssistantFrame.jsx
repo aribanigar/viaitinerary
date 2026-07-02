@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-const INK = "#10182a";
+const INK = "#181c22";
 
 // Black aperture brand mark (same as the AI-assistant page).
 const Mark = ({ className = "" }) => (
   <span
-    className={`grid place-items-center rounded-full bg-[#10182a] ${className}`}
+    className={`grid place-items-center rounded-full bg-[#181c22] ${className}`}
   >
     <Aperture className="w-[60%] h-[60%] text-white" strokeWidth={2.2} />
   </span>
@@ -26,8 +26,8 @@ const Mark = ({ className = "" }) => (
 const RailIcon = ({ icon: Icon, active, to }) => {
   const cls = `grid place-items-center w-11 h-11 rounded-2xl transition-colors ${
     active
-      ? "bg-[#10182a] text-white shadow-md"
-      : "text-[#10182a]/50 hover:text-[#10182a] hover:bg-black/5"
+      ? "bg-[#181c22] text-white shadow-md"
+      : "text-[#181c22]/50 hover:text-[#181c22] hover:bg-black/5"
   }`;
   return (
     <Link to={to} className={cls}>
@@ -52,7 +52,7 @@ const AssistantFrame = ({ title, nav, actions, children }) => {
     .slice(0, 2);
 
   return (
-    <div className="h-screen w-full bg-[#f0f0f1] text-[#10182a] font-sans antialiased flex overflow-hidden">
+    <div className="h-screen w-full bg-[#f0f0f1] text-[#181c22] font-sans antialiased flex overflow-hidden">
       {/* Left icon rail */}
       <aside className="w-[80px] shrink-0 flex flex-col items-center py-6">
         <Link to="/dashboard">
@@ -77,12 +77,12 @@ const AssistantFrame = ({ title, nav, actions, children }) => {
         <div className="mt-auto flex flex-col items-center gap-4">
           <Link
             to="/notifications"
-            className="relative grid place-items-center w-11 h-11 rounded-2xl bg-white border border-black/5 text-[#10182a]/60 shadow-sm hover:text-[#10182a]"
+            className="relative grid place-items-center w-11 h-11 rounded-2xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm hover:text-[#181c22]"
           >
             <Bell className="w-[18px] h-[18px]" strokeWidth={2} />
             <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#ff5a4d] ring-2 ring-white" />
           </Link>
-          <div className="w-11 h-11 rounded-2xl bg-[#c7f135] text-[#10182a] grid place-items-center font-bold text-sm border border-black/5 shadow-sm">
+          <div className="w-11 h-11 rounded-2xl bg-[#e7f63c] text-[#181c22] grid place-items-center font-bold text-sm border border-black/5 shadow-sm">
             {initials}
           </div>
         </div>
@@ -94,8 +94,8 @@ const AssistantFrame = ({ title, nav, actions, children }) => {
           <div className="flex items-center gap-2 pr-2 min-w-0">
             <Sparkles
               className="w-4 h-4 shrink-0"
-              style={{ color: "#c7f135" }}
-              fill="#c7f135"
+              style={{ color: "#e7f63c" }}
+              fill="#e7f63c"
             />
             {typeof title === "string" ? (
               <span className="text-[15px] font-semibold tracking-tight">

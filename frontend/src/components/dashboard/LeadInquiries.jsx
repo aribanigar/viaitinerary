@@ -405,13 +405,13 @@ const LeadInquiries = () => {
               placeholder="Search by name, email, destination, or inquiry ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full md:w-44 px-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#c7f135]/20 transition-all"
+            className="w-full md:w-44 px-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
           >
             <option value="all">All Status</option>
             <option value="new">New</option>
@@ -558,7 +558,7 @@ const LeadInquiries = () => {
                         handleAssignmentChange(inquiry.id, e.target.value)
                       }
                       disabled={assigningId === inquiry.id}
-                      className="min-w-36 px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#c7f135] disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="min-w-36 px-2.5 py-1 rounded-lg text-[10px] font-semibold border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#e7f63c] disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <option value="">Unassigned</option>
                       {assignableMembers
@@ -582,7 +582,7 @@ const LeadInquiries = () => {
                   disabled={inquiry.status === "converted"}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase border ${getStatusBadgeClass(
                     inquiry.status,
-                  )} focus:outline-none focus:ring-2 focus:ring-[#c7f135] disabled:opacity-50 disabled:cursor-not-allowed`}
+                  )} focus:outline-none focus:ring-2 focus:ring-[#e7f63c] disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   <option value="new">New</option>
                   <option value="contacted">Contacted</option>
@@ -659,7 +659,7 @@ const LeadInquiries = () => {
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add internal notes about this inquiry..."
               rows={6}
-              className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#c7f135] text-slate-700 resize-none"
+              className="w-full px-4 py-3 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#e7f63c] text-slate-700 resize-none"
             />
             <div className="flex justify-end gap-3 mt-6">
               <button
@@ -670,7 +670,7 @@ const LeadInquiries = () => {
               </button>
               <button
                 onClick={handleNotesSave}
-                className="px-6 py-3 rounded-2xl font-semibold bg-linear-to-r from-[#c7f135] to-[#b0dc00] text-[#10182a] hover:shadow-lg hover:shadow-[#c7f135]/40 transition-all"
+                className="px-6 py-3 rounded-2xl font-semibold bg-linear-to-r from-[#e7f63c] to-[#d4e42e] text-[#181c22] hover:shadow-lg hover:shadow-[#e7f63c]/40 transition-all"
               >
                 Save Notes
               </button>

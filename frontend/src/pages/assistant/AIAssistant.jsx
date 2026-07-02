@@ -33,13 +33,13 @@ const usZoom = usRaw
   .replace(/viewBox="[^"]*"/, 'viewBox="72 322 210 178"')
   .replace(/<svg /, '<svg preserveAspectRatio="xMidYMid slice" ');
 
-const LIME = "#c7f135";
-const INK = "#10182a";
+const LIME = "#e7f63c";
+const INK = "#181c22";
 
 // Black aperture brand mark used in the reference (top-left / rail).
 const Mark = ({ className = "" }) => (
   <span
-    className={`grid place-items-center rounded-full bg-[#10182a] ${className}`}
+    className={`grid place-items-center rounded-full bg-[#181c22] ${className}`}
   >
     <Aperture className="w-[60%] h-[60%] text-white" strokeWidth={2.2} />
   </span>
@@ -48,8 +48,8 @@ const Mark = ({ className = "" }) => (
 const RailIcon = ({ icon: Icon, active, to }) => {
   const cls = `grid place-items-center w-11 h-11 rounded-2xl transition-colors ${
     active
-      ? "bg-[#10182a] text-white shadow-md"
-      : "text-[#10182a]/50 hover:text-[#10182a] hover:bg-black/5"
+      ? "bg-[#181c22] text-white shadow-md"
+      : "text-[#181c22]/50 hover:text-[#181c22] hover:bg-black/5"
   }`;
   const inner = <Icon className="w-[18px] h-[18px]" strokeWidth={2} />;
   return to ? (
@@ -65,8 +65,8 @@ const ToolIcon = ({ icon: Icon, active }) => (
   <button
     className={`grid place-items-center w-11 h-11 rounded-2xl border transition-colors ${
       active
-        ? "border-[#10182a] text-[#10182a] bg-white shadow-sm"
-        : "border-[#e6e6e6] text-[#10182a]/50 hover:text-[#10182a] hover:border-[#d0d0d0] bg-white"
+        ? "border-[#181c22] text-[#181c22] bg-white shadow-sm"
+        : "border-[#e6e6e6] text-[#181c22]/50 hover:text-[#181c22] hover:border-[#d0d0d0] bg-white"
     }`}
   >
     <Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
@@ -95,7 +95,7 @@ const Waveform = () => {
           />
         ))}
       </div>
-      <div className="absolute left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur border border-black/5 text-xs font-medium text-[#10182a] shadow-sm">
+      <div className="absolute left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/90 backdrop-blur border border-black/5 text-xs font-medium text-[#181c22] shadow-sm">
         Listen to You…
       </div>
     </div>
@@ -108,7 +108,7 @@ const AIAssistant = () => {
   );
 
   return (
-    <div className="min-h-screen w-full bg-[#f0f0f1] text-[#10182a] font-sans antialiased flex">
+    <div className="min-h-screen w-full bg-[#f0f0f1] text-[#181c22] font-sans antialiased flex">
       {/* ── Left icon rail ─────────────────────────────────────────── */}
       <aside className="w-[80px] shrink-0 flex flex-col items-center py-6">
         <Mark className="w-8 h-8" />
@@ -120,7 +120,7 @@ const AIAssistant = () => {
           <RailIcon icon={Settings} to="/settings" />
         </div>
         <div className="mt-auto flex flex-col items-center gap-4">
-          <button className="relative grid place-items-center w-11 h-11 rounded-2xl bg-white border border-black/5 text-[#10182a]/60 shadow-sm">
+          <button className="relative grid place-items-center w-11 h-11 rounded-2xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm">
             <Bell className="w-[18px] h-[18px]" strokeWidth={2} />
             <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#ff5a4d] ring-2 ring-white" />
           </button>
@@ -142,10 +142,10 @@ const AIAssistant = () => {
               Trip to the Grand Canyon
             </span>
           </div>
-          <button className="flex items-center gap-2 text-sm font-medium text-[#10182a] hover:opacity-70 transition-opacity">
+          <button className="flex items-center gap-2 text-sm font-medium text-[#181c22] hover:opacity-70 transition-opacity">
             <Plus className="w-4 h-4" /> New Chat
           </button>
-          <button className="flex items-center gap-2 text-sm font-medium text-[#10182a]/50 hover:text-[#10182a] transition-colors">
+          <button className="flex items-center gap-2 text-sm font-medium text-[#181c22]/50 hover:text-[#181c22] transition-colors">
             <Clock className="w-4 h-4" /> History
           </button>
         </header>
@@ -165,10 +165,10 @@ const AIAssistant = () => {
             {/* World Map card */}
             <div className="relative rounded-[24px] bg-[#f3f3f4] border border-black/5 p-5 overflow-hidden">
               <div className="absolute top-4 right-4 z-20 flex gap-2">
-                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#10182a]/60 shadow-sm hover:text-[#10182a]">
+                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm hover:text-[#181c22]">
                   <RefreshCw className="w-4 h-4" />
                 </button>
-                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#10182a]/60 shadow-sm hover:text-[#10182a]">
+                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm hover:text-[#181c22]">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -202,7 +202,7 @@ const AIAssistant = () => {
                     Arizona, USA
                   </span>
                   <span className="block w-5 h-5 rounded-full" style={{ background: LIME, boxShadow: `0 0 0 6px ${LIME}44` }} />
-                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#10182a]" />
+                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#181c22]" />
                 </div>
                 <div
                   className="absolute"
@@ -211,17 +211,17 @@ const AIAssistant = () => {
                   <span className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold">
                     Paris, France
                   </span>
-                  <span className="block w-2.5 h-2.5 rounded-full bg-[#10182a] ring-4 ring-white" />
+                  <span className="block w-2.5 h-2.5 rounded-full bg-[#181c22] ring-4 ring-white" />
                 </div>
                 {/* transit pill */}
                 <div
                   className="absolute flex items-center gap-2"
                   style={{ left: "33%", top: "52%", transform: "translate(-50%,-50%)" }}
                 >
-                  <span className="px-3 py-1.5 rounded-full bg-[#10182a] text-white text-[11px] font-medium shadow-lg">
+                  <span className="px-3 py-1.5 rounded-full bg-[#181c22] text-white text-[11px] font-medium shadow-lg">
                     Time in transit
                   </span>
-                  <span className="px-2.5 py-1.5 rounded-full bg-[#e7e7e7] text-[#10182a] text-[11px] font-semibold">
+                  <span className="px-2.5 py-1.5 rounded-full bg-[#e7e7e7] text-[#181c22] text-[11px] font-semibold">
                     15h
                   </span>
                 </div>
@@ -248,21 +248,21 @@ const AIAssistant = () => {
             {/* waveform + mic */}
             <div className="flex flex-col items-center gap-6 mt-8 mb-2">
               <Waveform />
-              <button className="grid place-items-center w-14 h-14 rounded-full bg-[#10182a] text-white shadow-xl hover:scale-105 transition-transform">
+              <button className="grid place-items-center w-14 h-14 rounded-full bg-[#181c22] text-white shadow-xl hover:scale-105 transition-transform">
                 <Mic className="w-5 h-5" />
               </button>
             </div>
 
             {/* input */}
             <div className="mt-auto flex items-center gap-3 bg-white rounded-full border border-black/10 pl-5 pr-2 py-2 shadow-sm">
-              <Link2 className="w-4 h-4 text-[#10182a]/40 shrink-0" />
+              <Link2 className="w-4 h-4 text-[#181c22]/40 shrink-0" />
               <input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-sm text-[#10182a] placeholder:text-[#10182a]/40"
+                className="flex-1 bg-transparent outline-none text-sm text-[#181c22] placeholder:text-[#181c22]/40"
                 placeholder="Ask your AI travel assistant…"
               />
-              <button className="grid place-items-center w-10 h-10 rounded-full bg-[#10182a] text-white shrink-0 hover:bg-black transition-colors">
+              <button className="grid place-items-center w-10 h-10 rounded-full bg-[#181c22] text-white shrink-0 hover:bg-black transition-colors">
                 <SendHorizontal className="w-4 h-4" />
               </button>
             </div>
@@ -277,7 +277,7 @@ const AIAssistant = () => {
                 Arizona, USA
               </h2>
               <div className="text-right shrink-0 pt-1">
-                <div className="text-[11px] text-[#10182a]/50">miles</div>
+                <div className="text-[11px] text-[#181c22]/50">miles</div>
                 <div className="text-2xl font-semibold tracking-tight">392</div>
               </div>
             </div>
@@ -288,7 +288,7 @@ const AIAssistant = () => {
               className="w-full h-[150px] object-cover rounded-[18px] mt-5"
             />
 
-            <p className="text-[13px] leading-relaxed text-[#10182a]/70 mt-5">
+            <p className="text-[13px] leading-relaxed text-[#181c22]/70 mt-5">
               The Grand Canyon is a vast gorge carved by the Colorado River over
               millions of years. Located in Arizona, USA, it is renowned for its
               immense size and colorful layers of rock that reveal Earth's
@@ -301,18 +301,18 @@ const AIAssistant = () => {
             {/* Arizona mini-map */}
             <div className="relative mt-3 flex-1 min-h-[220px] rounded-[20px] bg-[#f3f3f4] border border-black/5 overflow-hidden">
               <div className="absolute top-3 left-3 z-20 flex gap-2">
-                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#10182a]/60 shadow-sm">
+                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm">
                   <Layers className="w-4 h-4" />
                 </button>
-                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#10182a]/60 shadow-sm">
+                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm">
                   <Filter className="w-4 h-4" />
                 </button>
               </div>
               <div className="absolute top-3 right-3 z-20 flex gap-2">
-                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#10182a] shadow-sm">
+                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#181c22] shadow-sm">
                   <Plus className="w-4 h-4" />
                 </button>
-                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#10182a] shadow-sm">
+                <button className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#181c22] shadow-sm">
                   <Minus className="w-4 h-4" />
                 </button>
               </div>
@@ -321,13 +321,13 @@ const AIAssistant = () => {
                 className="usmap absolute inset-0 w-full h-full"
                 dangerouslySetInnerHTML={{ __html: usZoom }}
               />
-              <span className="absolute left-[16%] top-[34%] text-[11px] font-medium text-[#10182a]/60">
+              <span className="absolute left-[16%] top-[34%] text-[11px] font-medium text-[#181c22]/60">
                 California
               </span>
-              <span className="absolute left-[41%] -translate-x-1/2 top-[70%] text-[12px] font-semibold text-[#10182a]">
+              <span className="absolute left-[41%] -translate-x-1/2 top-[70%] text-[12px] font-semibold text-[#181c22]">
                 Arizona
               </span>
-              <span className="absolute right-[8%] top-[34%] text-[11px] font-medium text-[#10182a]/60">
+              <span className="absolute right-[8%] top-[34%] text-[11px] font-medium text-[#181c22]/60">
                 New Mexico
               </span>
 
@@ -335,13 +335,13 @@ const AIAssistant = () => {
               <div className="absolute bottom-3 left-3 right-3 z-20 flex items-center gap-3 rounded-[16px] bg-white/80 backdrop-blur border border-black/5 px-4 py-3 shadow-lg"
                 style={{ boxShadow: `0 0 0 1.5px ${LIME}, 0 12px 30px -12px rgba(0,0,0,.35)` }}
               >
-                <span className="text-xs font-medium text-[#10182a]">
+                <span className="text-xs font-medium text-[#181c22]">
                   Preparing the result
                 </span>
                 <span className="ml-auto text-lg font-semibold tracking-tight">
                   63%
                 </span>
-                <button className="grid place-items-center w-7 h-7 rounded-lg bg-white border border-black/10 text-[#10182a]/50">
+                <button className="grid place-items-center w-7 h-7 rounded-lg bg-white border border-black/10 text-[#181c22]/50">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>

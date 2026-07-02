@@ -44,7 +44,7 @@ const Navbar = () => {
                         ? "/login"
                         : link.href
                     }
-                    className="text-[15px] text-[#475569] hover:text-[#10182A] font-medium transition-colors cursor-pointer"
+                    className="text-[15px] text-[#475569] hover:text-[#181c22] font-medium transition-colors cursor-pointer"
                   >
                     {link.name}
                   </Link>
@@ -84,7 +84,7 @@ const Navbar = () => {
             <div className="md:hidden flex items-center">
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="text-[#10182A] hover:bg-slate-50 p-2 rounded-lg transition-colors focus:outline-none"
+                className="text-[#181c22] hover:bg-slate-50 p-2 rounded-lg transition-colors focus:outline-none"
                 aria-label="Toggle menu"
               >
                 {isOpen ? (
@@ -114,13 +114,13 @@ const Navbar = () => {
       >
         <div className="flex flex-col h-full p-6">
           <div className="flex justify-between items-center mb-10">
-            <span className="text-xl font-black text-[#10182A]">Menu</span>
+            <span className="text-xl font-black text-[#181c22]">Menu</span>
             <button
               onClick={() => setIsOpen(false)}
               className="p-2 hover:bg-slate-50 rounded-lg transition-colors"
               aria-label="Close menu"
             >
-              <X className="w-6 h-6 text-[#10182A]" />
+              <X className="w-6 h-6 text-[#181c22]" />
             </button>
           </div>
 
@@ -133,7 +133,7 @@ const Navbar = () => {
                     ? "/login"
                     : link.href
                 }
-                className="text-[18px] text-[#475569] hover:text-[#10182A] font-semibold transition-colors"
+                className="text-[18px] text-[#475569] hover:text-[#181c22] font-semibold transition-colors"
                 onClick={() => setIsOpen(false)}
               >
                 {link.name}

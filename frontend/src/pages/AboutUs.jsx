@@ -129,7 +129,7 @@ const AboutUs = () => {
             </div>
           </section>
 
-          <section className="bg-[#c7f135] text-[#10182a] p-8 rounded-2xl shadow-sm">
+          <section className="bg-[#e7f63c] text-[#181c22] p-8 rounded-2xl shadow-sm">
             <h3 className="text-2xl font-bold mb-4 text-[#1b1b1b]">
               Operate like a modern travel brand.
             </h3>
@@ -139,7 +139,7 @@ const AboutUs = () => {
             </p>
             <a
               href="/signup"
-              className="inline-block bg-[#c7f135] text-[#10182a] px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-transform shadow-md"
+              className="inline-block bg-[#e7f63c] text-[#181c22] px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-transform shadow-md"
             >
               Start Your Free Trial
             </a>

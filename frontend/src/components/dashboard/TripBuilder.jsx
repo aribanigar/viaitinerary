@@ -96,6 +96,7 @@ const TripBuilder = ({ mode }) => {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
+  const [loadedTabId, setLoadedTabId] = useState(null);
   const [defaultTripImage, setDefaultTripImage] = useState("");
   const [agencySettings, setAgencySettings] = useState({
     agencyName: "TravelAgency",
@@ -285,6 +286,7 @@ const TripBuilder = ({ mode }) => {
     token,
     urlTripId,
     draftKey,
+    setLoadedTabId,
     navigate,
     loading,
     setLoading,
@@ -770,17 +772,29 @@ const TripBuilder = ({ mode }) => {
     }
   }, [tabs]);
 
-  // keep the current trip present in the tab strip with a fresh title
+  // keep the current trip present in the tab strip with a fresh title.
+  // Only trust the form-derived title once the loaded data belongs to this tab,
+  // otherwise a freshly opened tab briefly shows the previous trip's name.
+  const dataIsCurrent = loadedTabId === currentTabId;
+  const isDraftTab = String(currentTabId).startsWith("draft:");
   useEffect(() => {
     setTabs((prev) => {
       const idx = prev.findIndex((t) => t.id === currentTabId);
-      if (idx === -1) return [...prev, { id: currentTabId, title: currentTitle }];
+      if (idx === -1) {
+        const initial = dataIsCurrent
+          ? currentTitle
+          : isDraftTab
+            ? defaultTabTitle
+            : "Loading…";
+        return [...prev, { id: currentTabId, title: initial }];
+      }
+      if (!dataIsCurrent) return prev; // keep title until this tab's data settles
       if (prev[idx].title === currentTitle) return prev;
       const next = [...prev];
       next[idx] = { ...next[idx], title: currentTitle };
       return next;
     });
-  }, [currentTabId, currentTitle]);
+  }, [currentTabId, currentTitle, dataIsCurrent, isDraftTab, defaultTabTitle]);
 
   const gotoTab = (tab) => {
     if (typeof tab.id === "string" && tab.id.startsWith("draft:")) {
@@ -1142,8 +1156,8 @@ const TripBuilder = ({ mode }) => {
               onClick={() => openTab(tab)}
               className={`group flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-medium whitespace-nowrap cursor-pointer transition-colors ${
                 active
-                  ? "bg-[#10182a] text-white border-transparent"
-                  : "bg-white text-[#10182a]/70 border-black/10 hover:text-[#10182a]"
+                  ? "bg-[#181c22] text-white border-transparent"
+                  : "bg-white text-[#181c22]/70 border-black/10 hover:text-[#181c22]"
               }`}
             >
               <span className="max-w-[130px] truncate">{tab.title}</span>
@@ -1163,7 +1177,7 @@ const TripBuilder = ({ mode }) => {
         onClick={handleNewTrip}
         disabled={busy}
         title="New trip"
-        className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-full text-xs font-semibold text-[#10182a] hover:bg-black/[0.05] transition-colors disabled:opacity-40"
+        className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-full text-xs font-semibold text-[#181c22] hover:bg-black/[0.05] transition-colors disabled:opacity-40"
       >
         <Plus className="w-3.5 h-3.5" /> New
       </button>
@@ -1174,12 +1188,12 @@ const TripBuilder = ({ mode }) => {
     <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-[#9aa3b2] mr-1">
       {autoState === "saving" ? (
         <>
-          <span className="w-2 h-2 rounded-full bg-[#c7f135] animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-[#e7f63c] animate-pulse" />
           Saving…
         </>
       ) : autoState === "saved" ? (
         <>
-          <span className="w-2 h-2 rounded-full bg-[#c7f135]" />
+          <span className="w-2 h-2 rounded-full bg-[#e7f63c]" />
           Saved
         </>
       ) : (
@@ -1196,7 +1210,7 @@ const TripBuilder = ({ mode }) => {
       <div className="relative">
         <button
           onClick={() => toggleMenu("history")}
-          className="flex items-center gap-2 text-sm font-medium text-[#10182a]/50 hover:text-[#10182a] transition-colors"
+          className="flex items-center gap-2 text-sm font-medium text-[#181c22]/50 hover:text-[#181c22] transition-colors"
         >
           <Clock className="w-4 h-4" /> History
         </button>
@@ -1207,7 +1221,7 @@ const TripBuilder = ({ mode }) => {
               onClick={() => setOpenMenu(null)}
             />
             <div className="absolute left-0 top-full mt-3 w-72 bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
-              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#10182a]/45 border-b border-black/5">
+              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45 border-b border-black/5">
                 Recent trips
               </div>
               <div className="max-h-80 overflow-y-auto py-1">
@@ -1229,7 +1243,7 @@ const TripBuilder = ({ mode }) => {
                         }}
                         className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors"
                       >
-                        <div className="text-sm font-medium text-[#10182a] truncate">
+                        <div className="text-sm font-medium text-[#181c22] truncate">
                           {t.trip_title || t.tripTitle || "Untitled Trip"}
                         </div>
                         <div className="text-xs text-[#9aa3b2] truncate">
@@ -1259,7 +1273,7 @@ const TripBuilder = ({ mode }) => {
             onChange={(e) =>
               setTripInfo((prev) => ({ ...prev, locked: e.target.checked }))
             }
-            className="accent-[#c7f135] w-3.5 h-3.5"
+            className="accent-[#e7f63c] w-3.5 h-3.5"
           />
           Locked
         </label>
@@ -1267,11 +1281,11 @@ const TripBuilder = ({ mode }) => {
       <button
         onClick={handleExport}
         disabled={loading || saving || exporting}
-        className="px-4 py-2 rounded-full text-xs font-semibold text-[#10182a] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {exporting ? (
           <>
-            <Loader size="sm" text="" inline color="text-[#10182a]" />
+            <Loader size="sm" text="" inline color="text-[#181c22]" />
             <span>Exporting…</span>
           </>
         ) : (
@@ -1283,11 +1297,11 @@ const TripBuilder = ({ mode }) => {
       <button
         onClick={handleSaveTrip}
         disabled={loading || saving || exporting}
-        className="px-4 py-2 rounded-full text-xs font-semibold bg-[#c7f135] text-[#10182a] hover:bg-[#b0dc00] transition-colors flex items-center gap-1.5 shadow-sm shadow-[#c7f135]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 rounded-full text-xs font-semibold bg-[#e7f63c] text-[#181c22] hover:bg-[#d4e42e] transition-colors flex items-center gap-1.5 shadow-sm shadow-[#e7f63c]/40 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {saving ? (
           <>
-            <Loader size="sm" text="" inline color="text-[#10182a]" />
+            <Loader size="sm" text="" inline color="text-[#181c22]" />
             <span>Saving…</span>
           </>
         ) : (
@@ -1331,8 +1345,8 @@ const TripBuilder = ({ mode }) => {
                       title={tab}
                       className={`grid place-items-center w-11 h-11 rounded-2xl border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                         activeTab === tab
-                          ? "border-[#10182a] text-[#10182a] bg-white shadow-sm"
-                          : "border-black/10 text-[#10182a]/45 hover:text-[#10182a] hover:border-black/20 bg-white"
+                          ? "border-[#181c22] text-[#181c22] bg-white shadow-sm"
+                          : "border-black/10 text-[#181c22]/45 hover:text-[#181c22] hover:border-black/20 bg-white"
                       }`}
                     >
                       <Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
@@ -1342,7 +1356,7 @@ const TripBuilder = ({ mode }) => {
                     <button
                       onClick={() => toggleMenu("templates")}
                       title="Load from package template"
-                      className="grid place-items-center w-11 h-11 rounded-2xl border border-black/10 text-[#10182a]/45 hover:text-[#10182a] hover:border-black/20 bg-white transition-colors"
+                      className="grid place-items-center w-11 h-11 rounded-2xl border border-black/10 text-[#181c22]/45 hover:text-[#181c22] hover:border-black/20 bg-white transition-colors"
                     >
                       <PackageIcon className="w-[18px] h-[18px]" strokeWidth={1.8} />
                     </button>
@@ -1353,7 +1367,7 @@ const TripBuilder = ({ mode }) => {
                           onClick={() => setOpenMenu(null)}
                         />
                         <div className="absolute left-0 top-full mt-3 w-72 bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
-                          <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#10182a]/45 border-b border-black/5">
+                          <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45 border-b border-black/5">
                             Load from template
                           </div>
                           <div className="max-h-80 overflow-y-auto py-1">
@@ -1372,7 +1386,7 @@ const TripBuilder = ({ mode }) => {
                                   onClick={() => applyTemplate(pkg)}
                                   className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors"
                                 >
-                                  <div className="text-sm font-medium text-[#10182a] truncate">
+                                  <div className="text-sm font-medium text-[#181c22] truncate">
                                     {pkg.trip_title || "Untitled Package"}
                                   </div>
                                   <div className="text-xs text-[#9aa3b2] truncate">
@@ -1391,7 +1405,7 @@ const TripBuilder = ({ mode }) => {
                       </>
                     )}
                   </div>
-                  <span className="ml-2 text-sm font-medium text-[#10182a]/60">
+                  <span className="ml-2 text-sm font-medium text-[#181c22]/60">
                     {activeTab}
                   </span>
                 </div>
@@ -1516,7 +1530,7 @@ const TripBuilder = ({ mode }) => {
 
               {/* Live Preview Badge */}
               <div className="absolute bottom-10 right-10 flex items-center gap-2 bg-[#1a1c1c]/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-50">
-                <div className="w-2 h-2 rounded-full bg-[#c7f135]"></div>
+                <div className="w-2 h-2 rounded-full bg-[#e7f63c]"></div>
                 <span className="text-[10px] font-black text-white uppercase tracking-widest">
                   Live Preview
                 </span>

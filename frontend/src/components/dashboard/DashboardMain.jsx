@@ -100,7 +100,7 @@ const DashboardMain = () => {
       change: `${totalTrips} itineraries created`,
       icon: Briefcase,
       color: "text-blue-500",
-      bgColor: "bg-[#c7f135]",
+      bgColor: "bg-[#e7f63c]",
       changeColor: "text-blue-400",
       link: "/dashboard/trips?filter=total",
     },

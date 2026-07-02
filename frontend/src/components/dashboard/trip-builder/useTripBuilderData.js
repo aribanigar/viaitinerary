@@ -7,6 +7,7 @@ export const useTripBuilderData = ({
   token,
   urlTripId,
   draftKey,
+  setLoadedTabId,
   navigate,
   loading,
   setLoading,
@@ -380,6 +381,7 @@ export const useTripBuilderData = ({
           navigate("/trip-builder", { replace: true });
         }
       } finally {
+        setLoadedTabId?.(urlTripId || `draft:${draftKey}`);
         setLoading(false);
       }
     }
@@ -387,7 +389,9 @@ export const useTripBuilderData = ({
     loadData();
   }, [
     urlTripId,
+    draftKey,
     draftStorageKey,
+    setLoadedTabId,
     navigate,
     token,
     formatImageUrl,
