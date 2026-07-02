@@ -179,6 +179,44 @@ html {
   display: none;
 }
 
+/* ── Frosted glass (glassmorphism) — see docs/glass-effect.md.
+   Only reads as glass over a busy backdrop (image / gradient / map). ── */
+.glass {
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 10px 40px -12px rgba(24, 28, 34, 0.25);
+}
+.glass-dark {
+  background: rgba(24, 28, 34, 0.45); /* #181C22 @ 45% */
+  color: #fff;
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.45);
+}
+.glass-lime {
+  background: rgba(231, 246, 60, 0.18); /* #E7F63C @ 18% */
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(231, 246, 60, 0.5);
+  box-shadow: 0 10px 40px -12px rgba(24, 28, 34, 0.25);
+}
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .glass {
+    background: rgba(255, 255, 255, 0.9);
+  }
+  .glass-dark {
+    background: rgba(24, 28, 34, 0.92);
+  }
+  .glass-lime {
+    background: rgba(231, 246, 60, 0.85);
+  }
+}
+
 /* ── AI assistant page: recolor the injected geographic SVGs onto the brand
    (light-gray landmasses, lime highlight for the active country/state). ── */
 .worldmap svg,
