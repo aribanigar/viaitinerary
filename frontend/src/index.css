@@ -227,23 +227,23 @@ input[type="number"] {
 }
 
 .custom-sidebar-scrollbar::-webkit-scrollbar-track {
-  background: #1b1b1b;
+  background: transparent;
 }
 
 .custom-sidebar-scrollbar::-webkit-scrollbar-thumb {
-  background: #475569; /* slate-500, similar to the text color */
+  background: #d5d8dd;
   border-radius: 10px;
-  border: 1px solid #1b1b1b; /* added small border for better definition */
+  border: 1px solid #ffffff;
 }
 
 .custom-sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #64748b; /* slate-400 */
+  background: #b9bdc5;
 }
 
 /* For Firefox */
 .custom-sidebar-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #475569 #1b1b1b;
+  scrollbar-color: #d5d8dd transparent;
 }
 
 /* Typography Styles for Blog Content */
