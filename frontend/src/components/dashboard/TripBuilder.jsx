@@ -24,10 +24,21 @@ import {
   Percent,
   ShieldCheck,
   Clock,
+  Package as PackageIcon,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { createTrip, updateTrip, downloadTripPdf } from "../../api/trips";
-import { createPackage, updatePackage } from "../../api/packages";
+import {
+  createTrip,
+  updateTrip,
+  downloadTripPdf,
+  fetchTrips,
+} from "../../api/trips";
+import {
+  createPackage,
+  updatePackage,
+  fetchPackages,
+  usePackage,
+} from "../../api/packages";
 import Loader from "../common/Loader";
 import ModernTemplate from "./ModernTemplate";
 import { toast } from "react-toastify";
@@ -940,6 +951,49 @@ const TripBuilder = ({ mode }) => {
     toast.info("Draft cleared and form reset");
   };
 
+  const [openMenu, setOpenMenu] = useState(null); // "history" | "templates" | null
+  const [recentTrips, setRecentTrips] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [menuLoading, setMenuLoading] = useState(false);
+
+  const toggleMenu = (which) => {
+    const next = openMenu === which ? null : which;
+    setOpenMenu(next);
+    if (next === "history") {
+      setMenuLoading(true);
+      fetchTrips(token, { per_page: 8 })
+        .then((res) => setRecentTrips(res.data || []))
+        .catch(() => setRecentTrips([]))
+        .finally(() => setMenuLoading(false));
+    }
+    if (next === "templates") {
+      setMenuLoading(true);
+      fetchPackages(token, { per_page: 20 })
+        .then((res) => setTemplates(res.data || []))
+        .catch(() => setTemplates([]))
+        .finally(() => setMenuLoading(false));
+    }
+  };
+
+  const applyTemplate = async (pkg) => {
+    setOpenMenu(null);
+    const loadingToast = toast.loading("Loading template…");
+    try {
+      const res = await usePackage(token, pkg.package_id, {});
+      const newId = res.trip_id || (res.trip && res.trip.trip_id);
+      toast.dismiss(loadingToast);
+      if (newId) {
+        toast.success("Template loaded");
+        navigate(`/trip-builder/${newId}`);
+      } else {
+        toast.error("Could not load template");
+      }
+    } catch (e) {
+      toast.dismiss(loadingToast);
+      toast.error(e.message || "Could not load template");
+    }
+  };
+
   const busy = loading || saving || exporting;
 
   const handleNewTrip = () => {
@@ -960,12 +1014,59 @@ const TripBuilder = ({ mode }) => {
       >
         <Plus className="w-4 h-4" /> New Trip
       </button>
-      <Link
-        to={isPackageMode ? "/packages" : "/my-trips"}
-        className="flex items-center gap-2 text-sm font-medium text-[#10182a]/50 hover:text-[#10182a] transition-colors"
-      >
-        <Clock className="w-4 h-4" /> History
-      </Link>
+      <div className="relative">
+        <button
+          onClick={() => toggleMenu("history")}
+          className="flex items-center gap-2 text-sm font-medium text-[#10182a]/50 hover:text-[#10182a] transition-colors"
+        >
+          <Clock className="w-4 h-4" /> History
+        </button>
+        {openMenu === "history" && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setOpenMenu(null)}
+            />
+            <div className="absolute left-0 top-full mt-3 w-72 bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
+              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#10182a]/45 border-b border-black/5">
+                Recent trips
+              </div>
+              <div className="max-h-80 overflow-y-auto py-1">
+                {menuLoading ? (
+                  <div className="px-4 py-3 text-sm text-[#9aa3b2]">Loading…</div>
+                ) : recentTrips.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-[#9aa3b2]">
+                    No saved trips yet
+                  </div>
+                ) : (
+                  recentTrips.map((t) => {
+                    const id = t.trip_id || t.tripId;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => {
+                          setOpenMenu(null);
+                          navigate(`/trip-builder/${id}`);
+                        }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors"
+                      >
+                        <div className="text-sm font-medium text-[#10182a] truncate">
+                          {t.trip_title || t.tripTitle || "Untitled Trip"}
+                        </div>
+                        <div className="text-xs text-[#9aa3b2] truncate">
+                          {[t.client_name, t.destination]
+                            .filter(Boolean)
+                            .join(" · ") || id}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </>
   );
 
@@ -1063,6 +1164,59 @@ const TripBuilder = ({ mode }) => {
                       <Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
                     </button>
                   ))}
+                  <div className="relative">
+                    <button
+                      onClick={() => toggleMenu("templates")}
+                      title="Load from package template"
+                      className="grid place-items-center w-11 h-11 rounded-2xl border border-black/10 text-[#10182a]/45 hover:text-[#10182a] hover:border-black/20 bg-white transition-colors"
+                    >
+                      <PackageIcon className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                    </button>
+                    {openMenu === "templates" && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setOpenMenu(null)}
+                        />
+                        <div className="absolute left-0 top-full mt-3 w-72 bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
+                          <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#10182a]/45 border-b border-black/5">
+                            Load from template
+                          </div>
+                          <div className="max-h-80 overflow-y-auto py-1">
+                            {menuLoading ? (
+                              <div className="px-4 py-3 text-sm text-[#9aa3b2]">
+                                Loading…
+                              </div>
+                            ) : templates.length === 0 ? (
+                              <div className="px-4 py-3 text-sm text-[#9aa3b2]">
+                                No package templates yet
+                              </div>
+                            ) : (
+                              templates.map((pkg) => (
+                                <button
+                                  key={pkg.package_id}
+                                  onClick={() => applyTemplate(pkg)}
+                                  className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors"
+                                >
+                                  <div className="text-sm font-medium text-[#10182a] truncate">
+                                    {pkg.trip_title || "Untitled Package"}
+                                  </div>
+                                  <div className="text-xs text-[#9aa3b2] truncate">
+                                    {[
+                                      pkg.destination,
+                                      pkg.duration ? `${pkg.duration} days` : null,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" · ") || "Template"}
+                                  </div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                   <span className="ml-2 text-sm font-medium text-[#10182a]/60">
                     {activeTab}
                   </span>
