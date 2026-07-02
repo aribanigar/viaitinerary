@@ -93,24 +93,33 @@ export async function POST(request) {
     const teamId = teamIdOf(user);
 
     const body = await request.json();
-    if (!body.tripId) return NextResponse.json({ message: "tripId is required." }, { status: 422 });
-    if (!body.tripTitle) return NextResponse.json({ message: "tripTitle is required." }, { status: 422 });
 
-    const clash = await prisma.trip.findUnique({ where: { tripId: body.tripId } });
-    if (clash) return NextResponse.json({ message: "A trip with this ID already exists." }, { status: 422 });
+    // Always guarantee a unique trip ID — never reject a save on collision.
+    // Use the client's id only if it's free; otherwise mint a fresh unique one.
+    let tripId = (body.tripId || "").trim();
+    if (!tripId || (await prisma.trip.findUnique({ where: { tripId } }))) {
+      do {
+        tripId = `TRP${Math.floor(100000 + Math.random() * 900000)}`;
+      } while (await prisma.trip.findUnique({ where: { tripId } }));
+    }
+
+    // Title is optional for client trips — default it so saving never errors.
+    const tripTitle =
+      (body.tripTitle && body.tripTitle.trim()) ||
+      (body.clientName ? `Trip — ${body.clientName}` : "Untitled Trip");
 
     // Subscription gate (mirrors the EnsureSubscriptionAllowsTripCreation middleware).
     const gate = await canCreateTrip(user);
     if (!gate.allowed) return NextResponse.json({ message: gate.reason }, { status: gate.status });
 
-    const scalars = await buildTripScalars(body);
+    const scalars = await buildTripScalars({ ...body, tripTitle });
     const trip = await prisma.trip.create({
       data: {
         ...scalars,
         userId: adminId,
         teamId,
-        tripId: body.tripId,
-        slug: `${slugify(body.tripTitle)}-${rand()}`,
+        tripId,
+        slug: `${slugify(tripTitle)}-${rand()}`,
       },
     });
     await syncTripRelations(trip.id, body);
