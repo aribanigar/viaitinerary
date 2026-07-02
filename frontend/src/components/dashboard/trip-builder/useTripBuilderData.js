@@ -6,6 +6,7 @@ export const DRAFT_KEY = "trip_builder_draft";
 export const useTripBuilderData = ({
   token,
   urlTripId,
+  draftKey,
   navigate,
   loading,
   setLoading,
@@ -40,6 +41,8 @@ export const useTripBuilderData = ({
   normalizeAccommodation,
   toast,
 }) => {
+  const draftStorageKey = `${DRAFT_KEY}:${draftKey || "default"}`;
+
   useEffect(() => {
     if (loading || urlTripId) return;
 
@@ -58,7 +61,7 @@ export const useTripBuilderData = ({
         lastUpdated: new Date().toISOString(),
       };
       try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+        localStorage.setItem(draftStorageKey, JSON.stringify(draftData));
       } catch (e) {
         console.warn(
           "Failed to save draft to localStorage (possibly quota exceeded):",
@@ -81,6 +84,7 @@ export const useTripBuilderData = ({
     profitMarginPercentage,
     loading,
     urlTripId,
+    draftStorageKey,
   ]);
 
   useEffect(() => {
@@ -294,7 +298,7 @@ export const useTripBuilderData = ({
           toast.error("You are not allowed to access this trip.");
           navigate("/trip-builder", { replace: true });
         } else if (!urlTripId) {
-          const savedDraft = localStorage.getItem(DRAFT_KEY);
+          const savedDraft = localStorage.getItem(draftStorageKey);
           if (savedDraft) {
             setHasDraft(true);
             try {
@@ -383,6 +387,7 @@ export const useTripBuilderData = ({
     loadData();
   }, [
     urlTripId,
+    draftStorageKey,
     navigate,
     token,
     formatImageUrl,

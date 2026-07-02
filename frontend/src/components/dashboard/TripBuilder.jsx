@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import {
+  useParams,
+  useNavigate,
+  useSearchParams,
+  Link,
+} from "react-router-dom";
 import AssistantFrame from "./AssistantFrame";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -66,6 +71,8 @@ const TripBuilder = ({ mode }) => {
   const isPackageMode = mode === "package";
   const { token } = useAuth();
   const { tripId: urlTripId } = useParams();
+  const [searchParams] = useSearchParams();
+  const draftKey = searchParams.get("d") || "default";
   const navigate = useNavigate();
 
   // Helper to format image URLs
@@ -277,6 +284,7 @@ const TripBuilder = ({ mode }) => {
   useTripBuilderData({
     token,
     urlTripId,
+    draftKey,
     navigate,
     loading,
     setLoading,
@@ -747,7 +755,9 @@ const TripBuilder = ({ mode }) => {
   const [autoState, setAutoState] = useState("idle"); // idle | saving | saved
   const [lastSavedAt, setLastSavedAt] = useState(null);
 
-  const currentTabId = urlTripId || "new";
+  const builderBase = isPackageMode ? "/package-builder" : "/trip-builder";
+  const draftStorageKey = `${DRAFT_KEY}:${draftKey}`;
+  const currentTabId = urlTripId || `draft:${draftKey}`;
   const defaultTabTitle = isPackageMode ? "New Package" : "New Trip";
   const currentTitle =
     (tripInfo.tripTitle || tripInfo.clientName || "").trim() || defaultTabTitle;
@@ -773,12 +783,12 @@ const TripBuilder = ({ mode }) => {
   }, [currentTabId, currentTitle]);
 
   const gotoTab = (tab) => {
-    if (tab.id === "new")
-      navigate(isPackageMode ? "/package-builder" : "/trip-builder");
-    else
-      navigate(
-        isPackageMode ? `/package-builder/${tab.id}` : `/trip-builder/${tab.id}`,
-      );
+    if (typeof tab.id === "string" && tab.id.startsWith("draft:")) {
+      const key = tab.id.slice(6);
+      navigate(key === "default" ? builderBase : `${builderBase}?d=${key}`);
+    } else {
+      navigate(`${builderBase}/${tab.id}`);
+    }
   };
 
   const openTab = (tab) => {
@@ -800,13 +810,20 @@ const TripBuilder = ({ mode }) => {
     });
   };
 
-  // when a brand-new trip is first saved, promote its "new" tab to the real id
+  // when a brand-new trip is first saved, promote its draft tab to the real id
   const replaceNewTab = (newId) => {
     setTabs((prev) =>
       prev
         .filter((t) => t.id !== newId)
-        .map((t) => (t.id === "new" ? { id: newId, title: currentTitle } : t)),
+        .map((t) =>
+          t.id === currentTabId ? { id: newId, title: currentTitle } : t,
+        ),
     );
+    try {
+      localStorage.removeItem(draftStorageKey);
+    } catch (e) {
+      /* ignore */
+    }
   };
 
   const saveTrip = async ({ silent = false } = {}) => {
@@ -915,7 +932,7 @@ const TripBuilder = ({ mode }) => {
         } else {
           const created = await createPackage(token, packageData);
           if (!silent) toast.success("Package saved successfully!");
-          localStorage.removeItem(DRAFT_KEY);
+          localStorage.removeItem(draftStorageKey);
           if (created && created.trip_id) {
             replaceNewTab(created.trip_id);
             navigate(`/package-builder/${created.trip_id}`, { replace: true });
@@ -930,7 +947,7 @@ const TripBuilder = ({ mode }) => {
         if (!silent) toast.success("Trip saved successfully!");
 
         // Clear draft when successfully saved as a new trip
-        localStorage.removeItem(DRAFT_KEY);
+        localStorage.removeItem(draftStorageKey);
 
         // Promote the "new" tab and navigate so subsequent saves/exports work
         if (createdTrip && createdTrip.trip_id) {
@@ -1014,7 +1031,7 @@ const TripBuilder = ({ mode }) => {
       return;
 
     try {
-      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(draftStorageKey);
     } catch (e) {
       console.warn("Failed to remove draft from localStorage:", e);
     }
@@ -1109,9 +1126,9 @@ const TripBuilder = ({ mode }) => {
   const busy = loading || saving || exporting;
 
   const handleNewTrip = () => {
-    if (busy) return;
-    if (currentTabId === "new") return; // already on a fresh tab
-    navigate(isPackageMode ? "/package-builder" : "/trip-builder");
+    // Always open a brand-new blank itinerary in its own tab — instantly.
+    const key = `${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+    navigate(`${builderBase}?d=${key}`);
   };
 
   const tabStrip = (
