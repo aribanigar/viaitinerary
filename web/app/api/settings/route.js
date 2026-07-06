@@ -26,6 +26,7 @@ const FIELD_MAP = {
   bankName: "bankName",
   accountNumber: "accountNumber",
   ifscCode: "ifscCode",
+  currency: "currency",
   greetingMessage: "greetingMessage",
   confirmationMessage: "confirmationMessage",
   confirmationPdfMessage: "confirmationPdfMessage",

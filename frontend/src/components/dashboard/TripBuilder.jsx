@@ -1331,7 +1331,7 @@ const TripBuilder = ({ mode }) => {
             {/* Left Form — builder panel */}
             <div className="w-full lg:w-[45%] lg:h-full flex flex-col bg-white rounded-[20px] border border-black/5 shadow-sm overflow-hidden shrink-0 lg:shrink">
               <div className="p-6 pb-0 shrink-0">
-                <div className="flex items-center gap-2 mb-6">
+                <div className="flex flex-wrap items-center gap-2 mb-6">
                   {[
                     { tab: "Trip Info", icon: SettingsIcon },
                     { tab: "Itinerary", icon: Calendar },
@@ -1343,22 +1343,24 @@ const TripBuilder = ({ mode }) => {
                       onClick={() => !busy && setActiveTab(tab)}
                       disabled={busy}
                       title={tab}
-                      className={`grid place-items-center w-11 h-11 rounded-2xl border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-2xl border text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                         activeTab === tab
-                          ? "border-[#181c22] text-[#181c22] bg-white shadow-sm"
-                          : "border-black/10 text-[#181c22]/45 hover:text-[#181c22] hover:border-black/20 bg-white"
+                          ? "border-[#181c22] bg-[#181c22] text-white shadow-sm"
+                          : "border-black/10 text-[#181c22]/55 hover:text-[#181c22] hover:border-black/20 bg-white"
                       }`}
                     >
-                      <Icon className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                      <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.8} />
+                      <span className="whitespace-nowrap">{tab}</span>
                     </button>
                   ))}
                   <div className="relative">
                     <button
                       onClick={() => toggleMenu("templates")}
                       title="Load from package template"
-                      className="grid place-items-center w-11 h-11 rounded-2xl border border-black/10 text-[#181c22]/45 hover:text-[#181c22] hover:border-black/20 bg-white transition-colors"
+                      className="inline-flex items-center gap-2 h-10 px-3.5 rounded-2xl border border-black/10 text-sm font-semibold text-[#181c22]/55 hover:text-[#181c22] hover:border-black/20 bg-white transition-colors"
                     >
-                      <PackageIcon className="w-[18px] h-[18px]" strokeWidth={1.8} />
+                      <PackageIcon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.8} />
+                      <span className="whitespace-nowrap">Template</span>
                     </button>
                     {openMenu === "templates" && (
                       <>
@@ -1405,9 +1407,6 @@ const TripBuilder = ({ mode }) => {
                       </>
                     )}
                   </div>
-                  <span className="ml-2 text-sm font-medium text-[#181c22]/60">
-                    {activeTab}
-                  </span>
                 </div>
               </div>
 

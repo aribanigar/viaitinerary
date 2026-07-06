@@ -128,6 +128,7 @@ export function serializeSettings(s) {
     bank_name: s.bankName,
     account_number: s.accountNumber,
     ifsc_code: s.ifscCode,
+    currency: s.currency || "INR (₹)",
     default_trip_image_path: s.defaultTripImagePath,
     default_trip_image_url: s.defaultTripImagePath,
     gst_percentage: num(s.gstPercentage),
@@ -188,6 +189,7 @@ export function settingsToCamel(s) {
     bankName: s.bankName,
     accountNumber: s.accountNumber,
     ifscCode: s.ifscCode,
+    currency: s.currency || "INR (₹)",
     greetingMessage: s.greetingMessage,
     confirmationMessage: s.confirmationMessage,
     confirmationPdfMessage: s.confirmationPdfMessage,
@@ -220,6 +222,7 @@ export const SETTINGS_DEFAULTS = {
   bankName: "",
   accountNumber: "",
   ifscCode: "",
+  currency: "INR (₹)",
   greetingMessage:
     "Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.",
   confirmationMessage:

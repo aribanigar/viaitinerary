@@ -122,6 +122,7 @@ export const useTripBuilderData = ({
             bankName: initData.settings.bank_name || initData.settings.bankName,
             accountNumber: initData.settings.account_number,
             ifscCode: initData.settings.ifsc_code,
+            currency: initData.settings.currency || "INR (₹)",
             defaultTripImage: configuredDefaultTripImage || null,
           });
         }
@@ -167,7 +168,8 @@ export const useTripBuilderData = ({
               new Date().toISOString().split("T")[0],
             duration: savedTrip.duration,
             cost: savedTrip.cost || "0",
-            currency: savedTrip.currency,
+            currency:
+              savedTrip.currency || initData.settings?.currency || "INR (₹)",
             image:
               formatImageUrl(
                 savedTrip.image_url || savedTrip.image_path || savedTrip.image,
@@ -351,7 +353,7 @@ export const useTripBuilderData = ({
             startDate: new Date().toISOString().split("T")[0],
             duration: "2",
             cost: "0",
-            currency: "INR (₹)",
+            currency: initData.settings?.currency || "INR (₹)",
             image: configuredDefaultTripImage || "",
             status: "Draft",
           });

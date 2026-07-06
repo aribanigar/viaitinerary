@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import DatePicker from "../../common/DatePicker";
+import { CURRENCY_OPTIONS } from "../../../constants/currencies";
 
 const TripInfoTab = ({
   tripInfo,
@@ -351,17 +352,25 @@ const TripInfoTab = ({
             <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
               Currency
             </label>
-            <input
-              type="text"
-              value={tripInfo.currency}
+            <select
+              value={tripInfo.currency || ""}
               onChange={(e) =>
                 setTripInfo({
                   ...tripInfo,
                   currency: e.target.value,
                 })
               }
-              className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all shadow-sm"
-            />
+              className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all shadow-sm appearance-none cursor-pointer"
+            >
+              {(CURRENCY_OPTIONS.includes(tripInfo.currency)
+                ? CURRENCY_OPTIONS
+                : [tripInfo.currency, ...CURRENCY_OPTIONS].filter(Boolean)
+              ).map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

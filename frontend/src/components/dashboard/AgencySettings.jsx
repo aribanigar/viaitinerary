@@ -20,6 +20,7 @@ import {
   Upload,
   FileSpreadsheet,
   Download,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -30,6 +31,7 @@ import {
   bulkExport,
 } from "../../api/settings";
 import Loader from "../common/Loader";
+import { CURRENCY_OPTIONS } from "../../constants/currencies";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 
@@ -49,6 +51,7 @@ const AgencySettings = () => {
     bankName: "",
     accountNumber: "",
     ifscCode: "",
+    currency: "INR (₹)",
     gstAmount: 5,
     profitMarginPercentage: 10,
     defaultTripImage: null,
@@ -529,6 +532,33 @@ const AgencySettings = () => {
                         inputClassName="!w-full !bg-slate-50 !border-slate-100 !rounded-xl !px-4 !py-6 !text-slate-900 !text-sm !font-bold !focus:ring-2 !focus:ring-[#e7f63c]/20 !focus:border-[#e7f63c] !outline-none !transition-all"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-1.5">
+                      <Wallet className="w-3 h-3" />
+                      Default Currency
+                    </label>
+                    <select
+                      name="currency"
+                      value={formData.currency || "INR (₹)"}
+                      onChange={handleInputChange}
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all cursor-pointer"
+                    >
+                      {(CURRENCY_OPTIONS.includes(formData.currency)
+                        ? CURRENCY_OPTIONS
+                        : [formData.currency, ...CURRENCY_OPTIONS].filter(
+                            Boolean,
+                          )
+                      ).map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-slate-400 ml-1">
+                      New trips and quotes default to this currency.
+                    </p>
                   </div>
                 </div>
               </div>
