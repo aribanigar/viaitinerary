@@ -2237,54 +2237,53 @@ const ModernTemplate = ({
             fontWeight: "600",
           }}
         >
-          <div style={{ textAlign: "center", marginBottom: "12px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexWrap: "wrap",
+              gap: "24px",
+            }}
+          >
+            {agencySettings.logo && (
+              <div
+                style={{
+                  backgroundColor: "white",
+                  padding: "4px 10px",
+                  borderRadius: "12px",
+                  display: "inline-block",
+                  lineHeight: 0,
+                }}
+              >
+                <img
+                  src={formatImageUrl(agencySettings.logo)}
+                  alt="Logo"
+                  style={{
+                    maxHeight: "50px",
+                    maxWidth: "180px",
+                    objectFit: "contain",
+                  }}
+                />
+              </div>
+            )}
             <span
               style={{
                 background: "var(--primary-orange)",
                 color: "var(--dark-green)",
-                padding: "5px 15px",
+                padding: "6px 18px",
                 borderRadius: "20px",
                 display: "inline-block",
               }}
             >
               Contact Us
             </span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "16px",
-            }}
-          >
-            <div style={{ width: "30%" }}>
-              {agencySettings.logo && (
-                <div
-                  style={{
-                    backgroundColor: "white",
-                    padding: "4px 10px",
-                    borderRadius: "12px",
-                    display: "inline-block",
-                    lineHeight: 0,
-                  }}
-                >
-                  <img
-                    src={formatImageUrl(agencySettings.logo)}
-                    alt="Logo"
-                    style={{
-                      maxHeight: "80px",
-                      maxWidth: "280px",
-                      objectFit: "contain",
-                    }}
-                  />
-                </div>
-              )}
-            </div>
             <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <WhatsAppIcon size={18} /> {agencySettings.whatsapp}
             </span>
-            <span>🔗 {agencySettings.website}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              🔗 {agencySettings.website}
+            </span>
           </div>
         </div>
       </div>
