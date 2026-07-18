@@ -192,7 +192,7 @@ function sectionBar(title, settings) {
         h(Text, { style: { ...s.bold, color: WHITE, fontSize: 21, letterSpacing: 1 } }, title),
       ),
     ),
-    h(Doodle, { style: { position: "absolute", top: -9, right: 26 } }),
+    h(Doodle, { color: brandOf(settings), style: { position: "absolute", top: -9, right: 26 } }),
   );
 }
 
