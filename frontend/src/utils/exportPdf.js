@@ -1,4 +1,7 @@
-import html2canvas from "html2canvas";
+// html2canvas-pro (maintained fork) fixes the text-baseline drift that made
+// exported text render lower than the preview (e.g. the cover title overlapping
+// its subtitle with line-height < 1). Drop-in replacement for html2canvas.
+import html2canvas from "html2canvas-pro";
 import { jsPDF } from "jspdf";
 
 // WYSIWYG PDF export: rasterizes the *actual* rendered itinerary preview
