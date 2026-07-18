@@ -49,21 +49,20 @@ export async function exportPreviewToPdf(filename = "Itinerary.pdf") {
   const clone = source.cloneNode(true);
   clone.style.transform = "none";
   if (isModern) clone.classList.add("pdf-export-mode");
-  // Strip cross-origin @import (Google Fonts) from cloned <style> tags — the
-  // fonts are already loaded on the page, and letting html2canvas re-fetch
-  // them can hang. Keep the rest of the CSS intact.
-  clone.querySelectorAll("style").forEach((st) => {
-    st.textContent = st.textContent.replace(/@import\s+url\([^)]*\);?/g, "");
-  });
+  // NOTE: we intentionally keep the template's @import web font in the clone.
+  // html2canvas renders in a sandbox and needs the @font-face to reproduce the
+  // exact font metrics — dropping it falls back to a system font whose taller
+  // line-heights push every element down (export no longer matches preview).
   holder.appendChild(clone);
   document.body.appendChild(holder);
 
   try {
-    // make sure fonts + images are ready before rasterizing (bounded)
+    // make sure the web fonts are actually loaded before rasterizing, so
+    // html2canvas captures with the same metrics as the on-screen preview.
     if (document.fonts && document.fonts.ready) {
       await Promise.race([
         document.fonts.ready,
-        new Promise((r) => setTimeout(r, 2500)),
+        new Promise((r) => setTimeout(r, 6000)),
       ]).catch(() => {});
     }
     await waitForImages(clone);
