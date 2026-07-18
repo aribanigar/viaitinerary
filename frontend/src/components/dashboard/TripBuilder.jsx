@@ -35,7 +35,6 @@ import { useAuth } from "../../context/AuthContext";
 import {
   createTrip,
   updateTrip,
-  downloadTripPdf,
   fetchTrips,
 } from "../../api/trips";
 import {
@@ -1011,23 +1010,11 @@ const TripBuilder = ({ mode }) => {
   ]);
 
   const handleExport = async () => {
-    // If we don't have urlTripId, check if title is entered to warn about saving
-    if (!urlTripId) {
-      toast.warning("Please save the trip first to generate a PDF.");
-      return;
-    }
-
     try {
       setExporting(true);
-      const blob = await downloadTripPdf(token, urlTripId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${tripInfo.tripId || "Trip"}_Itinerary.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      // WYSIWYG: export exactly what the live preview shows (any template).
+      const { exportPreviewToPdf } = await import("../../utils/exportPdf");
+      await exportPreviewToPdf(`${tripInfo.tripId || "Trip"}_Itinerary.pdf`);
     } catch (err) {
       console.error("PDF generation error:", err);
       toast.error("There was an error generating your PDF. Please try again.");
