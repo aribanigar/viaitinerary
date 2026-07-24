@@ -291,7 +291,7 @@ const ModernTemplate = ({
         }
         .footer-line { width: 250px; height: 3px; background: var(--primary-orange); margin: 0 0 10px 60px; }
 
-        .hero-1 { height: 600px; background-position: center; background-size: cover; position: relative; }
+        .hero-1 { height: 540px; background-position: center; background-size: cover; position: relative; }
         .hero-1::before {
           content: '';
           position: absolute;
@@ -403,7 +403,7 @@ const ModernTemplate = ({
         </div>
         <div
           className="cover-content"
-          style={{ position: "relative", minHeight: "450px" }}
+          style={{ position: "relative", minHeight: "380px" }}
         >
           <h2>
             Dear{" "}
