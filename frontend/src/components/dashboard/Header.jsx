@@ -3,6 +3,7 @@ import { Search, Bell, LogOut, Menu, Loader2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { useNotifications } from "../../context/NotificationContext";
+import InstallAppButton from "../common/InstallAppButton";
 
 const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
@@ -51,6 +52,10 @@ const Header = ({ onMenuClick }) => {
             </p>
           </div>
         </div>
+        <InstallAppButton
+          variant="icon"
+          className="!rounded-xl !w-10 !h-10 !bg-slate-50 !border-slate-100 hover:!bg-slate-100"
+        />
         <Link
           to="/notifications"
           className="relative w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 cursor-pointer hover:bg-slate-100 transition-colors group"

@@ -1,10 +1,68 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: null, // registered manually in src/main.jsx
+      includeAssets: ["favicon.png", "apple-touch-icon.png"],
+      manifest: {
+        name: "ViaItinerary — Travel CRM",
+        short_name: "ViaItinerary",
+        description:
+          "Build itineraries, manage trips, and run your travel agency from anywhere.",
+        start_url: "/dashboard",
+        id: "/dashboard",
+        scope: "/",
+        display: "standalone",
+        orientation: "portrait-primary",
+        background_color: "#181c22",
+        theme_color: "#181c22",
+        icons: [
+          { src: "/pwa-64x64.png", sizes: "64x64", type: "image/png" },
+          { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+          { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+          {
+            src: "/pwa-maskable-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
+          },
+        ],
+      },
+      workbox: {
+        // Never cache API calls or auth-sensitive data — only the app shell.
+        navigateFallbackDenylist: [/^\/api\//],
+        runtimeCaching: [
+          {
+            urlPattern: /^\/api\//,
+            handler: "NetworkOnly",
+          },
+          {
+            urlPattern: ({ request }) =>
+              ["style", "script", "worker"].includes(request.destination),
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "app-shell" },
+          },
+          {
+            urlPattern: ({ request }) => request.destination === "image",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "images",
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+        ],
+      },
+      devOptions: { enabled: false },
+    }),
+  ],
   build: {
     // Build straight into the Next app's public/ so a single Vercel deploy
     // (the web/ Next app) serves the SPA and the /api routes together.

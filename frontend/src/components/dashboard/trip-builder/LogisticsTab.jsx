@@ -210,7 +210,7 @@ const LogisticsTab = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => openEditHotelModal(hotel)}
-                    className="p-1.5 text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#181c22] rounded-xl transition-all"
+                    className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#181c22] active:bg-[#f3f3f4] active:text-[#181c22] rounded-xl transition-all"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
@@ -220,7 +220,7 @@ const LogisticsTab = ({
                         removeAccommodation(id),
                       )
                     }
-                    className="p-1.5 text-[#9aa3b2] hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+                    className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-red-50 hover:text-red-600 active:bg-red-50 active:text-red-600 rounded-xl transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -358,13 +358,13 @@ const LogisticsTab = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => openEditTransportModal(item)}
-                        className="p-1.5 text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#181c22] rounded-xl transition-all"
+                        className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#181c22] active:bg-[#f3f3f4] active:text-[#181c22] rounded-xl transition-all"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => removeTransportation(item.id)}
-                        className="p-1.5 text-[#9aa3b2] hover:bg-red-50 hover:text-red-600 rounded-xl transition-all"
+                        className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-red-50 hover:text-red-600 active:bg-red-50 active:text-red-600 rounded-xl transition-all"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

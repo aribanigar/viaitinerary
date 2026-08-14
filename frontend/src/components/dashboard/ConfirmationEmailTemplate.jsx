@@ -155,7 +155,7 @@ const ConfirmationEmailTemplate = () => {
                       />
                       <button
                         onClick={removeImage}
-                        className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 shadow-lg"
+                        className="absolute top-2 right-2 w-9 h-9 flex items-center justify-center bg-red-500 text-white rounded-full opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all hover:bg-red-600 active:bg-red-600 shadow-lg"
                       >
                         <X className="w-4 h-4" />
                       </button>

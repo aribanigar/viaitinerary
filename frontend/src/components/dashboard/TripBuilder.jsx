@@ -1199,7 +1199,7 @@ const TripBuilder = ({ mode }) => {
           onClick={() => toggleMenu("history")}
           className="flex items-center gap-2 text-sm font-medium text-[#181c22]/50 hover:text-[#181c22] transition-colors"
         >
-          <Clock className="w-4 h-4" /> History
+          <Clock className="w-4 h-4" /> <span className="hidden sm:inline">History</span>
         </button>
         {openMenu === "history" && (
           <>
@@ -1207,7 +1207,7 @@ const TripBuilder = ({ mode }) => {
               className="fixed inset-0 z-40"
               onClick={() => setOpenMenu(null)}
             />
-            <div className="absolute left-0 top-full mt-3 w-72 bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
+            <div className="absolute left-0 top-full mt-3 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
               <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45 border-b border-black/5">
                 Recent trips
               </div>
@@ -1312,7 +1312,7 @@ const TripBuilder = ({ mode }) => {
           </>
         }
       >
-        <div className="flex flex-col lg:h-full overflow-hidden">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Builder Area — two rounded panels (builder + live preview) */}
           <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden p-3 lg:p-4 gap-3 lg:gap-4">
             {/* Left Form — builder panel */}
@@ -1355,7 +1355,7 @@ const TripBuilder = ({ mode }) => {
                           className="fixed inset-0 z-40"
                           onClick={() => setOpenMenu(null)}
                         />
-                        <div className="absolute left-0 top-full mt-3 w-72 bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
+                        <div className="absolute left-0 top-full mt-3 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
                           <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45 border-b border-black/5">
                             Load from template
                           </div>
