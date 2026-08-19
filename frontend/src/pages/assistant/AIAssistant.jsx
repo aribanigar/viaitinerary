@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import {
-  Home,
-  Calendar,
-  Search,
-  Users,
-  Settings,
-  Bell,
   Plus,
   Clock,
   Sparkles,
@@ -21,10 +14,10 @@ import {
   Workflow,
   Tag,
   Pencil,
-  Aperture,
 } from "lucide-react";
 import worldRaw from "./world.svg?raw";
 import usRaw from "./us.svg?raw";
+import AssistantFrame from "../../components/dashboard/AssistantFrame";
 
 // ── Exact replica of the "AI travel assistant" reference, built on the brand
 // CSS (Manrope, monochrome base, lime accent, 20px+ radii). Static design piece.
@@ -35,31 +28,6 @@ const usZoom = usRaw
 
 const LIME = "#e7f63c";
 const INK = "#181c22";
-
-// Black aperture brand mark used in the reference (top-left / rail).
-const Mark = ({ className = "" }) => (
-  <span
-    className={`grid place-items-center rounded-full bg-[#181c22] ${className}`}
-  >
-    <Aperture className="w-[60%] h-[60%] text-white" strokeWidth={2.2} />
-  </span>
-);
-
-const RailIcon = ({ icon: Icon, active, to }) => {
-  const cls = `grid place-items-center w-11 h-11 rounded-2xl transition-colors ${
-    active
-      ? "bg-[#181c22] text-white shadow-md"
-      : "text-[#181c22]/50 hover:text-[#181c22] hover:bg-black/5"
-  }`;
-  const inner = <Icon className="w-[18px] h-[18px]" strokeWidth={2} />;
-  return to ? (
-    <Link to={to} className={cls}>
-      {inner}
-    </Link>
-  ) : (
-    <button className={cls}>{inner}</button>
-  );
-};
 
 const ToolIcon = ({ icon: Icon, active }) => (
   <button
@@ -108,48 +76,20 @@ const AIAssistant = () => {
   );
 
   return (
-    <div className="min-h-screen w-full bg-[#f0f0f1] text-[#181c22] font-sans antialiased flex">
-      {/* ── Left icon rail ─────────────────────────────────────────── */}
-      <aside className="w-[80px] shrink-0 flex flex-col items-center py-6">
-        <Mark className="w-8 h-8" />
-        <div className="mt-10 flex flex-col items-center gap-1.5 bg-white rounded-[26px] p-2 border border-black/5 shadow-sm">
-          <RailIcon icon={Home} to="/dashboard" />
-          <RailIcon icon={Calendar} to="/my-trips" />
-          <RailIcon icon={Search} active />
-          <RailIcon icon={Users} to="/team" />
-          <RailIcon icon={Settings} to="/settings" />
-        </div>
-        <div className="mt-auto flex flex-col items-center gap-4">
-          <button className="relative grid place-items-center w-11 h-11 rounded-2xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm">
-            <Bell className="w-[18px] h-[18px]" strokeWidth={2} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#ff5a4d] ring-2 ring-white" />
-          </button>
-          <img
-            src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=200&auto=format&fit=crop"
-            alt="You"
-            className="w-11 h-11 rounded-2xl object-cover border border-black/5 shadow-sm"
-          />
-        </div>
-      </aside>
-
-      {/* ── Main rounded surface ───────────────────────────────────── */}
-      <main className="flex-1 my-4 mr-4 rounded-[28px] bg-[#fbfbfb] border border-black/5 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.25)] overflow-hidden flex flex-col">
-        {/* top bar */}
-        <header className="flex items-center gap-8 px-8 pt-6 pb-4 border-b border-black/5">
-          <div className="flex items-center gap-2 pr-6">
-            <Sparkles className="w-4 h-4" style={{ color: LIME }} fill={LIME} />
-            <span className="text-[15px] font-semibold tracking-tight">
-              Trip to the Grand Canyon
-            </span>
-          </div>
+    <AssistantFrame
+      title="Trip to the Grand Canyon"
+      nav={
+        <>
           <button className="flex items-center gap-2 text-sm font-medium text-[#181c22] hover:opacity-70 transition-opacity">
             <Plus className="w-4 h-4" /> New Chat
           </button>
           <button className="flex items-center gap-2 text-sm font-medium text-[#181c22]/50 hover:text-[#181c22] transition-colors">
             <Clock className="w-4 h-4" /> History
           </button>
-        </header>
-
+        </>
+      }
+    >
+      <div className="h-full overflow-y-auto">
         {/* two columns */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.12fr_0.88fr] gap-6 p-6">
           {/* ── LEFT column ─────────────────────────────────────── */}
@@ -348,8 +288,8 @@ const AIAssistant = () => {
             </div>
           </aside>
         </div>
-      </main>
-    </div>
+      </div>
+    </AssistantFrame>
   );
 };
 
