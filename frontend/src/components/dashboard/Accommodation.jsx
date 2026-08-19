@@ -16,6 +16,7 @@ import {
   MapPin,
   CheckCircle2,
   XCircle,
+  Globe2,
 } from "lucide-react";
 import { getHotels, deleteHotel } from "../../api/hotels";
 import { useNavigate } from "react-router-dom";
@@ -143,6 +144,57 @@ const Accommodation = () => {
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
 
+  const availableCount = accommodations.filter((a) => a.is_available).length;
+  const avgStartingPrice = useMemo(() => {
+    const prices = accommodations
+      .map((a) => startingPrice(a))
+      .filter((n) => n != null);
+    if (!prices.length) return null;
+    return Math.round(prices.reduce((sum, n) => sum + n, 0) / prices.length);
+  }, [accommodations]);
+
+  const stats = [
+    {
+      label: "Total Accommodations",
+      value: accommodations.length.toString(),
+      change: "In your catalog",
+      icon: Hotel,
+      bgColor: "bg-[#e7f63c]",
+      iconColor: "text-[#181c22]",
+      onClick: () => setFilters(EMPTY_FILTERS),
+    },
+    {
+      label: "Available Now",
+      value: availableCount.toString(),
+      change: "Ready to book",
+      icon: CheckCircle2,
+      bgColor: "bg-[#181c22]",
+      iconColor: "text-white",
+      onClick: () => setFilters({ ...EMPTY_FILTERS, availability: "available" }),
+    },
+    {
+      label: "Unavailable",
+      value: (accommodations.length - availableCount).toString(),
+      change: "Currently on hold",
+      icon: XCircle,
+      bgColor: "bg-[#181c22]",
+      iconColor: "text-white",
+      onClick: () => setFilters({ ...EMPTY_FILTERS, availability: "unavailable" }),
+    },
+    {
+      label: "States Covered",
+      value: stateOptions.length.toString(),
+      change:
+        avgStartingPrice != null
+          ? `Avg. from ₹${avgStartingPrice.toLocaleString("en-IN")}`
+          : "Add pricing to see averages",
+      icon: Globe2,
+      bgColor: "bg-[#181c22]",
+      iconColor: "text-white",
+      onClick: null,
+    },
+  ];
+
   const handleDeleteClick = (id) => {
     setTargetId(id);
     setDeleteModalOpen(true);
@@ -181,7 +233,53 @@ const Accommodation = () => {
         </button>
       </PageHeader>
 
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, i) => {
+            const CardTag = stat.onClick ? "button" : "div";
+            return (
+              <CardTag
+                key={i}
+                onClick={stat.onClick || undefined}
+                className={`bg-white p-6 rounded-2xl border border-black/5 shadow-sm transition-all duration-300 group text-left w-full ${
+                  stat.onClick
+                    ? "hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+                    : ""
+                }`}
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div
+                    className={`${stat.bgColor} w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-[#8a93a2] text-[10px] font-bold uppercase tracking-widest mb-1">
+                    {stat.label}
+                  </h3>
+                  <p className="text-2xl font-bold text-[#181c22] mb-2">
+                    {stat.value}
+                  </p>
+                  <p className="text-[10px] font-bold text-[#9aa3b2]">
+                    {stat.change}
+                  </p>
+                </div>
+              </CardTag>
+            );
+          })}
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
+          <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
+            All Accommodations
+          </h3>
+          <span className="text-[10px] font-bold text-[#8a93a2] uppercase tracking-widest">
+            {filtered.length} of {accommodations.length}
+          </span>
+        </div>
         <div className="p-6 border-b border-black/5 space-y-4">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
