@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import DashboardLayout from "./DashboardLayout";
+import AssistantFrame from "./AssistantFrame";
 import {
   IndianRupee,
   Briefcase,
@@ -8,6 +8,19 @@ import {
   Calendar,
   ArrowRight,
   CheckCircle2,
+  Plus,
+  Inbox,
+  Package,
+  BarChart3,
+  Hotel,
+  Car,
+  MapPin,
+  ShieldCheck,
+  FileText,
+  BookOpen,
+  CreditCard,
+  Zap,
+  Type,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { fetchTrips } from "../../api/trips";
@@ -15,6 +28,24 @@ import { getTeams } from "../../api/teams";
 import Loader from "../common/Loader";
 import Modal from "../common/Modal";
 import SuperAdminDashboard from "./SuperAdminDashboard";
+
+// Quick-access destinations that used to live only in the sidebar's nested
+// Operations / Resources / Accounting submenus. Surfaced here as tiles since
+// the AssistantFrame shell's rail only carries the five primary sections.
+const QUICK_ACCESS = [
+  { label: "Lead Inquiries", to: "/lead-inquiries", icon: Inbox, roles: ["admin", "team"] },
+  { label: "Packages", to: "/packages", icon: Package, roles: ["admin", "team"] },
+  { label: "Team Reports", to: "/team-report", icon: BarChart3, roles: ["admin"] },
+  { label: "Accommodation", to: "/accommodation", icon: Hotel, roles: ["admin", "team"] },
+  { label: "Transportation", to: "/transportation", icon: Car, roles: ["admin", "team"] },
+  { label: "Destinations", to: "/destinations", icon: MapPin, roles: ["admin", "team"] },
+  { label: "Policies", to: "/policies", icon: ShieldCheck, roles: ["admin"] },
+  { label: "Voucher Desk", to: "/accounting", icon: FileText, roles: ["admin"] },
+  { label: "Ledger", to: "/ledger", icon: BookOpen, roles: ["admin"] },
+  { label: "Bank Details", to: "/payment-details", icon: CreditCard, roles: ["admin"] },
+  { label: "Subscription", to: "/subscription", icon: Zap, roles: ["admin"] },
+  { label: "Branding", to: "/typography", icon: Type, roles: ["admin"] },
+];
 
 const DashboardMain = () => {
   const { token, user } = useAuth();
@@ -131,18 +162,34 @@ const DashboardMain = () => {
     return <SuperAdminDashboard />;
   }
 
-  return (
-    <DashboardLayout>
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-[#181c22] leading-tight">
-          Dashboard
-        </h1>
-        <p className="text-[#8a93a2] font-medium mt-1">
-          Welcome back! Here's what's happening today.
-        </p>
-      </div>
+  const quickAccess = QUICK_ACCESS.filter((item) =>
+    item.roles.includes(user?.role),
+  );
 
-      {loading ? (
+  return (
+    <AssistantFrame
+      title="Dashboard"
+      actions={
+        <Link
+          to="/trip-builder"
+          className="px-4 py-2 rounded-full text-xs font-semibold bg-[#e7f63c] text-[#181c22] hover:bg-[#d4e42e] transition-colors flex items-center gap-1.5 shadow-sm shadow-[#e7f63c]/40"
+        >
+          <Plus className="w-3.5 h-3.5" /> Create a Trip
+        </Link>
+      }
+    >
+      <div className="h-full overflow-y-auto p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-10">
+            <h1 className="text-3xl font-bold text-[#181c22] leading-tight">
+              Dashboard
+            </h1>
+            <p className="text-[#8a93a2] font-medium mt-1">
+              Welcome back! Here's what's happening today.
+            </p>
+          </div>
+
+          {loading ? (
         <div className="flex items-center justify-center min-h-[40vh]">
           <Loader text="Loading dashboard metrics..." />
         </div>
@@ -181,7 +228,7 @@ const DashboardMain = () => {
 
           {/* Today's Trips Card */}
           <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-black/5 flex justify-between items-center bg-[#f3f3f4]/60">
+            <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
               <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
                 Ongoing Trips
               </h3>
@@ -260,7 +307,7 @@ const DashboardMain = () => {
 
           {/* Upcoming Trips Card */}
           <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden mt-8">
-            <div className="p-6 border-b border-black/5 flex justify-between items-center bg-[#f3f3f4]/60">
+            <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
               <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
                 Upcoming Trips (Next 7 Days)
               </h3>
@@ -350,6 +397,31 @@ const DashboardMain = () => {
               })()}
             </div>
           </div>
+
+          {/* Quick Access */}
+          {quickAccess.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest mb-4">
+                Quick Access
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {quickAccess.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 no-underline group flex flex-col items-center text-center gap-2"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-[#f3f3f4] group-hover:bg-[#e7f63c] flex items-center justify-center transition-colors">
+                      <item.icon className="w-5 h-5 text-[#181c22]" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#181c22]/80 leading-tight">
+                      {item.label}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -380,7 +452,9 @@ const DashboardMain = () => {
           )}
         </Modal>
       )}
-    </DashboardLayout>
+        </div>
+      </div>
+    </AssistantFrame>
   );
 };
 
