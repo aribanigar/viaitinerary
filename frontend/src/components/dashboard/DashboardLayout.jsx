@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import NavRail from "./NavRail";
 import { useAuth } from "../../context/AuthContext";
 
 const DashboardLayout = ({ children, noPadding = false }) => {
@@ -12,11 +13,12 @@ const DashboardLayout = ({ children, noPadding = false }) => {
 
   return (
     <div className="flex h-screen bg-[#eef0f1] overflow-hidden">
-      {/* Sidebar - Mobile: Fixed Drawer, Desktop: Sidebar */}
+      {/* Mobile: fixed drawer. Desktop: replaced by the collapsible NavRail. */}
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
+      <NavRail />
 
       {/* Main Content Area — floating rounded surface (AI-assistant look) */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden p-2.5 lg:p-3">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden p-2.5 lg:py-3 lg:pr-3 lg:pl-0">
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-[24px] bg-[#fbfbfb] border border-black/5 shadow-[0_18px_50px_-28px_rgba(16,24,42,0.35)]">
           <Header onMenuClick={toggleSidebar} />
           <main

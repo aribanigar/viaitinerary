@@ -90,8 +90,9 @@ const Sidebar = ({ isOpen, onClose }) => {
         />
       )}
 
+      {/* Mobile-only drawer — desktop uses NavRail instead. */}
       <aside
-        className={`fixed inset-y-0 left-0 w-72 bg-white text-[#5b6472] flex flex-col shrink-0 h-screen z-50 transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:h-[calc(100vh-24px)] lg:my-3 lg:ml-3 lg:rounded-[24px] lg:border lg:border-black/5 lg:shadow-[0_18px_50px_-28px_rgba(16,24,42,0.35)] ${
+        className={`fixed inset-y-0 left-0 w-72 bg-white text-[#5b6472] flex flex-col shrink-0 h-screen z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

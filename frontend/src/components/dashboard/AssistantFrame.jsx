@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import InstallAppButton from "../common/InstallAppButton";
+import NavRail from "./NavRail";
 
 const INK = "#181c22";
 
@@ -36,19 +37,6 @@ const NAV_ITEMS = [
   { icon: Users, to: "/team", label: "Team", match: ["/team"] },
   { icon: Settings, to: "/settings", label: "Settings", match: ["/settings"] },
 ];
-
-const RailIcon = ({ icon: Icon, active, to }) => {
-  const cls = `grid place-items-center w-11 h-11 rounded-2xl transition-colors ${
-    active
-      ? "bg-[#181c22] text-white shadow-md"
-      : "text-[#181c22]/50 hover:text-[#181c22] hover:bg-black/5"
-  }`;
-  return (
-    <Link to={to} className={cls}>
-      <Icon className="w-[18px] h-[18px]" strokeWidth={2} />
-    </Link>
-  );
-};
 
 // Bottom app-style tab bar shown on phones/tablets in place of the desktop
 // icon rail — always visible, thumb-reachable, and safe-area aware.
@@ -123,38 +111,8 @@ const AssistantFrame = ({ title, nav, actions, children }) => {
 
   return (
     <div className="h-[100dvh] w-full bg-[#f0f0f1] text-[#181c22] font-sans antialiased flex overflow-hidden">
-      {/* Left icon rail — desktop/tablet only */}
-      <aside className="hidden lg:flex w-[80px] shrink-0 flex-col items-center py-6">
-        <Link to="/dashboard">
-          <Mark className="w-8 h-8" />
-        </Link>
-        <div className="mt-10 flex flex-col items-center gap-1.5 bg-white rounded-[26px] p-2 border border-black/5 shadow-sm">
-          {NAV_ITEMS.map(({ icon, to, match }) => (
-            <RailIcon
-              key={to}
-              icon={icon}
-              to={to}
-              active={match.some((m) => is(m))}
-            />
-          ))}
-        </div>
-        <div className="mt-auto flex flex-col items-center gap-4">
-          <InstallAppButton
-            variant="icon"
-            className="!w-11 !h-11 !rounded-2xl hover:!text-[#181c22]"
-          />
-          <Link
-            to="/notifications"
-            className="relative grid place-items-center w-11 h-11 rounded-2xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm hover:text-[#181c22]"
-          >
-            <Bell className="w-[18px] h-[18px]" strokeWidth={2} />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#ff5a4d] ring-2 ring-white" />
-          </Link>
-          <div className="w-11 h-11 rounded-2xl bg-[#e7f63c] text-[#181c22] grid place-items-center font-bold text-sm border border-black/5 shadow-sm">
-            {initials}
-          </div>
-        </div>
-      </aside>
+      {/* Left nav rail — desktop/tablet only, collapses to icons, expands on hover/pin */}
+      <NavRail />
 
       {/* Content surface: full-bleed on mobile, rounded floating panel on desktop */}
       <main className="flex-1 flex flex-col min-w-0 lg:my-4 lg:mr-4 lg:rounded-[28px] bg-[#fbfbfb] lg:border lg:border-black/5 lg:shadow-[0_20px_60px_-30px_rgba(16,24,42,0.35)] overflow-hidden">
