@@ -47,6 +47,13 @@ const QUICK_ACCESS = [
   { label: "Branding", to: "/typography", icon: Type, roles: ["admin"] },
 ];
 
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good Morning";
+  if (hour < 17) return "Good Afternoon";
+  return "Good Evening";
+}
+
 const DashboardMain = () => {
   const { token, user } = useAuth();
   const [trips, setTrips] = useState([]);
@@ -180,14 +187,36 @@ const DashboardMain = () => {
     >
       <div className="h-full overflow-y-auto p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-10">
+          <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#181c22] leading-tight">
-              Dashboard
+              {getGreeting()}, {user?.name || "there"}
             </h1>
-            <p className="text-[#8a93a2] font-medium mt-1">
-              Welcome back! Here's what's happening today.
-            </p>
+            <p className="text-[#8a93a2] font-medium mt-1">Where to next?</p>
           </div>
+
+          {quickAccess.length > 0 && (
+            <div className="mb-10">
+              <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest mb-4">
+                Quick Access
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {quickAccess.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 no-underline group flex flex-col items-center text-center gap-2"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-[#f3f3f4] group-hover:bg-[#e7f63c] flex items-center justify-center transition-colors">
+                      <item.icon className="w-5 h-5 text-[#181c22]" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#181c22]/80 leading-tight">
+                      {item.label}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {loading ? (
         <div className="flex items-center justify-center min-h-[40vh]">
@@ -397,31 +426,6 @@ const DashboardMain = () => {
               })()}
             </div>
           </div>
-
-          {/* Quick Access */}
-          {quickAccess.length > 0 && (
-            <div className="mt-8">
-              <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest mb-4">
-                Quick Access
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                {quickAccess.map((item) => (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 no-underline group flex flex-col items-center text-center gap-2"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-[#f3f3f4] group-hover:bg-[#e7f63c] flex items-center justify-center transition-colors">
-                      <item.icon className="w-5 h-5 text-[#181c22]" />
-                    </div>
-                    <span className="text-[11px] font-semibold text-[#181c22]/80 leading-tight">
-                      {item.label}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
         </>
       )}
 
