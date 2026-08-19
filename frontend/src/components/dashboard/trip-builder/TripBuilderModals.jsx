@@ -143,6 +143,7 @@ export const HotelModal = ({
                     ...hotelForm,
                     hotelId: selectedHotel.id,
                     name: selectedHotel.name,
+                    category: selectedHotel.category || hotelForm.category,
                     roomType: initialRoomType,
                     pricePerRoom: initialPrice,
                     bedPrices: allBedPrices,

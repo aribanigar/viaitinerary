@@ -160,7 +160,8 @@ export function catalogDestination(d) {
 }
 export function catalogHotel(h) {
   return {
-    id: h.id, user_id: h.userId, name: h.name, city: h.city, email: h.email, phone: h.phone,
+    id: h.id, user_id: h.userId, name: h.name, city: h.city, state: h.state,
+    category: h.category, is_available: h.isAvailable ?? true, email: h.email, phone: h.phone,
     price_sections: h.priceSections ?? [], image_path: h.imagePath, image_url: h.imagePath,
     user: userLite(h.user), created_at: iso(h.createdAt), updated_at: iso(h.updatedAt),
   };

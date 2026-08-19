@@ -116,6 +116,9 @@ export async function mapHotel(body) {
   const data = {
     name: body.name,
     city: body.city ?? null,
+    state: body.state ?? null,
+    category: body.category ?? null,
+    isAvailable: body.is_available !== undefined ? !!body.is_available : true,
     email: body.email ?? null,
     phone: body.phone ?? null,
     priceSections: body.price_sections ?? [],

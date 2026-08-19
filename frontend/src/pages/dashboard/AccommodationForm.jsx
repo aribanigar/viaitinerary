@@ -12,9 +12,13 @@ import {
   ImageIcon,
   Plus,
   Trash2,
+  Star,
+  Map,
+  CheckCircle2,
 } from "lucide-react";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
+import { INDIAN_STATES } from "../../constants/indianStates";
 
 const AccommodationForm = () => {
   const { token } = useAuth();
@@ -28,6 +32,9 @@ const AccommodationForm = () => {
   const [formData, setFormData] = useState({
     name: "",
     city: "",
+    state: "",
+    category: "",
+    is_available: true,
     email: "",
     phone: "",
     photo: null,
@@ -47,6 +54,9 @@ const AccommodationForm = () => {
           setFormData({
             name: resp.name || "",
             city: resp.city || "",
+            state: resp.state || "",
+            category: resp.category || "",
+            is_available: resp.is_available ?? true,
             email: resp.email || "",
             phone: resp.phone || "",
             photo: resp.image_url || null,
@@ -247,6 +257,84 @@ const AccommodationForm = () => {
                     required
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                  State
+                </label>
+                <div className="relative">
+                  <Map className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <select
+                    name="state"
+                    value={formData.state}
+                    onChange={handleInputChange}
+                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 appearance-none"
+                  >
+                    <option value="">Select state</option>
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                  Category
+                </label>
+                <div className="flex items-center gap-1 bg-slate-50 rounded-2xl px-4 py-3.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          category: prev.category === String(n) ? "" : String(n),
+                        }))
+                      }
+                      className="p-0.5"
+                      title={`${n} Star`}
+                    >
+                      <Star
+                        className={`w-5 h-5 transition-colors ${
+                          Number(formData.category) >= n
+                            ? "fill-[#e7f63c] text-[#181c22]"
+                            : "fill-transparent text-slate-300"
+                        }`}
+                        strokeWidth={1.5}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                  Availability
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      is_available: !prev.is_available,
+                    }))
+                  }
+                  className={`w-full flex items-center gap-2 pl-4 pr-4 py-3.5 rounded-2xl text-sm font-bold transition-colors ${
+                    formData.is_available
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {formData.is_available ? "Available" : "Unavailable"}
+                </button>
               </div>
             </div>
 
