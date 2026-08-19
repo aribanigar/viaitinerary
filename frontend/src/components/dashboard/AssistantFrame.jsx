@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Home,
@@ -9,10 +9,12 @@ import {
   Bell,
   Sparkles,
   Aperture,
+  Menu,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import InstallAppButton from "../common/InstallAppButton";
 import NavRail from "./NavRail";
+import Sidebar from "./Sidebar";
 
 const INK = "#181c22";
 
@@ -70,13 +72,23 @@ const BottomTabBar = ({ is }) => (
   </nav>
 );
 
-// Slim top bar shown on phones/tablets: brand mark + notifications + profile,
-// standing in for the rail's bottom cluster on desktop.
-const MobileTopBar = ({ initials }) => (
+// Slim top bar shown on phones/tablets: hamburger (full nav drawer) + brand
+// mark on the left, notifications + profile on the right, standing in for
+// the rail's bottom cluster on desktop.
+const MobileTopBar = ({ initials, onMenuClick }) => (
   <header className="lg:hidden flex items-center justify-between px-4 pt-[calc(env(safe-area-inset-top)+10px)] pb-2.5 shrink-0">
-    <Link to="/dashboard" className="flex items-center gap-2">
-      <Mark className="w-7 h-7" />
-    </Link>
+    <div className="flex items-center gap-2.5">
+      <button
+        onClick={onMenuClick}
+        className="grid place-items-center w-9 h-9 rounded-full bg-white border border-black/5 text-[#181c22]/70 shadow-sm active:bg-black/5"
+        aria-label="Open menu"
+      >
+        <Menu className="w-[18px] h-[18px]" strokeWidth={2} />
+      </button>
+      <Link to="/dashboard" className="flex items-center gap-2">
+        <Mark className="w-7 h-7" />
+      </Link>
+    </div>
     <div className="flex items-center gap-2">
       <InstallAppButton variant="icon" />
       <Link
@@ -101,6 +113,7 @@ const MobileTopBar = ({ initials }) => (
 const AssistantFrame = ({ title, nav, actions, children }) => {
   const { pathname } = useLocation();
   const { user } = useAuth();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const is = (p) => pathname.startsWith(p);
   const initials = (user?.name || "U")
     .split(" ")
@@ -111,12 +124,20 @@ const AssistantFrame = ({ title, nav, actions, children }) => {
 
   return (
     <div className="h-[100dvh] w-full bg-[#f0f0f1] text-[#181c22] font-sans antialiased flex overflow-hidden">
-      {/* Left nav rail — desktop/tablet only, collapses to icons, expands on hover/pin */}
+      {/* Mobile: hamburger opens the same full-featured drawer the rest of the
+          app uses. Desktop: collapses to icons, expands on hover/pin. */}
+      <Sidebar
+        isOpen={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+      />
       <NavRail />
 
       {/* Content surface: full-bleed on mobile, rounded floating panel on desktop */}
       <main className="flex-1 flex flex-col min-w-0 lg:my-4 lg:mr-4 lg:rounded-[28px] bg-[#fbfbfb] lg:border lg:border-black/5 lg:shadow-[0_20px_60px_-30px_rgba(16,24,42,0.35)] overflow-hidden">
-        <MobileTopBar initials={initials} />
+        <MobileTopBar
+          initials={initials}
+          onMenuClick={() => setMobileNavOpen(true)}
+        />
         <header className="flex flex-wrap items-center gap-3 lg:gap-6 px-4 lg:px-8 pt-1 lg:pt-5 pb-3 lg:pb-4 border-b border-black/5 shrink-0">
           <div className="flex items-center gap-2 pr-2 min-w-0">
             <Sparkles
