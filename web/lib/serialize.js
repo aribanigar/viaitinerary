@@ -147,7 +147,11 @@ export function serializeDestination(d) {
   return { id: d.id, name: d.name, activities: d.activities ?? [], image_path: d.imagePath, image_url: d.imagePath };
 }
 export function serializeHotel(h) {
-  return { id: h.id, name: h.name, city: h.city, price_sections: h.priceSections ?? [], image_path: h.imagePath, image_url: h.imagePath };
+  return {
+    id: h.id, name: h.name, city: h.city, category: h.category,
+    is_available: h.isAvailable ?? true,
+    price_sections: h.priceSections ?? [], image_path: h.imagePath, image_url: h.imagePath,
+  };
 }
 export function serializeVehicle(v) {
   return { id: v.id, name: v.name, price: num(v.price) };

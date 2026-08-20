@@ -6,6 +6,14 @@ import { getHotelBlackouts } from "../../../api/hotels";
 
 const normalizeRoomTypeValue = (value) => String(value || "").trim();
 
+// The Hotel catalog stores star rating as a bare digit ("5"); the trip
+// builder's Hotel Category field stores it as "5 Star" — convert when
+// pulling a category over from the master hotel record.
+const hotelCategoryLabel = (digit) => {
+  const n = String(digit || "").trim();
+  return n ? `${n} Star` : "";
+};
+
 const expandDateRange = (startStr, endStr) => {
   const dates = [];
   const start = new Date(startStr);
@@ -203,7 +211,7 @@ export const HotelModal = ({
                     ...hotelForm,
                     hotelId: selectedHotel.id,
                     name: selectedHotel.name,
-                    category: selectedHotel.category || hotelForm.category,
+                    category: hotelCategoryLabel(selectedHotel.category) || hotelForm.category,
                     roomType: initialRoomType,
                     pricePerRoom: initialPrice,
                     bedPrices: allBedPrices,
@@ -217,6 +225,7 @@ export const HotelModal = ({
               {hotelsInCity.map((hotel) => (
                 <option key={hotel.id} value={hotel.id}>
                   {hotel.name}
+                  {hotel.is_available === false ? " (Unavailable)" : ""}
                 </option>
               ))}
             </select>
@@ -271,6 +280,7 @@ export const HotelModal = ({
                       { category: "cnb", price: section.cnb || 0 },
                       { category: "5_to_12", price: section.upto_5 || 0 },
                       { category: "above_12", price: section.above_12 || 0 },
+                      { category: "extra_adult", price: section.extra_adult || 0 },
                     ].filter((bp) => bp.price > 0);
                   }
                 }
