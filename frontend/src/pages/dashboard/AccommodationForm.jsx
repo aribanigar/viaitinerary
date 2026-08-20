@@ -503,6 +503,14 @@ const AccommodationForm = () => {
           <div className="py-12 text-center">Loading...</div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                <Hotel className="w-4 h-4 text-[#181c22]" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
+                  Property Details
+                </h3>
+              </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
@@ -565,6 +573,7 @@ const AccommodationForm = () => {
                   <select
                     value={countryIso}
                     onChange={handleCountrySelect}
+                    autoComplete="off"
                     className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 appearance-none cursor-pointer"
                     required
                   >
@@ -591,6 +600,7 @@ const AccommodationForm = () => {
                       name="state"
                       value={formData.state}
                       onChange={handleInputChange}
+                      autoComplete="off"
                       className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
                       placeholder="State / province"
                     />
@@ -599,6 +609,7 @@ const AccommodationForm = () => {
                       value={stateIso}
                       onChange={handleStateSelect}
                       disabled={!countryIso}
+                      autoComplete="off"
                       className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 appearance-none cursor-pointer disabled:cursor-not-allowed disabled:text-slate-400"
                     >
                       <option value="">
@@ -625,6 +636,7 @@ const AccommodationForm = () => {
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
+                      autoComplete="off"
                       className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
                       placeholder="City"
                       required
@@ -634,6 +646,7 @@ const AccommodationForm = () => {
                       value={formData.city}
                       onChange={handleCitySelect}
                       disabled={!stateIso || citiesLoading}
+                      autoComplete="off"
                       className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 appearance-none cursor-pointer disabled:cursor-not-allowed disabled:text-slate-400"
                       required
                     >
@@ -668,6 +681,7 @@ const AccommodationForm = () => {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
+                  autoComplete="off"
                   className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
                   placeholder={mapsLoaded ? "Filled from Hotel Name, or type your own" : "Street address"}
                 />
@@ -712,6 +726,15 @@ const AccommodationForm = () => {
                 ))}
               </div>
             </div>
+            </div>
+
+            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                <Phone className="w-4 h-4 text-[#181c22]" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
+                  Availability &amp; Contact
+                </h3>
+              </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -793,12 +816,16 @@ const AccommodationForm = () => {
                 </div>
               </div>
             </div>
+            </div>
 
-            <div className="space-y-4 w-full">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-1 px-1">
-                  Room & Meal Pricing
-                </label>
+            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <BedDouble className="w-4 h-4 text-[#181c22]" />
+                  <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
+                    Room &amp; Meal Pricing
+                  </h3>
+                </div>
                 <button
                   type="button"
                   onClick={() => addSection()}
@@ -1010,12 +1037,13 @@ const AccommodationForm = () => {
               ))}
             </div>
 
-            <div className="space-y-3 w-full bg-slate-50/50 rounded-2xl p-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-3.5 h-3.5 text-slate-500" />
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600">
+            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+            <div className="space-y-3 w-full">
+              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                <TrendingUp className="w-4 h-4 text-[#181c22]" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                   Market Reference Prices
-                </label>
+                </h3>
               </div>
               <p className="text-[10px] text-slate-400 font-medium -mt-2">
                 Check the live price on each OTA below, then note what you saw here — this is a
@@ -1124,13 +1152,15 @@ const AccommodationForm = () => {
                 </button>
               </div>
             </div>
+            </div>
 
-            <div className="space-y-3 w-full bg-slate-50/50 rounded-2xl p-4">
-              <div className="flex items-center gap-2">
-                <Wallet className="w-3.5 h-3.5 text-slate-500" />
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600">
+            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+            <div className="space-y-3 w-full">
+              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+                <Wallet className="w-4 h-4 text-[#181c22]" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                   Supplier Payment Terms
-                </label>
+                </h3>
               </div>
 
               <div>
@@ -1198,11 +1228,15 @@ const AccommodationForm = () => {
                 <Plus className="w-3.5 h-3.5" /> Add Installment
               </button>
             </div>
+            </div>
 
-            <div>
-              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
-                Photo Reference
-              </label>
+            <div className="bg-slate-50/50 rounded-2xl p-5">
+              <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100">
+                <ImageIcon className="w-4 h-4 text-[#181c22]" />
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
+                  Photo Reference
+                </h3>
+              </div>
               <div className="relative w-full h-32 md:h-20 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 overflow-hidden">
                 {formData.photo ? (
                   <img
