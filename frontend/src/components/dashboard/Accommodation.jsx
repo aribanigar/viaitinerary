@@ -51,7 +51,21 @@ const StarRow = ({ count }) => {
   );
 };
 
-const SPLIT_SPRING = { type: "spring", stiffness: 340, damping: 34 };
+const SPLIT_TRANSITION = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
+const PANEL_WIDTH = 440;
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+}
 
 const EMPTY_FILTERS = {
   state: "",
@@ -76,6 +90,7 @@ const Accommodation = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const isDesktop = useIsDesktop();
 
   const navigate = useNavigate();
 
@@ -235,10 +250,13 @@ const Accommodation = () => {
       <PageHeader
         title="Accommodation"
         description="Manage your hotel partners and stay options."
+        compact={panelOpen}
       >
         <button
           onClick={() => navigate("/accommodation/add")}
-          className="flex items-center gap-2 bg-[#e7f63c] text-[#181c22] px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit"
+          className={`flex items-center gap-2 bg-[#e7f63c] text-[#181c22] rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit ${
+            panelOpen ? "px-4 py-2" : "px-6 py-3"
+          }`}
         >
           <Plus className="w-4 h-4" />
           Add New Accommodation
@@ -246,7 +264,11 @@ const Accommodation = () => {
       </PageHeader>
 
       {!loading && (
-        <div className="flex flex-wrap items-center gap-2.5 mb-8">
+        <div
+          className={`flex flex-wrap items-center gap-2 transition-all duration-300 ${
+            panelOpen ? "mb-4" : "mb-8"
+          }`}
+        >
           {stats.map((stat, i) => {
             const Tag = stat.onClick ? "button" : "div";
             return (
@@ -254,21 +276,27 @@ const Accommodation = () => {
                 key={i}
                 onClick={stat.onClick || undefined}
                 title={stat.change}
-                className={`flex items-center gap-2.5 h-11 pl-1.5 pr-3.5 rounded-2xl border border-black/5 bg-white shadow-sm transition-all ${
-                  stat.onClick
-                    ? "hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
-                    : ""
-                }`}
+                className={`flex items-center gap-2 rounded-2xl border border-black/5 bg-white shadow-sm transition-all duration-300 ${
+                  panelOpen ? "h-9 pl-1 pr-2.5" : "h-11 pl-1.5 pr-3.5"
+                } ${stat.onClick ? "hover:shadow-md hover:-translate-y-0.5 cursor-pointer" : ""}`}
               >
                 <span
-                  className={`grid place-items-center w-8 h-8 rounded-xl shrink-0 ${stat.bgColor}`}
+                  className={`grid place-items-center rounded-xl shrink-0 transition-all duration-300 ${stat.bgColor} ${
+                    panelOpen ? "w-6 h-6" : "w-8 h-8"
+                  }`}
                 >
-                  <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
+                  <stat.icon className={`${panelOpen ? "w-3 h-3" : "w-4 h-4"} ${stat.iconColor}`} />
                 </span>
-                <span className="text-xs font-bold text-[#181c22] whitespace-nowrap">
-                  {stat.label}
-                </span>
-                <span className="grid place-items-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-[#f3f3f4] text-[11px] font-black text-[#181c22]">
+                {!panelOpen && (
+                  <span className="text-xs font-bold text-[#181c22] whitespace-nowrap">
+                    {stat.label}
+                  </span>
+                )}
+                <span
+                  className={`grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#f3f3f4] font-black text-[#181c22] ${
+                    panelOpen ? "text-[10px]" : "text-[11px]"
+                  }`}
+                >
                   {stat.value}
                 </span>
               </Tag>
@@ -278,13 +306,7 @@ const Accommodation = () => {
       )}
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">
-      <motion.div
-        layout
-        transition={SPLIT_SPRING}
-        className={`min-w-0 w-full bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden ${
-          panelOpen ? "lg:w-[58%] lg:shrink-0" : ""
-        }`}
-      >
+      <div className="min-w-0 w-full lg:flex-1 bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
           <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
             All Accommodations
@@ -584,20 +606,19 @@ const Accommodation = () => {
             );
           })}
         </CompactDataTable>
-      </motion.div>
+      </div>
 
       <AnimatePresence>
         {panelOpen && selectedHotel && (
           <motion.div
-            key={selectedHotel.id}
-            layout
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: "auto" }}
-            exit={{ opacity: 0, width: 0 }}
-            transition={SPLIT_SPRING}
-            className="w-full lg:flex-1 min-w-0 overflow-hidden lg:sticky lg:top-0"
+            key="hotel-panel"
+            initial={isDesktop ? { width: 0, opacity: 0 } : { opacity: 0, y: 16 }}
+            animate={isDesktop ? { width: PANEL_WIDTH, opacity: 1 } : { opacity: 1, y: 0 }}
+            exit={isDesktop ? { width: 0, opacity: 0 } : { opacity: 0, y: 16 }}
+            transition={SPLIT_TRANSITION}
+            className="w-full lg:shrink-0 overflow-hidden lg:sticky lg:top-0"
           >
-            <div className="w-full lg:w-[420px]">
+            <div className="w-full" style={isDesktop ? { width: PANEL_WIDTH } : undefined}>
               <HotelDetailsPanel
                 hotel={selectedHotel}
                 onClose={() => setPanelOpen(false)}

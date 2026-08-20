@@ -15,6 +15,7 @@ import {
   Briefcase,
   Pencil,
   Loader2,
+  Map,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { getHotelUsage, requestHotelAvailability } from "../../api/hotels";
@@ -100,69 +101,98 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
     }
   };
 
+  const location = [live.city, live.state].filter(Boolean).join(", ");
+
   return (
-    <div className="rounded-[24px] bg-white border border-black/5 shadow-sm overflow-hidden h-full flex flex-col">
-      <div className="relative h-40 bg-slate-100 shrink-0">
-        {live.image_url ? (
-          <img src={live.image_url} alt={live.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full grid place-items-center">
-            <Hotel className="w-10 h-10 text-slate-300" />
+    <div className="rounded-[24px] bg-white border border-black/5 shadow-sm h-full flex flex-col overflow-y-auto p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-[26px] leading-[1.1] font-light tracking-tight text-[#181c22] truncate">
+            {live.name}
+          </h2>
+          <div className="flex items-center gap-1.5 text-[#8a93a2] text-sm font-medium mt-1.5">
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
+            {location || "No location set"}
           </div>
-        )}
+        </div>
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 grid place-items-center w-9 h-9 rounded-xl bg-white/90 backdrop-blur border border-black/5 text-[#181c22] shadow-sm hover:bg-white transition-colors"
+          className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm hover:text-[#181c22] transition-colors shrink-0"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="p-6 overflow-y-auto">
-        <div className="flex items-start justify-between gap-3 mb-1">
-          <h2 className="text-2xl font-bold text-[#181c22] leading-tight">{live.name}</h2>
-          {live.is_available ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold shrink-0 mt-1">
-              <CheckCircle2 className="w-3 h-3" /> Available
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold shrink-0 mt-1">
-              <XCircle className="w-3 h-3" /> Unavailable
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 text-[#8a93a2] text-sm font-medium mb-3">
-          <MapPin className="w-3.5 h-3.5" />
-          {[live.city, live.state].filter(Boolean).join(", ") || "No location set"}
-        </div>
+      <div className="flex items-center justify-between mt-3">
         <StarRow count={live.category} />
+        {live.is_available ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold shrink-0">
+            <CheckCircle2 className="w-3 h-3" /> Available
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold shrink-0">
+            <XCircle className="w-3 h-3" /> Unavailable
+          </span>
+        )}
+      </div>
 
-        <div className="grid grid-cols-2 gap-3 mt-6">
-          <Fact
-            icon={Calendar}
-            label="Date Added"
-            value={
-              live.created_at
-                ? new Date(live.created_at).toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })
-                : "—"
-            }
-          />
-          <Fact
-            icon={BedDouble}
-            label="Rooms Available"
-            value={roomsAvailable != null ? roomsAvailable : "Not set"}
-          />
-          <Fact
-            icon={Briefcase}
-            label="Rooms Booked (all time)"
-            value={usageLoading ? "…" : roomsBooked}
-          />
-          <Fact icon={Send} label="Requests Sent" value={live.request_count || 0} />
+      <div className="relative h-[160px] rounded-xl bg-slate-100 overflow-hidden mt-4 shrink-0">
+        {live.image_url ? (
+          <img src={live.image_url} alt={live.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full grid place-items-center">
+            <Hotel className="w-8 h-8 text-slate-300" />
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mt-6">
+        <Fact
+          icon={Calendar}
+          label="Date Added"
+          value={
+            live.created_at
+              ? new Date(live.created_at).toLocaleDateString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "—"
+          }
+        />
+        <Fact
+          icon={BedDouble}
+          label="Rooms Available"
+          value={roomsAvailable != null ? roomsAvailable : "Not set"}
+        />
+        <Fact
+          icon={Briefcase}
+          label="Rooms Booked (all time)"
+          value={usageLoading ? "…" : roomsBooked}
+        />
+        <Fact icon={Send} label="Requests Sent" value={live.request_count || 0} />
+      </div>
+
+      <div className="mt-6">
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#8a93a2] mb-3">
+          Location
+        </h3>
+        <div className="relative rounded-[24px] bg-[#f3f3f4] border border-black/5 p-5 overflow-hidden">
+          <div className="flex items-center gap-3">
+            <div className="grid place-items-center w-10 h-10 rounded-xl bg-white border border-black/5 shadow-sm shrink-0">
+              <Map className="w-4 h-4 text-[#181c22]/60" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-[#181c22] truncate">
+                {location || "No location set"}
+              </p>
+              <p className="text-[10px] text-[#9aa3b2] font-medium">
+                Connect Google Maps to plot this hotel on a live map
+              </p>
+            </div>
+          </div>
         </div>
+      </div>
 
         {live.last_requested_at && (
           <p className="text-[10px] font-bold text-[#9aa3b2] mt-2 px-1">
@@ -277,7 +307,6 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
         >
           <Pencil className="w-3.5 h-3.5" /> Edit Accommodation
         </Link>
-      </div>
     </div>
   );
 };
