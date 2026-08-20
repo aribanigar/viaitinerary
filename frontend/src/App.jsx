@@ -38,6 +38,7 @@ const PaymentDetails = lazy(
 );
 const Typography = lazy(() => import("./components/dashboard/Typography"));
 const Destinations = lazy(() => import("./components/dashboard/Destinations"));
+const DestinationForm = lazy(() => import("./pages/dashboard/DestinationForm"));
 const Accommodation = lazy(
   () => import("./components/dashboard/Accommodation"),
 );
@@ -379,6 +380,14 @@ function App() {
                     }
                   >
                     <Route path="/destinations" element={<Destinations />} />
+                    <Route
+                      path="/destinations/add"
+                      element={<DestinationForm />}
+                    />
+                    <Route
+                      path="/destinations/edit/:id"
+                      element={<DestinationForm />}
+                    />
                     <Route path="/accommodation" element={<Accommodation />} />
                     <Route
                       path="/accommodation/add"

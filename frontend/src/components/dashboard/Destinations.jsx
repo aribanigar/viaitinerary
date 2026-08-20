@@ -1,70 +1,44 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import DashboardLayout from "./DashboardLayout";
-import Modal from "../common/Modal";
+import ConfirmationModal from "../common/ConfirmationModal";
+import PageHeader from "../common/PageHeader";
 import {
   Plus,
-  Upload,
   MapPin,
   Trash2,
   Pencil,
   Search,
   ImageIcon,
-  Loader2,
+  ImageOff,
+  ListChecks,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import {
-  fetchDestinations,
-  fetchDestination,
-  createDestination,
-  updateDestination,
-  deleteDestination,
-} from "../../api/destinations";
+import { fetchDestinations, deleteDestination } from "../../api/destinations";
 import { toast } from "react-toastify";
-import PageHeader from "../common/PageHeader";
+import { useNavigate } from "react-router-dom";
 import CompactDataTable from "../common/CompactDataTable";
+
+// Client-side pagination/filtering: an agency's destination catalog is small
+// enough to fetch once and filter instantly, matching Accommodation/Vehicles.
+const FETCH_ALL_PAGE_SIZE = 1000;
 
 const Destinations = () => {
   const { token } = useAuth();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
   const [destinations, setDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [targetId, setTargetId] = useState(null);
   const [pageSize, setPageSize] = useState(25);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    lastPage: 1,
-    total: 0,
-    from: 0,
-    to: 0,
-    perPage: 25,
-  });
-  const [editingLoading, setEditingLoading] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    activities: "",
-    photo: null,
-  });
-
-  const loadDestinations = async (page = 1) => {
+  const loadDestinations = async () => {
     try {
       setLoading(true);
-      const resp = await fetchDestinations(token, {
-        page,
-        per_page: pageSize,
-        search: searchQuery,
-      });
+      const resp = await fetchDestinations(token, { per_page: FETCH_ALL_PAGE_SIZE });
       setDestinations(resp.data);
-      setPagination({
-        currentPage: resp.current_page,
-        lastPage: resp.last_page,
-        total: resp.total,
-        from: resp.from,
-        to: resp.to,
-        perPage: resp.per_page,
-      });
     } catch (error) {
       toast.error(error.message || "Failed to load destinations");
     } finally {
@@ -73,114 +47,91 @@ const Destinations = () => {
   };
 
   useEffect(() => {
-    if (token) loadDestinations(1);
-  }, [token, searchQuery, pageSize]);
+    if (token) loadDestinations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
-  const handlePageSizeChange = (value) => {
-    setPageSize(value);
-    setPagination((prev) => ({ ...prev, perPage: value }));
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return destinations;
+    return destinations.filter((d) => d.name.toLowerCase().includes(q));
+  }, [destinations, searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, pageSize]);
+
+  const lastPage = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const page = Math.min(currentPage, lastPage);
+  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pagination = {
+    currentPage: page,
+    lastPage,
+    total: filtered.length,
+    from: filtered.length ? (page - 1) * pageSize + 1 : 0,
+    to: Math.min(page * pageSize, filtered.length),
+    perPage: pageSize,
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const totalActivities = useMemo(
+    () => destinations.reduce((sum, d) => sum + (d.activities || []).length, 0),
+    [destinations],
+  );
+  const withPhotoCount = destinations.filter((d) => d.image_url).length;
+
+  const stats = [
+    {
+      label: "Total Destinations",
+      value: destinations.length.toString(),
+      change: "In your catalog",
+      icon: MapPin,
+      bgColor: "bg-[#e7f63c]",
+      iconColor: "text-[#181c22]",
+    },
+    {
+      label: "Total Activities",
+      value: totalActivities.toString(),
+      change: "Across all destinations",
+      icon: ListChecks,
+      bgColor: "bg-[#181c22]",
+      iconColor: "text-white",
+    },
+    {
+      label: "With Photos",
+      value: withPhotoCount.toString(),
+      change: "Ready to showcase",
+      icon: ImageIcon,
+      bgColor: "bg-[#181c22]",
+      iconColor: "text-white",
+    },
+    {
+      label: "Missing Photos",
+      value: (destinations.length - withPhotoCount).toString(),
+      change: "Could use a photo",
+      icon: ImageOff,
+      bgColor: "bg-[#181c22]",
+      iconColor: "text-white",
+    },
+  ];
+
+  const handleDeleteClick = (id) => {
+    setTargetId(id);
+    setDeleteModalOpen(true);
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          photo: reader.result,
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleEdit = async (destination) => {
+  const handleConfirmDelete = async () => {
     try {
-      setEditingLoading((prev) => new Set(prev).add(destination.id));
-      const fullDest = await fetchDestination(destination.id, token);
-      setEditingId(fullDest.id);
-      setFormData({
-        name: fullDest.name,
-        activities: (fullDest.activities || []).join("\n"),
-        photo: fullDest.image_path,
-      });
-      setIsModalOpen(true);
+      setIsDeleting(true);
+      await deleteDestination(targetId, token);
+      setDestinations((prev) => prev.filter((d) => d.id !== targetId));
+      toast.success("Destination deleted successfully");
+      setDeleteModalOpen(false);
     } catch (error) {
-      toast.error("Error fetching destination details");
+      toast.error(error.message || "Failed to delete destination");
     } finally {
-      setEditingLoading((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(destination.id);
-        return newSet;
-      });
+      setIsDeleting(false);
+      setTargetId(null);
     }
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Are you sure you want to delete this destination?")) {
-      try {
-        await deleteDestination(id, token);
-        toast.success("Destination deleted successfully");
-        loadDestinations(pagination.currentPage);
-      } catch (error) {
-        toast.error("Failed to delete destination");
-      }
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    try {
-      setSubmitting(true);
-      const dataToSend = {
-        name: formData.name,
-        activities: formData.activities
-          .split("\n")
-          .filter((line) => line.trim() !== ""),
-        photo:
-          formData.photo && formData.photo.startsWith("data:")
-            ? formData.photo
-            : undefined,
-      };
-
-      if (editingId) {
-        await updateDestination(editingId, dataToSend, token);
-        toast.success("Destination updated successfully");
-      } else {
-        await createDestination(dataToSend, token);
-        toast.success("Destination added successfully");
-      }
-
-      setFormData({ name: "", activities: "", photo: null });
-      setEditingId(null);
-      setIsModalOpen(false);
-      loadDestinations(1);
-    } catch (error) {
-      toast.error(
-        editingId
-          ? "Failed to update destination"
-          : "Failed to add destination",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const formatImageUrl = (path) => {
-    if (!path) return null;
-    if (path.startsWith("http") || path.startsWith("data:")) return path;
-    const apiBase = (
-      import.meta.env.VITE_API_URL || "http://localhost:8000/api"
-    ).replace(/\/$/, "");
-    return `${apiBase}/storage/${path}`;
   };
 
   return (
@@ -190,21 +141,49 @@ const Destinations = () => {
         description="Manage and explore travel destinations for your trips."
       >
         <button
-          onClick={() => {
-            setEditingId(null);
-            setFormData({ name: "", activities: "", photo: null });
-            setIsModalOpen(true);
-          }}
-          className="flex items-center gap-2 bg-[#e7f63c] text-[#181c22] px-6 py-3 rounded-xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit"
+          onClick={() => navigate("/destinations/add")}
+          className="flex items-center gap-2 bg-[#e7f63c] text-[#181c22] px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit"
         >
           <Plus className="w-4 h-4" />
           Add New Destination
         </button>
       </PageHeader>
 
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-50 flex items-center gap-3">
-          <div className="relative flex-1">
+      {!loading && (
+        <div className="flex flex-wrap items-center gap-2 mb-8">
+          {stats.map((stat, i) => (
+            <div
+              key={i}
+              title={stat.change}
+              className="flex items-center gap-2 h-11 pl-1.5 pr-3.5 rounded-2xl border border-black/5 bg-white shadow-sm"
+            >
+              <span
+                className={`grid place-items-center w-8 h-8 rounded-xl shrink-0 ${stat.bgColor}`}
+              >
+                <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
+              </span>
+              <span className="text-xs font-bold text-[#181c22] whitespace-nowrap">
+                {stat.label}
+              </span>
+              <span className="grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#f3f3f4] font-black text-[#181c22] text-[11px]">
+                {stat.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
+          <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
+            All Destinations
+          </h3>
+          <span className="text-[10px] font-bold text-[#8a93a2] uppercase tracking-widest">
+            {filtered.length} of {destinations.length}
+          </span>
+        </div>
+        <div className="p-6 border-b border-black/5">
+          <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
@@ -225,7 +204,7 @@ const Destinations = () => {
           ]}
           loading={loading}
           loadingText="Loading destinations..."
-          hasRows={destinations.length > 0}
+          hasRows={pageItems.length > 0}
           emptyIcon={<MapPin className="w-8 h-8" />}
           emptyTitle="No destinations found"
           emptyDescription={
@@ -234,23 +213,39 @@ const Destinations = () => {
               : "Start by adding your first travel destination."
           }
           pagination={pagination}
-          onPageChange={loadDestinations}
-          onPageSizeChange={handlePageSizeChange}
+          onPageChange={(p) => setCurrentPage(p)}
+          onPageSizeChange={(size) => setPageSize(size)}
         >
-          {destinations.map((destination) => (
+          {pageItems.map((destination) => (
             <tr
               key={destination.id}
               className="hover:bg-slate-50/50 group transition-colors"
             >
               <td>
-                <div>
-                  <div className="font-bold text-slate-900 capitalize text-sm">
-                    {destination.name}
+                <button
+                  onClick={() => navigate(`/destinations/edit/${destination.id}`)}
+                  className="flex items-center gap-3 text-left w-full"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                    {destination.image_url ? (
+                      <img
+                        src={destination.image_url}
+                        alt={destination.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <MapPin className="w-4 h-4 text-slate-300" />
+                    )}
                   </div>
-                  <div className="text-slate-400 text-[10px] mt-1 font-medium">
-                    {(destination.activities || []).length} Total Activities
+                  <div className="min-w-0">
+                    <div className="font-bold text-slate-900 capitalize truncate hover:underline">
+                      {destination.name}
+                    </div>
+                    <div className="text-slate-400 text-[11px] mt-0.5 font-medium">
+                      {(destination.activities || []).length} total activities
+                    </div>
                   </div>
-                </div>
+                </button>
               </td>
               <td>
                 <div className="flex flex-col">
@@ -279,26 +274,28 @@ const Destinations = () => {
                       + {(destination.activities || []).length - 2} MORE
                     </span>
                   )}
+                  {(destination.activities || []).length === 0 && (
+                    <span className="text-[10px] text-slate-300 italic">
+                      No activities yet
+                    </span>
+                  )}
                 </div>
               </td>
               <td className="text-right">
-                <div className="flex items-center justify-end gap-1">
+                <div className="flex items-center justify-end gap-2">
                   <button
-                    onClick={() => handleEdit(destination)}
-                    disabled={editingLoading.has(destination.id)}
-                    className="p-1.5 hover:bg-blue-50 text-slate-300 hover:text-blue-600 rounded-lg transition-all disabled:opacity-50"
+                    onClick={() => navigate(`/destinations/edit/${destination.id}`)}
+                    className="p-2 hover:bg-blue-50 text-slate-300 hover:text-blue-600 rounded-xl transition-all"
+                    title="Edit"
                   >
-                    {editingLoading.has(destination.id) ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Pencil className="w-3.5 h-3.5" />
-                    )}
+                    <Pencil className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(destination.id)}
-                    className="p-1.5 hover:bg-red-50 text-slate-300 hover:text-red-600 rounded-lg transition-all"
+                    onClick={() => handleDeleteClick(destination.id)}
+                    className="p-2 hover:bg-red-50 text-slate-300 hover:text-red-600 rounded-xl transition-all"
+                    title="Delete"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </td>
@@ -307,95 +304,15 @@ const Destinations = () => {
         </CompactDataTable>
       </div>
 
-      {/* Add Destination Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingId(null);
-        }}
-        title="Destination"
-        isEditing={!!editingId}
-        onSubmit={handleSubmit}
-        submitButtonText="Save Destination"
-        submitting={submitting}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">
-              Destination Name
-            </label>
-            <div className="relative group">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-              <input
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
-                placeholder="e.g. Paris, Tokyo, Bali"
-                required
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">
-              Activities
-            </label>
-            <div className="bg-slate-50 rounded-2xl p-4 min-h-[120px] focus-within:ring-2 focus-within:ring-[#e7f63c]/20 focus-within:bg-white transition-all">
-              <textarea
-                name="activities"
-                value={formData.activities}
-                onChange={handleInputChange}
-                placeholder="Add activities here... (one activity per line)"
-                className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-sm font-bold text-slate-900 placeholder:text-slate-300 resize-none min-h-[100px] custom-scrollbar"
-                required
-              />
-            </div>
-            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-2 ml-1">
-              Tip: Enter each activity on a new line
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">
-              Photo Reference
-            </label>
-            <div className="relative group">
-              <div className="w-full h-32 rounded-2xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 hover:border-blue-400 transition-colors cursor-pointer relative overflow-hidden">
-                {formData.photo ? (
-                  <>
-                    <img
-                      src={formatImageUrl(formData.photo)}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-slate-900/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Upload className="w-5 h-5 text-white" />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="w-6 h-6 text-slate-300" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                      Upload Reference Image
-                    </span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                  accept=".jpg,.jpeg,.png,.webp"
-                />
-              </div>
-            </div>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-2 ml-1">
-              Accepted formats: JPG, JPEG, PNG, WebP
-            </p>
-          </div>
-        </div>
-      </Modal>
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Destination"
+        message="Are you sure you want to delete this destination? This action cannot be undone."
+        confirmText="Delete"
+        loading={isDeleting}
+      />
     </DashboardLayout>
   );
 };
