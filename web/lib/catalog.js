@@ -115,6 +115,7 @@ export async function mapHotel(body) {
   if (!body.name) return { error: "name is required." };
   const data = {
     name: body.name,
+    address: body.address ?? null,
     city: body.city ?? null,
     state: body.state ?? null,
     country: body.country ?? null,

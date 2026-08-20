@@ -165,7 +165,7 @@ export function catalogDestination(d) {
 }
 export function catalogHotel(h) {
   return {
-    id: h.id, user_id: h.userId, name: h.name, city: h.city, state: h.state, country: h.country,
+    id: h.id, user_id: h.userId, name: h.name, address: h.address, city: h.city, state: h.state, country: h.country,
     category: h.category, is_available: h.isAvailable ?? true, email: h.email, phone: h.phone,
     latitude: num(h.latitude), longitude: num(h.longitude),
     price_sections: h.priceSections ?? [], image_path: h.imagePath, image_url: h.imagePath,

@@ -21,6 +21,8 @@ import {
   TrendingUp,
   Wallet,
   Sparkles,
+  ExternalLink,
+  Building2,
 } from "lucide-react";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -37,6 +39,7 @@ const AccommodationForm = () => {
 
   const [formData, setFormData] = useState({
     name: "",
+    address: "",
     city: "",
     state: "",
     country: "",
@@ -54,7 +57,9 @@ const AccommodationForm = () => {
   const [marketPrices, setMarketPrices] = useState([]);
   const [marketPriceDraft, setMarketPriceDraft] = useState({ source: "", price: "", note: "" });
   const [paymentTerms, setPaymentTerms] = useState({ reference_event: "booking_date", installments: [] });
-  const cityInputRef = useRef(null);
+  const [googleRating, setGoogleRating] = useState(null);
+  const [fetchingPlace, setFetchingPlace] = useState(false);
+  const hotelNameInputRef = useRef(null);
   const { loaded: mapsLoaded } = useGoogleMapsScript();
 
   const roomTypeOptions = ["deluxe", "super_deluxe", "suite"];
@@ -68,6 +73,7 @@ const AccommodationForm = () => {
 
           setFormData({
             name: resp.name || "",
+            address: resp.address || "",
             city: resp.city || "",
             state: resp.state || "",
             country: resp.country || "",
@@ -110,18 +116,41 @@ const AccommodationForm = () => {
     }
   }, [id, token]);
 
-  useEffect(() => {
-    if (!mapsLoaded || !cityInputRef.current || !window.google?.maps?.places) return;
+  // Fetch a Google Place photo and convert it to a data URL so it flows
+  // through the same persistImage path as a manually uploaded photo.
+  const applyPlacePhoto = async (place) => {
+    const photoRef = place.photos?.[0];
+    if (!photoRef) return;
+    try {
+      const url = photoRef.getUrl({ maxWidth: 800, maxHeight: 600 });
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      setFormData((prev) => ({ ...prev, photo: dataUrl }));
+    } catch {
+      // Photo fetch can fail (CORS, rate limits) — non-fatal, just skip it.
+    }
+  };
 
-    // Worldwide by design — no componentRestrictions, so this works for any
-    // country's cities, not just one region.
-    const autocomplete = new window.google.maps.places.Autocomplete(cityInputRef.current, {
-      types: ["(cities)"],
-      fields: ["address_components", "geometry", "name"],
+  useEffect(() => {
+    if (!mapsLoaded || !hotelNameInputRef.current || !window.google?.maps?.places) return;
+
+    // Search businesses/hotels by name, worldwide — no componentRestrictions
+    // or country bias, so this works for any property anywhere.
+    const autocomplete = new window.google.maps.places.Autocomplete(hotelNameInputRef.current, {
+      types: ["establishment"],
+      fields: ["address_components", "geometry", "name", "formatted_address", "photos", "rating"],
     });
 
     const listener = autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
+      if (!place.geometry) return; // user hit Enter without picking a suggestion
+
       const components = place.address_components || [];
       const find = (type) =>
         components.find((c) => c.types.includes(type))?.long_name || "";
@@ -132,12 +161,18 @@ const AccommodationForm = () => {
 
       setFormData((prev) => ({
         ...prev,
+        name: place.name || prev.name,
+        address: place.formatted_address || prev.address,
         city: city || prev.city,
         state: state || prev.state,
         country: country || prev.country,
         latitude: place.geometry?.location ? String(place.geometry.location.lat()) : prev.latitude,
         longitude: place.geometry?.location ? String(place.geometry.location.lng()) : prev.longitude,
       }));
+
+      setGoogleRating(place.rating ?? null);
+      setFetchingPlace(true);
+      applyPlacePhoto(place).finally(() => setFetchingPlace(false));
     });
 
     return () => {
@@ -346,43 +381,64 @@ const AccommodationForm = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
                   Hotel Name
+                  {mapsLoaded && (
+                    <span className="inline-flex items-center gap-1 normal-case font-bold text-blue-500 tracking-normal">
+                      <LocateFixed className="w-3 h-3" /> Google-assisted
+                    </span>
+                  )}
+                  {fetchingPlace && (
+                    <span className="normal-case font-bold text-slate-400 tracking-normal">
+                      Fetching details…
+                    </span>
+                  )}
                 </label>
                 <div className="relative">
                   <Hotel className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    ref={hotelNameInputRef}
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
                     className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
-                    placeholder="e.g. Radisson Blu"
+                    placeholder="Start typing a hotel name…"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
                   City
-                  {mapsLoaded && (
-                    <span className="inline-flex items-center gap-1 normal-case font-bold text-blue-500 tracking-normal">
-                      <LocateFixed className="w-3 h-3" /> Google-assisted
-                    </span>
-                  )}
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
-                    ref={cityInputRef}
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
                     className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
-                    placeholder="Start typing a city…"
+                    placeholder="Filled from Hotel Name"
                     required
                   />
                 </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                Address
+              </label>
+              <div className="relative">
+                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  name="address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                  className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
+                  placeholder="Filled from Hotel Name"
+                />
               </div>
             </div>
 
@@ -420,8 +476,16 @@ const AccommodationForm = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
                   Category
+                  {googleRating != null && (
+                    <span
+                      className="normal-case font-bold text-amber-500 tracking-normal"
+                      title="Google's guest review score — not an official star classification. Set the star category yourself."
+                    >
+                      Google: {googleRating.toFixed(1)}★ (guest rating)
+                    </span>
+                  )}
                 </label>
                 <div className="flex items-center gap-1 bg-slate-50 rounded-2xl px-4 py-3.5">
                   {[1, 2, 3, 4, 5].map((n) => (
@@ -756,9 +820,42 @@ const AccommodationForm = () => {
                 </label>
               </div>
               <p className="text-[10px] text-slate-400 font-medium -mt-2">
-                Note down what you see on MMT, EaseMyTrip, Goibibo, etc. — used only as a manual
-                reference. No live scraping.
+                Check the live price on each OTA below, then note what you saw here — this is a
+                manual reference, not live scraping (no public API exists for this).
               </p>
+
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "MakeMyTrip", domain: "makemytrip.com" },
+                  { label: "EaseMyTrip", domain: "easemytrip.com" },
+                  { label: "Goibibo", domain: "goibibo.com" },
+                  { label: "Google Search", domain: null },
+                ].map((ota) => {
+                  const query = `${formData.name} ${formData.city} hotel`.trim();
+                  const url = ota.domain
+                    ? `https://www.google.com/search?q=${encodeURIComponent(`${query} site:${ota.domain}`)}`
+                    : `https://www.google.com/search?q=${encodeURIComponent(`${query} price`)}`;
+                  return (
+                    <a
+                      key={ota.label}
+                      href={formData.name ? url : undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => {
+                        if (!formData.name) {
+                          e.preventDefault();
+                          toast.error("Enter a hotel name first");
+                        }
+                      }}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 bg-white rounded-lg text-[10px] font-bold text-slate-700 hover:text-blue-600 ${
+                        !formData.name ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <ExternalLink className="w-3 h-3" /> Check {ota.label}
+                    </a>
+                  );
+                })}
+              </div>
 
               {marketPrices.length > 0 && (
                 <div className="space-y-1.5">

@@ -179,6 +179,9 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
             <MapPin className="w-3.5 h-3.5 shrink-0" />
             {location || "No location set"}
           </div>
+          {live.address && (
+            <p className="text-[#9aa3b2] text-xs font-medium mt-1 truncate">{live.address}</p>
+          )}
         </div>
         <button
           onClick={onClose}

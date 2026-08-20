@@ -199,6 +199,7 @@ model Hotel {
   id            Int      @id @default(autoincrement())
   userId        Int      @map("user_id")
   name          String
+  address       String?
   city          String?
   state         String?
   country       String?
