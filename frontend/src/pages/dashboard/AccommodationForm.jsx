@@ -446,6 +446,8 @@ const AccommodationForm = () => {
                 <div className="relative phone-input-container">
                   <PhoneInput
                     defaultCountry="in"
+                    disableCountryGuess
+                    forceDialCode
                     value={formData.phone}
                     onChange={(phone) =>
                       setFormData((prev) => ({ ...prev, phone }))

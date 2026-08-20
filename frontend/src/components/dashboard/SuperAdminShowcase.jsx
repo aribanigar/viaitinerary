@@ -391,6 +391,8 @@ const SuperAdminShowcase = () => {
               <div className="phone-input-container">
                 <PhoneInput
                   defaultCountry="in"
+                  disableCountryGuess
+                  forceDialCode
                   value={formData.whatsapp_number}
                   onChange={(phone) =>
                     setFormData({ ...formData, whatsapp_number: phone })

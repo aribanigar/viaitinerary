@@ -335,6 +335,8 @@ const Vehicles = () => {
             <div className="relative phone-input-container">
               <PhoneInput
                 defaultCountry="in"
+                disableCountryGuess
+                forceDialCode
                 value={formData.phone}
                 onChange={(phone) => setFormData({ ...formData, phone })}
                 inputClassName="!w-full !pr-4 !py-3 !bg-slate-50 !border-none !rounded-2xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-[#e7f63c]/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium !h-[44px]"

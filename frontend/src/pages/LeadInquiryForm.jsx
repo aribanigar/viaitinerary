@@ -376,6 +376,8 @@ const LeadInquiryForm = () => {
                     <div className="phone-input-container">
                       <PhoneInput
                         defaultCountry="in"
+                        disableCountryGuess
+                        forceDialCode
                         value={formData.clientPhone}
                         onChange={(phone) =>
                           setFormData((prev) => ({

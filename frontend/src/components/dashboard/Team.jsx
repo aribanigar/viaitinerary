@@ -559,6 +559,8 @@ const Team = () => {
             <div className="phone-input-container">
               <PhoneInput
                 defaultCountry="in"
+                disableCountryGuess
+                forceDialCode
                 value={formData.phone}
                 onChange={(phone) => setFormData({ ...formData, phone })}
                 className="w-full"

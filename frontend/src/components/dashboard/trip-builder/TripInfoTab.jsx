@@ -146,6 +146,8 @@ const TripInfoTab = ({
         <div className="phone-input-container">
           <PhoneInput
             defaultCountry="in"
+            disableCountryGuess
+            forceDialCode
             value={tripInfo.clientPhone}
             onChange={(phone) =>
               setTripInfo({

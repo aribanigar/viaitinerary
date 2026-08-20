@@ -170,6 +170,8 @@ const Signup = () => {
                 <div className="relative phone-input-container">
                   <PhoneInput
                     defaultCountry="in"
+                    disableCountryGuess
+                    forceDialCode
                     value={formData.phone}
                     onChange={(phone) =>
                       setFormData({ ...formData, phone: phone })

@@ -163,6 +163,8 @@ const CreateLead = () => {
                     <div className="phone-input-container">
                       <PhoneInput
                         defaultCountry="in"
+                        disableCountryGuess
+                        forceDialCode
                         value={formData.client_phone}
                         onChange={(phone) =>
                           setFormData({

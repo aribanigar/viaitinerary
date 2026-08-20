@@ -206,6 +206,8 @@ const ScheduleDemo = () => {
                       <div className="phone-input-container">
                         <PhoneInput
                           defaultCountry="in"
+                          disableCountryGuess
+                          forceDialCode
                           value={formData.contact_number}
                           onChange={(phone) =>
                             setFormData((prev) => ({

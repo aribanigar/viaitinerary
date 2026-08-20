@@ -459,6 +459,8 @@ const AgencySettings = () => {
                     <div className="phone-input-container">
                       <PhoneInput
                         defaultCountry="in"
+                        disableCountryGuess
+                        forceDialCode
                         value={formData.phone}
                         onChange={(phone) =>
                           setFormData({ ...formData, phone })
@@ -524,6 +526,8 @@ const AgencySettings = () => {
                     <div className="phone-input-container">
                       <PhoneInput
                         defaultCountry="in"
+                        disableCountryGuess
+                        forceDialCode
                         value={formData.whatsapp}
                         onChange={(phone) =>
                           setFormData({ ...formData, whatsapp: phone })
