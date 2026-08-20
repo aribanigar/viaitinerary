@@ -1,9 +1,23 @@
-import React from "react";
-import { Minus, Plus } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Minus, Plus, AlertTriangle, Ban, X } from "lucide-react";
 import Modal from "../../common/Modal";
 import DatePicker from "../../common/DatePicker";
+import { getHotelBlackouts } from "../../../api/hotels";
 
 const normalizeRoomTypeValue = (value) => String(value || "").trim();
+
+const expandDateRange = (startStr, endStr) => {
+  const dates = [];
+  const start = new Date(startStr);
+  const end = new Date(endStr);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return dates;
+  const cursor = new Date(start);
+  while (cursor <= end) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+};
 
 const toRoomTypeSlug = (value) =>
   normalizeRoomTypeValue(value).toLowerCase().replace(/\s+/g, "_");
@@ -24,20 +38,34 @@ const formatRoomTypeLabel = (value) => {
     .replace(/\b\w/g, (match) => match.toUpperCase());
 };
 
-const findRoomTypeSection = (hotel, roomTypeValue) => {
+const sectionMatchesSeason = (section, dateStr) => {
+  if (!section.valid_from && !section.valid_to) return true;
+  if (!dateStr) return false;
+  const date = new Date(dateStr);
+  if (section.valid_from && date < new Date(section.valid_from)) return false;
+  if (section.valid_to && date > new Date(section.valid_to)) return false;
+  return true;
+};
+
+// Matches by room type, then prefers whichever section's season (valid_from/
+// valid_to) actually covers the given date — falls back to an always-valid
+// (no date range) section, then to any matching-room-type section at all.
+const findRoomTypeSection = (hotel, roomTypeValue, dateStr) => {
   if (!hotel || !roomTypeValue) return {};
 
   const normalized = normalizeRoomTypeValue(roomTypeValue);
   const sections = hotel.price_sections || [];
 
+  const matching = sections.filter(
+    (section) =>
+      normalizeRoomTypeValue(section.room_type) === normalized ||
+      toRoomTypeSlug(section.room_type) === toRoomTypeSlug(normalized),
+  );
+
   return (
-    sections.find(
-      (section) => normalizeRoomTypeValue(section.room_type) === normalized,
-    ) ||
-    sections.find(
-      (section) =>
-        toRoomTypeSlug(section.room_type) === toRoomTypeSlug(normalized),
-    ) ||
+    matching.find((section) => dateStr && sectionMatchesSeason(section, dateStr) && (section.valid_from || section.valid_to)) ||
+    matching.find((section) => !section.valid_from && !section.valid_to) ||
+    matching[0] ||
     {}
   );
 };
@@ -55,6 +83,7 @@ export const HotelModal = ({
   tripInfo,
   urlTripId,
   reservedAccommodationDates = [],
+  token,
 }) => {
   const selectedHotel = masterHotels.find(
     (hotel) => hotel.id === hotelForm.hotelId,
@@ -68,6 +97,35 @@ export const HotelModal = ({
   const resolvedRoomType = roomTypeOptions.includes(hotelForm.roomType)
     ? hotelForm.roomType
     : roomTypeOptions[0] || "";
+
+  const [blackouts, setBlackouts] = useState([]);
+  useEffect(() => {
+    if (!hotelForm.hotelId || !token) {
+      setBlackouts([]);
+      return;
+    }
+    let cancelled = false;
+    getHotelBlackouts(hotelForm.hotelId, token)
+      .then((resp) => {
+        if (!cancelled) setBlackouts(resp.data || []);
+      })
+      .catch(() => setBlackouts([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [hotelForm.hotelId, token]);
+
+  const stopSaleDates = blackouts
+    .filter((b) => b.type === "stop_sale" && (!b.room_type || b.room_type === hotelForm.roomType))
+    .flatMap((b) => expandDateRange(b.start_date, b.end_date));
+  const blackoutWarnDates = blackouts
+    .filter((b) => b.type === "blackout" && (!b.room_type || b.room_type === hotelForm.roomType))
+    .flatMap((b) => expandDateRange(b.start_date, b.end_date));
+
+  const checkInBlocked = hotelForm.checkIn && stopSaleDates.includes(hotelForm.checkIn);
+  const checkOutBlocked = hotelForm.checkOut && stopSaleDates.includes(hotelForm.checkOut);
+  const checkInWarn = hotelForm.checkIn && blackoutWarnDates.includes(hotelForm.checkIn);
+  const checkOutWarn = hotelForm.checkOut && blackoutWarnDates.includes(hotelForm.checkOut);
 
   return (
     <Modal
@@ -129,6 +187,7 @@ export const HotelModal = ({
                   const section = findRoomTypeSection(
                     selectedHotel,
                     initialRoomType,
+                    hotelForm.checkIn,
                   );
 
                   const initialPrice = section.price || 0;
@@ -137,6 +196,7 @@ export const HotelModal = ({
                     { category: "cnb", price: section.cnb || 0 },
                     { category: "5_to_12", price: section.upto_5 || 0 },
                     { category: "above_12", price: section.above_12 || 0 },
+                    { category: "extra_adult", price: section.extra_adult || 0 },
                   ].filter((bp) => bp.price > 0);
 
                   setHotelForm({
@@ -202,6 +262,7 @@ export const HotelModal = ({
                     const section = findRoomTypeSection(
                       selectedHotel,
                       newRoomType,
+                      hotelForm.checkIn,
                     );
 
                     updatedPrice = section.price || 0;
@@ -388,6 +449,45 @@ export const HotelModal = ({
           </div>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
+              Extra Adult (AWEB)
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(hotelForm.extraAdultCount || 0);
+                  setHotelForm({
+                    ...hotelForm,
+                    extraAdultCount: Math.max(0, current - 1).toString(),
+                  });
+                }}
+                className="w-8 h-8 rounded-lg bg-[#eef0f1] flex items-center justify-center hover:bg-[#e6e8eb] transition-colors"
+              >
+                <Minus className="w-3 h-3 text-[#5b6472]" />
+              </button>
+              <span className="font-semibold text-[#181c22] w-4 text-center text-sm">
+                {hotelForm.extraAdultCount || 0}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(hotelForm.extraAdultCount || 0);
+                  setHotelForm({
+                    ...hotelForm,
+                    extraAdultCount: (current + 1).toString(),
+                  });
+                }}
+                className="w-8 h-8 rounded-lg bg-[#eef0f1] flex items-center justify-center hover:bg-[#e6e8eb] transition-colors"
+              >
+                <Plus className="w-3 h-3 text-[#5b6472]" />
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div>
           <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
             Meal Plan
@@ -417,7 +517,24 @@ export const HotelModal = ({
             <DatePicker
               value={hotelForm.checkIn}
               onChange={(dateString) => {
-                setHotelForm({ ...hotelForm, checkIn: dateString });
+                // Re-resolve the room-type price against the new date so
+                // season-based rate sheets (valid_from/valid_to) apply.
+                if (selectedHotel && resolvedRoomType) {
+                  const section = findRoomTypeSection(selectedHotel, resolvedRoomType, dateString);
+                  setHotelForm({
+                    ...hotelForm,
+                    checkIn: dateString,
+                    pricePerRoom: section.price || hotelForm.pricePerRoom,
+                    bedPrices: [
+                      { category: "cnb", price: section.cnb || 0 },
+                      { category: "5_to_12", price: section.upto_5 || 0 },
+                      { category: "above_12", price: section.above_12 || 0 },
+                      { category: "extra_adult", price: section.extra_adult || 0 },
+                    ].filter((bp) => bp.price > 0),
+                  });
+                } else {
+                  setHotelForm({ ...hotelForm, checkIn: dateString });
+                }
               }}
               className="w-full"
               options={{
@@ -426,8 +543,20 @@ export const HotelModal = ({
                 highlightRangeStart: hotelForm.checkIn,
                 highlightRangeEnd: hotelForm.checkOut,
                 reservedDates: reservedAccommodationDates,
+                excludeDates: stopSaleDates,
+                blackoutDates: blackoutWarnDates,
               }}
             />
+            {checkInBlocked && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-red-600">
+                <Ban className="w-3 h-3" /> Hotel is stop-sale on this date — pick another.
+              </p>
+            )}
+            {!checkInBlocked && checkInWarn && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-amber-600">
+                <AlertTriangle className="w-3 h-3" /> Blackout date — confirm with the hotel before booking.
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
@@ -447,10 +576,76 @@ export const HotelModal = ({
                 highlightRangeStart: hotelForm.checkIn,
                 highlightRangeEnd: hotelForm.checkOut,
                 reservedDates: reservedAccommodationDates,
+                excludeDates: stopSaleDates,
+                blackoutDates: blackoutWarnDates,
               }}
             />
+            {checkOutBlocked && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-red-600">
+                <Ban className="w-3 h-3" /> Hotel is stop-sale on this date — pick another.
+              </p>
+            )}
+            {!checkOutBlocked && checkOutWarn && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-amber-600">
+                <AlertTriangle className="w-3 h-3" /> Blackout date — confirm with the hotel before booking.
+              </p>
+            )}
           </div>
         </div>
+
+        {isEditing && (
+          <div className="pt-2 border-t border-black/5">
+            <label className="flex items-center gap-2 text-[11px] font-semibold text-[#181c22]/70 uppercase tracking-[0.12em] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!!hotelForm.cancelled}
+                onChange={(e) => {
+                  const cancelled = e.target.checked;
+                  setHotelForm({
+                    ...hotelForm,
+                    cancelled,
+                    cancellationCharge: cancelled ? hotelForm.cancellationCharge : "",
+                    cancellationNote: cancelled ? hotelForm.cancellationNote : "",
+                  });
+                }}
+                className="w-4 h-4 rounded accent-red-500"
+              />
+              Mark this booking as cancelled
+            </label>
+            {hotelForm.cancelled && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+                    Cancellation Charge
+                  </label>
+                  <input
+                    type="number"
+                    value={hotelForm.cancellationCharge}
+                    onChange={(e) =>
+                      setHotelForm({ ...hotelForm, cancellationCharge: e.target.value })
+                    }
+                    placeholder="0.00"
+                    className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+                    Note
+                  </label>
+                  <input
+                    type="text"
+                    value={hotelForm.cancellationNote}
+                    onChange={(e) =>
+                      setHotelForm({ ...hotelForm, cancellationNote: e.target.value })
+                    }
+                    placeholder="Reason / reference"
+                    className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </Modal>
   );

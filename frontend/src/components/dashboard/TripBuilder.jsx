@@ -278,6 +278,11 @@ const TripBuilder = ({ mode }) => {
       cnbCount,
       extraBeds5To12Count,
       extraBedsAbove12Count,
+      extraAdultCount: item.extraAdultCount ?? item.extra_adult_count ?? "0",
+      cancelledAt: item.cancelledAt ?? item.cancelled_at ?? null,
+      cancellationCharge: item.cancellationCharge ?? item.cancellation_charge ?? "",
+      cancellationNote: item.cancellationNote ?? item.cancellation_note ?? "",
+      alternateOptions: item.alternateOptions ?? item.alternate_options ?? [],
     };
   }, []);
 
@@ -439,10 +444,15 @@ const TripBuilder = ({ mode }) => {
     cnbCount: "0",
     extraBeds5To12Count: "0",
     extraBedsAbove12Count: "0",
+    extraAdultCount: "0",
     mealPlan: "",
     pricePerRoom: "",
     bedPrices: [],
     photo: null,
+    cancelled: false,
+    cancellationCharge: "",
+    cancellationNote: "",
+    alternateOptions: [],
   });
 
   const uniqueCities = [...new Set(masterHotels.map((h) => h.city))]
@@ -501,10 +511,15 @@ const TripBuilder = ({ mode }) => {
         cnbCount: "0",
         extraBeds5To12Count: "0",
         extraBedsAbove12Count: "0",
+        extraAdultCount: "0",
         mealPlan: "",
         pricePerRoom: "",
         bedPrices: [],
         photo: null,
+        cancelled: false,
+        cancellationCharge: "",
+        cancellationNote: "",
+        alternateOptions: [],
       });
       setEditingHotelId(null);
       setIsHotelModalOpen(false);
@@ -558,11 +573,16 @@ const TripBuilder = ({ mode }) => {
       cnbCount: normalizedHotel.cnbCount || "0",
       extraBeds5To12Count: normalizedHotel.extraBeds5To12Count || "0",
       extraBedsAbove12Count: normalizedHotel.extraBedsAbove12Count || "0",
+      extraAdultCount: normalizedHotel.extraAdultCount || "0",
       mealPlan: normalizedHotel.mealPlan,
       roomType: normalizedHotel.roomType || "Deluxe",
       pricePerRoom: normalizedHotel.pricePerRoom || "",
       bedPrices: normalizedHotel.bedPrices || [],
       photo: normalizedHotel.photo,
+      cancelled: !!normalizedHotel.cancelledAt,
+      cancellationCharge: normalizedHotel.cancellationCharge ?? "",
+      cancellationNote: normalizedHotel.cancellationNote ?? "",
+      alternateOptions: normalizedHotel.alternateOptions || [],
     });
     setEditingHotelId(hotel.id);
     setIsHotelModalOpen(true);
@@ -881,6 +901,7 @@ const TripBuilder = ({ mode }) => {
       cnb_count: item.cnbCount || "0",
       extra_beds_5_to_12_count: item.extraBeds5To12Count || "0",
       extra_beds_above_12_count: item.extraBedsAbove12Count || "0",
+      extra_adult_count: item.extraAdultCount || "0",
       meal_plan: item.mealPlan,
       room_type: item.roomType || "Deluxe",
       price_per_room: item.pricePerRoom,
@@ -888,6 +909,10 @@ const TripBuilder = ({ mode }) => {
       check_in: item.checkIn,
       check_out: item.checkOut,
       image: item.photo,
+      cancelled_at: item.cancelled ? item.cancelledAt || new Date().toISOString() : null,
+      cancellation_charge: item.cancellationCharge === "" ? null : item.cancellationCharge,
+      cancellation_note: item.cancellationNote ?? null,
+      alternate_options: item.alternateOptions ?? [],
     }));
 
     const formattedTransportations = sortedTransportation.map((item, index) => {
@@ -1539,6 +1564,7 @@ const TripBuilder = ({ mode }) => {
         tripInfo={tripInfo}
         urlTripId={urlTripId}
         reservedAccommodationDates={reservedAccommodationDates}
+        token={token}
       />
 
       <TransportModal

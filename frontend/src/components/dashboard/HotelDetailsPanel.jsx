@@ -15,9 +15,19 @@ import {
   Briefcase,
   Pencil,
   Loader2,
+  Ban,
+  AlertTriangle,
+  Trash2,
+  Plus,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import { getHotelUsage, requestHotelAvailability } from "../../api/hotels";
+import {
+  getHotelUsage,
+  requestHotelAvailability,
+  getHotelBlackouts,
+  createHotelBlackout,
+  deleteHotelBlackout,
+} from "../../api/hotels";
 import { useAuth } from "../../context/AuthContext";
 import HotelLocationMap from "./HotelLocationMap";
 
@@ -53,11 +63,39 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
   const [usageLoading, setUsageLoading] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [overrides, setOverrides] = useState(null);
+  const [blackouts, setBlackouts] = useState([]);
+  const [blackoutsLoading, setBlackoutsLoading] = useState(false);
+  const [blackoutDraft, setBlackoutDraft] = useState({
+    type: "blackout",
+    start_date: "",
+    end_date: "",
+    note: "",
+  });
+  const [savingBlackout, setSavingBlackout] = useState(false);
 
   useEffect(() => {
     setOverrides(null);
     setUsage(null);
+    setBlackouts([]);
   }, [hotel?.id]);
+
+  const loadBlackouts = async () => {
+    if (!hotel || !token) return;
+    try {
+      setBlackoutsLoading(true);
+      const resp = await getHotelBlackouts(hotel.id, token);
+      setBlackouts(resp.data || []);
+    } catch (err) {
+      toast.error(err.message || "Failed to load blocked dates");
+    } finally {
+      setBlackoutsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBlackouts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hotel?.id, token]);
 
   useEffect(() => {
     if (!hotel || !token) return;
@@ -98,6 +136,33 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
       toast.error(err.message || "Failed to send request");
     } finally {
       setRequesting(false);
+    }
+  };
+
+  const addBlackout = async () => {
+    if (!blackoutDraft.start_date || !blackoutDraft.end_date) {
+      toast.error("Pick a start and end date");
+      return;
+    }
+    try {
+      setSavingBlackout(true);
+      await createHotelBlackout(hotel.id, blackoutDraft, token);
+      setBlackoutDraft({ type: "blackout", start_date: "", end_date: "", note: "" });
+      await loadBlackouts();
+      toast.success("Date range added");
+    } catch (err) {
+      toast.error(err.message || "Failed to add date range");
+    } finally {
+      setSavingBlackout(false);
+    }
+  };
+
+  const removeBlackout = async (blackoutId) => {
+    try {
+      await deleteHotelBlackout(hotel.id, blackoutId, token);
+      setBlackouts((prev) => prev.filter((b) => b.id !== blackoutId));
+    } catch (err) {
+      toast.error(err.message || "Failed to remove date range");
     }
   };
 
@@ -183,6 +248,91 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
           name={live.name}
           location={location}
         />
+      </div>
+
+      <div className="mt-6 pt-6 border-t border-black/5">
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-[#8a93a2] mb-3">
+          Availability Blocks
+        </h3>
+        {blackoutsLoading ? (
+          <p className="text-xs text-slate-300 font-medium">Loading…</p>
+        ) : blackouts.length > 0 ? (
+          <div className="space-y-1.5 mb-3">
+            {blackouts.map((b) => (
+              <div
+                key={b.id}
+                className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#f7f7f8]"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  {b.type === "stop_sale" ? (
+                    <Ban className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                  ) : (
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-[#181c22] truncate">
+                      {b.start_date} → {b.end_date}
+                      {b.room_type ? ` · ${b.room_type}` : ""}
+                    </p>
+                    <p className="text-[10px] text-[#9aa3b2] font-medium capitalize">
+                      {b.type.replace("_", " ")}
+                      {b.note ? ` — ${b.note}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => removeBlackout(b.id)}
+                  className="text-slate-300 hover:text-red-500 shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-300 font-medium mb-3">No blocked dates.</p>
+        )}
+
+        <div className="space-y-2 bg-[#f7f7f8] rounded-xl p-3">
+          <div className="flex items-center gap-2">
+            <select
+              value={blackoutDraft.type}
+              onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, type: e.target.value }))}
+              className="px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-[#181c22] appearance-none"
+            >
+              <option value="blackout">Blackout (warn)</option>
+              <option value="stop_sale">Stop Sale (block)</option>
+            </select>
+            <input
+              type="date"
+              value={blackoutDraft.start_date}
+              onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, start_date: e.target.value }))}
+              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-[#181c22]"
+            />
+            <input
+              type="date"
+              value={blackoutDraft.end_date}
+              onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, end_date: e.target.value }))}
+              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-[#181c22]"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={blackoutDraft.note}
+              onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, note: e.target.value }))}
+              placeholder="Note (optional)"
+              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-[#181c22]"
+            />
+            <button
+              onClick={addBlackout}
+              disabled={savingBlackout}
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#181c22] text-white rounded-lg text-[11px] font-bold disabled:opacity-60"
+            >
+              <Plus className="w-3 h-3" /> Add
+            </button>
+          </div>
+        </div>
       </div>
 
         {live.last_requested_at && (

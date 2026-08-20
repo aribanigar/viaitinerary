@@ -137,6 +137,7 @@ model Accommodation {
   cnbCount              Int       @default(0) @map("cnb_count")
   extraBeds5To12Count   Int       @default(0) @map("extra_beds_5_to_12_count")
   extraBedsAbove12Count Int       @default(0) @map("extra_beds_above_12_count")
+  extraAdultCount       Int       @default(0) @map("extra_adult_count")
   mealPlan              String?   @map("meal_plan")
   roomType              String?   @default("Deluxe") @map("room_type")
   checkIn               DateTime? @map("check_in")
@@ -144,6 +145,10 @@ model Accommodation {
   pricePerRoom          Decimal?  @map("price_per_room") @db.Decimal(12, 2)
   bedPrices             Json?     @map("bed_prices")
   imagePath             String?   @map("image_path")
+  cancelledAt           DateTime? @map("cancelled_at")
+  cancellationCharge    Decimal?  @map("cancellation_charge") @db.Decimal(12, 2)
+  cancellationNote      String?   @map("cancellation_note")
+  alternateOptions      Json?     @map("alternate_options")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
@@ -208,13 +213,32 @@ model Hotel {
   totalRooms      Int?      @map("total_rooms")
   requestCount    Int       @default(0) @map("request_count")
   lastRequestedAt DateTime? @map("last_requested_at")
+  marketPrices  Json?    @map("market_prices") // manually-noted OTA reference prices: [{source, price, date, note}]
+  paymentTerms  Json?    @map("payment_terms") // {referenceEvent, installments: [{percentage, daysOffset, label}]}
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   accommodations Accommodation[]
+  blackouts      HotelBlackout[]
 
   @@index([userId])
   @@map("hotels")
+}
+
+model HotelBlackout {
+  id        Int      @id @default(autoincrement())
+  hotelId   Int      @map("hotel_id")
+  roomType  String?  @map("room_type") // null = applies hotel-wide
+  type      String   @default("blackout") // "stop_sale" (hard block) | "blackout" (warn, allow override)
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+  @@map("hotel_blackouts")
 }
 
 model Vehicle {

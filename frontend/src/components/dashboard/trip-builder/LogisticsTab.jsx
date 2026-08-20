@@ -136,8 +136,14 @@ const LogisticsTab = ({
                         );
                       })}
                   </div>
-                  <h4 className="text-lg font-semibold text-[#181c22] border-none outline-none focus:ring-0 bg-transparent">
+                  <h4 className="text-lg font-semibold text-[#181c22] border-none outline-none focus:ring-0 bg-transparent flex items-center gap-2">
                     {hotel.name}
+                    {hotel.cancelledAt && (
+                      <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                        Cancelled
+                        {hotel.cancellationCharge ? ` · ₹${Number(hotel.cancellationCharge).toLocaleString("en-IN")} charge` : ""}
+                      </span>
+                    )}
                   </h4>
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     <span className="text-xs font-bold text-[#9aa3b2] uppercase tracking-wider">

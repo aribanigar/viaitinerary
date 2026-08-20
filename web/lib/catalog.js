@@ -129,6 +129,8 @@ export async function mapHotel(body) {
       body.total_rooms !== undefined && body.total_rooms !== ""
         ? parseInt(body.total_rooms, 10) || null
         : null,
+    marketPrices: body.market_prices ?? undefined,
+    paymentTerms: body.payment_terms ?? undefined,
   };
   if (body.photo) data.imagePath = await persistImage(String(body.photo), "hotels");
   return { data };

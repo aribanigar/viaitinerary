@@ -43,3 +43,22 @@ export const requestHotelAvailability = async (id, token) => {
     body: JSON.stringify({}),
   });
 };
+
+export const getHotelBlackouts = async (id, token) => {
+  return request(`/hotels/${id}/blackouts`, { token });
+};
+
+export const createHotelBlackout = async (id, blackoutData, token) => {
+  return request(`/hotels/${id}/blackouts`, {
+    method: "POST",
+    token,
+    body: JSON.stringify(blackoutData),
+  });
+};
+
+export const deleteHotelBlackout = async (id, blackoutId, token) => {
+  return request(`/hotels/${id}/blackouts/${blackoutId}`, {
+    method: "DELETE",
+    token,
+  });
+};

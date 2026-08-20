@@ -100,6 +100,20 @@ const DatePicker = ({
       ).getTime(),
     );
   const reservedDateSet = new Set(reservedDates);
+  const blackoutDates = (options.blackoutDates || [])
+    .map((dateValue) => parseToDate(dateValue))
+    .filter((dateValue) => dateValue instanceof Date)
+    .map((dateValue) =>
+      new Date(
+        dateValue.getFullYear(),
+        dateValue.getMonth(),
+        dateValue.getDate(),
+      ).getTime(),
+    );
+  const blackoutDateSet = new Set(blackoutDates);
+  const excludeDates = (options.excludeDates || [])
+    .map((dateValue) => parseToDate(dateValue))
+    .filter((dateValue) => dateValue instanceof Date);
   const minDateValue =
     effectiveMinDate === "today" ? new Date() : parseToDate(effectiveMinDate);
   const maxDateValue = parseToDate(effectiveMaxDate);
@@ -118,6 +132,7 @@ const DatePicker = ({
           timeIntervals={15}
           minDate={minDateValue}
           maxDate={maxDateValue}
+          excludeDates={excludeDates}
           startDate={startDate || null}
           endDate={endDate || null}
           calendarStartDay={1}
@@ -138,6 +153,10 @@ const DatePicker = ({
 
             if (reservedDateSet.has(day)) {
               classNames.push("trip-reserved-day");
+            }
+
+            if (blackoutDateSet.has(day)) {
+              classNames.push("trip-blackout-day");
             }
 
             if (startDate && endDate) {
@@ -213,6 +232,18 @@ const DatePicker = ({
           color: #1d4ed8;
           border-radius: 999px;
           font-weight: 700;
+        }
+
+        .trip-date-popper .react-datepicker__day.trip-blackout-day {
+          background: #fef3c7;
+          color: #b45309;
+          border-radius: 999px;
+          font-weight: 700;
+        }
+
+        .trip-date-popper .react-datepicker__day--excluded {
+          text-decoration: line-through;
+          color: #cbd5e1;
         }
       `,
         }}

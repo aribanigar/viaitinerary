@@ -104,12 +104,17 @@ export async function syncTripRelations(tripDbId, body) {
         cnbCount: int(item.cnb_count, 0),
         extraBeds5To12Count: int(item.extra_beds_5_to_12_count, 0),
         extraBedsAbove12Count: int(item.extra_beds_above_12_count, 0),
+        extraAdultCount: int(item.extra_adult_count, 0),
         mealPlan: item.meal_plan ?? null,
         roomType: item.room_type ?? "Deluxe",
         checkIn: parseDate(item.check_in),
         checkOut: parseDate(item.check_out),
         pricePerRoom: dec(item.price_per_room),
         bedPrices: item.bed_prices ?? [],
+        cancelledAt: item.cancelled_at !== undefined ? parseDate(item.cancelled_at) : undefined,
+        cancellationCharge: item.cancellation_charge !== undefined ? dec(item.cancellation_charge) : undefined,
+        cancellationNote: item.cancellation_note !== undefined ? item.cancellation_note : undefined,
+        alternateOptions: item.alternate_options !== undefined ? item.alternate_options : undefined,
       };
       const img = await imageValue(item.image, "accommodations");
       if (img !== undefined) data.imagePath = img;

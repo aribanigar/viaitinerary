@@ -18,6 +18,9 @@ import {
   CheckCircle2,
   BedDouble,
   LocateFixed,
+  TrendingUp,
+  Wallet,
+  Sparkles,
 } from "lucide-react";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -48,6 +51,9 @@ const AccommodationForm = () => {
   });
 
   const [priceSections, setPriceSections] = useState([]);
+  const [marketPrices, setMarketPrices] = useState([]);
+  const [marketPriceDraft, setMarketPriceDraft] = useState({ source: "", price: "", note: "" });
+  const [paymentTerms, setPaymentTerms] = useState({ reference_event: "booking_date", installments: [] });
   const cityInputRef = useRef(null);
   const { loaded: mapsLoaded } = useGoogleMapsScript();
 
@@ -74,6 +80,11 @@ const AccommodationForm = () => {
             phone: resp.phone || "",
             photo: resp.image_url || null,
           });
+
+          setMarketPrices(resp.market_prices || []);
+          setPaymentTerms(
+            resp.payment_terms || { reference_event: "booking_date", installments: [] },
+          );
 
           if (resp.price_sections && resp.price_sections.length) {
             setPriceSections(
@@ -164,7 +175,8 @@ const AccommodationForm = () => {
         field.includes("price") ||
         field === "cnb" ||
         field === "upto_5" ||
-        field === "above_12"
+        field === "above_12" ||
+        field === "extra_adult"
           ? value === ""
             ? ""
             : Number(value)
@@ -197,6 +209,9 @@ const AccommodationForm = () => {
               cnb: "",
               upto_5: "",
               above_12: "",
+              extra_adult: "",
+              valid_from: "",
+              valid_to: "",
             };
       return [...prev, newSec];
     });
@@ -204,6 +219,57 @@ const AccommodationForm = () => {
 
   const removeSection = (index) => {
     setPriceSections((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addMarketPrice = () => {
+    if (!marketPriceDraft.source || !marketPriceDraft.price) return;
+    setMarketPrices((prev) => [
+      ...prev,
+      {
+        source: marketPriceDraft.source,
+        price: Number(marketPriceDraft.price),
+        note: marketPriceDraft.note || "",
+        date: new Date().toISOString().slice(0, 10),
+      },
+    ]);
+    setMarketPriceDraft({ source: "", price: "", note: "" });
+  };
+
+  const removeMarketPrice = (index) => {
+    setMarketPrices((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const marketAverage = marketPrices.length
+    ? Math.round(marketPrices.reduce((sum, m) => sum + Number(m.price || 0), 0) / marketPrices.length)
+    : null;
+
+  const applySuggestedPrice = () => {
+    if (marketAverage == null || priceSections.length === 0) return;
+    updateSection(0, "price", marketAverage);
+    toast.success(`Applied ₹${marketAverage.toLocaleString("en-IN")} to the first price row`);
+  };
+
+  const addInstallment = () => {
+    setPaymentTerms((prev) => ({
+      ...prev,
+      installments: [...prev.installments, { label: "", percentage: "", days_offset: "" }],
+    }));
+  };
+
+  const updateInstallment = (index, field, value) => {
+    setPaymentTerms((prev) => ({
+      ...prev,
+      installments: prev.installments.map((inst, i) =>
+        i === index ? { ...inst, [field]: value } : inst,
+      ),
+    }));
+  };
+
+  const removeInstallment = (index) => {
+    setPaymentTerms((prev) => ({
+      ...prev,
+      installments: prev.installments.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -225,7 +291,13 @@ const AccommodationForm = () => {
         cnb: s.cnb,
         upto_5: s.upto_5,
         above_12: s.above_12,
+        extra_adult: s.extra_adult,
+        valid_from: s.valid_from || null,
+        valid_to: s.valid_to || null,
       }));
+      submitData.market_prices = marketPrices;
+      submitData.payment_terms =
+        paymentTerms.installments.length > 0 ? paymentTerms : null;
 
       if (
         submitData.photo &&
@@ -624,8 +696,212 @@ const AccommodationForm = () => {
                       <Trash2 className="w-3.5 h-3.5 text-red-500 md:text-slate-400 md:group-hover:text-red-500" />
                     </button>
                   </div>
+
+                  <div className="md:col-span-3">
+                    <label className="block text-[8px] font-black uppercase tracking-widest text-slate-600 mb-1 px-1">
+                      Extra Adult
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        value={sec.extra_adult}
+                        onChange={(e) =>
+                          updateSection(idx, "extra_adult", e.target.value)
+                        }
+                        className="w-full pl-6 pr-2 py-2 bg-white md:bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 shadow-sm md:shadow-none"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-4">
+                    <label className="block text-[8px] font-black uppercase tracking-widest text-slate-600 mb-1 px-1">
+                      Season From (optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={sec.valid_from || ""}
+                      onChange={(e) =>
+                        updateSection(idx, "valid_from", e.target.value)
+                      }
+                      className="w-full px-3 py-2 bg-white md:bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 shadow-sm md:shadow-none"
+                    />
+                  </div>
+
+                  <div className="md:col-span-4">
+                    <label className="block text-[8px] font-black uppercase tracking-widest text-slate-600 mb-1 px-1">
+                      Season To (optional)
+                    </label>
+                    <input
+                      type="date"
+                      value={sec.valid_to || ""}
+                      onChange={(e) =>
+                        updateSection(idx, "valid_to", e.target.value)
+                      }
+                      className="w-full px-3 py-2 bg-white md:bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 shadow-sm md:shadow-none"
+                    />
+                  </div>
                 </div>
               ))}
+            </div>
+
+            <div className="space-y-3 w-full bg-slate-50/50 rounded-2xl p-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-3.5 h-3.5 text-slate-500" />
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600">
+                  Market Reference Prices
+                </label>
+              </div>
+              <p className="text-[10px] text-slate-400 font-medium -mt-2">
+                Note down what you see on MMT, EaseMyTrip, Goibibo, etc. — used only as a manual
+                reference. No live scraping.
+              </p>
+
+              {marketPrices.length > 0 && (
+                <div className="space-y-1.5">
+                  {marketPrices.map((m, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between px-3 py-2 bg-white rounded-lg text-xs"
+                    >
+                      <span className="font-bold text-slate-900">{m.source}</span>
+                      <span className="text-slate-500">{m.date}</span>
+                      <span className="font-bold text-slate-900">
+                        ₹{Number(m.price).toLocaleString("en-IN")}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeMarketPrice(i)}
+                        className="text-slate-300 hover:text-red-500"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {marketAverage != null && (
+                <div className="flex items-center justify-between px-3 py-2.5 bg-[#181c22] rounded-lg">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#e7f63c]" />
+                    Suggested price: ₹{marketAverage.toLocaleString("en-IN")} (avg of{" "}
+                    {marketPrices.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={applySuggestedPrice}
+                    className="text-[10px] font-black uppercase tracking-wider bg-[#e7f63c] text-[#181c22] px-2.5 py-1.5 rounded-md hover:bg-[#d4e42e]"
+                  >
+                    Use this price
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <input
+                  type="text"
+                  value={marketPriceDraft.source}
+                  onChange={(e) =>
+                    setMarketPriceDraft((prev) => ({ ...prev, source: e.target.value }))
+                  }
+                  placeholder="Source (e.g. MakeMyTrip)"
+                  className="sm:col-span-2 px-3 py-2 bg-white border-none rounded-lg text-xs font-bold text-slate-900"
+                />
+                <input
+                  type="number"
+                  value={marketPriceDraft.price}
+                  onChange={(e) =>
+                    setMarketPriceDraft((prev) => ({ ...prev, price: e.target.value }))
+                  }
+                  placeholder="Price seen"
+                  className="px-3 py-2 bg-white border-none rounded-lg text-xs font-bold text-slate-900"
+                />
+                <button
+                  type="button"
+                  onClick={addMarketPrice}
+                  className="flex items-center justify-center gap-1.5 text-xs font-bold text-blue-600 bg-white rounded-lg py-2"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-3 w-full bg-slate-50/50 rounded-2xl p-4">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-3.5 h-3.5 text-slate-500" />
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600">
+                  Supplier Payment Terms
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">
+                  Reference Event
+                </label>
+                <select
+                  value={paymentTerms.reference_event}
+                  onChange={(e) =>
+                    setPaymentTerms((prev) => ({ ...prev, reference_event: e.target.value }))
+                  }
+                  className="w-full sm:w-64 px-3 py-2 bg-white border-none rounded-lg text-xs font-bold text-slate-900 appearance-none"
+                >
+                  <option value="booking_date">Booking Date</option>
+                  <option value="service_date">Service (Check-in) Date</option>
+                  <option value="month_end">Month End</option>
+                </select>
+              </div>
+
+              {paymentTerms.installments.map((inst, i) => (
+                <div key={i} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
+                  <input
+                    type="text"
+                    value={inst.label}
+                    onChange={(e) => updateInstallment(i, "label", e.target.value)}
+                    placeholder="e.g. Advance"
+                    className="sm:col-span-2 px-3 py-2 bg-white border-none rounded-lg text-xs font-bold text-slate-900"
+                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={inst.percentage}
+                      onChange={(e) => updateInstallment(i, "percentage", e.target.value)}
+                      placeholder="%"
+                      className="w-full pr-6 px-3 py-2 bg-white border-none rounded-lg text-xs font-bold text-slate-900"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
+                      %
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={inst.days_offset}
+                      onChange={(e) => updateInstallment(i, "days_offset", e.target.value)}
+                      placeholder="Days before"
+                      className="w-full px-3 py-2 bg-white border-none rounded-lg text-xs font-bold text-slate-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeInstallment(i)}
+                      className="text-slate-300 hover:text-red-500 shrink-0"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={addInstallment}
+                className="flex items-center gap-1.5 text-xs font-bold text-blue-600"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Installment
+              </button>
             </div>
 
             <div>

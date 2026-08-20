@@ -35,6 +35,7 @@ export function serializeAccommodation(a) {
     cnb_count: a.cnbCount,
     extra_beds_5_to_12_count: a.extraBeds5To12Count,
     extra_beds_above_12_count: a.extraBedsAbove12Count,
+    extra_adult_count: a.extraAdultCount ?? 0,
     meal_plan: a.mealPlan,
     room_type: a.roomType,
     price_per_room: num(a.pricePerRoom),
@@ -43,6 +44,10 @@ export function serializeAccommodation(a) {
     check_out: dateOnly(a.checkOut),
     image_path: a.imagePath,
     image_url: a.imagePath,
+    cancelled_at: iso(a.cancelledAt),
+    cancellation_charge: num(a.cancellationCharge),
+    cancellation_note: a.cancellationNote ?? null,
+    alternate_options: a.alternateOptions ?? [],
     hotel: a.hotel ? { id: a.hotel.id, name: a.hotel.name, city: a.hotel.city } : null,
   };
 }
@@ -166,7 +171,16 @@ export function catalogHotel(h) {
     price_sections: h.priceSections ?? [], image_path: h.imagePath, image_url: h.imagePath,
     total_rooms: h.totalRooms ?? null, request_count: h.requestCount ?? 0,
     last_requested_at: iso(h.lastRequestedAt),
+    market_prices: h.marketPrices ?? [], payment_terms: h.paymentTerms ?? null,
+    blackouts: Array.isArray(h.blackouts) ? h.blackouts.map(catalogHotelBlackout) : undefined,
     user: userLite(h.user), created_at: iso(h.createdAt), updated_at: iso(h.updatedAt),
+  };
+}
+export function catalogHotelBlackout(b) {
+  return {
+    id: b.id, hotel_id: b.hotelId, room_type: b.roomType, type: b.type,
+    start_date: dateOnly(b.startDate), end_date: dateOnly(b.endDate), note: b.note,
+    created_at: iso(b.createdAt),
   };
 }
 export function catalogVehicle(v) {
