@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Map as MapIcon } from "lucide-react";
 import { useGoogleMapsScript } from "../../hooks/useGoogleMapsScript";
+import { useAgencyMapsKey } from "../../hooks/useAgencyMapsKey";
 
 // Desaturated grey theme so the embedded map matches the app's monochrome
 // palette instead of Google's default blue/green styling.
@@ -18,7 +19,8 @@ const GREY_MAP_STYLE = [
 ];
 
 const HotelLocationMap = ({ latitude, longitude, name, location }) => {
-  const { loaded, hasKey } = useGoogleMapsScript();
+  const mapsKey = useAgencyMapsKey();
+  const { loaded, hasKey } = useGoogleMapsScript(mapsKey);
   const mapRef = useRef(null);
   const mapObj = useRef(null);
 

@@ -39,6 +39,12 @@ export default defineConfig({
       workbox: {
         // Never cache API calls or auth-sensitive data — only the app shell.
         navigateFallbackDenylist: [/^\/api\//],
+        // The world-cities dataset (Country/State/City manual-entry dropdown)
+        // is multi-MB and lazily fetched only when someone opens the
+        // Accommodation form — don't force every visitor to precache it
+        // upfront. It still gets cached at runtime via the "app-shell"
+        // StaleWhileRevalidate rule below on first actual use.
+        globIgnores: ["**/city-*.js"],
         runtimeCaching: [
           {
             urlPattern: /^\/api\//,

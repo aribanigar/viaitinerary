@@ -39,6 +39,7 @@ const FIELD_MAP = {
   smtpPort: "smtpPort",
   smtpEncryption: "smtpEncryption",
   smtpAppPassword: "smtpAppPassword",
+  googleMapsApiKey: "googleMapsApiKey",
 };
 
 // GET /api/settings

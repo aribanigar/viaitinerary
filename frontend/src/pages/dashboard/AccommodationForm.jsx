@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Country, State } from "country-state-city";
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -27,6 +28,7 @@ import {
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import { useGoogleMapsScript } from "../../hooks/useGoogleMapsScript";
+import { useAgencyMapsKey } from "../../hooks/useAgencyMapsKey";
 
 const AccommodationForm = () => {
   const { token } = useAuth();
@@ -65,7 +67,78 @@ const AccommodationForm = () => {
   const hotelNameWrapRef = useRef(null);
   const sessionTokenRef = useRef(null);
   const suggestDebounceRef = useRef(null);
-  const { loaded: mapsLoaded } = useGoogleMapsScript();
+  const mapsKey = useAgencyMapsKey();
+  const { loaded: mapsLoaded } = useGoogleMapsScript(mapsKey);
+
+  // Manual Country > State > City selection — always available, whether or
+  // not this agency has Google Maps configured. City data is dynamically
+  // imported (it's a multi-MB dataset) only once a state is picked.
+  const [countryIso, setCountryIso] = useState("");
+  const [stateIso, setStateIso] = useState("");
+  const [cities, setCities] = useState([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+  const countries = useMemo(() => Country.getAllCountries(), []);
+  const states = useMemo(
+    () => (countryIso ? State.getStatesOfCountry(countryIso) : []),
+    [countryIso],
+  );
+
+  useEffect(() => {
+    if (!countryIso || !stateIso) {
+      setCities([]);
+      return;
+    }
+    let cancelled = false;
+    setCitiesLoading(true);
+    import("country-state-city/lib/city")
+      .then((mod) => {
+        if (cancelled) return;
+        setCities(mod.default.getCitiesOfState(countryIso, stateIso) || []);
+      })
+      .finally(() => {
+        if (!cancelled) setCitiesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [countryIso, stateIso]);
+
+  // Match Google/edit-loaded country+state name strings back to their ISO
+  // codes so the cascading selects reflect the right option.
+  const resolveLocationCodes = (countryName, stateName) => {
+    if (!countryName) return { countryIso: "", stateIso: "" };
+    const country = Country.getAllCountries().find(
+      (c) => c.name.toLowerCase() === countryName.toLowerCase(),
+    );
+    if (!country) return { countryIso: "", stateIso: "" };
+    let matchedStateIso = "";
+    if (stateName) {
+      const match = State.getStatesOfCountry(country.isoCode).find(
+        (s) => s.name.toLowerCase() === stateName.toLowerCase(),
+      );
+      if (match) matchedStateIso = match.isoCode;
+    }
+    return { countryIso: country.isoCode, stateIso: matchedStateIso };
+  };
+
+  const handleCountrySelect = (e) => {
+    const iso = e.target.value;
+    const country = countries.find((c) => c.isoCode === iso);
+    setCountryIso(iso);
+    setStateIso("");
+    setFormData((prev) => ({ ...prev, country: country?.name || "", state: "", city: "" }));
+  };
+
+  const handleStateSelect = (e) => {
+    const iso = e.target.value;
+    const state = states.find((s) => s.isoCode === iso);
+    setStateIso(iso);
+    setFormData((prev) => ({ ...prev, state: state?.name || "", city: "" }));
+  };
+
+  const handleCitySelect = (e) => {
+    setFormData((prev) => ({ ...prev, city: e.target.value }));
+  };
 
   const roomTypeOptions = ["deluxe", "super_deluxe", "suite"];
 
@@ -91,6 +164,10 @@ const AccommodationForm = () => {
             phone: resp.phone || "",
             photo: resp.image_url || null,
           });
+
+          const codes = resolveLocationCodes(resp.country, resp.state);
+          setCountryIso(codes.countryIso);
+          setStateIso(codes.stateIso);
 
           setMarketPrices(resp.market_prices || []);
           setPaymentTerms(
@@ -212,6 +289,10 @@ const AccommodationForm = () => {
         latitude: lat != null ? String(lat) : prev.latitude,
         longitude: lng != null ? String(lng) : prev.longitude,
       }));
+
+      const codes = resolveLocationCodes(country, state);
+      setCountryIso(codes.countryIso);
+      setStateIso(codes.stateIso);
 
       setGoogleRating(place.rating ?? null);
       await applyPlacePhoto(place);
@@ -477,18 +558,102 @@ const AccommodationForm = () => {
 
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                  Country
+                </label>
+                <div className="relative">
+                  <Globe2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <select
+                    value={countryIso}
+                    onChange={handleCountrySelect}
+                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 appearance-none cursor-pointer"
+                    required
+                  >
+                    <option value="">Select country…</option>
+                    {countries.map((c) => (
+                      <option key={c.isoCode} value={c.isoCode}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                  State / Province
+                </label>
+                <div className="relative">
+                  <Map className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  {countryIso && states.length === 0 ? (
+                    <input
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
+                      placeholder="State / province"
+                    />
+                  ) : (
+                    <select
+                      value={stateIso}
+                      onChange={handleStateSelect}
+                      disabled={!countryIso}
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 appearance-none cursor-pointer disabled:cursor-not-allowed disabled:text-slate-400"
+                    >
+                      <option value="">
+                        {countryIso ? "Select state…" : "Select country first"}
+                      </option>
+                      {states.map((s) => (
+                        <option key={s.isoCode} value={s.isoCode}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
                   City
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
-                    placeholder="Filled from Hotel Name"
-                    required
-                  />
+                  {stateIso && !citiesLoading && cities.length === 0 ? (
+                    <input
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
+                      placeholder="City"
+                      required
+                    />
+                  ) : (
+                    <select
+                      value={formData.city}
+                      onChange={handleCitySelect}
+                      disabled={!stateIso || citiesLoading}
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 appearance-none cursor-pointer disabled:cursor-not-allowed disabled:text-slate-400"
+                      required
+                    >
+                      <option value="">
+                        {citiesLoading
+                          ? "Loading cities…"
+                          : stateIso
+                            ? "Select city…"
+                            : "Select state first"}
+                      </option>
+                      {formData.city && !cities.some((c) => c.name === formData.city) && (
+                        <option value={formData.city}>{formData.city}</option>
+                      )}
+                      {cities.map((c) => (
+                        <option key={`${c.name}-${c.latitude}-${c.longitude}`} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
             </div>
@@ -504,81 +669,47 @@ const AccommodationForm = () => {
                   value={formData.address}
                   onChange={handleInputChange}
                   className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
-                  placeholder="Filled from Hotel Name"
+                  placeholder={mapsLoaded ? "Filled from Hotel Name, or type your own" : "Street address"}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
-                  Country
-                </label>
-                <div className="relative">
-                  <Globe2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    name="country"
-                    value={formData.country}
-                    onChange={handleInputChange}
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
-                    placeholder="Filled from City"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
-                  State / Province
-                </label>
-                <div className="relative">
-                  <Map className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
-                    placeholder="Filled from City"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
-                  Category
-                  {googleRating != null && (
-                    <span
-                      className="normal-case font-bold text-amber-500 tracking-normal"
-                      title="Google's guest review score — not an official star classification. Set the star category yourself."
-                    >
-                      Google: {googleRating.toFixed(1)}★ (guest rating)
-                    </span>
-                  )}
-                </label>
-                <div className="flex items-center gap-1 bg-slate-50 rounded-2xl px-4 py-3.5">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          category: prev.category === String(n) ? "" : String(n),
-                        }))
-                      }
-                      className="p-0.5"
-                      title={`${n} Star`}
-                    >
-                      <Star
-                        className={`w-5 h-5 transition-colors ${
-                          Number(formData.category) >= n
-                            ? "fill-[#e7f63c] text-[#181c22]"
-                            : "fill-transparent text-slate-300"
-                        }`}
-                        strokeWidth={1.5}
-                      />
-                    </button>
-                  ))}
-                </div>
+            <div>
+              <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                Category
+                {googleRating != null && (
+                  <span
+                    className="normal-case font-bold text-amber-500 tracking-normal"
+                    title="Google's guest review score — not an official star classification. Set the star category yourself."
+                  >
+                    Google: {googleRating.toFixed(1)}★ (guest rating)
+                  </span>
+                )}
+              </label>
+              <div className="flex items-center gap-1 bg-slate-50 rounded-2xl px-4 py-3.5 w-fit">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        category: prev.category === String(n) ? "" : String(n),
+                      }))
+                    }
+                    className="p-0.5"
+                    title={`${n} Star`}
+                  >
+                    <Star
+                      className={`w-5 h-5 transition-colors ${
+                        Number(formData.category) >= n
+                          ? "fill-[#e7f63c] text-[#181c22]"
+                          : "fill-transparent text-slate-300"
+                      }`}
+                      strokeWidth={1.5}
+                    />
+                  </button>
+                ))}
               </div>
             </div>
 

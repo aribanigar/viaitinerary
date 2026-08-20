@@ -222,6 +222,7 @@ export function settingsToCamel(s) {
     smtpPort: s.smtpPort,
     smtpEncryption: s.smtpEncryption || "tls",
     hasSmtpPassword: !!s.smtpAppPassword,
+    googleMapsApiKey: s.googleMapsApiKey || "",
   };
 }
 
@@ -260,4 +261,5 @@ export const SETTINGS_DEFAULTS = {
   smtpPort: 587,
   smtpEncryption: "tls",
   hasSmtpPassword: false,
+  googleMapsApiKey: "",
 };

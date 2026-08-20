@@ -21,6 +21,7 @@ import {
   FileSpreadsheet,
   Download,
   Wallet,
+  KeyRound,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -57,6 +58,7 @@ const AgencySettings = () => {
     defaultTripImage: null,
     greetingMessage:
       "Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.",
+    googleMapsApiKey: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -564,6 +566,48 @@ const AgencySettings = () => {
                       New trips and quotes default to this currency.
                     </p>
                   </div>
+                </div>
+              </div>
+
+              {/* Integrations Section */}
+              <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col">
+                <div className="flex items-center gap-2 mb-4 text-[#1b1b1b]">
+                  <KeyRound className="w-5 h-5" />
+                  <h2 className="text-base font-bold text-slate-900">
+                    Integrations
+                  </h2>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3" />
+                    Google Maps API Key{" "}
+                    <span className="text-slate-300">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="googleMapsApiKey"
+                    value={formData.googleMapsApiKey || ""}
+                    onChange={handleInputChange}
+                    placeholder="Paste your own Google Maps / Places API key"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                  />
+                  <p className="text-[11px] text-slate-400 ml-1 leading-relaxed">
+                    Powers Hotel Name autocomplete and the location map on
+                    Accommodation. This is your own key from{" "}
+                    <a
+                      href="https://console.cloud.google.com/google/maps-apis"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline hover:text-slate-600"
+                    >
+                      Google Cloud Console
+                    </a>{" "}
+                    (with billing, <b>Places API (New)</b> and{" "}
+                    <b>Maps JavaScript API</b> enabled) — leave this blank and
+                    the Hotel form still works fully, just with manual entry
+                    instead of auto-fill.
+                  </p>
                 </div>
               </div>
 

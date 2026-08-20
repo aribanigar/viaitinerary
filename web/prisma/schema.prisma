@@ -304,6 +304,7 @@ model AgencySetting {
   smtpPort                  Int?     @map("smtp_port")
   smtpEncryption            String?  @map("smtp_encryption")
   smtpAppPassword           String?  @map("smtp_app_password")
+  googleMapsApiKey          String?  @map("google_maps_api_key")
   createdAt                 DateTime @default(now()) @map("created_at")
   updatedAt                 DateTime @updatedAt @map("updated_at")
 
