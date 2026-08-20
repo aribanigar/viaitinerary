@@ -31,3 +31,34 @@ export const deleteVehicle = async (id, token) => {
     token,
   });
 };
+
+export const getVehicleUsage = async (id, token) => {
+  return request(`/vehicles/${id}/usage`, { token });
+};
+
+export const requestVehicleAvailability = async (id, token) => {
+  return request(`/vehicles/${id}/request`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({}),
+  });
+};
+
+export const getVehicleBlackouts = async (id, token) => {
+  return request(`/vehicles/${id}/blackouts`, { token });
+};
+
+export const createVehicleBlackout = async (id, blackoutData, token) => {
+  return request(`/vehicles/${id}/blackouts`, {
+    method: "POST",
+    token,
+    body: JSON.stringify(blackoutData),
+  });
+};
+
+export const deleteVehicleBlackout = async (id, blackoutId, token) => {
+  return request(`/vehicles/${id}/blackouts/${blackoutId}`, {
+    method: "DELETE",
+    token,
+  });
+};

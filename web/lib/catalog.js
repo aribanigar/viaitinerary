@@ -137,16 +137,42 @@ export async function mapHotel(body) {
   return { data };
 }
 
-export function mapVehicle(body) {
+export async function mapVehicle(body) {
   if (!body.name) return { error: "name is required." };
   if (body.price === undefined || body.price === null || body.price === "")
     return { error: "price is required." };
-  return {
-    data: {
-      name: body.name,
-      email: body.email ?? null,
-      phone: body.phone ?? null,
-      price: Number(body.price),
-    },
+  const num = (v) => (v !== undefined && v !== null && v !== "" ? Number(v) : null);
+  const int = (v) => {
+    if (v === undefined || v === null || v === "") return null;
+    const n = parseInt(v, 10);
+    return Number.isNaN(n) ? null : n;
   };
+  const data = {
+    name: body.name,
+    email: body.email ?? null,
+    phone: body.phone ?? null,
+    price: Number(body.price),
+    vehicleType: body.vehicle_type ?? null,
+    isAc: body.is_ac !== undefined ? (body.is_ac === "" ? null : !!body.is_ac) : null,
+    seatingCapacity: int(body.seating_capacity),
+    luggageCapacity: int(body.luggage_capacity),
+    fuelType: body.fuel_type ?? null,
+    registrationNumber: body.registration_number ?? null,
+    city: body.city ?? null,
+    state: body.state ?? null,
+    country: body.country ?? null,
+    isAvailable: body.is_available !== undefined ? !!body.is_available : true,
+    rateType: body.rate_type ?? null,
+    extraKmRate: num(body.extra_km_rate),
+    extraHourRate: num(body.extra_hour_rate),
+    driverAllowance: num(body.driver_allowance),
+    nightHaltCharges: num(body.night_halt_charges),
+    minKmPerDay: int(body.min_km_per_day),
+    tollParkingIncluded:
+      body.toll_parking_included !== undefined ? (body.toll_parking_included === "" ? null : !!body.toll_parking_included) : null,
+    features: Array.isArray(body.features) ? body.features : undefined,
+    notes: body.notes ?? null,
+  };
+  if (body.photo) data.imagePath = await persistImage(String(body.photo), "vehicles");
+  return { data };
 }

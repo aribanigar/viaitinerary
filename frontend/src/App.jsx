@@ -48,6 +48,7 @@ const HotelBookingCalendar = lazy(
   () => import("./components/dashboard/HotelBookingCalendar"),
 );
 const Vehicles = lazy(() => import("./components/dashboard/Vehicles"));
+const VehicleForm = lazy(() => import("./pages/dashboard/VehicleForm"));
 const Team = lazy(() => import("./components/dashboard/Team"));
 const TeamReport = lazy(() => import("./components/dashboard/TeamReport"));
 const Quotes = lazy(() => import("./components/dashboard/Quotes"));
@@ -392,6 +393,14 @@ function App() {
                       element={<HotelBookingCalendar />}
                     />
                     <Route path="/transportation" element={<Vehicles />} />
+                    <Route
+                      path="/transportation/add"
+                      element={<VehicleForm />}
+                    />
+                    <Route
+                      path="/transportation/edit/:id"
+                      element={<VehicleForm />}
+                    />
                     <Route path="/lead-inquiries" element={<LeadInquiries />} />
                   </Route>
 

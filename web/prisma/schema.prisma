@@ -249,13 +249,53 @@ model Vehicle {
   email     String?
   phone     String?
   price     Decimal? @db.Decimal(12, 2)
+
+  vehicleType         String?  @map("vehicle_type") // sedan | suv | hatchback | tempo_traveller | mini_bus | luxury_bus | other
+  isAc                Boolean? @map("is_ac")
+  seatingCapacity     Int?     @map("seating_capacity")
+  luggageCapacity     Int?     @map("luggage_capacity")
+  fuelType            String?  @map("fuel_type") // petrol | diesel | cng | electric | hybrid
+  registrationNumber  String?  @map("registration_number")
+  city                String?
+  state               String?
+  country             String?
+  isAvailable         Boolean  @default(true) @map("is_available")
+  imagePath           String?  @map("image_path")
+  rateType            String?  @map("rate_type") // per_day | per_km | per_trip
+  extraKmRate         Decimal? @map("extra_km_rate") @db.Decimal(12, 2)
+  extraHourRate       Decimal? @map("extra_hour_rate") @db.Decimal(12, 2)
+  driverAllowance     Decimal? @map("driver_allowance") @db.Decimal(12, 2)
+  nightHaltCharges    Decimal? @map("night_halt_charges") @db.Decimal(12, 2)
+  minKmPerDay         Int?     @map("min_km_per_day")
+  tollParkingIncluded Boolean? @map("toll_parking_included")
+  features            Json? // e.g. ["AC","Music System","USB Charging","GPS Tracking"]
+  notes               String?
+  requestCount        Int       @default(0) @map("request_count")
+  lastRequestedAt      DateTime? @map("last_requested_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   transportations Transportation[]
+  blackouts       VehicleBlackout[]
 
   @@index([userId])
   @@map("vehicles")
+}
+
+model VehicleBlackout {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int      @map("vehicle_id")
+  type      String   @default("blackout") // "stop_sale" (hard block, e.g. maintenance) | "blackout" (warn, allow override)
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@map("vehicle_blackouts")
 }
 
 model InclusionExclusion {
