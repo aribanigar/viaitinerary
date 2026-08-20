@@ -163,6 +163,8 @@ export function catalogHotel(h) {
     id: h.id, user_id: h.userId, name: h.name, city: h.city, state: h.state,
     category: h.category, is_available: h.isAvailable ?? true, email: h.email, phone: h.phone,
     price_sections: h.priceSections ?? [], image_path: h.imagePath, image_url: h.imagePath,
+    total_rooms: h.totalRooms ?? null, request_count: h.requestCount ?? 0,
+    last_requested_at: iso(h.lastRequestedAt),
     user: userLite(h.user), created_at: iso(h.createdAt), updated_at: iso(h.updatedAt),
   };
 }

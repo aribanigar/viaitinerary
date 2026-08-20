@@ -122,6 +122,10 @@ export async function mapHotel(body) {
     email: body.email ?? null,
     phone: body.phone ?? null,
     priceSections: body.price_sections ?? [],
+    totalRooms:
+      body.total_rooms !== undefined && body.total_rooms !== ""
+        ? parseInt(body.total_rooms, 10) || null
+        : null,
   };
   if (body.photo) data.imagePath = await persistImage(String(body.photo), "hotels");
   return { data };

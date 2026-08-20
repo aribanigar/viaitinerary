@@ -15,6 +15,7 @@ import {
   Star,
   Map,
   CheckCircle2,
+  BedDouble,
 } from "lucide-react";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -35,6 +36,7 @@ const AccommodationForm = () => {
     state: "",
     category: "",
     is_available: true,
+    total_rooms: "",
     email: "",
     phone: "",
     photo: null,
@@ -57,6 +59,7 @@ const AccommodationForm = () => {
             state: resp.state || "",
             category: resp.category || "",
             is_available: resp.is_available ?? true,
+            total_rooms: resp.total_rooms != null ? String(resp.total_rooms) : "",
             email: resp.email || "",
             phone: resp.phone || "",
             photo: resp.image_url || null,
@@ -260,7 +263,7 @@ const AccommodationForm = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
                   State
@@ -335,6 +338,24 @@ const AccommodationForm = () => {
                   <CheckCircle2 className="w-4 h-4" />
                   {formData.is_available ? "Available" : "Unavailable"}
                 </button>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                  Total Rooms
+                </label>
+                <div className="relative">
+                  <BedDouble className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="number"
+                    min="0"
+                    name="total_rooms"
+                    value={formData.total_rooms}
+                    onChange={handleInputChange}
+                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
+                    placeholder="e.g. 40"
+                  />
+                </div>
               </div>
             </div>
 

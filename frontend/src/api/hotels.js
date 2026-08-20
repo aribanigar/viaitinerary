@@ -31,3 +31,15 @@ export const deleteHotel = async (id, token) => {
     token,
   });
 };
+
+export const getHotelUsage = async (id, token) => {
+  return request(`/hotels/${id}/usage`, { token });
+};
+
+export const requestHotelAvailability = async (id, token) => {
+  return request(`/hotels/${id}/request`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({}),
+  });
+};

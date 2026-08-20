@@ -109,6 +109,17 @@ export function cabBookingHtml(trip, trans, settings) {
   return { subject: `New Cab Service Request - ${agencyName}`, html: shell("Cab Service Request", body, agencyName) };
 }
 
+export function hotelAvailabilityRequestHtml(hotel, settings) {
+  const agencyName = settings?.agencyName || "Travel Agency";
+  const body = `<p><strong>${esc(agencyName)}</strong> is checking room availability with you.</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      ${row("Hotel", hotel.name || "—")}
+      ${row("Location", [hotel.city, hotel.state].filter(Boolean).join(", ") || "—")}
+    </table>
+    <p style="margin-top:16px;color:#6b7280">Please reply with your current room availability at your earliest convenience.</p>`;
+  return { subject: `Room Availability Request - ${agencyName}`, html: shell("Room Availability Request", body, agencyName) };
+}
+
 export function confirmationHtml(message, agencyName) {
   const body = `<div style="white-space:pre-wrap;font-size:14px;line-height:1.6">${esc(message)}</div>`;
   return shell(`${agencyName} — Booking Confirmation`, body, agencyName);

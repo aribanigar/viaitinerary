@@ -17,12 +17,14 @@ import {
   CheckCircle2,
   XCircle,
   Globe2,
+  Eye,
 } from "lucide-react";
 import { getHotels, deleteHotel } from "../../api/hotels";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import CompactDataTable from "../common/CompactDataTable";
+import HotelDetailsPanel from "./HotelDetailsPanel";
 
 // Client-side pagination/filtering: an agency's hotel catalog is small
 // enough (tens to low hundreds) to fetch once and filter instantly, rather
@@ -69,8 +71,15 @@ const Accommodation = () => {
   const [targetId, setTargetId] = useState(null);
   const [pageSize, setPageSize] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const navigate = useNavigate();
+
+  const openHotelPanel = (accommodation) => {
+    setSelectedHotel(accommodation);
+    setPanelOpen(true);
+  };
 
   useEffect(() => {
     if (token) fetchHotels();
@@ -234,38 +243,32 @@ const Accommodation = () => {
       </PageHeader>
 
       {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="flex flex-wrap items-center gap-2.5 mb-8">
           {stats.map((stat, i) => {
-            const CardTag = stat.onClick ? "button" : "div";
+            const Tag = stat.onClick ? "button" : "div";
             return (
-              <CardTag
+              <Tag
                 key={i}
                 onClick={stat.onClick || undefined}
-                className={`bg-white p-6 rounded-2xl border border-black/5 shadow-sm transition-all duration-300 group text-left w-full ${
+                title={stat.change}
+                className={`flex items-center gap-2.5 h-11 pl-1.5 pr-3.5 rounded-2xl border border-black/5 bg-white shadow-sm transition-all ${
                   stat.onClick
-                    ? "hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+                    ? "hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
                     : ""
                 }`}
               >
-                <div className="flex justify-between items-start mb-6">
-                  <div
-                    className={`${stat.bgColor} w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-[#8a93a2] text-[10px] font-bold uppercase tracking-widest mb-1">
-                    {stat.label}
-                  </h3>
-                  <p className="text-2xl font-bold text-[#181c22] mb-2">
-                    {stat.value}
-                  </p>
-                  <p className="text-[10px] font-bold text-[#9aa3b2]">
-                    {stat.change}
-                  </p>
-                </div>
-              </CardTag>
+                <span
+                  className={`grid place-items-center w-8 h-8 rounded-xl shrink-0 ${stat.bgColor}`}
+                >
+                  <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
+                </span>
+                <span className="text-xs font-bold text-[#181c22] whitespace-nowrap">
+                  {stat.label}
+                </span>
+                <span className="grid place-items-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-[#f3f3f4] text-[11px] font-black text-[#181c22]">
+                  {stat.value}
+                </span>
+              </Tag>
             );
           })}
         </div>
@@ -453,7 +456,10 @@ const Accommodation = () => {
                 className="hover:bg-slate-50/50 group transition-colors"
               >
                 <td>
-                  <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => openHotelPanel(accommodation)}
+                    className="flex items-center gap-3 text-left w-full"
+                  >
                     <div className="w-11 h-11 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
                       {accommodation.image_url ? (
                         <img
@@ -466,7 +472,7 @@ const Accommodation = () => {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-bold text-slate-900 capitalize truncate">
+                      <div className="font-bold text-slate-900 capitalize truncate hover:underline">
                         {accommodation.name}
                       </div>
                       <div className="text-slate-400 text-[11px] mt-0.5 flex items-center gap-1 truncate">
@@ -476,7 +482,7 @@ const Accommodation = () => {
                           .join(", ") || "—"}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 </td>
                 <td>
                   <StarRow count={accommodation.category} />
@@ -540,16 +546,25 @@ const Accommodation = () => {
                 <td className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
+                      onClick={() => openHotelPanel(accommodation)}
+                      className="p-2 hover:bg-slate-100 text-slate-300 hover:text-slate-700 rounded-xl transition-all"
+                      title="View details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
                       onClick={() =>
                         navigate(`/accommodation/edit/${accommodation.id}`)
                       }
                       className="p-2 hover:bg-blue-50 text-slate-300 hover:text-blue-600 rounded-xl transition-all"
+                      title="Edit"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDeleteClick(accommodation.id)}
                       className="p-2 hover:bg-red-50 text-slate-300 hover:text-red-600 rounded-xl transition-all"
+                      title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -569,6 +584,12 @@ const Accommodation = () => {
         message="Are you sure you want to delete this hotel? This action cannot be undone."
         confirmText="Delete"
         loading={isDeleting}
+      />
+
+      <HotelDetailsPanel
+        hotel={selectedHotel}
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
       />
     </DashboardLayout>
   );
