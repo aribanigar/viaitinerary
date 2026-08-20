@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Minus, Plus, AlertTriangle, Ban, X } from "lucide-react";
+import { Minus, Plus, AlertTriangle, Ban, X, Trash2, Layers } from "lucide-react";
 import Modal from "../../common/Modal";
 import DatePicker from "../../common/DatePicker";
 import { getHotelBlackouts } from "../../../api/hotels";
@@ -591,6 +591,82 @@ export const HotelModal = ({
               </p>
             )}
           </div>
+        </div>
+
+        <div className="pt-2 border-t border-black/5">
+          <div className="flex items-center justify-between mb-2">
+            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-[#181c22]/70 uppercase tracking-[0.12em]">
+              <Layers className="w-3.5 h-3.5" /> Similar Options
+            </label>
+            <button
+              type="button"
+              onClick={() =>
+                setHotelForm({
+                  ...hotelForm,
+                  alternateOptions: [
+                    ...(hotelForm.alternateOptions || []),
+                    { name: "", room_type: "", price: "" },
+                  ],
+                })
+              }
+              className="flex items-center gap-1 text-[11px] font-bold text-blue-600"
+            >
+              <Plus className="w-3 h-3" /> Add Alternate
+            </button>
+          </div>
+          <p className="text-[10px] text-[#181c22]/40 font-medium mb-2">
+            Offer the client a choice for this night — the price shown will be the
+            highest of all options, so margin is protected either way.
+          </p>
+          {(hotelForm.alternateOptions || []).map((opt, idx) => (
+            <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-2 items-center">
+              <input
+                type="text"
+                value={opt.name}
+                onChange={(e) => {
+                  const next = [...hotelForm.alternateOptions];
+                  next[idx] = { ...next[idx], name: e.target.value };
+                  setHotelForm({ ...hotelForm, alternateOptions: next });
+                }}
+                placeholder="Hotel name"
+                className="sm:col-span-2 bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
+              />
+              <input
+                type="text"
+                value={opt.room_type}
+                onChange={(e) => {
+                  const next = [...hotelForm.alternateOptions];
+                  next[idx] = { ...next[idx], room_type: e.target.value };
+                  setHotelForm({ ...hotelForm, alternateOptions: next });
+                }}
+                placeholder="Room type"
+                className="bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
+              />
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  value={opt.price}
+                  onChange={(e) => {
+                    const next = [...hotelForm.alternateOptions];
+                    next[idx] = { ...next[idx], price: e.target.value };
+                    setHotelForm({ ...hotelForm, alternateOptions: next });
+                  }}
+                  placeholder="Price"
+                  className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = hotelForm.alternateOptions.filter((_, i) => i !== idx);
+                    setHotelForm({ ...hotelForm, alternateOptions: next });
+                  }}
+                  className="text-slate-300 hover:text-red-500 shrink-0"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
 
         {isEditing && (

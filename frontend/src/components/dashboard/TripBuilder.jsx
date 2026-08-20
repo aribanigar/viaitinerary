@@ -614,11 +614,19 @@ const TripBuilder = ({ mode }) => {
 
   // Pricing Calculation logic
   const calculateHotelCost = (item) => {
-    const basePrice = parseFloat(item.pricePerRoom || 0);
+    // A cancelled stay shouldn't count toward the live trip total.
+    if (item.cancelled || item.cancelledAt) return 0;
+
+    // "Similar Options": when alternate hotels are attached to this slot,
+    // the client-facing price is the highest of all options shown — protects
+    // margin regardless of which one the client ends up picking.
+    const altPrices = (item.alternateOptions || []).map((o) => parseFloat(o.price || 0));
+    const basePrice = Math.max(parseFloat(item.pricePerRoom || 0), ...altPrices, 0);
     const rooms = parseInt(item.rooms || 1);
     const cnbCount = parseInt(item.cnbCount || 0);
     const extraBeds5To12Count = parseInt(item.extraBeds5To12Count || 0);
     const extraBedsAbove12Count = parseInt(item.extraBedsAbove12Count || 0);
+    const extraAdultCount = parseInt(item.extraAdultCount || 0);
 
     // Calculate nights
     let nights = 1;
@@ -661,6 +669,7 @@ const TripBuilder = ({ mode }) => {
     let totalExtraBed5To12Cost = 0;
     let totalExtraBedAbove12Cost = 0;
     let totalCnbCost = 0;
+    let totalExtraAdultCost = 0;
 
     if (item.bedPrices && Array.isArray(item.bedPrices)) {
       const cnbPriceEntry = item.bedPrices.find((bp) => bp.category === "cnb");
@@ -670,6 +679,9 @@ const TripBuilder = ({ mode }) => {
       const extraBedAbove12PriceEntry = item.bedPrices.find(
         (bp) => bp.category === "above_12",
       );
+      const extraAdultPriceEntry = item.bedPrices.find(
+        (bp) => bp.category === "extra_adult",
+      );
       const cnbPrice = parseFloat(cnbPriceEntry?.price || 0);
       const extraBed5To12Price = parseFloat(
         extraBed5To12PriceEntry?.price || 0,
@@ -677,18 +689,21 @@ const TripBuilder = ({ mode }) => {
       const extraBedAbove12Price = parseFloat(
         extraBedAbove12PriceEntry?.price || 0,
       );
+      const extraAdultPrice = parseFloat(extraAdultPriceEntry?.price || 0);
       totalExtraBed5To12Cost =
         extraBed5To12Price * extraBeds5To12Count * nights;
       totalExtraBedAbove12Cost =
         extraBedAbove12Price * extraBedsAbove12Count * nights;
       totalCnbCost = cnbPrice * cnbCount * nights;
+      totalExtraAdultCost = extraAdultPrice * extraAdultCount * nights;
     }
 
     return (
       roomSubtotal +
       totalExtraBed5To12Cost +
       totalExtraBedAbove12Cost +
-      totalCnbCost
+      totalCnbCost +
+      totalExtraAdultCost
     );
   };
 

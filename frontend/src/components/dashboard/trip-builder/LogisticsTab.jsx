@@ -1,5 +1,5 @@
 import React from "react";
-import { Briefcase, Hotel, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import { Briefcase, Hotel, MapPin, Pencil, Plus, Trash2, Layers } from "lucide-react";
 
 const parseAccommodationDate = (dateValue) => {
   if (!dateValue) return null;
@@ -142,6 +142,13 @@ const LogisticsTab = ({
                       <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
                         Cancelled
                         {hotel.cancellationCharge ? ` · ₹${Number(hotel.cancellationCharge).toLocaleString("en-IN")} charge` : ""}
+                      </span>
+                    )}
+                    {hotel.alternateOptions?.length > 0 && (
+                      <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                        <Layers className="w-2.5 h-2.5" />
+                        +{hotel.alternateOptions.length} option
+                        {hotel.alternateOptions.length === 1 ? "" : "s"}
                       </span>
                     )}
                   </h4>

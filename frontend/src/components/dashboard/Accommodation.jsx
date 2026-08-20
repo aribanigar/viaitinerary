@@ -19,6 +19,7 @@ import {
   XCircle,
   Globe2,
   Eye,
+  CalendarDays,
 } from "lucide-react";
 import { getHotels, deleteHotel } from "../../api/hotels";
 import { useNavigate } from "react-router-dom";
@@ -267,6 +268,15 @@ const Accommodation = () => {
         description="Manage your hotel partners and stay options."
         compact={panelOpen}
       >
+        <button
+          onClick={() => navigate("/accommodation/calendar")}
+          className={`flex items-center gap-2 bg-white border border-black/5 text-[#181c22] rounded-2xl font-bold shadow-sm hover:bg-slate-50 transition-all text-sm w-fit ${
+            panelOpen ? "px-4 py-2" : "px-6 py-3"
+          }`}
+        >
+          <CalendarDays className="w-4 h-4" />
+          Booking Calendar
+        </button>
         <button
           onClick={() => navigate("/accommodation/add")}
           className={`flex items-center gap-2 bg-[#e7f63c] text-[#181c22] rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit ${
