@@ -7,6 +7,20 @@ import { catalogGate } from "@/lib/subscription";
 
 const unauth = () => NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
 
+const OWNER_SELECT = { id: true, name: true, email: true };
+
+// The "owner" shown as Created By is the agency admin (adminId) — almost
+// always the same person as the authenticated request user, since only
+// team-role users resolve to a different admin. Reuse the already-fetched
+// `user` row in that common case instead of a second DB round trip; every
+// avoided query matters here since each one crosses the network to Postgres.
+function ownerOf(user, adminId) {
+  if (user.id === adminId) {
+    return Promise.resolve({ id: user.id, name: user.name, email: user.email });
+  }
+  return prisma.user.findUnique({ where: { id: adminId }, select: OWNER_SELECT });
+}
+
 /**
  * Build paginated list + create handlers for a catalog model (destinations,
  * hotels, vehicles). `mapBody(body)` returns { data } or { error }.
@@ -34,7 +48,7 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
           skip: (page - 1) * perPage,
           take: perPage,
         }),
-        prisma.user.findUnique({ where: { id: adminId }, select: { id: true, name: true, email: true } }),
+        ownerOf(user, adminId),
       ]);
 
       return NextResponse.json({
@@ -56,8 +70,10 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
       }
       const mapped = await mapBody(await request.json());
       if (mapped.error) return NextResponse.json({ message: mapped.error }, { status: 422 });
-      const created = await prisma[model].create({ data: { ...mapped.data, userId: adminId } });
-      const owner = await prisma.user.findUnique({ where: { id: adminId }, select: { id: true, name: true, email: true } });
+      const [created, owner] = await Promise.all([
+        prisma[model].create({ data: { ...mapped.data, userId: adminId } }),
+        ownerOf(user, adminId),
+      ]);
       return NextResponse.json(serialize({ ...created, user: owner }), { status: 201 });
     },
   };
@@ -73,14 +89,14 @@ export function catalogItem({ model, mapBody, serialize }) {
     if (Number.isNaN(numId)) return { error: NextResponse.json({ message: "Invalid id" }, { status: 400 }) };
     const item = await prisma[model].findFirst({ where: { id: numId, userId: adminId } });
     if (!item) return { error: NextResponse.json({ message: "Not found" }, { status: 404 }) };
-    return { item, adminId };
+    return { item, user, adminId };
   }
 
   return {
     async GET(request, { params }) {
       const r = await scoped(request, params.id);
       if (r.error) return r.error;
-      const owner = await prisma.user.findUnique({ where: { id: r.adminId }, select: { id: true, name: true, email: true } });
+      const owner = await ownerOf(r.user, r.adminId);
       return NextResponse.json(serialize({ ...r.item, user: owner }));
     },
     async PUT(request, { params }) {
@@ -88,8 +104,10 @@ export function catalogItem({ model, mapBody, serialize }) {
       if (r.error) return r.error;
       const mapped = await mapBody(await request.json(), r.item);
       if (mapped.error) return NextResponse.json({ message: mapped.error }, { status: 422 });
-      const updated = await prisma[model].update({ where: { id: r.item.id }, data: mapped.data });
-      const owner = await prisma.user.findUnique({ where: { id: r.adminId }, select: { id: true, name: true, email: true } });
+      const [updated, owner] = await Promise.all([
+        prisma[model].update({ where: { id: r.item.id }, data: mapped.data }),
+        ownerOf(r.user, r.adminId),
+      ]);
       return NextResponse.json(serialize({ ...updated, user: owner }));
     },
     async DELETE(request, { params }) {
