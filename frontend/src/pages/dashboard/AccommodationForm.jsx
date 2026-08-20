@@ -59,7 +59,12 @@ const AccommodationForm = () => {
   const [paymentTerms, setPaymentTerms] = useState({ reference_event: "booking_date", installments: [] });
   const [googleRating, setGoogleRating] = useState(null);
   const [fetchingPlace, setFetchingPlace] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const hotelNameInputRef = useRef(null);
+  const hotelNameWrapRef = useRef(null);
+  const sessionTokenRef = useRef(null);
+  const suggestDebounceRef = useRef(null);
   const { loaded: mapsLoaded } = useGoogleMapsScript();
 
   const roomTypeOptions = ["deluxe", "super_deluxe", "suite"];
@@ -122,7 +127,7 @@ const AccommodationForm = () => {
     const photoRef = place.photos?.[0];
     if (!photoRef) return;
     try {
-      const url = photoRef.getUrl({ maxWidth: 800, maxHeight: 600 });
+      const url = photoRef.getURI({ maxWidth: 800, maxHeight: 600 });
       const res = await fetch(url);
       const blob = await res.blob();
       const dataUrl = await new Promise((resolve, reject) => {
@@ -137,48 +142,86 @@ const AccommodationForm = () => {
     }
   };
 
+  // Close the suggestions dropdown when clicking outside the Hotel Name field.
   useEffect(() => {
-    if (!mapsLoaded || !hotelNameInputRef.current || !window.google?.maps?.places) return;
+    const onClickOutside = (e) => {
+      if (hotelNameWrapRef.current && !hotelNameWrapRef.current.contains(e.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
 
-    // Search businesses/hotels by name, worldwide — no componentRestrictions
-    // or country bias, so this works for any property anywhere.
-    const autocomplete = new window.google.maps.places.Autocomplete(hotelNameInputRef.current, {
-      types: ["establishment"],
-      fields: ["address_components", "geometry", "name", "formatted_address", "photos", "rating"],
-    });
+  const fetchSuggestions = async (query) => {
+    const places = window.google?.maps?.places;
+    if (!mapsLoaded || !places?.AutocompleteSuggestion || !query || query.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    if (!sessionTokenRef.current && places.AutocompleteSessionToken) {
+      sessionTokenRef.current = new places.AutocompleteSessionToken();
+    }
+    try {
+      const { suggestions: results } = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input: query,
+        includedPrimaryTypes: ["lodging"],
+        sessionToken: sessionTokenRef.current,
+      });
+      setSuggestions(results || []);
+      setShowSuggestions(true);
+    } catch {
+      setSuggestions([]);
+    }
+  };
 
-    const listener = autocomplete.addListener("place_changed", () => {
-      const place = autocomplete.getPlace();
-      if (!place.geometry) return; // user hit Enter without picking a suggestion
+  const handleHotelNameChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => ({ ...prev, name: value }));
+    setGoogleRating(null);
+    if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
+    suggestDebounceRef.current = setTimeout(() => fetchSuggestions(value), 250);
+  };
 
-      const components = place.address_components || [];
-      const find = (type) =>
-        components.find((c) => c.types.includes(type))?.long_name || "";
+  const selectSuggestion = async (suggestion) => {
+    setShowSuggestions(false);
+    setSuggestions([]);
+    const place = suggestion.placePrediction.toPlace();
+    setFetchingPlace(true);
+    try {
+      await place.fetchFields({
+        fields: ["displayName", "formattedAddress", "addressComponents", "location", "photos", "rating"],
+      });
+
+      const components = place.addressComponents || [];
+      const find = (type) => components.find((c) => c.types.includes(type))?.longText || "";
 
       const city = find("locality") || find("postal_town") || find("administrative_area_level_2");
       const state = find("administrative_area_level_1");
       const country = find("country");
+      const lat = typeof place.location?.lat === "function" ? place.location.lat() : place.location?.lat;
+      const lng = typeof place.location?.lng === "function" ? place.location.lng() : place.location?.lng;
 
       setFormData((prev) => ({
         ...prev,
-        name: place.name || prev.name,
-        address: place.formatted_address || prev.address,
+        name: place.displayName || prev.name,
+        address: place.formattedAddress || prev.address,
         city: city || prev.city,
         state: state || prev.state,
         country: country || prev.country,
-        latitude: place.geometry?.location ? String(place.geometry.location.lat()) : prev.latitude,
-        longitude: place.geometry?.location ? String(place.geometry.location.lng()) : prev.longitude,
+        latitude: lat != null ? String(lat) : prev.latitude,
+        longitude: lng != null ? String(lng) : prev.longitude,
       }));
 
       setGoogleRating(place.rating ?? null);
-      setFetchingPlace(true);
-      applyPlacePhoto(place).finally(() => setFetchingPlace(false));
-    });
-
-    return () => {
-      window.google.maps.event.removeListener(listener);
-    };
-  }, [mapsLoaded]);
+      await applyPlacePhoto(place);
+    } catch {
+      toast.error("Couldn't fetch that property's details — you can still fill the fields in manually.");
+    } finally {
+      setFetchingPlace(false);
+      sessionTokenRef.current = null; // start a fresh (billing) session next search
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -394,17 +437,41 @@ const AccommodationForm = () => {
                     </span>
                   )}
                 </label>
-                <div className="relative">
+                <div className="relative" ref={hotelNameWrapRef}>
                   <Hotel className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
                     ref={hotelNameInputRef}
                     name="name"
                     value={formData.name}
-                    onChange={handleInputChange}
+                    onChange={handleHotelNameChange}
+                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    autoComplete="off"
                     className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
                     placeholder="Start typing a hotel name…"
                     required
                   />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <ul className="absolute z-20 left-0 right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+                      {suggestions.map((s, idx) => (
+                        <li key={s.placePrediction?.placeId || idx}>
+                          <button
+                            type="button"
+                            onClick={() => selectSuggestion(s)}
+                            className="w-full text-left px-4 py-2.5 hover:bg-slate-50 transition-colors"
+                          >
+                            <p className="text-sm font-bold text-slate-900 truncate">
+                              {s.placePrediction?.mainText?.text || s.placePrediction?.text?.text}
+                            </p>
+                            {s.placePrediction?.secondaryText?.text && (
+                              <p className="text-xs text-slate-400 truncate">
+                                {s.placePrediction.secondaryText.text}
+                              </p>
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </div>
 
