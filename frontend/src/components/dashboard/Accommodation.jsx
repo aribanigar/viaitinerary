@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "./DashboardLayout";
 import ConfirmationModal from "../common/ConfirmationModal";
 import PageHeader from "../common/PageHeader";
@@ -49,6 +50,8 @@ const StarRow = ({ count }) => {
     </div>
   );
 };
+
+const SPLIT_SPRING = { type: "spring", stiffness: 340, damping: 34 };
 
 const EMPTY_FILTERS = {
   state: "",
@@ -274,7 +277,14 @@ const Accommodation = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+      <motion.div
+        layout
+        transition={SPLIT_SPRING}
+        className={`min-w-0 w-full bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden ${
+          panelOpen ? "lg:w-[58%] lg:shrink-0" : ""
+        }`}
+      >
         <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
           <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
             All Accommodations
@@ -574,6 +584,28 @@ const Accommodation = () => {
             );
           })}
         </CompactDataTable>
+      </motion.div>
+
+      <AnimatePresence>
+        {panelOpen && selectedHotel && (
+          <motion.div
+            key={selectedHotel.id}
+            layout
+            initial={{ opacity: 0, width: 0 }}
+            animate={{ opacity: 1, width: "auto" }}
+            exit={{ opacity: 0, width: 0 }}
+            transition={SPLIT_SPRING}
+            className="w-full lg:flex-1 min-w-0 overflow-hidden lg:sticky lg:top-0"
+          >
+            <div className="w-full lg:w-[420px]">
+              <HotelDetailsPanel
+                hotel={selectedHotel}
+                onClose={() => setPanelOpen(false)}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       </div>
 
       <ConfirmationModal
@@ -584,12 +616,6 @@ const Accommodation = () => {
         message="Are you sure you want to delete this hotel? This action cannot be undone."
         confirmText="Delete"
         loading={isDeleting}
-      />
-
-      <HotelDetailsPanel
-        hotel={selectedHotel}
-        open={panelOpen}
-        onClose={() => setPanelOpen(false)}
       />
     </DashboardLayout>
   );
