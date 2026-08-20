@@ -484,26 +484,27 @@ const AccommodationForm = () => {
 
   return (
     <DashboardLayout>
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden p-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-          <h2 className="font-bold text-lg">
-            {isEditing ? "Edit" : "Add"} Accommodation
-          </h2>
-          <div>
-            <button
-              onClick={() => navigate("/accommodation")}
-              className="text-sm text-slate-500 hover:text-slate-700"
-            >
-              Back to list
-            </button>
-          </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+        <h2 className="font-bold text-lg">
+          {isEditing ? "Edit" : "Add"} Accommodation
+        </h2>
+        <div>
+          <button
+            onClick={() => navigate("/accommodation")}
+            className="text-sm text-slate-500 hover:text-slate-700"
+          >
+            Back to list
+          </button>
         </div>
+      </div>
 
-        {loading ? (
-          <div className="py-12 text-center">Loading...</div>
-        ) : (
+      {loading ? (
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm py-12 text-center">
+          Loading...
+        </div>
+      ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                 <Hotel className="w-4 h-4 text-[#181c22]" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
@@ -728,7 +729,7 @@ const AccommodationForm = () => {
             </div>
             </div>
 
-            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                 <Phone className="w-4 h-4 text-[#181c22]" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
@@ -818,7 +819,7 @@ const AccommodationForm = () => {
             </div>
             </div>
 
-            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <BedDouble className="w-4 h-4 text-[#181c22]" />
@@ -1037,7 +1038,7 @@ const AccommodationForm = () => {
               ))}
             </div>
 
-            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="space-y-3 w-full">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                 <TrendingUp className="w-4 h-4 text-[#181c22]" />
@@ -1154,7 +1155,7 @@ const AccommodationForm = () => {
             </div>
             </div>
 
-            <div className="bg-slate-50/50 rounded-2xl p-5 space-y-4">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="space-y-3 w-full">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
                 <Wallet className="w-4 h-4 text-[#181c22]" />
@@ -1230,7 +1231,7 @@ const AccommodationForm = () => {
             </div>
             </div>
 
-            <div className="bg-slate-50/50 rounded-2xl p-5">
+            <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
               <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100">
                 <ImageIcon className="w-4 h-4 text-[#181c22]" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
@@ -1281,8 +1282,7 @@ const AccommodationForm = () => {
               </button>
             </div>
           </form>
-        )}
-      </div>
+      )}
     </DashboardLayout>
   );
 };
