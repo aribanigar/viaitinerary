@@ -15,11 +15,11 @@ import {
   Briefcase,
   Pencil,
   Loader2,
-  Map,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { getHotelUsage, requestHotelAvailability } from "../../api/hotels";
 import { useAuth } from "../../context/AuthContext";
+import HotelLocationMap from "./HotelLocationMap";
 
 const StarRow = ({ count }) => {
   const n = parseInt(count, 10) || 0;
@@ -177,21 +177,12 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
         <h3 className="text-[10px] font-black uppercase tracking-widest text-[#8a93a2] mb-3">
           Location
         </h3>
-        <div className="relative rounded-[24px] bg-[#f3f3f4] border border-black/5 p-5 overflow-hidden">
-          <div className="flex items-center gap-3">
-            <div className="grid place-items-center w-10 h-10 rounded-xl bg-white border border-black/5 shadow-sm shrink-0">
-              <Map className="w-4 h-4 text-[#181c22]/60" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-[#181c22] truncate">
-                {location || "No location set"}
-              </p>
-              <p className="text-[10px] text-[#9aa3b2] font-medium">
-                Connect Google Maps to plot this hotel on a live map
-              </p>
-            </div>
-          </div>
-        </div>
+        <HotelLocationMap
+          latitude={live.latitude}
+          longitude={live.longitude}
+          name={live.name}
+          location={location}
+        />
       </div>
 
         {live.last_requested_at && (

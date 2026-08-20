@@ -198,6 +198,8 @@ model Hotel {
   state         String?
   category      String? // star rating, "1".."5" — same convention as Accommodation.category
   isAvailable   Boolean  @default(true) @map("is_available")
+  latitude      Float?
+  longitude     Float?
   email         String?
   phone         String?
   priceSections Json?    @map("price_sections")

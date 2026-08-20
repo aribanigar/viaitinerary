@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
@@ -16,10 +16,12 @@ import {
   Map,
   CheckCircle2,
   BedDouble,
+  LocateFixed,
 } from "lucide-react";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import { INDIAN_STATES } from "../../constants/indianStates";
+import { useGoogleMapsScript } from "../../hooks/useGoogleMapsScript";
 
 const AccommodationForm = () => {
   const { token } = useAuth();
@@ -37,12 +39,16 @@ const AccommodationForm = () => {
     category: "",
     is_available: true,
     total_rooms: "",
+    latitude: "",
+    longitude: "",
     email: "",
     phone: "",
     photo: null,
   });
 
   const [priceSections, setPriceSections] = useState([]);
+  const cityInputRef = useRef(null);
+  const { loaded: mapsLoaded } = useGoogleMapsScript();
 
   const roomTypeOptions = ["deluxe", "super_deluxe", "suite"];
 
@@ -60,6 +66,8 @@ const AccommodationForm = () => {
             category: resp.category || "",
             is_available: resp.is_available ?? true,
             total_rooms: resp.total_rooms != null ? String(resp.total_rooms) : "",
+            latitude: resp.latitude != null ? String(resp.latitude) : "",
+            longitude: resp.longitude != null ? String(resp.longitude) : "",
             email: resp.email || "",
             phone: resp.phone || "",
             photo: resp.image_url || null,
@@ -88,6 +96,40 @@ const AccommodationForm = () => {
       })();
     }
   }, [id, token]);
+
+  useEffect(() => {
+    if (!mapsLoaded || !cityInputRef.current || !window.google?.maps?.places) return;
+
+    const autocomplete = new window.google.maps.places.Autocomplete(cityInputRef.current, {
+      types: ["(cities)"],
+      fields: ["address_components", "geometry", "name"],
+    });
+
+    const listener = autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      const components = place.address_components || [];
+      const find = (type) =>
+        components.find((c) => c.types.includes(type))?.long_name || "";
+
+      const city = find("locality") || find("postal_town") || find("administrative_area_level_2");
+      const stateName = find("administrative_area_level_1");
+      const matchedState = INDIAN_STATES.find(
+        (s) => s.toLowerCase() === stateName.toLowerCase(),
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        city: city || prev.city,
+        state: matchedState || prev.state,
+        latitude: place.geometry?.location ? String(place.geometry.location.lat()) : prev.latitude,
+        longitude: place.geometry?.location ? String(place.geometry.location.lng()) : prev.longitude,
+      }));
+    });
+
+    return () => {
+      window.google.maps.event.removeListener(listener);
+    };
+  }, [mapsLoaded]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -246,17 +288,23 @@ const AccommodationForm = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
                   City
+                  {mapsLoaded && (
+                    <span className="inline-flex items-center gap-1 normal-case font-bold text-blue-500 tracking-normal">
+                      <LocateFixed className="w-3 h-3" /> Google-assisted
+                    </span>
+                  )}
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input
+                    ref={cityInputRef}
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
                     className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
-                    placeholder="City Name"
+                    placeholder="Start typing a city…"
                     required
                   />
                 </div>

@@ -119,6 +119,8 @@ export async function mapHotel(body) {
     state: body.state ?? null,
     category: body.category ?? null,
     isAvailable: body.is_available !== undefined ? !!body.is_available : true,
+    latitude: body.latitude !== undefined && body.latitude !== "" ? Number(body.latitude) : null,
+    longitude: body.longitude !== undefined && body.longitude !== "" ? Number(body.longitude) : null,
     email: body.email ?? null,
     phone: body.phone ?? null,
     priceSections: body.price_sections ?? [],
