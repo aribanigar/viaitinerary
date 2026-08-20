@@ -14,13 +14,13 @@ import {
   Trash2,
   Star,
   Map,
+  Globe2,
   CheckCircle2,
   BedDouble,
   LocateFixed,
 } from "lucide-react";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
-import { INDIAN_STATES } from "../../constants/indianStates";
 import { useGoogleMapsScript } from "../../hooks/useGoogleMapsScript";
 
 const AccommodationForm = () => {
@@ -36,6 +36,7 @@ const AccommodationForm = () => {
     name: "",
     city: "",
     state: "",
+    country: "",
     category: "",
     is_available: true,
     total_rooms: "",
@@ -63,6 +64,7 @@ const AccommodationForm = () => {
             name: resp.name || "",
             city: resp.city || "",
             state: resp.state || "",
+            country: resp.country || "",
             category: resp.category || "",
             is_available: resp.is_available ?? true,
             total_rooms: resp.total_rooms != null ? String(resp.total_rooms) : "",
@@ -100,6 +102,8 @@ const AccommodationForm = () => {
   useEffect(() => {
     if (!mapsLoaded || !cityInputRef.current || !window.google?.maps?.places) return;
 
+    // Worldwide by design — no componentRestrictions, so this works for any
+    // country's cities, not just one region.
     const autocomplete = new window.google.maps.places.Autocomplete(cityInputRef.current, {
       types: ["(cities)"],
       fields: ["address_components", "geometry", "name"],
@@ -112,15 +116,14 @@ const AccommodationForm = () => {
         components.find((c) => c.types.includes(type))?.long_name || "";
 
       const city = find("locality") || find("postal_town") || find("administrative_area_level_2");
-      const stateName = find("administrative_area_level_1");
-      const matchedState = INDIAN_STATES.find(
-        (s) => s.toLowerCase() === stateName.toLowerCase(),
-      );
+      const state = find("administrative_area_level_1");
+      const country = find("country");
 
       setFormData((prev) => ({
         ...prev,
         city: city || prev.city,
-        state: matchedState || prev.state,
+        state: state || prev.state,
+        country: country || prev.country,
         latitude: place.geometry?.location ? String(place.geometry.location.lat()) : prev.latitude,
         longitude: place.geometry?.location ? String(place.geometry.location.lng()) : prev.longitude,
       }));
@@ -311,26 +314,36 @@ const AccommodationForm = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
-                  State
+                  Country
+                </label>
+                <div className="relative">
+                  <Globe2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
+                    placeholder="Filled from City"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
+                  State / Province
                 </label>
                 <div className="relative">
                   <Map className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <select
+                  <input
                     name="state"
                     value={formData.state}
                     onChange={handleInputChange}
-                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 appearance-none"
-                  >
-                    <option value="">Select state</option>
-                    {INDIAN_STATES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
+                    className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900"
+                    placeholder="Filled from City"
+                  />
                 </div>
               </div>
 
@@ -364,7 +377,9 @@ const AccommodationForm = () => {
                   ))}
                 </div>
               </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
                   Availability

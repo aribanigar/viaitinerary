@@ -101,7 +101,7 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
     }
   };
 
-  const location = [live.city, live.state].filter(Boolean).join(", ");
+  const location = [live.city, live.state, live.country].filter(Boolean).join(", ");
 
   return (
     <div className="rounded-[24px] bg-white border border-black/5 shadow-sm h-full flex flex-col overflow-y-auto p-6">

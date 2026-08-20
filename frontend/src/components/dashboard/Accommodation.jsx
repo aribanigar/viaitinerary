@@ -68,6 +68,7 @@ function useIsDesktop() {
 }
 
 const EMPTY_FILTERS = {
+  country: "",
   state: "",
   city: "",
   minStars: "",
@@ -115,22 +116,35 @@ const Accommodation = () => {
     }
   };
 
+  const countryOptions = useMemo(
+    () =>
+      [...new Set(accommodations.map((a) => a.country).filter(Boolean))].sort(),
+    [accommodations],
+  );
   const stateOptions = useMemo(
     () =>
-      [...new Set(accommodations.map((a) => a.state).filter(Boolean))].sort(),
-    [accommodations],
+      [
+        ...new Set(
+          accommodations
+            .filter((a) => !filters.country || a.country === filters.country)
+            .map((a) => a.state)
+            .filter(Boolean),
+        ),
+      ].sort(),
+    [accommodations, filters.country],
   );
   const cityOptions = useMemo(
     () =>
       [
         ...new Set(
           accommodations
+            .filter((a) => !filters.country || a.country === filters.country)
             .filter((a) => !filters.state || a.state === filters.state)
             .map((a) => a.city)
             .filter(Boolean),
         ),
       ].sort(),
-    [accommodations, filters.state],
+    [accommodations, filters.country, filters.state],
   );
 
   const filtered = useMemo(() => {
@@ -138,6 +152,7 @@ const Accommodation = () => {
     return accommodations.filter((a) => {
       if (q && !`${a.name} ${a.city || ""}`.toLowerCase().includes(q))
         return false;
+      if (filters.country && a.country !== filters.country) return false;
       if (filters.state && a.state !== filters.state) return false;
       if (filters.city && a.city !== filters.city) return false;
       if (filters.minStars && (parseInt(a.category, 10) || 0) < parseInt(filters.minStars, 10))
@@ -209,8 +224,8 @@ const Accommodation = () => {
       onClick: () => setFilters({ ...EMPTY_FILTERS, availability: "unavailable" }),
     },
     {
-      label: "States Covered",
-      value: stateOptions.length.toString(),
+      label: "Countries Covered",
+      value: countryOptions.length.toString(),
       change:
         avgStartingPrice != null
           ? `Avg. from ₹${avgStartingPrice.toLocaleString("en-IN")}`
@@ -347,6 +362,31 @@ const Accommodation = () => {
 
           {filtersOpen && (
             <div className="flex flex-wrap items-end gap-3 pt-1">
+              <div>
+                <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
+                  Country
+                </label>
+                <select
+                  value={filters.country}
+                  onChange={(e) => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      country: e.target.value,
+                      state: "",
+                      city: "",
+                    }));
+                  }}
+                  className="bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-900 py-2.5 px-3 pr-8 appearance-none min-w-[140px]"
+                >
+                  <option value="">All countries</option>
+                  {countryOptions.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5">
                   State
@@ -509,7 +549,7 @@ const Accommodation = () => {
                       </div>
                       <div className="text-slate-400 text-[11px] mt-0.5 flex items-center gap-1 truncate">
                         <MapPin className="w-3 h-3 shrink-0" />
-                        {[accommodation.city, accommodation.state]
+                        {[accommodation.city, accommodation.state, accommodation.country]
                           .filter(Boolean)
                           .join(", ") || "—"}
                       </div>
