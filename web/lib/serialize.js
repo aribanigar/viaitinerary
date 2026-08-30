@@ -163,8 +163,17 @@ const userLite = (u) => (u ? { id: u.id, name: u.name, email: u.email } : null);
 export function catalogDestination(d) {
   return {
     id: d.id, user_id: d.userId, name: d.name, activities: d.activities ?? [],
+    country: d.country ?? null, state: d.state ?? null, city: d.city ?? null,
     image_path: d.imagePath, image_url: d.imagePath, user: userLite(d.user),
     created_at: iso(d.createdAt), updated_at: iso(d.updatedAt),
+  };
+}
+export function catalogComplementaryService(s) {
+  return {
+    id: s.id, user_id: s.userId, name: s.name, cost: num(s.cost),
+    selling_price: num(s.sellingPrice), description: s.description,
+    is_active: s.isActive ?? true, user: userLite(s.user),
+    created_at: iso(s.createdAt), updated_at: iso(s.updatedAt),
   };
 }
 export function catalogHotel(h) {
@@ -240,6 +249,7 @@ export function settingsToCamel(s) {
     defaultTripImage: s.defaultTripImagePath,
     gstPercentage: num(s.gstPercentage),
     profitMarginPercentage: num(s.profitMarginPercentage),
+    costActivities: s.costActivities ?? false,
     smtpEmail: s.smtpEmail,
     smtpHost: s.smtpHost,
     smtpPort: s.smtpPort,
@@ -279,6 +289,7 @@ export const SETTINGS_DEFAULTS = {
   defaultTripImage: null,
   gstPercentage: 5.0,
   profitMarginPercentage: 10.0,
+  costActivities: false,
   smtpEmail: null,
   smtpHost: null,
   smtpPort: 587,

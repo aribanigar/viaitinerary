@@ -21,6 +21,30 @@ import {
 
 const SEARCH_DEBOUNCE_MS = 500;
 
+// Activities are stored as [{ name, cost }] (cost 0 = free/bundled), but the
+// editor stays a plain textarea — one activity per line, optionally
+// "Name | Cost" — so old plain-string data and new costed entries both work.
+const activitiesToText = (activities) =>
+  (activities || [])
+    .map((a) => {
+      if (typeof a === "string") return a;
+      const cost = Number(a?.cost) || 0;
+      return cost > 0 ? `${a.name} | ${cost}` : a?.name || "";
+    })
+    .filter(Boolean)
+    .join("\n");
+
+const textToActivities = (text) =>
+  text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, costStr] = line.split("|").map((part) => part.trim());
+      const cost = costStr ? Number(costStr) || 0 : 0;
+      return { name: name || line, cost };
+    });
+
 const DestinationForm = () => {
   const { token } = useAuth();
   const navigate = useNavigate();
@@ -50,7 +74,7 @@ const DestinationForm = () => {
           const resp = await fetchDestination(id, token);
           setFormData({
             name: resp.name || "",
-            activities: (resp.activities || []).join("\n"),
+            activities: activitiesToText(resp.activities),
             photo: resp.image_url || null,
           });
         } catch (error) {
@@ -121,9 +145,7 @@ const DestinationForm = () => {
       setSubmitting(true);
       const dataToSend = {
         name: formData.name,
-        activities: formData.activities
-          .split("\n")
-          .filter((line) => line.trim() !== ""),
+        activities: textToActivities(formData.activities),
         photo: formData.photo || undefined,
       };
 
@@ -200,12 +222,14 @@ const DestinationForm = () => {
                   name="activities"
                   value={formData.activities}
                   onChange={handleInputChange}
-                  placeholder="Add activities here... (one activity per line)"
+                  placeholder="Add activities here... (one per line, e.g. Shikara Ride | 800)"
                   className="w-full bg-transparent border-none focus:ring-0 focus:outline-none text-sm font-bold text-slate-900 placeholder:text-slate-300 resize-none min-h-[100px]"
                 />
               </div>
               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-2 ml-1">
-                Tip: Enter each activity on a new line
+                Tip: One activity per line. Add "| cost" for a per-person price
+                (e.g. Gondola Ride | 1200) — leave it off for a free/bundled
+                activity.
               </p>
             </div>
           </div>

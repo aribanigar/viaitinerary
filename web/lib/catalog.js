@@ -124,7 +124,16 @@ export function catalogItem({ model, mapBody, serialize }) {
 export async function mapDestination(body) {
   if (!body.name) return { error: "name is required." };
   if (!Array.isArray(body.activities)) return { error: "activities must be an array." };
-  const data = { name: body.name, activities: body.activities };
+  const data = {
+    name: body.name,
+    activities: body.activities,
+    // Defaults to India (no location UI yet, and every existing destination
+    // predates this field) so the itinerary generator's country filter
+    // doesn't hide the whole catalog — override later once other markets ship.
+    country: body.country ?? "India",
+    state: body.state ?? null,
+    city: body.city ?? null,
+  };
   if (body.photo) data.imagePath = await persistImage(String(body.photo), "destinations");
   return { data };
 }
@@ -193,4 +202,19 @@ export async function mapVehicle(body) {
   };
   if (body.photo) data.imagePath = await persistImage(String(body.photo), "vehicles");
   return { data };
+}
+
+export function mapComplementaryService(body) {
+  if (!body.name) return { error: "name is required." };
+  if (body.selling_price === undefined || body.selling_price === null || body.selling_price === "")
+    return { error: "selling_price is required." };
+  return {
+    data: {
+      name: body.name,
+      cost: body.cost !== undefined && body.cost !== "" ? Number(body.cost) : null,
+      sellingPrice: Number(body.selling_price),
+      description: body.description ?? null,
+      isActive: body.is_active !== undefined ? !!body.is_active : true,
+    },
+  };
 }

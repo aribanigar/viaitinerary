@@ -14,6 +14,7 @@ import {
   Loader2,
   Filter,
   Copy,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -327,19 +328,34 @@ const MyTrips = () => {
         }
         description="Manage your saved itineraries and quotes"
       >
-        <Link
-          to={subscription?.can_create_trip ? "/trip-builder" : "#"}
-          onClick={(e) => {
-            if (!subscription?.can_create_trip) {
-              e.preventDefault();
-              toast.error("Upgrade required to create more trips");
-            }
-          }}
-          className={`${subscription?.can_create_trip ? "bg-[#e7f63c] text-[#181c22] hover:bg-[#d4e42e]" : "bg-slate-400 text-white cursor-not-allowed"} px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-xl transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
-        >
-          <Plus className="w-5 h-5" />
-          CREATE NEW TRIP
-        </Link>
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full md:w-auto">
+          <Link
+            to={subscription?.can_create_trip ? "/trip-builder/generate" : "#"}
+            onClick={(e) => {
+              if (!subscription?.can_create_trip) {
+                e.preventDefault();
+                toast.error("Upgrade required to create more trips");
+              }
+            }}
+            className={`${subscription?.can_create_trip ? "bg-white border border-black/10 text-[#181c22] hover:bg-slate-50" : "bg-slate-400 text-white cursor-not-allowed"} px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-sm transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
+          >
+            <Sparkles className="w-5 h-5" />
+            GENERATE ITINERARY
+          </Link>
+          <Link
+            to={subscription?.can_create_trip ? "/trip-builder" : "#"}
+            onClick={(e) => {
+              if (!subscription?.can_create_trip) {
+                e.preventDefault();
+                toast.error("Upgrade required to create more trips");
+              }
+            }}
+            className={`${subscription?.can_create_trip ? "bg-[#e7f63c] text-[#181c22] hover:bg-[#d4e42e]" : "bg-slate-400 text-white cursor-not-allowed"} px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-xl transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
+          >
+            <Plus className="w-5 h-5" />
+            CREATE NEW TRIP
+          </Link>
+        </div>
       </PageHeader>
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm">

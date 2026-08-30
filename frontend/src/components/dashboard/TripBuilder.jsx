@@ -6,6 +6,7 @@ import {
   Link,
 } from "react-router-dom";
 import AssistantFrame from "./AssistantFrame";
+import { destinationActivityLabels } from "../../utils/destinationActivities";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import {
@@ -770,6 +771,7 @@ const TripBuilder = ({ mode }) => {
 
   const addDayFromDestination = (dest) => {
     const nextDay = itinerary.length + 1;
+    const activityLabels = destinationActivityLabels(dest.activities);
     setItinerary([
       ...itinerary,
       {
@@ -779,8 +781,8 @@ const TripBuilder = ({ mode }) => {
         destination: dest.name,
         destinationId: dest.id,
         location: dest.name, // Auto-fill location from destination
-        description: (dest.activities || []).join("\n"),
-        activities: dest.activities || [],
+        description: activityLabels.join("\n"),
+        activities: activityLabels,
         photo: dest.image_path || null,
       },
     ]);

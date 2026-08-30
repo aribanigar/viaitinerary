@@ -266,7 +266,7 @@ const Destinations = () => {
                         key={idx}
                         className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md uppercase tracking-wider"
                       >
-                        {activity}
+                        {typeof activity === "string" ? activity : activity?.name}
                       </span>
                     ))}
                   {(destination.activities || []).length > 2 && (

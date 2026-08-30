@@ -1,5 +1,6 @@
 import React from "react";
 import { Image as ImageIcon, MapPin, Trash2 } from "lucide-react";
+import { destinationActivityLabels } from "../../../utils/destinationActivities";
 
 const ItineraryTab = ({
   availableDestinations,
@@ -67,14 +68,17 @@ const ItineraryTab = ({
                         (d) => d.id === day.id,
                       );
                       if (dayIdx !== -1) {
+                        const activityLabels = destinationActivityLabels(
+                          dest.activities,
+                        );
                         newItinerary[dayIdx] = {
                           ...newItinerary[dayIdx],
                           title: dest.name,
                           destination: dest.name,
                           destinationId: dest.id,
                           location: dest.name,
-                          description: (dest.activities || []).join("\n"),
-                          activities: dest.activities || [],
+                          description: activityLabels.join("\n"),
+                          activities: activityLabels,
                           photo: dest.image_path || null,
                         };
                         setItinerary(newItinerary);

@@ -22,6 +22,8 @@ import {
   Download,
   Wallet,
   KeyRound,
+  Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -55,6 +57,7 @@ const AgencySettings = () => {
     currency: "INR (₹)",
     gstAmount: 5,
     profitMarginPercentage: 10,
+    costActivities: false,
     defaultTripImage: null,
     greetingMessage:
       "Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.",
@@ -607,6 +610,49 @@ const AgencySettings = () => {
                     <b>Maps JavaScript API</b> enabled) — leave this blank and
                     the Hotel form still works fully, just with manual entry
                     instead of auto-fill.
+                  </p>
+                </div>
+              </div>
+
+              {/* Itinerary Generator Section */}
+              <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col">
+                <div className="flex items-center gap-2 mb-4 text-[#1b1b1b]">
+                  <Sparkles className="w-5 h-5" />
+                  <h2 className="text-base font-bold text-slate-900">
+                    Itinerary Generator
+                  </h2>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                    Activity Costing
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        costActivities: !prev.costActivities,
+                      }))
+                    }
+                    className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                      formData.costActivities
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-slate-50 text-slate-500"
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {formData.costActivities
+                      ? "Activity costs count toward the budget"
+                      : "Activities are free/bundled"}
+                  </button>
+                  <p className="text-[11px] text-slate-400 ml-1 leading-relaxed">
+                    When generating an itinerary automatically, the engine
+                    always fills each day with real activities from your
+                    Destinations. Turn this on if you'd rather it also
+                    subtract each activity's per-person cost (set on the
+                    destination) from the trip budget, instead of treating
+                    them as included for free.
                   </p>
                 </div>
               </div>

@@ -127,6 +127,23 @@ export const useTripBuilderData = ({
           });
         }
 
+        // Seed GST%/margin% from the agency's own settings — Trip only ever
+        // stores the resulting absolute gstAmount/cost, never these
+        // percentages, so without this every trip (new or existing) starts
+        // the Pricing tab at 0%/0% until someone types real values in,
+        // silently recalculating (and overwriting) cost the moment it loads.
+        if (initData.settings) {
+          if (initData.settings.gst_percentage != null) {
+            setGstPercentage(Number(initData.settings.gst_percentage));
+          }
+          if (initData.settings.profit_percentage != null) {
+            setProfitMarginPercentage(Number(initData.settings.profit_percentage));
+          }
+          if (initData.settings.include_gst != null) {
+            setIncludeGST(!!initData.settings.include_gst);
+          }
+        }
+
         if (initData.destinations) {
           setAvailableDestinations(initData.destinations);
         }
