@@ -4,6 +4,8 @@
 // hotels with nested rooms; this module fetches that feed and maps it onto
 // this app's Hotel + price_sections shape for prisma.hotel.upsert.
 
+import prisma from "@/lib/prisma";
+
 const DEFAULT_BASE_URL = "https://b2b.viakashmiritinerary.in";
 export const B2B_SOURCE = "b2b_viakashmir";
 
@@ -86,4 +88,66 @@ export async function fetchB2BHotels() {
     throw new Error("Via Kashmir B2B feed returned an unexpected shape");
   }
   return json.hotels;
+}
+
+/**
+ * Upsert an already-fetched B2B feed into one agency's catalog, keyed by
+ * (userId, external_source, external_id) so re-runs refresh in place. Shared
+ * by the manual "Import" button and the scheduled cron sync, both of which
+ * fetch the feed once and apply it to one or more admins.
+ */
+export async function applyB2BHotelsForAdmin(adminId, hotels) {
+  const admin = await prisma.user.findUnique({
+    where: { id: adminId },
+    select: { bypassSubscription: true },
+  });
+  let remainingSlots = Infinity;
+  if (!admin?.bypassSubscription) {
+    const sub = await prisma.subscription.findUnique({ where: { userId: adminId } });
+    const plan = sub?.planKey ? await prisma.plan.findFirst({ where: { key: sub.planKey } }) : null;
+    if (plan?.hotelLimit != null) {
+      const currentCount = await prisma.hotel.count({ where: { userId: adminId } });
+      remainingSlots = Math.max(0, plan.hotelLimit - currentCount);
+    }
+  }
+
+  let imported = 0;
+  let updated = 0;
+  let skippedLimit = 0;
+
+  for (const hotel of hotels) {
+    if (!hotel?.id || !hotel?.name) continue;
+    const mapped = mapB2BHotel(hotel);
+
+    const existing = await prisma.hotel.findFirst({
+      where: { userId: adminId, externalSource: B2B_SOURCE, externalId: hotel.id },
+      select: { id: true },
+    });
+
+    if (!existing && remainingSlots <= 0) {
+      skippedLimit++;
+      continue;
+    }
+
+    if (existing) {
+      await prisma.hotel.update({ where: { id: existing.id }, data: mapped });
+      updated++;
+    } else {
+      await prisma.hotel.create({ data: { ...mapped, userId: adminId } });
+      imported++;
+      remainingSlots--;
+    }
+  }
+
+  return { imported, updated, skipped_limit: skippedLimit, total_source_hotels: hotels.length };
+}
+
+/** Admin ids that have opted in by importing at least once — the scheduled sync only refreshes these, never a first-time import. */
+export async function adminIdsWithB2BImports() {
+  const rows = await prisma.hotel.findMany({
+    where: { externalSource: B2B_SOURCE },
+    select: { userId: true },
+    distinct: ["userId"],
+  });
+  return rows.map((r) => r.userId);
 }
