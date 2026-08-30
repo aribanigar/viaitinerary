@@ -176,6 +176,8 @@ export function catalogHotel(h) {
     total_rooms: h.totalRooms ?? null, request_count: h.requestCount ?? 0,
     last_requested_at: iso(h.lastRequestedAt),
     market_prices: h.marketPrices ?? [], payment_terms: h.paymentTerms ?? null,
+    external_source: h.externalSource ?? null, external_id: h.externalId ?? null,
+    last_synced_at: iso(h.lastSyncedAt),
     blackouts: Array.isArray(h.blackouts) ? h.blackouts.map(catalogHotelBlackout) : undefined,
     user: userLite(h.user), created_at: iso(h.createdAt), updated_at: iso(h.updatedAt),
   };

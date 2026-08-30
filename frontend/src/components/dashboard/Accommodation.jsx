@@ -20,8 +20,10 @@ import {
   Globe2,
   Eye,
   CalendarDays,
+  Download,
+  Loader2,
 } from "lucide-react";
-import { getHotels, deleteHotel } from "../../api/hotels";
+import { getHotels, deleteHotel, importB2BHotels } from "../../api/hotels";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
@@ -92,9 +94,31 @@ const Accommodation = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
   const isDesktop = useIsDesktop();
 
   const navigate = useNavigate();
+
+  const handleImportB2B = async () => {
+    try {
+      setImporting(true);
+      const resp = await importB2BHotels(token);
+      const parts = [];
+      if (resp.imported) parts.push(`${resp.imported} added`);
+      if (resp.updated) parts.push(`${resp.updated} refreshed`);
+      if (resp.skipped_limit) parts.push(`${resp.skipped_limit} skipped (plan limit)`);
+      toast.success(
+        parts.length
+          ? `Via Kashmir B2B: ${parts.join(", ")}`
+          : "Already up to date with Via Kashmir B2B",
+      );
+      fetchHotels();
+    } catch (error) {
+      toast.error(error.message || "Failed to import from Via Kashmir B2B");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const openHotelPanel = (accommodation) => {
     setSelectedHotel(accommodation);
@@ -268,6 +292,21 @@ const Accommodation = () => {
         description="Manage your hotel partners and stay options."
         compact={panelOpen}
       >
+        <button
+          onClick={handleImportB2B}
+          disabled={importing}
+          title="Sync approved, in-tariff hotels from the Via Kashmir B2B rate portal"
+          className={`flex items-center gap-2 bg-white border border-black/5 text-[#181c22] rounded-2xl font-bold shadow-sm hover:bg-slate-50 transition-all text-sm w-fit disabled:opacity-60 ${
+            panelOpen ? "px-4 py-2" : "px-6 py-3"
+          }`}
+        >
+          {importing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          Import Via Kashmir B2B
+        </button>
         <button
           onClick={() => navigate("/accommodation/calendar")}
           className={`flex items-center gap-2 bg-white border border-black/5 text-[#181c22] rounded-2xl font-bold shadow-sm hover:bg-slate-50 transition-all text-sm w-fit ${
