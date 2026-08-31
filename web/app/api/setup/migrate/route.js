@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -98,9 +97,10 @@ const STATEMENTS = [
 ];
 
 async function handle(request) {
-  const limit = await rateLimit(`setup-migrate:${clientIp(request)}`);
-  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
-
+  // No rateLimit() gate here on purpose: this route's whole job is to run
+  // before rate_limit_attempts necessarily exists, so calling it would throw
+  // before we ever reach the statements below. The SETUP_TOKEN check is the
+  // only gate, same as it was before rate limiting existed.
   const requiredToken = process.env.SETUP_TOKEN;
   if (!requiredToken) {
     return NextResponse.json({ message: "Setup is disabled (SETUP_TOKEN not configured)." }, { status: 403 });
