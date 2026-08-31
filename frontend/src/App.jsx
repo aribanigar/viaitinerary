@@ -91,7 +91,6 @@ const AccountingSummary = lazy(
   () => import("./components/dashboard/AccountingSummary"),
 );
 const Ledger = lazy(() => import("./components/dashboard/Ledger"));
-// CalculatorList and CalculatorForm are not used in App.jsx routes, so we can ignore or remove if they really aren't used.
 const LeadInquiries = lazy(
   () => import("./components/dashboard/LeadInquiries"),
 );

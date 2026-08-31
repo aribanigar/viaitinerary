@@ -335,6 +335,18 @@ model ComplementaryService {
   @@map("complementary_services")
 }
 
+// DB-backed sliding-window rate limiting (login, OTP, password reset,
+// signup, public inquiries) — a plain in-memory counter wouldn't reliably
+// persist across serverless invocations, but Postgres already does.
+model RateLimitAttempt {
+  id        Int      @id @default(autoincrement())
+  key       String // e.g. "login:1.2.3.4"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([key, createdAt])
+  @@map("rate_limit_attempts")
+}
+
 model InclusionExclusion {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")

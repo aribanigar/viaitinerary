@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyCode } from "@/lib/otp";
 import { hashPassword } from "@/lib/auth";
+import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 // POST /api/password/reset { email, otp, password } — verify code, set new password.
 export async function POST(request) {
+  // The 6-digit OTP itself has no other brute-force protection, so this
+  // limit matters more here than on most of the other endpoints it's on.
+  const limit = await rateLimit(`password-reset:${clientIp(request)}`);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
   const b = await request.json().catch(() => ({}));
   const email = b.email;
   const otp = b.otp ?? b.code;

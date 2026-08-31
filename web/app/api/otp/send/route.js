@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { issueCode, otpEmailHtml } from "@/lib/otp";
 import { mailerForAdminId, sendMail } from "@/lib/mailer";
+import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -10,6 +11,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // POST /api/otp/send { email } — email a verification code (signup).
 export async function POST(request) {
+  const limit = await rateLimit(`otp:${clientIp(request)}`);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
   const { email } = await request.json().catch(() => ({}));
   if (!email || !EMAIL_RE.test(email)) {
     return NextResponse.json({ message: "A valid email is required." }, { status: 422 });

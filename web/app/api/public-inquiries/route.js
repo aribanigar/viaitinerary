@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { generateInquiryId } from "@/lib/leads";
+import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/public-inquiries — PUBLIC inquiry with no agency (goes to super admin).
 export async function POST(request) {
+  const limit = await rateLimit(`public-inquiries:${clientIp(request)}`);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
   const body = await request.json();
 
   if (body.website) {

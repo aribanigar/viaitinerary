@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { hashPassword, signToken, publicUser, cookieOptions, TOKEN_COOKIE } from "@/lib/auth";
 import { initializeTrial } from "@/lib/subscription";
+import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ function slugify(s) {
 // POST /api/signup — create an agency owner (admin) + their team.
 export async function POST(request) {
   try {
+    const limit = await rateLimit(`signup:${clientIp(request)}`);
+    if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
     const body = await request.json();
     const { name, email, password } = body;
     const agencyName = body.agency_name || body.agencyName;

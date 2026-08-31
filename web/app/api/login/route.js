@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifyPassword, signToken, publicUser, cookieOptions, TOKEN_COOKIE } from "@/lib/auth";
+import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,9 @@ export const dynamic = "force-dynamic";
 // shape the existing frontend expects) and sets a session cookie.
 export async function POST(request) {
   try {
+    const limit = await rateLimit(`login:${clientIp(request)}`);
+    if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
     const { email, password } = await request.json();
     if (!email || !password) {
       return NextResponse.json({ message: "Email and password are required." }, { status: 422 });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth";
+import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -10,6 +11,9 @@ export const runtime = "nodejs";
 // default plans and a trial subscription. It only ever touches this one
 // known admin account. DELETE this route once you can log in.
 async function handle(request) {
+  const limit = await rateLimit(`setup:${clientIp(request)}`);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
   const requiredToken = process.env.SETUP_TOKEN;
   if (!requiredToken) {
     return NextResponse.json({ message: "Setup is disabled (SETUP_TOKEN not configured)." }, { status: 403 });
