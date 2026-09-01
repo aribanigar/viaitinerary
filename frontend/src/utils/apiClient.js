@@ -65,12 +65,16 @@ export const request = async (endpoint, options = {}) => {
 
     if (data.errors) {
       const firstError = Object.values(data.errors)[0][0];
-      throw new Error(firstError);
+      const err = new Error(firstError);
+      err.status = response.status;
+      throw err;
     }
 
-    throw new Error(
+    const err = new Error(
       data.message || `Request failed with status ${response.status}`,
     );
+    err.status = response.status;
+    throw err;
   }
 
   if (responseType === "blob") {
