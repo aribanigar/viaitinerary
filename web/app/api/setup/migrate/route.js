@@ -3,6 +3,9 @@ import prisma from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+// This route runs ~35 sequential statements against the DB — well past the
+// Hobby plan's default 10s function timeout. 60s is the Hobby plan max.
+export const maxDuration = 60;
 
 // ONE-TIME, token-gated schema-sync fallback for when `prisma db push` can't
 // run at build time (e.g. the Postgres pooler's DDL port is unreachable from
