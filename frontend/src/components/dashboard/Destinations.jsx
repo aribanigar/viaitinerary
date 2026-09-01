@@ -53,8 +53,17 @@ const Destinations = () => {
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return destinations;
-    return destinations.filter((d) => d.name.toLowerCase().includes(q));
+    const list = q
+      ? destinations.filter((d) => d.name.toLowerCase().includes(q))
+      : destinations;
+    // Group by state so the catalog reads as an organized map of India
+    // (Jammu and Kashmir together, Kerala together, ...) instead of whatever
+    // order rows happened to be created in.
+    return [...list].sort((a, b) => {
+      const stateCompare = (a.state || "").localeCompare(b.state || "");
+      if (stateCompare !== 0) return stateCompare;
+      return a.name.localeCompare(b.name);
+    });
   }, [destinations, searchQuery]);
 
   useEffect(() => {
@@ -241,8 +250,10 @@ const Destinations = () => {
                     <div className="font-bold text-slate-900 capitalize truncate hover:underline">
                       {destination.name}
                     </div>
-                    <div className="text-slate-400 text-[11px] mt-0.5 font-medium">
-                      {(destination.activities || []).length} total activities
+                    <div className="text-slate-400 text-[11px] mt-0.5 font-medium truncate">
+                      {[destination.state, destination.country]
+                        .filter(Boolean)
+                        .join(", ") || `${(destination.activities || []).length} total activities`}
                     </div>
                   </div>
                 </button>
