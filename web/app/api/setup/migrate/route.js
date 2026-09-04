@@ -67,6 +67,17 @@ const STATEMENTS = [
 
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "supabase_id" TEXT`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "users_supabase_id_key" ON "users"("supabase_id")`,
+  `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phone" TEXT`,
+
+  `CREATE TABLE IF NOT EXISTS "notifications" (
+    "id" SERIAL PRIMARY KEY,
+    "user_id" INTEGER NOT NULL,
+    "type" TEXT NOT NULL,
+    "data" JSONB NOT NULL,
+    "read_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS "notifications_user_id_idx" ON "notifications"("user_id")`,
 
   `ALTER TABLE "hotels" ADD COLUMN IF NOT EXISTS "total_rooms" INTEGER`,
   `ALTER TABLE "hotels" ADD COLUMN IF NOT EXISTS "request_count" INTEGER NOT NULL DEFAULT 0`,

@@ -24,6 +24,7 @@ model User {
   role               String    @default("admin") // super_admin | admin | team
   status             String    @default("active")
   profilePicture     String?   @map("profile_picture")
+  phone              String?
   embedToken         String?   @map("embed_token")
   bypassSubscription Boolean   @default(false) @map("bypass_subscription")
   emailVerifiedAt    DateTime? @map("email_verified_at")
@@ -671,4 +672,19 @@ model BlogPostTag {
 
   @@unique([blogPostId, blogTagId])
   @@map("blog_post_tag")
+}
+
+// Personal, per-recipient notifications (new lead, lead assigned, ...).
+// Deliberately scoped to userId directly rather than through adminIdOf —
+// a team member gets their own inbox, not the agency's shared one.
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  type      String
+  data      Json
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("notifications")
 }

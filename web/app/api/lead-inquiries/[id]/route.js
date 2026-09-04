@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
 import { serializeLead, generateInquiryId, assignableMemberIds } from "@/lib/leads";
+import { notify } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +104,16 @@ export async function PATCH(request, { params }) {
   const assignee = updated.assignedTo
     ? await prisma.user.findUnique({ where: { id: updated.assignedTo }, select: { id: true, name: true, email: true } })
     : null;
+
+  if (data.assignedTo && data.assignedTo !== lead.assignedTo) {
+    await notify(data.assignedTo, "lead_assigned", {
+      lead_inquiry_id: updated.id,
+      inquiry_id: updated.inquiryId,
+      client_name: updated.clientName,
+      destination: updated.destination,
+    });
+  }
+
   return NextResponse.json({ message: "Inquiry updated successfully.", inquiry: serializeLead(updated, assignee) });
 }
 

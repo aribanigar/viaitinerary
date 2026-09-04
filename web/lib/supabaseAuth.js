@@ -92,3 +92,23 @@ export async function supabaseSetPassword(supabaseUserId, password) {
     return false;
   }
 }
+
+/**
+ * Create (or claim an orphaned) Supabase Auth identity for a brand-new
+ * account, before any Prisma row exists for it — so a failure here leaves
+ * nothing behind to clean up and the caller is safely retryable. Used by
+ * both self-service signup and admin-created team member accounts.
+ */
+export async function provisionSupabaseUser(email, password) {
+  try {
+    const created = await supabaseCreateUser(email, password);
+    return created?.id || null;
+  } catch {
+    // Most likely an orphaned identity from an earlier partial attempt (no
+    // Prisma row ever got created for it) — claim it.
+    const existing = await supabaseFindUserByEmail(email);
+    if (!existing) throw new Error("Could not create the account with the auth provider.");
+    await supabaseSetPassword(existing.id, password);
+    return existing.id;
+  }
+}

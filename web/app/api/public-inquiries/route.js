@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { generateInquiryId } from "@/lib/leads";
 import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
+import { notify } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,16 @@ export async function POST(request) {
       sourceUrl: request.headers.get("referer"),
     },
   });
+
+  const superAdmin = await prisma.user.findFirst({ where: { role: "super_admin" } });
+  if (superAdmin) {
+    await notify(superAdmin.id, "new_lead", {
+      lead_inquiry_id: lead.id,
+      inquiry_id: lead.inquiryId,
+      client_name: lead.clientName,
+      destination: lead.destination,
+    });
+  }
 
   return NextResponse.json({ message: "Your inquiry has been submitted successfully!", inquiry_id: lead.inquiryId }, { status: 201 });
 }
