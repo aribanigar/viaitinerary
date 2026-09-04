@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { verifyPassword, signToken, publicUser, cookieOptions, TOKEN_COOKIE } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 // POST /api/login — email + password, returns a bearer token (Sanctum-compatible
 // shape the existing frontend expects) and sets a session cookie.
