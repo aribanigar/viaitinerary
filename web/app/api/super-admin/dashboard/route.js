@@ -4,6 +4,7 @@ import { requireSuperAdmin } from "@/lib/auth";
 import { isExpired } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const num = (v) => (v == null ? 0 : Number(v));
 const monthStart = (y, m) => new Date(Date.UTC(y, m, 1));
@@ -83,28 +84,34 @@ export async function GET(request) {
     inquiryByStatus[s] = rawByStatus.get(s) || 0;
   }
 
-  // 6-month growth.
-  const growth = [];
+  // 6-month growth — all 6 months (3 queries each) fired together instead of
+  // one month at a time, which was turning this into 6 sequential round-trip
+  // batches and was the main reason this route hung/timed out.
+  const months = [];
   for (let i = 5; i >= 0; i--) {
     const gm = m - i;
     const gy = y + Math.floor(gm / 12);
     const gmonth = ((gm % 12) + 12) % 12;
-    const start = monthStart(gy, gmonth);
-    const end = monthEnd(gy, gmonth);
-    const [admins, trips, inquiries] = await Promise.all([
-      prisma.user.count({ where: { role: "admin", createdAt: { gte: start, lt: end } } }),
-      prisma.trip.count({ where: { isPackage: false, createdAt: { gte: start, lt: end } } }),
-      prisma.leadInquiry.count({ where: { createdAt: { gte: start, lt: end } } }),
-    ]);
-    growth.push({ month: `${MONTHS[gmonth]} ${gy}`, admins, trips, inquiries });
+    months.push({ label: `${MONTHS[gmonth]} ${gy}`, start: monthStart(gy, gmonth), end: monthEnd(gy, gmonth) });
   }
-
-  const recentAdmins = await prisma.user.findMany({
-    where: { role: "admin" },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-    select: { id: true, name: true, email: true, status: true, createdAt: true },
-  });
+  const [growth, recentAdmins] = await Promise.all([
+    Promise.all(
+      months.map(async ({ label, start, end }) => {
+        const [admins, trips, inquiries] = await Promise.all([
+          prisma.user.count({ where: { role: "admin", createdAt: { gte: start, lt: end } } }),
+          prisma.trip.count({ where: { isPackage: false, createdAt: { gte: start, lt: end } } }),
+          prisma.leadInquiry.count({ where: { createdAt: { gte: start, lt: end } } }),
+        ]);
+        return { month: label, admins, trips, inquiries };
+      })
+    ),
+    prisma.user.findMany({
+      where: { role: "admin" },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, name: true, email: true, status: true, createdAt: true },
+    }),
+  ]);
   const recentSubs = await prisma.subscription.findMany({ where: { userId: { in: recentAdmins.map((u) => u.id) } } });
   const recentSubByUser = new Map(recentSubs.map((s) => [s.userId, s]));
   const recentBusinesses = recentAdmins.map((u) => ({
