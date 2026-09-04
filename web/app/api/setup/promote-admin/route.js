@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { hashPassword } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 // ONE-TIME, token-gated: promotes a specific existing account to super_admin
-// without touching its password (unlike /api/setup, which resets the
-// password too — not appropriate for an account that already logs in fine).
-// Delete this route once the promotion is confirmed.
+// and sets its password to a known value on request.
+// Delete this route once done.
 const TARGET_EMAIL = "viakashmir.in@gmail.com";
+const NEW_PASSWORD = "Admin@123";
 
 async function handle(request) {
   const requiredToken = process.env.SETUP_TOKEN;
@@ -30,14 +31,19 @@ async function handle(request) {
 
   const updated = await prisma.user.update({
     where: { id: user.id },
-    data: { role: "super_admin", status: "active" },
+    data: {
+      role: "super_admin",
+      status: "active",
+      password: await hashPassword(NEW_PASSWORD),
+    },
   });
 
   return NextResponse.json({
-    message: `${updated.email} is now super_admin.`,
+    message: `${updated.email} is now super_admin with the password reset.`,
     id: updated.id,
     email: updated.email,
     role: updated.role,
+    password: NEW_PASSWORD,
   });
 }
 
