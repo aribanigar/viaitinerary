@@ -3,6 +3,26 @@ import prisma from "@/lib/prisma";
 import { hashPassword, signToken, publicUser, cookieOptions, TOKEN_COOKIE } from "@/lib/auth";
 import { initializeTrial } from "@/lib/subscription";
 import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
+import { supabaseCreateUser, supabaseFindUserByEmail, supabaseSetPassword } from "@/lib/supabaseAuth";
+
+/**
+ * Create (or claim an orphaned) Supabase Auth identity for a brand-new
+ * signup, before any Prisma row exists — so a failure here leaves nothing
+ * behind to clean up and the signup is safely retryable.
+ */
+async function provisionSupabaseUser(email, password) {
+  try {
+    const created = await supabaseCreateUser(email, password);
+    return created?.id || null;
+  } catch {
+    // Most likely an orphaned identity from an earlier partial signup
+    // attempt (no Prisma row ever got created for it) — claim it.
+    const existing = await supabaseFindUserByEmail(email);
+    if (!existing) throw new Error("Could not create your account with the auth provider.");
+    await supabaseSetPassword(existing.id, password);
+    return existing.id;
+  }
+}
 
 export const dynamic = "force-dynamic";
 
@@ -41,11 +61,14 @@ export async function POST(request) {
     // First account in an empty system becomes the super admin.
     const isFirst = (await prisma.user.count()) === 0;
 
+    const supabaseId = await provisionSupabaseUser(String(email).toLowerCase(), password);
+
     const user = await prisma.user.create({
       data: {
         name,
         email: String(email).toLowerCase(),
         password: await hashPassword(password),
+        supabaseId,
         role: isFirst ? "super_admin" : "admin",
         status: "active",
       },

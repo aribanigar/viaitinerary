@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { verifyCode } from "@/lib/otp";
 import { hashPassword } from "@/lib/auth";
 import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
+import { supabaseSetPassword } from "@/lib/supabaseAuth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -36,5 +37,10 @@ export async function POST(request) {
   if (!ok) return NextResponse.json({ message: "Invalid or expired code." }, { status: 422 });
 
   await prisma.user.update({ where: { id: user.id }, data: { password: await hashPassword(password) } });
+  if (user.supabaseId) {
+    // Keep the two password stores in sync for an already-migrated account.
+    // Best-effort — the legacy hash above is still authoritative either way.
+    await supabaseSetPassword(user.supabaseId, password);
+  }
   return NextResponse.json({ message: "Password reset successfully. You can now log in." });
 }

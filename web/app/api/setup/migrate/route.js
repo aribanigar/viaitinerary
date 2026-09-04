@@ -65,6 +65,9 @@ const STATEMENTS = [
 
   `ALTER TABLE "agency_settings" ADD COLUMN IF NOT EXISTS "cost_activities" BOOLEAN NOT NULL DEFAULT false`,
 
+  `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "supabase_id" TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "users_supabase_id_key" ON "users"("supabase_id")`,
+
   `ALTER TABLE "hotels" ADD COLUMN IF NOT EXISTS "total_rooms" INTEGER`,
   `ALTER TABLE "hotels" ADD COLUMN IF NOT EXISTS "request_count" INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE "hotels" ADD COLUMN IF NOT EXISTS "last_requested_at" TIMESTAMP(3)`,
