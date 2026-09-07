@@ -2,14 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Two systems live in this repo — only one is active
+## System
 
-This repository contains **two independent full-stack implementations** of the same travel-agency SaaS product. They share the same `frontend/` SPA but point it at two different, unrelated backends.
-
-- **`web/` + `frontend/` — ACTIVE, currently deployed.** A Next.js (App Router) + Prisma + Supabase (Postgres) rewrite of the original Laravel API, deployed as a single Vercel app. All current feature work happens here. Default to this system for anything unless told otherwise.
-- **`backend/` + root `Dockerfile` / `render.yaml` / `DEPLOY.md` — LEGACY, no longer maintained.** The original Laravel API, meant to be deployed as one Docker container (Render/Railway/Fly/VPS) serving the same `frontend/` SPA. Its last commit predates most of the Next.js port's feature work — schema/routes added to `web/` since then (accommodation blackouts, market prices, Google Maps integration, etc.) have **no equivalent** in `backend/`, so the Laravel path is drifted and would not support the current frontend if actually deployed. `notes/security-risks.md` and `notes/RAZORPAY_FIX_GUIDE.md` are audits of this legacy Laravel app, not of `web/`.
-
-Everything below describes the **active** `web/` + `frontend/` system.
+`web/` (API) + `frontend/` (UI) is the entire product — a Next.js (App Router) + Prisma + Supabase (Postgres) backend serving a Vite/React SPA, deployed as one Vercel app. There used to be a second, original Laravel implementation (`backend/`, plus a root `Dockerfile`/`render.yaml` for a Docker/Render deploy); it was removed since it was unmaintained, had drifted out of sync with `frontend/`, and was never the deployed system. If you see any reference to a Laravel backend, Blade templates, `php artisan`, or Sanctum in old docs/notes/history, it's about that removed system, not this one.
 
 ## Commands
 
@@ -42,7 +37,7 @@ npm run lint                  # eslint . — repo currently has ~120 pre-existin
 
 No test suite here either.
 
-## Architecture (`web/` + `frontend/`)
+## Architecture
 
 ### One Vercel deploy, two apps glued together
 
