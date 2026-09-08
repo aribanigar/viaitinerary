@@ -45,6 +45,8 @@ export async function buildTripScalars(body) {
     duration: body.duration != null ? String(body.duration) : null,
     cost: dec(body.cost),
     gstAmount: dec(body.gst_amount) ?? 0,
+    gstPercentage: dec(body.gst_percentage),
+    profitMarginPercentage: dec(body.profit_margin_percentage),
     currency: body.currency ?? "INR (Rs)",
     template: body.template ?? "ModernTemplate",
     status: body.status ?? "pending",

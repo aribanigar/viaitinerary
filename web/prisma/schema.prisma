@@ -74,6 +74,8 @@ model Trip {
   duration        String?
   cost            Decimal?  @db.Decimal(12, 2)
   gstAmount       Decimal   @default(0) @map("gst_amount") @db.Decimal(12, 2)
+  gstPercentage   Decimal?  @map("gst_percentage") @db.Decimal(8, 2)
+  profitMarginPercentage Decimal? @map("profit_margin_percentage") @db.Decimal(8, 2)
   paidAmount      Decimal   @default(0) @map("paid_amount") @db.Decimal(12, 2)
   refundedAmount  Decimal   @default(0) @map("refunded_amount") @db.Decimal(12, 2)
   currency        String    @default("INR (Rs)")

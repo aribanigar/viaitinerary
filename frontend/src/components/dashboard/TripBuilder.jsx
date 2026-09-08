@@ -153,6 +153,21 @@ const TripBuilder = ({ mode }) => {
   const [includeGST, setIncludeGST] = useState(true);
   const [gstPercentage, setGstPercentage] = useState(0);
   const [profitMarginPercentage, setProfitMarginPercentage] = useState(0);
+  // Guards the auto-cost effect below from firing before gstPercentage/
+  // profitMarginPercentage have been restored for the trip being loaded —
+  // without this, reopening a saved trip briefly has both at their 0
+  // defaults, which the effect would treat as a real edit and use to
+  // silently overwrite (and then autosave) the trip's actual quoted price.
+  // Only flips true once the agent actually edits pricing themselves.
+  const [pricingTouched, setPricingTouched] = useState(false);
+  const handleGstPercentageChange = (value) => {
+    setPricingTouched(true);
+    setGstPercentage(value);
+  };
+  const handleProfitMarginPercentageChange = (value) => {
+    setPricingTouched(true);
+    setProfitMarginPercentage(value);
+  };
   const [otherCosts, setOtherCosts] = useState([]);
   const [itinerary, setItinerary] = useState([]);
 
@@ -321,6 +336,7 @@ const TripBuilder = ({ mode }) => {
     setHasDraft,
     setGstPercentage,
     setProfitMarginPercentage,
+    setPricingTouched,
     formatImageUrl,
     normalizeAccommodation,
     toast,
@@ -733,6 +749,11 @@ const TripBuilder = ({ mode }) => {
   const calculatedTotalCost = costWithGst * (1 + profitMarginPercentage / 100);
 
   useEffect(() => {
+    // Don't touch the trip's saved cost until the agent has actually edited
+    // GST%/margin% themselves — otherwise this fires the instant a trip
+    // loads (before its real percentages, if any, have been restored) and
+    // silently overwrites its quoted price.
+    if (!pricingTouched) return;
     const nextCost = Math.max(0, Math.round(calculatedTotalCost)).toString();
     setTripInfo((prev) =>
       prev.cost === nextCost
@@ -742,7 +763,7 @@ const TripBuilder = ({ mode }) => {
             cost: nextCost,
           },
     );
-  }, [calculatedTotalCost]);
+  }, [calculatedTotalCost, pricingTouched]);
 
   const removeDay = (id) => {
     const updatedItinerary = itinerary
@@ -959,6 +980,8 @@ const TripBuilder = ({ mode }) => {
       ...tripInfo,
       include_gst: includeGST,
       gst_amount: includeGST ? Number(gstAmountValue.toFixed(2)) : 0,
+      gst_percentage: gstPercentage,
+      profit_margin_percentage: profitMarginPercentage,
       use_flight: tripInfo.useFlight,
       transport_details: (tripInfo.transportDetails || []).map((t) => ({
         ...t,
@@ -1522,9 +1545,9 @@ const TripBuilder = ({ mode }) => {
                         otherCosts={otherCosts}
                         setOtherCosts={setOtherCosts}
                         gstPercentage={gstPercentage}
-                        setGstPercentage={setGstPercentage}
+                        setGstPercentage={handleGstPercentageChange}
                         profitMarginPercentage={profitMarginPercentage}
-                        setProfitMarginPercentage={setProfitMarginPercentage}
+                        setProfitMarginPercentage={handleProfitMarginPercentageChange}
                         calculatedTotalCost={calculatedTotalCost}
                       />
                     )}

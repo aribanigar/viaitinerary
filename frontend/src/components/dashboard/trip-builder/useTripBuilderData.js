@@ -38,6 +38,7 @@ export const useTripBuilderData = ({
   setHasDraft,
   setGstPercentage,
   setProfitMarginPercentage,
+  setPricingTouched,
   formatImageUrl,
   normalizeAccommodation,
   toast,
@@ -92,6 +93,11 @@ export const useTripBuilderData = ({
     async function loadData() {
       if (!token) return;
       setLoading(true);
+      // Re-arm the auto-cost guard for whichever trip we're about to load —
+      // its real gstPercentage/profitMarginPercentage are about to be
+      // restored below, and none of that should count as the agent editing
+      // pricing themselves.
+      setPricingTouched(false);
 
       try {
         const initData = await fetchBuilderInit(token, urlTripId);
@@ -297,6 +303,23 @@ export const useTripBuilderData = ({
             remarks: item.remarks,
           }));
           setTransportation(mappedTransportation);
+
+          // Restore this trip's own GST%/margin% so the Pricing tab shows
+          // what was actually quoted. Trips saved before these columns
+          // existed have neither stored — fall back to the agency's
+          // configured defaults for display only; the auto-cost effect
+          // won't touch the trip's saved cost regardless, until the agent
+          // edits pricing themselves (see pricingTouched).
+          setGstPercentage(
+            savedTrip.gst_percentage != null
+              ? Number(savedTrip.gst_percentage)
+              : Number(initData.settings?.gst_percentage ?? 0),
+          );
+          setProfitMarginPercentage(
+            savedTrip.profit_margin_percentage != null
+              ? Number(savedTrip.profit_margin_percentage)
+              : Number(initData.settings?.profit_percentage ?? 0),
+          );
         } else if (urlTripId) {
           toast.error("You are not allowed to access this trip.");
           navigate("/trip-builder", { replace: true });

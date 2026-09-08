@@ -85,6 +85,8 @@ export function serializeTrip(trip) {
     duration: trip.duration,
     cost: num(trip.cost),
     gst_amount: num(trip.gstAmount),
+    gst_percentage: num(trip.gstPercentage),
+    profit_margin_percentage: num(trip.profitMarginPercentage),
     paid_amount: num(trip.paidAmount),
     refunded_amount: num(trip.refundedAmount),
     currency: trip.currency,

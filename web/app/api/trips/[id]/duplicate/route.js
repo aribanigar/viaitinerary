@@ -43,6 +43,8 @@ export async function POST(request, { params }) {
         duration: original.duration,
         cost: original.cost,
         gstAmount: original.gstAmount,
+        gstPercentage: original.gstPercentage,
+        profitMarginPercentage: original.profitMarginPercentage,
         currency: original.currency,
         imagePath: original.imagePath,
         status: "draft",
