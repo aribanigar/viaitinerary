@@ -288,6 +288,7 @@ export const useTripBuilderData = ({
                 cancellation_charge: item.cancellation_charge,
                 cancellation_note: item.cancellation_note,
                 alternate_options: item.alternate_options,
+                markup_percentage: item.markup_percentage,
               }),
           );
           setAccommodations(mappedAccommodations);
@@ -306,6 +307,7 @@ export const useTripBuilderData = ({
             vehicleType: item.vehicle_type || item.vehicleType,
             quantity: item.quantity || 1,
             remarks: item.remarks,
+            markupPercentage: item.markup_percentage ?? item.markupPercentage ?? "",
           }));
           setTransportation(mappedTransportation);
 

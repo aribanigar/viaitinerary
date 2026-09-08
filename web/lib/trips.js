@@ -117,6 +117,7 @@ export async function syncTripRelations(tripDbId, body) {
         cancellationCharge: item.cancellation_charge !== undefined ? dec(item.cancellation_charge) : undefined,
         cancellationNote: item.cancellation_note !== undefined ? item.cancellation_note : undefined,
         alternateOptions: item.alternate_options !== undefined ? item.alternate_options : undefined,
+        markupPercentage: item.markup_percentage !== undefined ? dec(item.markup_percentage) : undefined,
       };
       const img = await imageValue(item.image, "accommodations");
       if (img !== undefined) data.imagePath = img;
@@ -144,6 +145,7 @@ export async function syncTripRelations(tripDbId, body) {
         vehicleType: item.vehicle_type ?? null,
         quantity: int(item.quantity, 1),
         remarks: item.remarks ?? null,
+        markupPercentage: item.markup_percentage !== undefined ? dec(item.markup_percentage) : undefined,
       };
       if (typeof item.id === "number") {
         await prisma.transportation.update({ where: { id: item.id }, data });
@@ -194,6 +196,7 @@ export function cloneTripChildren(src) {
         imagePath: a.imagePath,
         extraAdultCount: a.extraAdultCount,
         alternateOptions: a.alternateOptions ?? [],
+        markupPercentage: a.markupPercentage,
         // Cancellation state is a booking-event fact about the *original*
         // trip's stay, not reusable config — a fresh clone starts
         // un-cancelled (cancelledAt/cancellationCharge/cancellationNote
@@ -210,6 +213,7 @@ export function cloneTripChildren(src) {
         vehicleType: t.vehicleType,
         quantity: t.quantity,
         remarks: t.remarks,
+        markupPercentage: t.markupPercentage,
       })),
     },
   };

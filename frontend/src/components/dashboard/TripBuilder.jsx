@@ -300,6 +300,7 @@ const TripBuilder = ({ mode }) => {
       cancellationCharge: item.cancellationCharge ?? item.cancellation_charge ?? "",
       cancellationNote: item.cancellationNote ?? item.cancellation_note ?? "",
       alternateOptions: item.alternateOptions ?? item.alternate_options ?? [],
+      markupPercentage: item.markupPercentage ?? item.markup_percentage ?? "",
     };
   }, []);
 
@@ -471,6 +472,7 @@ const TripBuilder = ({ mode }) => {
     cancellationCharge: "",
     cancellationNote: "",
     alternateOptions: [],
+    markupPercentage: "",
   });
 
   const uniqueCities = [...new Set(masterHotels.map((h) => h.city))]
@@ -489,6 +491,7 @@ const TripBuilder = ({ mode }) => {
     vehicleType: "",
     quantity: 1,
     remarks: "",
+    markupPercentage: "",
   });
 
   const handleHotelPhotoChange = (e) => {
@@ -538,6 +541,7 @@ const TripBuilder = ({ mode }) => {
         cancellationCharge: "",
         cancellationNote: "",
         alternateOptions: [],
+        markupPercentage: "",
       });
       setEditingHotelId(null);
       setIsHotelModalOpen(false);
@@ -570,6 +574,7 @@ const TripBuilder = ({ mode }) => {
         vehicleType: "",
         quantity: 1,
         remarks: "",
+        markupPercentage: "",
       });
       setEditingTransportId(null);
       setIsTransportModalOpen(false);
@@ -601,6 +606,7 @@ const TripBuilder = ({ mode }) => {
       cancellationCharge: normalizedHotel.cancellationCharge ?? "",
       cancellationNote: normalizedHotel.cancellationNote ?? "",
       alternateOptions: normalizedHotel.alternateOptions || [],
+      markupPercentage: normalizedHotel.markupPercentage ?? "",
     });
     setEditingHotelId(hotel.id);
     setIsHotelModalOpen(true);
@@ -617,6 +623,7 @@ const TripBuilder = ({ mode }) => {
       vehicleType: transport.vehicleType,
       quantity: transport.quantity || 1,
       remarks: transport.remarks,
+      markupPercentage: transport.markupPercentage ?? "",
     });
     setEditingTransportId(transport.id);
     setIsTransportModalOpen(true);
@@ -745,10 +752,34 @@ const TripBuilder = ({ mode }) => {
     0,
   );
 
-  const netCost = totalHotelCost + totalVehicleCost + totalOtherCost;
-  const gstAmountValue = includeGST ? netCost * (gstPercentage / 100) : 0;
-  const costWithGst = netCost + gstAmountValue;
-  const calculatedTotalCost = costWithGst * (1 + profitMarginPercentage / 100);
+  // Per-item markup override falls back to the trip-wide margin when unset —
+  // this is what lets one hotel/vehicle carry a different margin than the
+  // rest of the trip without touching the raw cost totals shown above.
+  const effectiveMarkup = (item) =>
+    item.markupPercentage !== undefined &&
+    item.markupPercentage !== null &&
+    item.markupPercentage !== ""
+      ? parseFloat(item.markupPercentage) || 0
+      : profitMarginPercentage || 0;
+
+  // Marked-up (client-facing) totals, used only for the grand total below —
+  // by the distributive property this equals totalHotelCost*(1+margin%) etc.
+  // when no item overrides the trip margin, so the final total is unchanged
+  // for every existing trip.
+  const totalHotelCostMarkedUp = accommodations.reduce(
+    (sum, item) => sum + calculateHotelCost(item) * (1 + effectiveMarkup(item) / 100),
+    0,
+  );
+  const totalVehicleCostMarkedUp = transportation.reduce(
+    (sum, item) => sum + calculateVehicleCost(item) * (1 + effectiveMarkup(item) / 100),
+    0,
+  );
+  const totalOtherCostMarkedUp = totalOtherCost * (1 + (profitMarginPercentage || 0) / 100);
+
+  const netCostMarkedUp = totalHotelCostMarkedUp + totalVehicleCostMarkedUp + totalOtherCostMarkedUp;
+  const gstAmountValue = includeGST ? netCostMarkedUp * (gstPercentage / 100) : 0;
+  const costWithGst = netCostMarkedUp + gstAmountValue;
+  const calculatedTotalCost = costWithGst;
 
   useEffect(() => {
     // Don't touch the trip's saved cost until the agent has actually edited
@@ -951,6 +982,7 @@ const TripBuilder = ({ mode }) => {
       cancellation_charge: item.cancellationCharge === "" ? null : item.cancellationCharge,
       cancellation_note: item.cancellationNote ?? null,
       alternate_options: item.alternateOptions ?? [],
+      markup_percentage: item.markupPercentage === "" ? null : item.markupPercentage,
     }));
 
     const formattedTransportations = sortedTransportation.map((item, index) => {
@@ -975,6 +1007,7 @@ const TripBuilder = ({ mode }) => {
         quantity: item.quantity || 1,
         remarks: item.remarks,
         day_number: dayNumber, // Include day_number for PDF rendering
+        markup_percentage: item.markupPercentage === "" ? null : item.markupPercentage,
       };
     });
 
@@ -1668,6 +1701,7 @@ const TripBuilder = ({ mode }) => {
         urlTripId={urlTripId}
         reservedAccommodationDates={reservedAccommodationDates}
         token={token}
+        tripMarginPercentage={profitMarginPercentage}
       />
 
       <TransportModal
@@ -1680,6 +1714,7 @@ const TripBuilder = ({ mode }) => {
         availableVehicles={availableVehicles}
         tripInfo={tripInfo}
         urlTripId={urlTripId}
+        tripMarginPercentage={profitMarginPercentage}
       />
     </>
   );

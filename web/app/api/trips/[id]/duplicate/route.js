@@ -92,6 +92,7 @@ export async function POST(request, { params }) {
             imagePath: a.imagePath,
             extraAdultCount: a.extraAdultCount,
             alternateOptions: a.alternateOptions ?? [],
+            markupPercentage: a.markupPercentage,
             // Cancellation state is a booking-event fact about the
             // original stay, not reusable config — a duplicate starts
             // un-cancelled (cancelledAt/cancellationCharge/cancellationNote
@@ -108,6 +109,7 @@ export async function POST(request, { params }) {
             vehicleType: t.vehicleType,
             quantity: t.quantity,
             remarks: t.remarks,
+            markupPercentage: t.markupPercentage,
           })),
         },
       },

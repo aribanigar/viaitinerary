@@ -151,6 +151,7 @@ model Accommodation {
   cancellationCharge    Decimal?  @map("cancellation_charge") @db.Decimal(12, 2)
   cancellationNote      String?   @map("cancellation_note")
   alternateOptions      Json?     @map("alternate_options")
+  markupPercentage      Decimal?  @map("markup_percentage") @db.Decimal(6, 2)
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
@@ -172,6 +173,7 @@ model Transportation {
   vehicleType String?   @map("vehicle_type")
   quantity    Int       @default(1)
   remarks     String?
+  markupPercentage Decimal? @map("markup_percentage") @db.Decimal(6, 2)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
