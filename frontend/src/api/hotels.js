@@ -62,3 +62,7 @@ export const deleteHotelBlackout = async (id, blackoutId, token) => {
     token,
   });
 };
+
+export const getHotelB2BRates = async (id, token) => {
+  return request(`/hotels/${id}/b2b-rates`, { token });
+};
