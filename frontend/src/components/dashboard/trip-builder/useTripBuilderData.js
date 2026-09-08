@@ -283,6 +283,11 @@ export const useTripBuilderData = ({
                 photo: formatImageUrl(
                   item.image_url || item.image_path || item.photo,
                 ),
+                extra_adult_count: item.extra_adult_count,
+                cancelled_at: item.cancelled_at,
+                cancellation_charge: item.cancellation_charge,
+                cancellation_note: item.cancellation_note,
+                alternate_options: item.alternate_options,
               }),
           );
           setAccommodations(mappedAccommodations);

@@ -192,6 +192,12 @@ export function cloneTripChildren(src) {
         pricePerRoom: a.pricePerRoom,
         bedPrices: a.bedPrices ?? [],
         imagePath: a.imagePath,
+        extraAdultCount: a.extraAdultCount,
+        alternateOptions: a.alternateOptions ?? [],
+        // Cancellation state is a booking-event fact about the *original*
+        // trip's stay, not reusable config — a fresh clone starts
+        // un-cancelled (cancelledAt/cancellationCharge/cancellationNote
+        // intentionally omitted, defaulting to null).
       })),
     },
     transportations: {
