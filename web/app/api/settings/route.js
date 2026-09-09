@@ -34,6 +34,7 @@ const FIELD_MAP = {
   invoiceEmailMessage: "invoiceEmailMessage",
   gstPercentage: "gstPercentage",
   profitMarginPercentage: "profitMarginPercentage",
+  costActivities: "costActivities",
   smtpEmail: "smtpEmail",
   smtpHost: "smtpHost",
   smtpPort: "smtpPort",

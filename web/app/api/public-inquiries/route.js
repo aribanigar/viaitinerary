@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { generateInquiryId } from "@/lib/leads";
+import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
+import { notify } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
 // POST /api/public-inquiries — PUBLIC inquiry with no agency (goes to super admin).
 export async function POST(request) {
+  const limit = await rateLimit(`public-inquiries:${clientIp(request)}`);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
   const body = await request.json();
 
   if (body.website) {
@@ -39,6 +44,16 @@ export async function POST(request) {
       sourceUrl: request.headers.get("referer"),
     },
   });
+
+  const superAdmin = await prisma.user.findFirst({ where: { role: "super_admin" } });
+  if (superAdmin) {
+    await notify(superAdmin.id, "new_lead", {
+      lead_inquiry_id: lead.id,
+      inquiry_id: lead.inquiryId,
+      client_name: lead.clientName,
+      destination: lead.destination,
+    });
+  }
 
   return NextResponse.json({ message: "Your inquiry has been submitted successfully!", inquiry_id: lead.inquiryId }, { status: 201 });
 }

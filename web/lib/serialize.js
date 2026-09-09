@@ -167,8 +167,17 @@ const userLite = (u) => (u ? { id: u.id, name: u.name, email: u.email } : null);
 export function catalogDestination(d) {
   return {
     id: d.id, user_id: d.userId, name: d.name, activities: d.activities ?? [],
+    country: d.country ?? null, state: d.state ?? null, city: d.city ?? null,
     image_path: d.imagePath, image_url: d.imagePath, user: userLite(d.user),
     created_at: iso(d.createdAt), updated_at: iso(d.updatedAt),
+  };
+}
+export function catalogComplementaryService(s) {
+  return {
+    id: s.id, user_id: s.userId, name: s.name, cost: num(s.cost),
+    selling_price: num(s.sellingPrice), description: s.description,
+    is_active: s.isActive ?? true, user: userLite(s.user),
+    created_at: iso(s.createdAt), updated_at: iso(s.updatedAt),
   };
 }
 export function catalogHotel(h) {
@@ -180,6 +189,8 @@ export function catalogHotel(h) {
     total_rooms: h.totalRooms ?? null, request_count: h.requestCount ?? 0,
     last_requested_at: iso(h.lastRequestedAt),
     market_prices: h.marketPrices ?? [], payment_terms: h.paymentTerms ?? null,
+    external_source: h.externalSource ?? null, external_id: h.externalId ?? null,
+    last_synced_at: iso(h.lastSyncedAt),
     blackouts: Array.isArray(h.blackouts) ? h.blackouts.map(catalogHotelBlackout) : undefined,
     user: userLite(h.user), created_at: iso(h.createdAt), updated_at: iso(h.updatedAt),
   };
@@ -194,7 +205,24 @@ export function catalogHotelBlackout(b) {
 export function catalogVehicle(v) {
   return {
     id: v.id, user_id: v.userId, name: v.name, email: v.email, phone: v.phone, price: num(v.price),
+    vehicle_type: v.vehicleType, is_ac: v.isAc, seating_capacity: v.seatingCapacity ?? null,
+    luggage_capacity: v.luggageCapacity ?? null, fuel_type: v.fuelType, registration_number: v.registrationNumber,
+    city: v.city, state: v.state, country: v.country, is_available: v.isAvailable ?? true,
+    image_path: v.imagePath, image_url: v.imagePath, rate_type: v.rateType,
+    extra_km_rate: num(v.extraKmRate), extra_hour_rate: num(v.extraHourRate),
+    driver_allowance: num(v.driverAllowance), night_halt_charges: num(v.nightHaltCharges),
+    min_km_per_day: v.minKmPerDay ?? null, toll_parking_included: v.tollParkingIncluded,
+    features: v.features ?? [], notes: v.notes,
+    request_count: v.requestCount ?? 0, last_requested_at: iso(v.lastRequestedAt),
+    blackouts: Array.isArray(v.blackouts) ? v.blackouts.map(catalogVehicleBlackout) : undefined,
     user: userLite(v.user), created_at: iso(v.createdAt), updated_at: iso(v.updatedAt),
+  };
+}
+export function catalogVehicleBlackout(b) {
+  return {
+    id: b.id, vehicle_id: b.vehicleId, type: b.type,
+    start_date: dateOnly(b.startDate), end_date: dateOnly(b.endDate), note: b.note,
+    created_at: iso(b.createdAt),
   };
 }
 
@@ -225,6 +253,7 @@ export function settingsToCamel(s) {
     defaultTripImage: s.defaultTripImagePath,
     gstPercentage: num(s.gstPercentage),
     profitMarginPercentage: num(s.profitMarginPercentage),
+    costActivities: s.costActivities ?? false,
     smtpEmail: s.smtpEmail,
     smtpHost: s.smtpHost,
     smtpPort: s.smtpPort,
@@ -264,6 +293,7 @@ export const SETTINGS_DEFAULTS = {
   defaultTripImage: null,
   gstPercentage: 5.0,
   profitMarginPercentage: 10.0,
+  costActivities: false,
   smtpEmail: null,
   smtpHost: null,
   smtpPort: 587,

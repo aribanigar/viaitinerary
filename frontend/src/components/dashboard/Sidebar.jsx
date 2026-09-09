@@ -29,6 +29,7 @@ import {
   Tag,
   Wallet,
   KeyRound,
+  Gift,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import logoLight from "../../assets/logo-light.png";
@@ -52,6 +53,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     location.pathname.startsWith("/accommodation") ||
       location.pathname.startsWith("/transportation") ||
       location.pathname.startsWith("/destinations") ||
+      location.pathname.startsWith("/complementary-services") ||
       location.pathname.startsWith("/policies"),
   );
 
@@ -397,6 +399,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                     isActive("/accommodation") ||
                     isActive("/transportation") ||
                     isActive("/destinations") ||
+                    isActive("/complementary-services") ||
                     isActive("/policies")
                       ? "bg-black/[0.03] text-[#181c22] font-bold"
                       : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
@@ -452,6 +455,19 @@ const Sidebar = ({ isOpen, onClose }) => {
                     >
                       <MapPin className="w-5 h-5" />
                       <span>Destination</span>
+                    </Link>
+
+                    <Link
+                      to="/complementary-services"
+                      onClick={onClose}
+                      className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                        isActive("/complementary-services")
+                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                      }`}
+                    >
+                      <Gift className="w-5 h-5" />
+                      <span>Complementary Services</span>
                     </Link>
 
                     {user?.role === "admin" && (

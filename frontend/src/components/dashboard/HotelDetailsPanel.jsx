@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Trash2,
   Plus,
+  Download,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import {
@@ -181,6 +182,18 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
           </div>
           {live.address && (
             <p className="text-[#9aa3b2] text-xs font-medium mt-1 truncate">{live.address}</p>
+          )}
+          {live.external_source === "b2b_viakashmir" && (
+            <span
+              className="inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[9px] font-black uppercase tracking-widest"
+              title={
+                live.last_synced_at
+                  ? `Last synced ${new Date(live.last_synced_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`
+                  : undefined
+              }
+            >
+              <Download className="w-3 h-3" /> Via Kashmir B2B
+            </span>
           )}
         </div>
         <button

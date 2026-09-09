@@ -7,6 +7,20 @@ import { catalogGate } from "@/lib/subscription";
 
 const unauth = () => NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
 
+const OWNER_SELECT = { id: true, name: true, email: true };
+
+// The "owner" shown as Created By is the agency admin (adminId) — almost
+// always the same person as the authenticated request user, since only
+// team-role users resolve to a different admin. Reuse the already-fetched
+// `user` row in that common case instead of a second DB round trip; every
+// avoided query matters here since each one crosses the network to Postgres.
+function ownerOf(user, adminId) {
+  if (user.id === adminId) {
+    return Promise.resolve({ id: user.id, name: user.name, email: user.email });
+  }
+  return prisma.user.findUnique({ where: { id: adminId }, select: OWNER_SELECT });
+}
+
 /**
  * Build paginated list + create handlers for a catalog model (destinations,
  * hotels, vehicles). `mapBody(body)` returns { data } or { error }.
@@ -34,7 +48,7 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
           skip: (page - 1) * perPage,
           take: perPage,
         }),
-        prisma.user.findUnique({ where: { id: adminId }, select: { id: true, name: true, email: true } }),
+        ownerOf(user, adminId),
       ]);
 
       return NextResponse.json({
@@ -56,8 +70,10 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
       }
       const mapped = await mapBody(await request.json());
       if (mapped.error) return NextResponse.json({ message: mapped.error }, { status: 422 });
-      const created = await prisma[model].create({ data: { ...mapped.data, userId: adminId } });
-      const owner = await prisma.user.findUnique({ where: { id: adminId }, select: { id: true, name: true, email: true } });
+      const [created, owner] = await Promise.all([
+        prisma[model].create({ data: { ...mapped.data, userId: adminId } }),
+        ownerOf(user, adminId),
+      ]);
       return NextResponse.json(serialize({ ...created, user: owner }), { status: 201 });
     },
   };
@@ -73,14 +89,14 @@ export function catalogItem({ model, mapBody, serialize }) {
     if (Number.isNaN(numId)) return { error: NextResponse.json({ message: "Invalid id" }, { status: 400 }) };
     const item = await prisma[model].findFirst({ where: { id: numId, userId: adminId } });
     if (!item) return { error: NextResponse.json({ message: "Not found" }, { status: 404 }) };
-    return { item, adminId };
+    return { item, user, adminId };
   }
 
   return {
     async GET(request, { params }) {
       const r = await scoped(request, params.id);
       if (r.error) return r.error;
-      const owner = await prisma.user.findUnique({ where: { id: r.adminId }, select: { id: true, name: true, email: true } });
+      const owner = await ownerOf(r.user, r.adminId);
       return NextResponse.json(serialize({ ...r.item, user: owner }));
     },
     async PUT(request, { params }) {
@@ -88,8 +104,10 @@ export function catalogItem({ model, mapBody, serialize }) {
       if (r.error) return r.error;
       const mapped = await mapBody(await request.json(), r.item);
       if (mapped.error) return NextResponse.json({ message: mapped.error }, { status: 422 });
-      const updated = await prisma[model].update({ where: { id: r.item.id }, data: mapped.data });
-      const owner = await prisma.user.findUnique({ where: { id: r.adminId }, select: { id: true, name: true, email: true } });
+      const [updated, owner] = await Promise.all([
+        prisma[model].update({ where: { id: r.item.id }, data: mapped.data }),
+        ownerOf(r.user, r.adminId),
+      ]);
       return NextResponse.json(serialize({ ...updated, user: owner }));
     },
     async DELETE(request, { params }) {
@@ -106,7 +124,16 @@ export function catalogItem({ model, mapBody, serialize }) {
 export async function mapDestination(body) {
   if (!body.name) return { error: "name is required." };
   if (!Array.isArray(body.activities)) return { error: "activities must be an array." };
-  const data = { name: body.name, activities: body.activities };
+  const data = {
+    name: body.name,
+    activities: body.activities,
+    // Defaults to India (no location UI yet, and every existing destination
+    // predates this field) so the itinerary generator's country filter
+    // doesn't hide the whole catalog — override later once other markets ship.
+    country: body.country ?? "India",
+    state: body.state ?? null,
+    city: body.city ?? null,
+  };
   if (body.photo) data.imagePath = await persistImage(String(body.photo), "destinations");
   return { data };
 }
@@ -137,16 +164,57 @@ export async function mapHotel(body) {
   return { data };
 }
 
-export function mapVehicle(body) {
+export async function mapVehicle(body) {
   if (!body.name) return { error: "name is required." };
   if (body.price === undefined || body.price === null || body.price === "")
     return { error: "price is required." };
+  const num = (v) => (v !== undefined && v !== null && v !== "" ? Number(v) : null);
+  const int = (v) => {
+    if (v === undefined || v === null || v === "") return null;
+    const n = parseInt(v, 10);
+    return Number.isNaN(n) ? null : n;
+  };
+  const data = {
+    name: body.name,
+    email: body.email ?? null,
+    phone: body.phone ?? null,
+    price: Number(body.price),
+    vehicleType: body.vehicle_type ?? null,
+    isAc: body.is_ac !== undefined ? (body.is_ac === "" ? null : !!body.is_ac) : null,
+    seatingCapacity: int(body.seating_capacity),
+    luggageCapacity: int(body.luggage_capacity),
+    fuelType: body.fuel_type ?? null,
+    registrationNumber: body.registration_number ?? null,
+    city: body.city ?? null,
+    state: body.state ?? null,
+    country: body.country ?? null,
+    isAvailable: body.is_available !== undefined ? !!body.is_available : true,
+    rateType: body.rate_type ?? null,
+    extraKmRate: num(body.extra_km_rate),
+    extraHourRate: num(body.extra_hour_rate),
+    driverAllowance: num(body.driver_allowance),
+    nightHaltCharges: num(body.night_halt_charges),
+    minKmPerDay: int(body.min_km_per_day),
+    tollParkingIncluded:
+      body.toll_parking_included !== undefined ? (body.toll_parking_included === "" ? null : !!body.toll_parking_included) : null,
+    features: Array.isArray(body.features) ? body.features : undefined,
+    notes: body.notes ?? null,
+  };
+  if (body.photo) data.imagePath = await persistImage(String(body.photo), "vehicles");
+  return { data };
+}
+
+export function mapComplementaryService(body) {
+  if (!body.name) return { error: "name is required." };
+  if (body.selling_price === undefined || body.selling_price === null || body.selling_price === "")
+    return { error: "selling_price is required." };
   return {
     data: {
       name: body.name,
-      email: body.email ?? null,
-      phone: body.phone ?? null,
-      price: Number(body.price),
+      cost: body.cost !== undefined && body.cost !== "" ? Number(body.cost) : null,
+      sellingPrice: Number(body.selling_price),
+      description: body.description ?? null,
+      isActive: body.is_active !== undefined ? !!body.is_active : true,
     },
   };
 }

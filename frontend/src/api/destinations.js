@@ -31,3 +31,8 @@ export const deleteDestination = async (id, token) => {
     token,
   });
 };
+
+export const searchDestinationPhotos = async (query, token) => {
+  const params = new URLSearchParams({ q: query });
+  return request(`/destinations/photos?${params.toString()}`, { token });
+};

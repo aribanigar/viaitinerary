@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
 import { serializeLead, generateInquiryId } from "@/lib/leads";
+import { notify } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +84,13 @@ export async function POST(request) {
       isPublic: false,
       assignedTo: user.id,
     },
+  });
+
+  await notify(adminId, "new_lead", {
+    lead_inquiry_id: lead.id,
+    inquiry_id: lead.inquiryId,
+    client_name: lead.clientName,
+    destination: lead.destination,
   });
 
   return NextResponse.json({ message: "Lead inquiry created successfully.", inquiry: serializeLead(lead) }, { status: 201 });

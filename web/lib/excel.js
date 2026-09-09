@@ -5,6 +5,22 @@ import prisma from "@/lib/prisma";
 // SheetJS reads/writes the same three-sheet workbook: Transportation (vehicles),
 // Accommodation (hotels), Destinations.
 
+/** Activities are [{name, cost}] (legacy rows may be plain strings) — render
+ * as comma-separated text for the exported sheet, matching the import side's
+ * comma-split parsing. */
+function formatActivitiesForExport(activities) {
+  if (!Array.isArray(activities)) return activities || "";
+  return activities
+    .map((a) => {
+      if (typeof a === "string") return a;
+      if (!a?.name) return null;
+      const cost = Number(a.cost) || 0;
+      return cost > 0 ? `${a.name} (${cost})` : a.name;
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
 /** Mirror Maatwebsite WithHeadingRow: lowercase, non-alphanumeric runs → "_". */
 export function normalizeHeader(h) {
   return String(h ?? "")
@@ -162,7 +178,7 @@ export async function exportCatalogWorkbook(adminId) {
     wb,
     "Destinations",
     DEST_HEAD,
-    destinations.map((d) => [d.name, Array.isArray(d.activities) ? d.activities.join(", ") : d.activities || ""])
+    destinations.map((d) => [d.name, formatActivitiesForExport(d.activities)])
   );
   return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 }

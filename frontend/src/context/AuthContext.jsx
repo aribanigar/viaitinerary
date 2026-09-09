@@ -63,8 +63,14 @@ export const AuthProvider = ({ children }) => {
           setUser(userData);
           setLoading(false);
         })
-        .catch(() => {
-          clearAuthState();
+        .catch((err) => {
+          // Only a real 401 means the token is actually invalid. Any other
+          // failure (a transient DB/network blip) must not silently log the
+          // user out — that was bouncing people straight back to "/" right
+          // after a successful login whenever /api/user hiccuped once.
+          if (err?.status === 401) {
+            clearAuthState();
+          }
           setLoading(false);
         });
     } else {

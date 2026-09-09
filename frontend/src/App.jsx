@@ -24,6 +24,9 @@ const FilteredTrips = lazy(
   () => import("./components/dashboard/FilteredTrips"),
 );
 const TripBuilder = lazy(() => import("./components/dashboard/TripBuilder"));
+const GenerateItinerary = lazy(
+  () => import("./pages/dashboard/GenerateItinerary"),
+);
 const MyTrips = lazy(() => import("./components/dashboard/MyTrips"));
 const AIAssistant = lazy(() => import("./pages/assistant/AIAssistant"));
 const Packages = lazy(() => import("./components/dashboard/Packages"));
@@ -38,6 +41,10 @@ const PaymentDetails = lazy(
 );
 const Typography = lazy(() => import("./components/dashboard/Typography"));
 const Destinations = lazy(() => import("./components/dashboard/Destinations"));
+const ComplementaryServices = lazy(
+  () => import("./components/dashboard/ComplementaryServices"),
+);
+const DestinationForm = lazy(() => import("./pages/dashboard/DestinationForm"));
 const Accommodation = lazy(
   () => import("./components/dashboard/Accommodation"),
 );
@@ -48,6 +55,7 @@ const HotelBookingCalendar = lazy(
   () => import("./components/dashboard/HotelBookingCalendar"),
 );
 const Vehicles = lazy(() => import("./components/dashboard/Vehicles"));
+const VehicleForm = lazy(() => import("./pages/dashboard/VehicleForm"));
 const Team = lazy(() => import("./components/dashboard/Team"));
 const TeamReport = lazy(() => import("./components/dashboard/TeamReport"));
 const Quotes = lazy(() => import("./components/dashboard/Quotes"));
@@ -83,7 +91,6 @@ const AccountingSummary = lazy(
   () => import("./components/dashboard/AccountingSummary"),
 );
 const Ledger = lazy(() => import("./components/dashboard/Ledger"));
-// CalculatorList and CalculatorForm are not used in App.jsx routes, so we can ignore or remove if they really aren't used.
 const LeadInquiries = lazy(
   () => import("./components/dashboard/LeadInquiries"),
 );
@@ -263,6 +270,7 @@ const PublicWhatsAppCTA = () => {
     "/destinations",
     "/accommodation",
     "/transportation",
+    "/complementary-services",
     "/team",
     "/team-report",
     "/quotes",
@@ -353,6 +361,10 @@ function App() {
                     />
                     <Route path="/trip-builder" element={<TripBuilder />} />
                     <Route
+                      path="/trip-builder/generate"
+                      element={<GenerateItinerary />}
+                    />
+                    <Route
                       path="/trip-builder/:tripId"
                       element={<TripBuilder />}
                     />
@@ -378,6 +390,18 @@ function App() {
                     }
                   >
                     <Route path="/destinations" element={<Destinations />} />
+                    <Route
+                      path="/complementary-services"
+                      element={<ComplementaryServices />}
+                    />
+                    <Route
+                      path="/destinations/add"
+                      element={<DestinationForm />}
+                    />
+                    <Route
+                      path="/destinations/edit/:id"
+                      element={<DestinationForm />}
+                    />
                     <Route path="/accommodation" element={<Accommodation />} />
                     <Route
                       path="/accommodation/add"
@@ -392,6 +416,14 @@ function App() {
                       element={<HotelBookingCalendar />}
                     />
                     <Route path="/transportation" element={<Vehicles />} />
+                    <Route
+                      path="/transportation/add"
+                      element={<VehicleForm />}
+                    />
+                    <Route
+                      path="/transportation/edit/:id"
+                      element={<VehicleForm />}
+                    />
                     <Route path="/lead-inquiries" element={<LeadInquiries />} />
                   </Route>
 

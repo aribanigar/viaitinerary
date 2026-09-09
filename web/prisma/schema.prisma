@@ -17,9 +17,14 @@ model User {
   name               String
   email              String    @unique
   password           String
+  // Supabase Auth's own user id, set once this account has been verified or
+  // created through Supabase (login lazily migrates legacy accounts on their
+  // first successful password check; signup sets it immediately).
+  supabaseId         String?   @unique @map("supabase_id")
   role               String    @default("admin") // super_admin | admin | team
   status             String    @default("active")
   profilePicture     String?   @map("profile_picture")
+  phone              String?
   embedToken         String?   @map("embed_token")
   bypassSubscription Boolean   @default(false) @map("bypass_subscription")
   emailVerifiedAt    DateTime? @map("email_verified_at")
@@ -188,6 +193,15 @@ model Destination {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
   name      String
+  // Scoping filter for the itinerary generator. Defaulted (and backfilled
+  // for pre-existing rows via this column default) since there's no location
+  // UI yet and every destination created so far is India-market.
+  country   String? @default("India")
+  state     String?
+  city      String?
+  // Historically a flat array of plain strings. Going forward stored as
+  // [{ name, cost: number (0 = free/bundled), durationHours: number|null }]
+  // — old plain-string entries still render fine, cost just reads as 0.
   activities Json?
   imagePath String?  @map("image_path")
   createdAt DateTime @default(now()) @map("created_at")
@@ -220,6 +234,14 @@ model Hotel {
   lastRequestedAt DateTime? @map("last_requested_at")
   marketPrices  Json?    @map("market_prices") // manually-noted OTA reference prices: [{source, price, date, note}]
   paymentTerms  Json?    @map("payment_terms") // {referenceEvent, installments: [{percentage, daysOffset, label}]}
+
+  // Set when this row was synced in from an external catalog feed (e.g. the
+  // Via Kashmir B2B rate portal) rather than entered by hand — externalId is
+  // that feed's own hotel id, used to upsert on re-sync instead of duplicating.
+  externalSource String?   @map("external_source")
+  externalId     String?   @map("external_id")
+  lastSyncedAt   DateTime? @map("last_synced_at")
+
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
@@ -227,6 +249,7 @@ model Hotel {
   blackouts      HotelBlackout[]
 
   @@index([userId])
+  @@unique([userId, externalSource, externalId])
   @@map("hotels")
 }
 
@@ -253,13 +276,84 @@ model Vehicle {
   email     String?
   phone     String?
   price     Decimal? @db.Decimal(12, 2)
+
+  vehicleType         String?  @map("vehicle_type") // sedan | suv | hatchback | tempo_traveller | mini_bus | luxury_bus | other
+  isAc                Boolean? @map("is_ac")
+  seatingCapacity     Int?     @map("seating_capacity")
+  luggageCapacity     Int?     @map("luggage_capacity")
+  fuelType            String?  @map("fuel_type") // petrol | diesel | cng | electric | hybrid
+  registrationNumber  String?  @map("registration_number")
+  city                String?
+  state               String?
+  country             String?
+  isAvailable         Boolean  @default(true) @map("is_available")
+  imagePath           String?  @map("image_path")
+  rateType            String?  @map("rate_type") // per_day | per_km | per_trip
+  extraKmRate         Decimal? @map("extra_km_rate") @db.Decimal(12, 2)
+  extraHourRate       Decimal? @map("extra_hour_rate") @db.Decimal(12, 2)
+  driverAllowance     Decimal? @map("driver_allowance") @db.Decimal(12, 2)
+  nightHaltCharges    Decimal? @map("night_halt_charges") @db.Decimal(12, 2)
+  minKmPerDay         Int?     @map("min_km_per_day")
+  tollParkingIncluded Boolean? @map("toll_parking_included")
+  features            Json? // e.g. ["AC","Music System","USB Charging","GPS Tracking"]
+  notes               String?
+  requestCount        Int       @default(0) @map("request_count")
+  lastRequestedAt      DateTime? @map("last_requested_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   transportations Transportation[]
+  blackouts       VehicleBlackout[]
 
   @@index([userId])
   @@map("vehicles")
+}
+
+model VehicleBlackout {
+  id        Int      @id @default(autoincrement())
+  vehicleId Int      @map("vehicle_id")
+  type      String   @default("blackout") // "stop_sale" (hard block, e.g. maintenance) | "blackout" (warn, allow override)
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@map("vehicle_blackouts")
+}
+
+// Small costed catalog for extras (airport transfer, welcome drink, cake,
+// candlelight dinner, photography, ...) — picked from by the itinerary
+// generator's complementary-inclusions step, and manageable like any other
+// catalog (Hotels/Vehicles/Destinations).
+model ComplementaryService {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  name         String
+  cost         Decimal? @db.Decimal(12, 2) // supplier cost
+  sellingPrice Decimal  @map("selling_price") @db.Decimal(12, 2)
+  description  String?
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("complementary_services")
+}
+
+// DB-backed sliding-window rate limiting (login, OTP, password reset,
+// signup, public inquiries) — a plain in-memory counter wouldn't reliably
+// persist across serverless invocations, but Postgres already does.
+model RateLimitAttempt {
+  id        Int      @id @default(autoincrement())
+  key       String // e.g. "login:1.2.3.4"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([key, createdAt])
+  @@map("rate_limit_attempts")
 }
 
 model InclusionExclusion {
@@ -303,6 +397,9 @@ model AgencySetting {
   gstPercentage             Decimal? @map("gst_percentage") @db.Decimal(8, 2)
   profitMarginPercentage    Decimal? @map("profit_margin_percentage") @db.Decimal(8, 2)
   includeGst                Boolean  @default(true) @map("include_gst")
+  // Whether the itinerary generator subtracts Destination.activities' cost
+  // from the budget, or treats activities as free/bundled (default).
+  costActivities            Boolean  @default(false) @map("cost_activities")
   smtpEmail                 String?  @map("smtp_email")
   smtpHost                  String?  @map("smtp_host")
   smtpPort                  Int?     @map("smtp_port")
@@ -579,4 +676,19 @@ model BlogPostTag {
 
   @@unique([blogPostId, blogTagId])
   @@map("blog_post_tag")
+}
+
+// Personal, per-recipient notifications (new lead, lead assigned, ...).
+// Deliberately scoped to userId directly rather than through adminIdOf —
+// a team member gets their own inbox, not the agency's shared one.
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  type      String
+  data      Json
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("notifications")
 }

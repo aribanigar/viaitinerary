@@ -3,12 +3,18 @@ import prisma from "@/lib/prisma";
 import { issueCode, otpEmailHtml } from "@/lib/otp";
 import { mailerForAdminId, sendMail } from "@/lib/mailer";
 import { adminIdOf } from "@/lib/scope";
+import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 // POST /api/password/forgot { email } — email a reset code. Always 200 (no leak).
 export async function POST(request) {
+  // Applied before the user lookup so the rate limit itself can't be used to
+  // probe which emails exist — every request pays the same cost either way.
+  const limit = await rateLimit(`password-forgot:${clientIp(request)}`);
+  if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+
   const { email } = await request.json().catch(() => ({}));
   if (!email) return NextResponse.json({ message: "Email is required." }, { status: 422 });
 
