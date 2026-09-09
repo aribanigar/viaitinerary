@@ -37,6 +37,7 @@ model User {
   authoredPosts  BlogPost[] @relation("PostAuthor")
 
   @@index([role])
+  @@index([role, createdAt])
   @@index([teamId])
   @@map("users")
 }
@@ -110,6 +111,7 @@ model Trip {
   @@index([userId])
   @@index([teamId])
   @@index([status])
+  @@index([isPackage, createdAt])
   @@map("trips")
 }
 
@@ -442,6 +444,7 @@ model LeadInquiry {
   @@index([userId])
   @@index([assignedTo])
   @@index([status])
+  @@index([createdAt])
   @@map("trip_inquiries")
 }
 
