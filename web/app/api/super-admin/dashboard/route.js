@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth";
-import { isExpired } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -12,6 +11,16 @@ const monthEnd = (y, m) => new Date(Date.UTC(y, m + 1, 1));
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 // GET /api/super-admin/dashboard — platform-wide analytics.
+//
+// This route used to take 6 sequential round-trips to the DB (each stage
+// awaited before the next could start), with one stage alone firing 18
+// separate per-month count queries (3 queries x 6 months) — on a pooled
+// connection with a low connection_limit, that fan-out queued up and made
+// the dashboard take ages to load. Everything below is independent of
+// everything else (nothing here actually needs another query's result), so
+// it all fires as a single Promise.all batch, and the 18 per-month counts
+// are collapsed into 3 grouped queries (one per metric, all 6 months at
+// once) via date_trunc.
 export async function GET(request) {
   const { error, status } = await requireSuperAdmin(request);
   if (error) return NextResponse.json({ message: error }, { status });
@@ -19,53 +28,67 @@ export async function GET(request) {
   const now = new Date();
   const y = now.getUTCFullYear();
   const m = now.getUTCMonth();
+  const monthStartCur = monthStart(y, m);
+  const monthEndCur = monthEnd(y, m);
+  const trialWindowEnd = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-  const [totalAdmins, totalTeams, totalTrips, activeTeams, adminUsers, plans] = await Promise.all([
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const gm = m - i;
+    const gy = y + Math.floor(gm / 12);
+    const gmonth = ((gm % 12) + 12) % 12;
+    months.push({ key: `${gy}-${gmonth}`, label: `${MONTHS[gmonth]} ${gy}`, start: monthStart(gy, gmonth) });
+  }
+  const growthRangeStart = months[0].start;
+  const growthRangeEnd = monthEndCur;
+  const monthKey = (d) => {
+    const dt = new Date(d);
+    return `${dt.getUTCFullYear()}-${dt.getUTCMonth()}`;
+  };
+
+  const [
+    totalAdmins,
+    totalTeams,
+    totalTrips,
+    activeTeams,
+    plans,
+    newAdminsThisMonth,
+    tripsThisMonth,
+    platformRevenueAgg,
+    subscriptionsAdmin,
+    trialsExpiringSoonRows,
+    totalInquiries,
+    pipelineAgg,
+    inquiryGroups,
+    totalDemos,
+    pendingDemos,
+    recentDemos,
+    recentAdmins,
+    adminsByMonth,
+    tripsByMonth,
+    inquiriesByMonth,
+  ] = await Promise.all([
     prisma.user.count({ where: { role: "admin" } }),
     prisma.team.count(),
     prisma.trip.count({ where: { isPackage: false } }),
     prisma.team.count({ where: { isActive: true } }),
-    prisma.user.findMany({ where: { role: "admin" }, select: { id: true } }),
     prisma.plan.findMany(),
-  ]);
-  const adminIds = adminUsers.map((a) => a.id);
-  const planByKey = new Map(plans.map((p) => [p.key, p]));
-
-  const [newAdminsThisMonth, tripsThisMonth, subscriptions, platformRevenueAgg] = await Promise.all([
-    prisma.user.count({ where: { role: "admin", createdAt: { gte: monthStart(y, m), lt: monthEnd(y, m) } } }),
-    prisma.trip.count({ where: { isPackage: false, createdAt: { gte: monthStart(y, m), lt: monthEnd(y, m) } } }),
-    prisma.subscription.findMany({ where: { userId: { in: adminIds } } }),
+    prisma.user.count({ where: { role: "admin", createdAt: { gte: monthStartCur, lt: monthEndCur } } }),
+    prisma.trip.count({ where: { isPackage: false, createdAt: { gte: monthStartCur, lt: monthEndCur } } }),
     prisma.trip.aggregate({ where: { isPackage: false }, _sum: { paidAmount: true } }),
-  ]);
-
-  const planBreakdown = {
-    trial: subscriptions.filter((s) => s.planKey === "trial").length,
-    monthly: subscriptions.filter((s) => s.planKey === "monthly").length,
-    six_months: subscriptions.filter((s) => s.planKey === "six_months").length,
-    yearly: subscriptions.filter((s) => s.planKey === "yearly").length,
-  };
-
-  const activePaid = subscriptions.filter((s) => s.status === "active" && s.endsAt && new Date(s.endsAt) > now);
-  let mrr = 0;
-  for (const sub of activePaid) {
-    const plan = planByKey.get(sub.planKey);
-    const price = plan ? num(plan.price) : 0;
-    const durationMo = Math.max(plan ? Number(plan.durationMonths || 1) : 1, 1);
-    mrr += price / durationMo;
-  }
-  mrr = Math.round(mrr);
-  const arr = mrr * 12;
-
-  const trialsExpiringSoon = await prisma.subscription.count({
-    where: {
-      userId: { in: adminIds },
-      planKey: "trial",
-      status: "trialing",
-      trialEndsAt: { gte: now, lte: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000) },
-    },
-  });
-
-  const [totalInquiries, pipelineAgg, inquiryGroups, totalDemos, pendingDemos, recentDemos] = await Promise.all([
+    prisma.$queryRaw`
+      SELECT s.plan_key AS "planKey", s.status, s.ends_at AS "endsAt"
+      FROM subscriptions s
+      JOIN users u ON u.id = s.user_id
+      WHERE u.role = 'admin'
+    `,
+    prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count
+      FROM subscriptions s
+      JOIN users u ON u.id = s.user_id
+      WHERE u.role = 'admin' AND s.plan_key = 'trial' AND s.status = 'trialing'
+        AND s.trial_ends_at >= ${now} AND s.trial_ends_at <= ${trialWindowEnd}
+    `,
     prisma.leadInquiry.count(),
     prisma.leadInquiry.aggregate({ where: { approximateBudget: { not: null } }, _sum: { approximateBudget: true } }),
     prisma.leadInquiry.groupBy({ by: ["status"], _count: { _all: true } }),
@@ -76,7 +99,52 @@ export async function GET(request) {
       take: 5,
       select: { id: true, name: true, companyName: true, agencyType: true, noOfEmployees: true, status: true, createdAt: true },
     }),
+    prisma.user.findMany({
+      where: { role: "admin" },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: { id: true, name: true, email: true, status: true, createdAt: true },
+    }),
+    prisma.$queryRaw`
+      SELECT date_trunc('month', created_at) AS month, COUNT(*)::int AS count
+      FROM users
+      WHERE role = 'admin' AND created_at >= ${growthRangeStart} AND created_at < ${growthRangeEnd}
+      GROUP BY 1
+    `,
+    prisma.$queryRaw`
+      SELECT date_trunc('month', created_at) AS month, COUNT(*)::int AS count
+      FROM trips
+      WHERE is_package = false AND created_at >= ${growthRangeStart} AND created_at < ${growthRangeEnd}
+      GROUP BY 1
+    `,
+    prisma.$queryRaw`
+      SELECT date_trunc('month', created_at) AS month, COUNT(*)::int AS count
+      FROM trip_inquiries
+      WHERE created_at >= ${growthRangeStart} AND created_at < ${growthRangeEnd}
+      GROUP BY 1
+    `,
   ]);
+
+  const planByKey = new Map(plans.map((p) => [p.key, p]));
+
+  const planBreakdown = {
+    trial: subscriptionsAdmin.filter((s) => s.planKey === "trial").length,
+    monthly: subscriptionsAdmin.filter((s) => s.planKey === "monthly").length,
+    six_months: subscriptionsAdmin.filter((s) => s.planKey === "six_months").length,
+    yearly: subscriptionsAdmin.filter((s) => s.planKey === "yearly").length,
+  };
+
+  const activePaid = subscriptionsAdmin.filter((s) => s.status === "active" && s.endsAt && new Date(s.endsAt) > now);
+  let mrr = 0;
+  for (const sub of activePaid) {
+    const plan = planByKey.get(sub.planKey);
+    const price = plan ? num(plan.price) : 0;
+    const durationMo = Math.max(plan ? Number(plan.durationMonths || 1) : 1, 1);
+    mrr += price / durationMo;
+  }
+  mrr = Math.round(mrr);
+  const arr = mrr * 12;
+  const trialsExpiringSoon = trialsExpiringSoonRows[0]?.count ?? 0;
 
   const rawByStatus = new Map(inquiryGroups.map((g) => [g.status, g._count._all]));
   const inquiryByStatus = {};
@@ -84,34 +152,16 @@ export async function GET(request) {
     inquiryByStatus[s] = rawByStatus.get(s) || 0;
   }
 
-  // 6-month growth — all 6 months (3 queries each) fired together instead of
-  // one month at a time, which was turning this into 6 sequential round-trip
-  // batches and was the main reason this route hung/timed out.
-  const months = [];
-  for (let i = 5; i >= 0; i--) {
-    const gm = m - i;
-    const gy = y + Math.floor(gm / 12);
-    const gmonth = ((gm % 12) + 12) % 12;
-    months.push({ label: `${MONTHS[gmonth]} ${gy}`, start: monthStart(gy, gmonth), end: monthEnd(gy, gmonth) });
-  }
-  const [growth, recentAdmins] = await Promise.all([
-    Promise.all(
-      months.map(async ({ label, start, end }) => {
-        const [admins, trips, inquiries] = await Promise.all([
-          prisma.user.count({ where: { role: "admin", createdAt: { gte: start, lt: end } } }),
-          prisma.trip.count({ where: { isPackage: false, createdAt: { gte: start, lt: end } } }),
-          prisma.leadInquiry.count({ where: { createdAt: { gte: start, lt: end } } }),
-        ]);
-        return { month: label, admins, trips, inquiries };
-      })
-    ),
-    prisma.user.findMany({
-      where: { role: "admin" },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      select: { id: true, name: true, email: true, status: true, createdAt: true },
-    }),
-  ]);
+  const adminsByMonthMap = new Map(adminsByMonth.map((r) => [monthKey(r.month), r.count]));
+  const tripsByMonthMap = new Map(tripsByMonth.map((r) => [monthKey(r.month), r.count]));
+  const inquiriesByMonthMap = new Map(inquiriesByMonth.map((r) => [monthKey(r.month), r.count]));
+  const growth = months.map(({ key, label }) => ({
+    month: label,
+    admins: adminsByMonthMap.get(key) || 0,
+    trips: tripsByMonthMap.get(key) || 0,
+    inquiries: inquiriesByMonthMap.get(key) || 0,
+  }));
+
   const recentSubs = await prisma.subscription.findMany({ where: { userId: { in: recentAdmins.map((u) => u.id) } } });
   const recentSubByUser = new Map(recentSubs.map((s) => [s.userId, s]));
   const recentBusinesses = recentAdmins.map((u) => ({
