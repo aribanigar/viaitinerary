@@ -113,7 +113,11 @@ export async function POST(request, { params }) {
     return NextResponse.json({ message: "Agency contact email is not set." }, { status: 422 });
   }
 
-  if (trip.status === "pending") {
+  // Trips created via duplicate/package-use/lead-conversion start at
+  // "draft" rather than "pending" — without including it here, sending a
+  // confirmation on one of those never actually marks the trip confirmed,
+  // silently excluding it from "confirmed" revenue/reporting filters forever.
+  if (trip.status === "pending" || trip.status === "draft") {
     await prisma.trip.update({ where: { id: trip.id }, data: { status: "confirmed", confirmationSent: true } });
   } else {
     await prisma.trip.update({ where: { id: trip.id }, data: { confirmationSent: true } });

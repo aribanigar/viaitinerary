@@ -32,10 +32,10 @@ function waitForImages(node) {
 }
 
 /**
- * Export the on-screen itinerary preview to a downloadable PDF.
- * @param {string} filename  e.g. "TRP123_Itinerary.pdf"
+ * Rasterize the on-screen itinerary preview into a jsPDF document. Shared by
+ * both the direct-download and share (Blob) export paths below.
  */
-export async function exportPreviewToPdf(filename = "Itinerary.pdf") {
+async function buildPreviewPdf() {
   // the preview renders either the Modern or Classic template wrapper
   const source = document.querySelector(
     ".trip-preview-wrapper, .classic-template-wrapper",
@@ -95,8 +95,27 @@ export async function exportPreviewToPdf(filename = "Itinerary.pdf") {
       pdf.addImage(img, "JPEG", 0, 0, A4.w, A4.h, undefined, "FAST");
     }
 
-    pdf.save(filename);
+    return pdf;
   } finally {
     holder.remove();
   }
+}
+
+/**
+ * Export the on-screen itinerary preview to a downloadable PDF.
+ * @param {string} filename  e.g. "TRP123_Itinerary.pdf"
+ */
+export async function exportPreviewToPdf(filename = "Itinerary.pdf") {
+  const pdf = await buildPreviewPdf();
+  pdf.save(filename);
+}
+
+/**
+ * Same rasterization, returned as a Blob instead of triggering a download —
+ * for handing the PDF to the Web Share API (e.g. sharing straight to
+ * WhatsApp) rather than saving it to disk first.
+ */
+export async function exportPreviewToPdfBlob() {
+  const pdf = await buildPreviewPdf();
+  return pdf.output("blob");
 }

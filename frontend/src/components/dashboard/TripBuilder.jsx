@@ -31,6 +31,7 @@ import {
   ShieldCheck,
   Clock,
   Package as PackageIcon,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -95,6 +96,7 @@ const TripBuilder = ({ mode }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [loadedTabId, setLoadedTabId] = useState(null);
   const [defaultTripImage, setDefaultTripImage] = useState("");
@@ -154,6 +156,21 @@ const TripBuilder = ({ mode }) => {
   const [includeGST, setIncludeGST] = useState(true);
   const [gstPercentage, setGstPercentage] = useState(0);
   const [profitMarginPercentage, setProfitMarginPercentage] = useState(0);
+  // Guards the auto-cost effect below from firing before gstPercentage/
+  // profitMarginPercentage have been restored for the trip being loaded —
+  // without this, reopening a saved trip briefly has both at their 0
+  // defaults, which the effect would treat as a real edit and use to
+  // silently overwrite (and then autosave) the trip's actual quoted price.
+  // Only flips true once the agent actually edits pricing themselves.
+  const [pricingTouched, setPricingTouched] = useState(false);
+  const handleGstPercentageChange = (value) => {
+    setPricingTouched(true);
+    setGstPercentage(value);
+  };
+  const handleProfitMarginPercentageChange = (value) => {
+    setPricingTouched(true);
+    setProfitMarginPercentage(value);
+  };
   const [otherCosts, setOtherCosts] = useState([]);
   const [itinerary, setItinerary] = useState([]);
 
@@ -284,6 +301,7 @@ const TripBuilder = ({ mode }) => {
       cancellationCharge: item.cancellationCharge ?? item.cancellation_charge ?? "",
       cancellationNote: item.cancellationNote ?? item.cancellation_note ?? "",
       alternateOptions: item.alternateOptions ?? item.alternate_options ?? [],
+      markupPercentage: item.markupPercentage ?? item.markup_percentage ?? "",
     };
   }, []);
 
@@ -322,6 +340,7 @@ const TripBuilder = ({ mode }) => {
     setHasDraft,
     setGstPercentage,
     setProfitMarginPercentage,
+    setPricingTouched,
     formatImageUrl,
     normalizeAccommodation,
     toast,
@@ -454,6 +473,7 @@ const TripBuilder = ({ mode }) => {
     cancellationCharge: "",
     cancellationNote: "",
     alternateOptions: [],
+    markupPercentage: "",
   });
 
   const uniqueCities = [...new Set(masterHotels.map((h) => h.city))]
@@ -472,6 +492,7 @@ const TripBuilder = ({ mode }) => {
     vehicleType: "",
     quantity: 1,
     remarks: "",
+    markupPercentage: "",
   });
 
   const handleHotelPhotoChange = (e) => {
@@ -521,6 +542,7 @@ const TripBuilder = ({ mode }) => {
         cancellationCharge: "",
         cancellationNote: "",
         alternateOptions: [],
+        markupPercentage: "",
       });
       setEditingHotelId(null);
       setIsHotelModalOpen(false);
@@ -553,6 +575,7 @@ const TripBuilder = ({ mode }) => {
         vehicleType: "",
         quantity: 1,
         remarks: "",
+        markupPercentage: "",
       });
       setEditingTransportId(null);
       setIsTransportModalOpen(false);
@@ -584,6 +607,7 @@ const TripBuilder = ({ mode }) => {
       cancellationCharge: normalizedHotel.cancellationCharge ?? "",
       cancellationNote: normalizedHotel.cancellationNote ?? "",
       alternateOptions: normalizedHotel.alternateOptions || [],
+      markupPercentage: normalizedHotel.markupPercentage ?? "",
     });
     setEditingHotelId(hotel.id);
     setIsHotelModalOpen(true);
@@ -600,6 +624,7 @@ const TripBuilder = ({ mode }) => {
       vehicleType: transport.vehicleType,
       quantity: transport.quantity || 1,
       remarks: transport.remarks,
+      markupPercentage: transport.markupPercentage ?? "",
     });
     setEditingTransportId(transport.id);
     setIsTransportModalOpen(true);
@@ -728,12 +753,41 @@ const TripBuilder = ({ mode }) => {
     0,
   );
 
-  const netCost = totalHotelCost + totalVehicleCost + totalOtherCost;
-  const gstAmountValue = includeGST ? netCost * (gstPercentage / 100) : 0;
-  const costWithGst = netCost + gstAmountValue;
-  const calculatedTotalCost = costWithGst * (1 + profitMarginPercentage / 100);
+  // Per-item markup override falls back to the trip-wide margin when unset —
+  // this is what lets one hotel/vehicle carry a different margin than the
+  // rest of the trip without touching the raw cost totals shown above.
+  const effectiveMarkup = (item) =>
+    item.markupPercentage !== undefined &&
+    item.markupPercentage !== null &&
+    item.markupPercentage !== ""
+      ? parseFloat(item.markupPercentage) || 0
+      : profitMarginPercentage || 0;
+
+  // Marked-up (client-facing) totals, used only for the grand total below —
+  // by the distributive property this equals totalHotelCost*(1+margin%) etc.
+  // when no item overrides the trip margin, so the final total is unchanged
+  // for every existing trip.
+  const totalHotelCostMarkedUp = accommodations.reduce(
+    (sum, item) => sum + calculateHotelCost(item) * (1 + effectiveMarkup(item) / 100),
+    0,
+  );
+  const totalVehicleCostMarkedUp = transportation.reduce(
+    (sum, item) => sum + calculateVehicleCost(item) * (1 + effectiveMarkup(item) / 100),
+    0,
+  );
+  const totalOtherCostMarkedUp = totalOtherCost * (1 + (profitMarginPercentage || 0) / 100);
+
+  const netCostMarkedUp = totalHotelCostMarkedUp + totalVehicleCostMarkedUp + totalOtherCostMarkedUp;
+  const gstAmountValue = includeGST ? netCostMarkedUp * (gstPercentage / 100) : 0;
+  const costWithGst = netCostMarkedUp + gstAmountValue;
+  const calculatedTotalCost = costWithGst;
 
   useEffect(() => {
+    // Don't touch the trip's saved cost until the agent has actually edited
+    // GST%/margin% themselves — otherwise this fires the instant a trip
+    // loads (before its real percentages, if any, have been restored) and
+    // silently overwrites its quoted price.
+    if (!pricingTouched) return;
     const nextCost = Math.max(0, Math.round(calculatedTotalCost)).toString();
     setTripInfo((prev) =>
       prev.cost === nextCost
@@ -743,7 +797,7 @@ const TripBuilder = ({ mode }) => {
             cost: nextCost,
           },
     );
-  }, [calculatedTotalCost]);
+  }, [calculatedTotalCost, pricingTouched]);
 
   const removeDay = (id) => {
     const updatedItinerary = itinerary
@@ -930,6 +984,7 @@ const TripBuilder = ({ mode }) => {
       cancellation_charge: item.cancellationCharge === "" ? null : item.cancellationCharge,
       cancellation_note: item.cancellationNote ?? null,
       alternate_options: item.alternateOptions ?? [],
+      markup_percentage: item.markupPercentage === "" ? null : item.markupPercentage,
     }));
 
     const formattedTransportations = sortedTransportation.map((item, index) => {
@@ -954,6 +1009,7 @@ const TripBuilder = ({ mode }) => {
         quantity: item.quantity || 1,
         remarks: item.remarks,
         day_number: dayNumber, // Include day_number for PDF rendering
+        markup_percentage: item.markupPercentage === "" ? null : item.markupPercentage,
       };
     });
 
@@ -961,6 +1017,8 @@ const TripBuilder = ({ mode }) => {
       ...tripInfo,
       include_gst: includeGST,
       gst_amount: includeGST ? Number(gstAmountValue.toFixed(2)) : 0,
+      gst_percentage: gstPercentage,
+      profit_margin_percentage: profitMarginPercentage,
       use_flight: tripInfo.useFlight,
       transport_details: (tripInfo.transportDetails || []).map((t) => ({
         ...t,
@@ -1062,6 +1120,53 @@ const TripBuilder = ({ mode }) => {
       toast.error("There was an error generating your PDF. Please try again.");
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleShareWhatsApp = async () => {
+    const greeting = `Hi ${tripInfo.clientName || "there"}, here's your itinerary for ${tripInfo.tripTitle || "your trip"} from ${agencySettings.agencyName || "us"}.`;
+    try {
+      setSharing(true);
+      const { exportPreviewToPdfBlob } = await import("../../utils/exportPdf");
+      const blob = await exportPreviewToPdfBlob();
+      const filename = `${tripInfo.tripId || "Trip"}_Itinerary.pdf`;
+      const file = new File([blob], filename, { type: "application/pdf" });
+
+      // Web Share API (mobile Chrome/Safari): opens the native share sheet
+      // with WhatsApp as a target and the PDF attached directly — true
+      // one-click sharing. Not supported for files on desktop Chrome.
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: tripInfo.tripTitle || "Itinerary",
+          text: greeting,
+        });
+        return;
+      }
+
+      // Desktop fallback: WhatsApp's web/deep-link only pre-fills text, it
+      // can't attach a file — so download the PDF and open a WhatsApp chat
+      // with the greeting, and tell the agent to attach the file themselves.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      const phone = (tripInfo.clientPhone || "").replace(/[^\d]/g, "");
+      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(`${greeting} PDF downloaded — attach it here.`)}`;
+      window.open(waUrl, "_blank", "noopener,noreferrer");
+      toast.info("PDF downloaded — attach it in the WhatsApp chat that just opened.");
+    } catch (err) {
+      if (err?.name !== "AbortError") {
+        console.error("WhatsApp share error:", err);
+        toast.error("Couldn't share the itinerary. Please try again.");
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -1324,6 +1429,22 @@ const TripBuilder = ({ mode }) => {
         )}
       </button>
       <button
+        onClick={handleShareWhatsApp}
+        disabled={loading || saving || exporting || sharing}
+        className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {sharing ? (
+          <>
+            <Loader size="sm" text="" inline color="text-[#181c22]" />
+            <span>Sharing…</span>
+          </>
+        ) : (
+          <>
+            <MessageCircle className="w-3.5 h-3.5" /> Share
+          </>
+        )}
+      </button>
+      <button
         onClick={handleSaveTrip}
         disabled={loading || saving || exporting}
         className="px-4 py-2 rounded-full text-xs font-semibold bg-[#e7f63c] text-[#181c22] hover:bg-[#d4e42e] transition-colors flex items-center gap-1.5 shadow-sm shadow-[#e7f63c]/40 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1524,9 +1645,9 @@ const TripBuilder = ({ mode }) => {
                         otherCosts={otherCosts}
                         setOtherCosts={setOtherCosts}
                         gstPercentage={gstPercentage}
-                        setGstPercentage={setGstPercentage}
+                        setGstPercentage={handleGstPercentageChange}
                         profitMarginPercentage={profitMarginPercentage}
-                        setProfitMarginPercentage={setProfitMarginPercentage}
+                        setProfitMarginPercentage={handleProfitMarginPercentageChange}
                         calculatedTotalCost={calculatedTotalCost}
                       />
                     )}
@@ -1582,6 +1703,7 @@ const TripBuilder = ({ mode }) => {
         urlTripId={urlTripId}
         reservedAccommodationDates={reservedAccommodationDates}
         token={token}
+        tripMarginPercentage={profitMarginPercentage}
       />
 
       <TransportModal
@@ -1594,6 +1716,7 @@ const TripBuilder = ({ mode }) => {
         availableVehicles={availableVehicles}
         tripInfo={tripInfo}
         urlTripId={urlTripId}
+        tripMarginPercentage={profitMarginPercentage}
       />
     </>
   );

@@ -92,6 +92,7 @@ export const HotelModal = ({
   urlTripId,
   reservedAccommodationDates = [],
   token,
+  tripMarginPercentage,
 }) => {
   const selectedHotel = masterHotels.find(
     (hotel) => hotel.id === hotelForm.hotelId,
@@ -603,6 +604,25 @@ export const HotelModal = ({
           </div>
         </div>
 
+        <div>
+          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
+            Markup Override %
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-3 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
+            placeholder={`Trip default: ${tripMarginPercentage || 0}%`}
+            value={hotelForm.markupPercentage}
+            onChange={(e) =>
+              setHotelForm({ ...hotelForm, markupPercentage: e.target.value })
+            }
+          />
+          <p className="mt-1.5 text-[10px] text-[#181c22]/40 font-medium">
+            Leave blank to use the trip's overall margin for this hotel.
+          </p>
+        </div>
+
         <div className="pt-2 border-t border-black/5">
           <div className="flex items-center justify-between mb-2">
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-[#181c22]/70 uppercase tracking-[0.12em]">
@@ -747,6 +767,7 @@ export const TransportModal = ({
   availableVehicles,
   tripInfo,
   urlTripId,
+  tripMarginPercentage,
 }) => {
   return (
     <Modal
@@ -901,6 +922,24 @@ export const TransportModal = ({
                 <Plus className="w-3 h-3 text-[#5b6472]" />
               </button>
             </div>
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+              Markup Override %
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
+              placeholder={`Trip default: ${tripMarginPercentage || 0}%`}
+              value={transportForm.markupPercentage}
+              onChange={(e) =>
+                setTransportForm({
+                  ...transportForm,
+                  markupPercentage: e.target.value,
+                })
+              }
+            />
           </div>
         </div>
 

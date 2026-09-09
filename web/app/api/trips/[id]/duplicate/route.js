@@ -4,6 +4,7 @@ import { userFromRequest } from "@/lib/auth";
 import { adminIdOf, teamIdOf } from "@/lib/scope";
 import { serializeTrip } from "@/lib/serialize";
 import { TRIP_INCLUDE } from "@/lib/trips";
+import { canCreateTrip, incrementTripsUsed } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,11 @@ export async function POST(request, { params }) {
       include: TRIP_INCLUDE,
     });
     if (!original) return NextResponse.json({ message: "Not found" }, { status: 404 });
+
+    // Subscription gate (mirrors POST /api/trips — a duplicate is still a
+    // new trip and shouldn't be a free way past a trial's trip limit).
+    const gate = await canCreateTrip(user);
+    if (!gate.allowed) return NextResponse.json({ message: gate.reason }, { status: gate.status });
 
     const newTripId = `TRP${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -43,6 +49,8 @@ export async function POST(request, { params }) {
         duration: original.duration,
         cost: original.cost,
         gstAmount: original.gstAmount,
+        gstPercentage: original.gstPercentage,
+        profitMarginPercentage: original.profitMarginPercentage,
         currency: original.currency,
         imagePath: original.imagePath,
         status: "draft",
@@ -82,6 +90,13 @@ export async function POST(request, { params }) {
             pricePerRoom: a.pricePerRoom,
             bedPrices: a.bedPrices ?? [],
             imagePath: a.imagePath,
+            extraAdultCount: a.extraAdultCount,
+            alternateOptions: a.alternateOptions ?? [],
+            markupPercentage: a.markupPercentage,
+            // Cancellation state is a booking-event fact about the
+            // original stay, not reusable config — a duplicate starts
+            // un-cancelled (cancelledAt/cancellationCharge/cancellationNote
+            // intentionally omitted, defaulting to null).
           })),
         },
         transportations: {
@@ -94,11 +109,13 @@ export async function POST(request, { params }) {
             vehicleType: t.vehicleType,
             quantity: t.quantity,
             remarks: t.remarks,
+            markupPercentage: t.markupPercentage,
           })),
         },
       },
       include: TRIP_INCLUDE,
     });
+    await incrementTripsUsed(adminId);
 
     return NextResponse.json(serializeTrip(copy), { status: 201 });
   } catch (err) {

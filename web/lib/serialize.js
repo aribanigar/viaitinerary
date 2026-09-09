@@ -48,6 +48,7 @@ export function serializeAccommodation(a) {
     cancellation_charge: num(a.cancellationCharge),
     cancellation_note: a.cancellationNote ?? null,
     alternate_options: a.alternateOptions ?? [],
+    markup_percentage: num(a.markupPercentage),
     hotel: a.hotel ? { id: a.hotel.id, name: a.hotel.name, city: a.hotel.city } : null,
   };
 }
@@ -63,6 +64,7 @@ export function serializeTransportation(t) {
     vehicle_type: t.vehicleType,
     quantity: t.quantity,
     remarks: t.remarks,
+    markup_percentage: num(t.markupPercentage),
     vehicle: t.vehicle ? { id: t.vehicle.id, name: t.vehicle.name, price: num(t.vehicle.price) } : null,
   };
 }
@@ -85,6 +87,8 @@ export function serializeTrip(trip) {
     duration: trip.duration,
     cost: num(trip.cost),
     gst_amount: num(trip.gstAmount),
+    gst_percentage: num(trip.gstPercentage),
+    profit_margin_percentage: num(trip.profitMarginPercentage),
     paid_amount: num(trip.paidAmount),
     refunded_amount: num(trip.refundedAmount),
     currency: trip.currency,
