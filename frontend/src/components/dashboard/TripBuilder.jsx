@@ -32,12 +32,15 @@ import {
   Clock,
   Package as PackageIcon,
   MessageCircle,
+  History as HistoryIcon,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
   createTrip,
   updateTrip,
   fetchTrips,
+  fetchTripRevisions,
+  logTripSend,
 } from "../../api/trips";
 import {
   createPackage,
@@ -58,6 +61,12 @@ import {
   DRAFT_KEY,
   useTripBuilderData,
 } from "./trip-builder/useTripBuilderData";
+
+const TRIGGER_LABELS = {
+  export: "PDF Export",
+  whatsapp_share: "WhatsApp Share",
+  confirmation_email: "Confirmation Email",
+};
 
 const TABS_KEY = "builder_open_tabs";
 const readTabs = () => {
@@ -97,6 +106,9 @@ const TripBuilder = ({ mode }) => {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [amendmentsOpen, setAmendmentsOpen] = useState(false);
+  const [revisions, setRevisions] = useState([]);
+  const [revisionsLoading, setRevisionsLoading] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [loadedTabId, setLoadedTabId] = useState(null);
   const [defaultTripImage, setDefaultTripImage] = useState("");
@@ -1115,11 +1127,38 @@ const TripBuilder = ({ mode }) => {
       // WYSIWYG: export exactly what the live preview shows (any template).
       const { exportPreviewToPdf } = await import("../../utils/exportPdf");
       await exportPreviewToPdf(`${tripInfo.tripId || "Trip"}_Itinerary.pdf`);
+      logSendForAmendmentHistory("export");
     } catch (err) {
       console.error("PDF generation error:", err);
       toast.error("There was an error generating your PDF. Please try again.");
     } finally {
       setExporting(false);
+    }
+  };
+
+  // Log a "sent" event for the amendment history — only meaningful once the
+  // trip actually has a saved server-side record (urlTripId). Fire-and-forget:
+  // a logging failure shouldn't block or fail the export/share the agent is
+  // actually waiting on.
+  const logSendForAmendmentHistory = (trigger) => {
+    if (!urlTripId) return;
+    logTripSend(token, urlTripId, trigger).catch((err) =>
+      console.warn("Failed to log amendment history:", err),
+    );
+  };
+
+  const openAmendments = async () => {
+    setAmendmentsOpen(true);
+    if (!urlTripId) return;
+    setRevisionsLoading(true);
+    try {
+      const res = await fetchTripRevisions(token, urlTripId);
+      setRevisions(res.data || []);
+    } catch (err) {
+      console.error("Failed to load amendment history:", err);
+      toast.error("Couldn't load amendment history.");
+    } finally {
+      setRevisionsLoading(false);
     }
   };
 
@@ -1141,6 +1180,7 @@ const TripBuilder = ({ mode }) => {
           title: tripInfo.tripTitle || "Itinerary",
           text: greeting,
         });
+        logSendForAmendmentHistory("whatsapp_share");
         return;
       }
 
@@ -1160,6 +1200,7 @@ const TripBuilder = ({ mode }) => {
       const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(`${greeting} PDF downloaded — attach it here.`)}`;
       window.open(waUrl, "_blank", "noopener,noreferrer");
       toast.info("PDF downloaded — attach it in the WhatsApp chat that just opened.");
+      logSendForAmendmentHistory("whatsapp_share");
     } catch (err) {
       if (err?.name !== "AbortError") {
         console.error("WhatsApp share error:", err);
@@ -1411,6 +1452,14 @@ const TripBuilder = ({ mode }) => {
           />
           Locked
         </label>
+      )}
+      {urlTripId && (
+        <button
+          onClick={openAmendments}
+          className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5"
+        >
+          <HistoryIcon className="w-3.5 h-3.5" /> Amendments
+        </button>
       )}
       <button
         onClick={handleExport}
@@ -1718,6 +1767,60 @@ const TripBuilder = ({ mode }) => {
         urlTripId={urlTripId}
         tripMarginPercentage={profitMarginPercentage}
       />
+
+      {amendmentsOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8">
+          <div className="bg-white rounded-[2rem] w-full max-w-lg p-8 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <button
+              onClick={() => setAmendmentsOpen(false)}
+              className="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6 flex-shrink-0">
+              <h2 className="text-xl font-black text-slate-900">Amendment History</h2>
+              <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-wider">
+                Every version sent to the client
+              </p>
+            </div>
+            <div className="flex-grow overflow-y-auto pr-2 -mr-2 custom-scrollbar space-y-4">
+              {revisionsLoading ? (
+                <Loader size="sm" text="Loading history…" />
+              ) : revisions.length === 0 ? (
+                <p className="text-sm text-slate-400 font-medium">
+                  Nothing sent yet — export, share, or send a confirmation to start the trail.
+                </p>
+              ) : (
+                revisions.map((rev) => (
+                  <div key={rev.id} className="border border-black/5 rounded-xl p-4 bg-[#f9f9f9]/60">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-black text-[#181c22]">
+                        Version {rev.version_number}
+                      </span>
+                      <span className="text-[10px] font-bold text-[#9aa3b2] uppercase tracking-wider">
+                        {TRIGGER_LABELS[rev.trigger] || rev.trigger}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#9aa3b2] font-medium mb-2">
+                      {new Date(rev.created_at).toLocaleString("en-IN", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {(rev.change_summary || []).map((line, idx) => (
+                        <li key={idx} className="text-xs text-[#5b6472] font-medium">
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

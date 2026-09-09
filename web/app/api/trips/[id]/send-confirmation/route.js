@@ -4,6 +4,7 @@ import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
 import { TRIP_INCLUDE } from "@/lib/trips";
 import { currencySymbol } from "@/lib/serialize";
+import { recordTripRevision } from "@/lib/revisions";
 import { mailerForAdminId, sendMail, hotelBookingHtml, cabBookingHtml, confirmationHtml } from "@/lib/mailer";
 import { renderReceiptPdf, renderInvoicePdf, renderConfirmationPdf } from "@/lib/pdf";
 
@@ -138,6 +139,8 @@ export async function POST(request, { params }) {
     text: message,
     attachments: [{ filename: `${trip.tripId}_Confirmation.pdf`, content: confirmationPdf, contentType: "application/pdf" }],
   });
+
+  await recordTripRevision(trip.id, "confirmation_email");
 
   const response = { message: "Confirmation email sent for the client." };
   if (trip.clientPhone) {

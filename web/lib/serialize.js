@@ -12,6 +12,16 @@ export function currencySymbol(currency) {
   return m ? m[1].trim() : String(currency).trim();
 }
 
+export function serializeTripRevision(r) {
+  return {
+    id: r.id,
+    version_number: r.versionNumber,
+    trigger: r.trigger,
+    change_summary: r.changeSummary ?? [],
+    created_at: iso(r.createdAt),
+  };
+}
+
 export function serializeItinerary(it) {
   return {
     id: it.id,

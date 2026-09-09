@@ -108,11 +108,31 @@ model Trip {
   destinationRef  Destination? @relation(fields: [destinationId], references: [id])
   obligations     AccountingObligation[]
   settlements     AccountingSettlement[]
+  revisions       TripRevision[]
 
   @@index([userId])
   @@index([teamId])
   @@index([status])
   @@map("trips")
+}
+
+// A logged snapshot of a trip each time it's actually sent to/for the client
+// (export, WhatsApp share, booking confirmation) — an amendment trail, not an
+// autosave log. Only created when something client-facing changed since the
+// last logged send, so re-sending an untouched quote doesn't spam the trail.
+model TripRevision {
+  id            Int      @id @default(autoincrement())
+  tripId        Int      @map("trip_id")
+  versionNumber Int      @map("version_number")
+  trigger       String
+  snapshot      Json
+  changeSummary Json?    @map("change_summary")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@map("trip_revisions")
 }
 
 model Itinerary {
