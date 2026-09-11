@@ -44,11 +44,11 @@ const Hero = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl md:text-6xl xl:text-7xl font-black text-white tracking-tight leading-[1.15] md:leading-[1.1] mb-6"
           >
-            Powering the <br className="hidden md:block" />
-            World’s <br className="hidden md:block" />
-            <span className="text-[#faa81e]">Best Travel</span>{" "}
+            Powering the World’s
             <br className="hidden md:block" />
-            Businesses
+            <span className="font-serif italic font-normal text-[#faa81e]">
+              Best Travel Businesses
+            </span>
           </motion.h1>
 
           <motion.p

@@ -47,7 +47,10 @@ const Showcase = () => {
               viewport={{ once: true }}
               className="text-3xl md:text-6xl font-black text-white mb-6 leading-[1.2] md:leading-tight"
             >
-              Create Itineraries That Sell Themselves
+              Create Itineraries That{" "}
+              <span className="font-serif italic font-normal">
+                Sell Themselves
+              </span>
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -96,7 +99,7 @@ const Showcase = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-3xl font-black text-white mb-2 leading-tight">
+                  <h3 className="text-4xl font-serif italic font-normal text-white mb-2 leading-tight">
                     {item.city}
                   </h3>
 

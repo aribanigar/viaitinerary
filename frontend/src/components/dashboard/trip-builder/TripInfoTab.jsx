@@ -7,6 +7,8 @@ import {
   Pencil,
   Plus,
   Settings as SettingsIcon,
+  Sparkles,
+  BookOpen,
   Trash2,
   Users,
   X,
@@ -74,19 +76,35 @@ const TripInfoTab = ({
         <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
           TEMPLATE STYLE
         </label>
-        <select
-          value={resolvedTemplate}
-          onChange={(e) =>
-            setTripInfo({
-              ...tripInfo,
-              template: e.target.value,
-            })
-          }
-          className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
-        >
-          <option value="ModernTemplate">Modern Elegant</option>
-          <option value="ClassicTemplate">Classic Professional</option>
-        </select>
+        <div className="space-y-1.5">
+          {[
+            { value: "ModernTemplate", label: "Modern Elegant", Icon: Sparkles },
+            { value: "ClassicTemplate", label: "Classic Professional", Icon: BookOpen },
+          ].map(({ value, label, Icon }) => {
+            const active = resolvedTemplate === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setTripInfo({ ...tripInfo, template: value })}
+                className={`w-full flex items-center justify-between gap-3 rounded-xl py-2.5 px-4 text-sm font-medium transition-all ${
+                  active
+                    ? "bg-[#181c22] text-white shadow-md"
+                    : "bg-white border border-black/10 text-[#181c22] hover:bg-black/[0.03]"
+                }`}
+              >
+                <span>{label}</span>
+                <span
+                  className={`w-7 h-7 rounded-lg grid place-items-center shrink-0 ${
+                    active ? "bg-white/15" : "bg-[#f3f3f4]"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div>
         <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">

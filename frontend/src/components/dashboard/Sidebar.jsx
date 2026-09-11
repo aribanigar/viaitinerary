@@ -112,7 +112,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             onClick={onClose}
             className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
               isActive("/dashboard")
-                ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                 : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
             }`}
           >
@@ -133,7 +133,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/businesses")
-                    ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                     : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                 }`}
               >
@@ -146,7 +146,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/public-leads")
-                    ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                     : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                 }`}
               >
@@ -159,7 +159,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/demo-requests")
-                    ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                     : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                 }`}
               >
@@ -172,7 +172,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/admin/showcase")
-                    ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                     : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                 }`}
               >
@@ -185,7 +185,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/admin/trusted-companies")
-                    ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                     : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                 }`}
               >
@@ -221,7 +221,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/admin/blog/posts")
-                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                           : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                       }`}
                     >
@@ -233,7 +233,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/admin/blog/categories")
-                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                           : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                       }`}
                     >
@@ -249,7 +249,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/admin/plans")
-                    ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                     : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                 }`}
               >
@@ -266,7 +266,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/trip-builder")
-                    ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                     : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                 }`}
               >
@@ -279,7 +279,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/assistant")
-                    ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                     : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                 }`}
               >
@@ -320,7 +320,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/my-trips")
-                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                           : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                       }`}
                     >
@@ -333,7 +333,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/packages") || isActive("/package-builder")
-                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                           : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                       }`}
                     >
@@ -348,7 +348,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/lead-inquiries") ||
                           isActive("/integrations")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -363,7 +363,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/team")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -378,7 +378,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/team-report")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -423,7 +423,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/accommodation")
-                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                           : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                       }`}
                     >
@@ -436,7 +436,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/transportation")
-                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                           : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                       }`}
                     >
@@ -449,7 +449,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/destinations")
-                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                           : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                       }`}
                     >
@@ -462,7 +462,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/complementary-services")
-                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                           : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                       }`}
                     >
@@ -476,7 +476,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/policies")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -521,7 +521,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/accounting")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -534,7 +534,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/accounting-summary")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -547,7 +547,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/ledger")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -560,7 +560,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/payment-details")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -573,7 +573,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/subscription")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -615,7 +615,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           location.pathname === "/settings"
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -628,7 +628,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/typography")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >
@@ -641,7 +641,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/settings/email-connect")
-                            ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                             : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                         }`}
                       >

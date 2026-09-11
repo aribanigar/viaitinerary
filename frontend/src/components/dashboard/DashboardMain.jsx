@@ -224,33 +224,27 @@ const DashboardMain = () => {
         </div>
       ) : (
         <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {/* Stats strip */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-black/5 rounded-3xl overflow-hidden border border-black/5 mb-12">
             {stats.map((stat, i) => (
               <Link
                 key={i}
                 to={stat.link}
-                className="bg-white p-6 rounded-2xl border border-black/5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 no-underline group block"
+                className="bg-white p-6 hover:bg-[#f9f9f9] transition-colors duration-200 no-underline group block"
               >
-                <div className="flex justify-between items-start mb-6">
-                  <div
-                    className={`${stat.bgColor} w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-[#cdd2da] group-hover:text-blue-500 transition-colors" />
-                </div>
-                <div>
-                  <h3 className="text-[#8a93a2] text-[10px] font-bold uppercase tracking-widest mb-1">
+                <div className="flex items-center gap-1.5 mb-4">
+                  <stat.icon className={`w-3.5 h-3.5 ${stat.iconColor}`} />
+                  <h3 className="text-[#8a93a2] text-[10px] font-bold uppercase tracking-widest">
                     {stat.label}
                   </h3>
-                  <p className="text-2xl font-bold text-[#181c22] mb-2 group-hover:text-blue-600 transition-colors">
-                    {stat.value}
-                  </p>
-                  <p className={`text-[10px] font-bold ${stat.changeColor}`}>
-                    {stat.change}
-                  </p>
+                  <ArrowRight className="w-3 h-3 text-[#cdd2da] group-hover:text-[#181c22] group-hover:translate-x-0.5 transition-all ml-auto" />
                 </div>
+                <p className="text-3xl md:text-4xl font-light text-[#181c22] mb-2">
+                  {stat.value}
+                </p>
+                <p className={`text-[10px] font-bold ${stat.changeColor}`}>
+                  {stat.change}
+                </p>
               </Link>
             ))}
           </div>
