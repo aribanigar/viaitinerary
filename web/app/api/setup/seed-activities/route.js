@@ -1926,21 +1926,26 @@ async function handle(request) {
     },
   });
 
+  const toFill = destinations.filter(
+    (dest) => !(Array.isArray(dest.activities) && dest.activities.length > 0) && CITY_ACTIVITIES[dest.name],
+  );
+  const skipped = destinations.length - toFill.length;
+
+  // Parallelize — sequential awaits over hundreds of rows (every admin's own
+  // copy of each seeded destination) is what timed out the function before.
+  const BATCH_SIZE = 20;
   let filled = 0;
-  let skipped = 0;
-  for (const dest of destinations) {
-    const hasActivities = Array.isArray(dest.activities) && dest.activities.length > 0;
-    if (hasActivities) {
-      skipped++;
-      continue;
-    }
-    const activities = CITY_ACTIVITIES[dest.name];
-    if (!activities) continue;
-    await prisma.destination.update({
-      where: { id: dest.id },
-      data: { activities },
-    });
-    filled++;
+  for (let i = 0; i < toFill.length; i += BATCH_SIZE) {
+    const batch = toFill.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map((dest) =>
+        prisma.destination.update({
+          where: { id: dest.id },
+          data: { activities: CITY_ACTIVITIES[dest.name] },
+        }),
+      ),
+    );
+    filled += batch.length;
   }
 
   return NextResponse.json({
