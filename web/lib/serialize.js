@@ -158,7 +158,11 @@ export function serializeSettings(s) {
 
 // --- Builder/init lite shapes ---
 export function serializeDestination(d) {
-  return { id: d.id, name: d.name, activities: d.activities ?? [], image_path: d.imagePath, image_url: d.imagePath };
+  return {
+    id: d.id, name: d.name, activities: d.activities ?? [],
+    country: d.country ?? null, state: d.state ?? null, city: d.city ?? null,
+    image_path: d.imagePath, image_url: d.imagePath,
+  };
 }
 export function serializeHotel(h) {
   return {

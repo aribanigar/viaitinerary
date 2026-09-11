@@ -1,6 +1,7 @@
 import React from "react";
 import { Image as ImageIcon, MapPin, Trash2 } from "lucide-react";
 import { destinationActivityLabels } from "../../../utils/destinationActivities";
+import DestinationPicker from "./DestinationPicker";
 
 const ItineraryTab = ({
   availableDestinations,
@@ -18,28 +19,12 @@ const ItineraryTab = ({
         </h3>
         {availableDestinations.length > 0 && (
           <div className="w-64">
-            <select
-              onChange={(e) => {
-                const destId = e.target.value;
-                if (destId) {
-                  const dest = availableDestinations.find(
-                    (d) => String(d.id) === destId,
-                  );
-                  if (dest) {
-                    addDayFromDestination(dest);
-                  }
-                }
-                e.target.value = "";
-              }}
-              className="w-full bg-[#f3f3f4] border border-black/10 rounded-lg py-2 px-3 text-[11px] font-bold text-[#3a4250] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/10 transition-all cursor-pointer"
-            >
-              <option value="">+ Add Day from Destination</option>
-              {availableDestinations.map((dest) => (
-                <option key={dest.id} value={dest.id}>
-                  {dest.name}
-                </option>
-              ))}
-            </select>
+            <DestinationPicker
+              destinations={availableDestinations}
+              value=""
+              onSelect={(dest) => addDayFromDestination(dest)}
+              placeholder="+ Add Day from Destination"
+            />
           </div>
         )}
       </div>
@@ -54,49 +39,32 @@ const ItineraryTab = ({
               <div className="w-8 h-8 bg-white shadow-sm border border-black/10 rounded-md flex items-center justify-center text-[#181c22] font-bold text-xs shrink-0">
                 {day.day}
               </div>
-              <select
+              <DestinationPicker
+                className="flex-1"
+                destinations={availableDestinations}
                 value={day.destinationId || ""}
-                onChange={(e) => {
-                  const destId = e.target.value;
-                  if (destId) {
-                    const dest = availableDestinations.find(
-                      (d) => String(d.id) === destId,
+                placeholder="Select Destination"
+                onSelect={(dest) => {
+                  const newItinerary = [...itinerary];
+                  const dayIdx = newItinerary.findIndex((d) => d.id === day.id);
+                  if (dayIdx !== -1) {
+                    const activityLabels = destinationActivityLabels(
+                      dest.activities,
                     );
-                    if (dest) {
-                      const newItinerary = [...itinerary];
-                      const dayIdx = newItinerary.findIndex(
-                        (d) => d.id === day.id,
-                      );
-                      if (dayIdx !== -1) {
-                        const activityLabels = destinationActivityLabels(
-                          dest.activities,
-                        );
-                        newItinerary[dayIdx] = {
-                          ...newItinerary[dayIdx],
-                          title: dest.name,
-                          destination: dest.name,
-                          destinationId: dest.id,
-                          location: dest.name,
-                          description: activityLabels.join("\n"),
-                          activities: activityLabels,
-                          photo: dest.image_path || null,
-                        };
-                        setItinerary(newItinerary);
-                      }
-                    }
+                    newItinerary[dayIdx] = {
+                      ...newItinerary[dayIdx],
+                      title: dest.name,
+                      destination: dest.name,
+                      destinationId: dest.id,
+                      location: dest.name,
+                      description: activityLabels.join("\n"),
+                      activities: activityLabels,
+                      photo: dest.image_path || null,
+                    };
+                    setItinerary(newItinerary);
                   }
                 }}
-                className="flex-1 bg-[#f3f3f4] border border-black/10 rounded-md py-1 px-2 text-sm font-bold text-[#3a4250] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/10 transition-all cursor-pointer hover:border-black/15"
-              >
-                {!day.destinationId && (
-                  <option value="">Select Destination</option>
-                )}
-                {availableDestinations.map((dest) => (
-                  <option key={dest.id} value={dest.id}>
-                    {dest.name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
             <button
               onClick={() => removeDay(day.id)}

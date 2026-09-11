@@ -10,10 +10,16 @@ import {
   Search,
   ImageIcon,
   ImageOff,
+  ImagePlus,
   ListChecks,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { fetchDestinations, deleteDestination } from "../../api/destinations";
+import {
+  fetchDestinations,
+  deleteDestination,
+  fillDestinationPhotos,
+} from "../../api/destinations";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import CompactDataTable from "../common/CompactDataTable";
@@ -33,6 +39,20 @@ const Destinations = () => {
   const [targetId, setTargetId] = useState(null);
   const [pageSize, setPageSize] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
+  const [fillingPhotos, setFillingPhotos] = useState(false);
+
+  const handleFillPhotos = async () => {
+    try {
+      setFillingPhotos(true);
+      const resp = await fillDestinationPhotos(token);
+      toast.success(resp.message || "Photos updated.");
+      await loadDestinations();
+    } catch (error) {
+      toast.error(error.message || "Failed to fill destination photos");
+    } finally {
+      setFillingPhotos(false);
+    }
+  };
 
   const loadDestinations = async () => {
     try {
@@ -149,13 +169,31 @@ const Destinations = () => {
         title="Destinations"
         description="Manage and explore travel destinations for your trips."
       >
-        <button
-          onClick={() => navigate("/destinations/add")}
-          className="flex items-center gap-2 bg-[#e7f63c] text-[#181c22] px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit"
-        >
-          <Plus className="w-4 h-4" />
-          Add New Destination
-        </button>
+        <div className="flex items-center gap-2">
+          {!loading && withPhotoCount < destinations.length && (
+            <button
+              onClick={handleFillPhotos}
+              disabled={fillingPhotos}
+              className="flex items-center gap-2 bg-white border border-black/10 text-[#181c22] px-5 py-3 rounded-2xl font-bold hover:bg-black/[0.03] transition-all text-sm w-fit disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {fillingPhotos ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ImagePlus className="w-4 h-4" />
+              )}
+              {fillingPhotos
+                ? "Fetching photos…"
+                : `Fill Missing Photos (${destinations.length - withPhotoCount})`}
+            </button>
+          )}
+          <button
+            onClick={() => navigate("/destinations/add")}
+            className="flex items-center gap-2 bg-[#e7f63c] text-[#181c22] px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit"
+          >
+            <Plus className="w-4 h-4" />
+            Add New Destination
+          </button>
+        </div>
       </PageHeader>
 
       {!loading && (
