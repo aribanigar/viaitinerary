@@ -176,6 +176,16 @@ export function catalogComplementaryService(s) {
     created_at: iso(s.createdAt), updated_at: iso(s.updatedAt),
   };
 }
+export function catalogActivity(a) {
+  return {
+    id: a.id, user_id: a.userId, destination_id: a.destinationId ?? null,
+    destination_name: a.destination?.name ?? null,
+    name: a.name, description: a.description, cost: num(a.cost),
+    selling_price: num(a.sellingPrice), duration_hours: num(a.durationHours),
+    is_active: a.isActive ?? true, user: userLite(a.user),
+    created_at: iso(a.createdAt), updated_at: iso(a.updatedAt),
+  };
+}
 export function catalogHotel(h) {
   return {
     id: h.id, user_id: h.userId, name: h.name, address: h.address, city: h.city, state: h.state, country: h.country,

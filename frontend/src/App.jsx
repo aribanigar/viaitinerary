@@ -44,6 +44,7 @@ const Destinations = lazy(() => import("./components/dashboard/Destinations"));
 const ComplementaryServices = lazy(
   () => import("./components/dashboard/ComplementaryServices"),
 );
+const Activities = lazy(() => import("./components/dashboard/Activities"));
 const DestinationForm = lazy(() => import("./pages/dashboard/DestinationForm"));
 const Accommodation = lazy(
   () => import("./components/dashboard/Accommodation"),
@@ -271,6 +272,7 @@ const PublicWhatsAppCTA = () => {
     "/accommodation",
     "/transportation",
     "/complementary-services",
+    "/activities",
     "/team",
     "/team-report",
     "/quotes",
@@ -394,6 +396,7 @@ function App() {
                       path="/complementary-services"
                       element={<ComplementaryServices />}
                     />
+                    <Route path="/activities" element={<Activities />} />
                     <Route
                       path="/destinations/add"
                       element={<DestinationForm />}

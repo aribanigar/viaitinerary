@@ -111,6 +111,23 @@ const STATEMENTS = [
   `ALTER TABLE "vehicles" ADD COLUMN IF NOT EXISTS "notes" TEXT`,
   `ALTER TABLE "vehicles" ADD COLUMN IF NOT EXISTS "request_count" INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE "vehicles" ADD COLUMN IF NOT EXISTS "last_requested_at" TIMESTAMP(3)`,
+
+  `CREATE TABLE IF NOT EXISTS "activities" (
+    "id" SERIAL PRIMARY KEY,
+    "user_id" INTEGER NOT NULL,
+    "destination_id" INTEGER,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "cost" DECIMAL(12,2),
+    "selling_price" DECIMAL(12,2) NOT NULL,
+    "duration_hours" DECIMAL(6,2),
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS "activities_user_id_idx" ON "activities"("user_id")`,
+  `CREATE INDEX IF NOT EXISTS "activities_destination_id_idx" ON "activities"("destination_id")`,
+  `ALTER TABLE "activities" ADD CONSTRAINT "activities_destination_id_fkey" FOREIGN KEY ("destination_id") REFERENCES "destinations"("id") ON DELETE SET NULL`,
 ];
 
 async function handle(request) {

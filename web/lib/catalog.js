@@ -25,7 +25,7 @@ function ownerOf(user, adminId) {
  * Build paginated list + create handlers for a catalog model (destinations,
  * hotels, vehicles). `mapBody(body)` returns { data } or { error }.
  */
-export function catalogCollection({ model, mapBody, serialize, searchField = "name", limitKind }) {
+export function catalogCollection({ model, mapBody, serialize, searchField = "name", limitKind, extraWhere, include }) {
   return {
     async GET(request) {
       const user = await userFromRequest(request);
@@ -39,6 +39,7 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
 
       const where = { userId: adminId };
       if (search) where[searchField] = { contains: search, mode: "insensitive" };
+      if (extraWhere) Object.assign(where, extraWhere(searchParams));
 
       const [total, items, owner] = await Promise.all([
         prisma[model].count({ where }),
@@ -47,6 +48,7 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
           orderBy: { createdAt: "desc" },
           skip: (page - 1) * perPage,
           take: perPage,
+          ...(include ? { include } : {}),
         }),
         ownerOf(user, adminId),
       ]);
@@ -71,7 +73,7 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
       const mapped = await mapBody(await request.json());
       if (mapped.error) return NextResponse.json({ message: mapped.error }, { status: 422 });
       const [created, owner] = await Promise.all([
-        prisma[model].create({ data: { ...mapped.data, userId: adminId } }),
+        prisma[model].create({ data: { ...mapped.data, userId: adminId }, ...(include ? { include } : {}) }),
         ownerOf(user, adminId),
       ]);
       return NextResponse.json(serialize({ ...created, user: owner }), { status: 201 });
@@ -80,14 +82,17 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
 }
 
 /** Build show/update/delete handlers for a catalog model (numeric :id). */
-export function catalogItem({ model, mapBody, serialize }) {
+export function catalogItem({ model, mapBody, serialize, include }) {
   async function scoped(request, id) {
     const user = await userFromRequest(request);
     if (!user) return { error: unauth() };
     const adminId = await adminIdOf(user);
     const numId = parseInt(id, 10);
     if (Number.isNaN(numId)) return { error: NextResponse.json({ message: "Invalid id" }, { status: 400 }) };
-    const item = await prisma[model].findFirst({ where: { id: numId, userId: adminId } });
+    const item = await prisma[model].findFirst({
+      where: { id: numId, userId: adminId },
+      ...(include ? { include } : {}),
+    });
     if (!item) return { error: NextResponse.json({ message: "Not found" }, { status: 404 }) };
     return { item, user, adminId };
   }
@@ -105,7 +110,7 @@ export function catalogItem({ model, mapBody, serialize }) {
       const mapped = await mapBody(await request.json(), r.item);
       if (mapped.error) return NextResponse.json({ message: mapped.error }, { status: 422 });
       const [updated, owner] = await Promise.all([
-        prisma[model].update({ where: { id: r.item.id }, data: mapped.data }),
+        prisma[model].update({ where: { id: r.item.id }, data: mapped.data, ...(include ? { include } : {}) }),
         ownerOf(r.user, r.adminId),
       ]);
       return NextResponse.json(serialize({ ...updated, user: owner }));
@@ -214,6 +219,27 @@ export function mapComplementaryService(body) {
       cost: body.cost !== undefined && body.cost !== "" ? Number(body.cost) : null,
       sellingPrice: Number(body.selling_price),
       description: body.description ?? null,
+      isActive: body.is_active !== undefined ? !!body.is_active : true,
+    },
+  };
+}
+
+export function mapActivity(body) {
+  if (!body.name) return { error: "name is required." };
+  if (body.selling_price === undefined || body.selling_price === null || body.selling_price === "")
+    return { error: "selling_price is required." };
+  return {
+    data: {
+      name: body.name,
+      description: body.description ?? null,
+      cost: body.cost !== undefined && body.cost !== "" ? Number(body.cost) : null,
+      sellingPrice: Number(body.selling_price),
+      durationHours:
+        body.duration_hours !== undefined && body.duration_hours !== "" ? Number(body.duration_hours) : null,
+      destinationId:
+        body.destination_id !== undefined && body.destination_id !== "" && body.destination_id !== null
+          ? parseInt(body.destination_id, 10)
+          : null,
       isActive: body.is_active !== undefined ? !!body.is_active : true,
     },
   };
