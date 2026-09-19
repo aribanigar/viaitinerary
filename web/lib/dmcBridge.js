@@ -70,50 +70,82 @@ async function fetchCatalog(path, params = {}) {
 }
 
 /**
+ * Upserts a batch of {name, ...data} rows for one Prisma model, scoped to
+ * userId. One findMany (not one query per row) to see what already exists,
+ * then all creates/updates fired concurrently - the naive version of this
+ * (a findFirst + create/update per item, awaited serially) took 100+ real
+ * round trips for a full hotel catalog and blew Vercel's function timeout on
+ * first live test (confirmed 2026-09-19). This is the fix.
+ */
+async function upsertBatch(model, userId, rows) {
+  if (rows.length === 0) return;
+  const names = rows.map((r) => r.name);
+  const existing = await prisma[model].findMany({
+    where: { userId, name: { in: names } },
+    select: { id: true, name: true },
+  });
+  const existingByName = new Map(existing.map((e) => [e.name, e.id]));
+
+  await Promise.all(
+    rows.map((row) => {
+      const id = existingByName.get(row.name);
+      return id
+        ? prisma[model].update({ where: { id }, data: row.data })
+        : prisma[model].create({ data: { ...row.data, userId, name: row.name } });
+    })
+  );
+}
+
+/**
  * Seeds/refreshes this agency's private destinations/hotels/vehicles rows
  * from Via Kashmir's real inventory. Safe to call repeatedly - upserts by
  * (userId, name), so re-running it (e.g. on every SSO login) refreshes DMC
  * prices without creating duplicates.
  */
 export async function syncDmcInventory(userId) {
-  // Destinations - name + activities only, no pricing.
-  for (const d of await fetchCatalog("destinations")) {
-    const existing = await prisma.destination.findFirst({ where: { userId, name: d.name } });
-    const data = { activities: d.activities || [], imagePath: d.image || null };
-    if (existing) await prisma.destination.update({ where: { id: existing.id }, data });
-    else await prisma.destination.create({ data: { ...data, userId, name: d.name } });
-  }
+  // All four catalog fetches run in parallel - independent HTTP calls to
+  // ViaKashmir, no reason to wait on one before starting the next.
+  const [destinations, hotels, houseboats, cabs] = await Promise.all([
+    fetchCatalog("destinations"),
+    fetchCatalog("hotels", { type: "hotel" }),
+    fetchCatalog("hotels", { type: "houseboat" }),
+    fetchCatalog("cabs"),
+  ]);
 
-  // Hotels/houseboats - DMC price only, never the public price.
-  for (const type of ["hotel", "houseboat"]) {
-    for (const h of await fetchCatalog("hotels", { type })) {
-      if (typeof h.dmcPrice !== "number") continue;
-      const priceSections = [{
-        room_type: "Standard",
-        meal_plan: "CP",
-        price: h.dmcPrice,
-        cnb: 0,
-        upto_5: 0,
-        above_12: 0,
-        extra_adult: 0,
-        valid_from: null,
-        valid_to: null,
-      }];
-      const existing = await prisma.hotel.findFirst({ where: { userId, name: h.title } });
-      const data = { city: h.city || null, priceSections };
-      if (existing) await prisma.hotel.update({ where: { id: existing.id }, data });
-      else await prisma.hotel.create({ data: { ...data, userId, name: h.title } });
-    }
-  }
+  const destinationRows = destinations.map((d) => ({
+    name: d.name,
+    data: { activities: d.activities || [], imagePath: d.image || null },
+  }));
 
-  // Cabs/shikaras.
-  for (const c of await fetchCatalog("cabs")) {
-    if (typeof c.dmcPrice !== "number") continue;
-    const existing = await prisma.vehicle.findFirst({ where: { userId, name: c.title } });
-    const data = { price: c.dmcPrice };
-    if (existing) await prisma.vehicle.update({ where: { id: existing.id }, data });
-    else await prisma.vehicle.create({ data: { ...data, userId, name: c.title } });
-  }
+  const hotelRows = [...hotels, ...houseboats]
+    .filter((h) => typeof h.dmcPrice === "number")
+    .map((h) => ({
+      name: h.title,
+      data: {
+        city: h.city || null,
+        priceSections: [{
+          room_type: "Standard",
+          meal_plan: "CP",
+          price: h.dmcPrice,
+          cnb: 0,
+          upto_5: 0,
+          above_12: 0,
+          extra_adult: 0,
+          valid_from: null,
+          valid_to: null,
+        }],
+      },
+    }));
+
+  const vehicleRows = cabs
+    .filter((c) => typeof c.dmcPrice === "number")
+    .map((c) => ({ name: c.title, data: { price: c.dmcPrice } }));
+
+  await Promise.all([
+    upsertBatch("destination", userId, destinationRows),
+    upsertBatch("hotel", userId, hotelRows),
+    upsertBatch("vehicle", userId, vehicleRows),
+  ]);
 
   await prisma.user.update({ where: { id: userId }, data: { dmcBridgeSyncedAt: new Date() } });
 }
