@@ -151,6 +151,13 @@ const STATEMENTS = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "users_via_kashmir_dmc_user_id_key" ON "users"("via_kashmir_dmc_user_id")`,
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_dmc_bridge" BOOLEAN NOT NULL DEFAULT false`,
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "dmc_bridge_synced_at" TIMESTAMP(3)`,
+
+  `CREATE TABLE IF NOT EXISTS "dmc_sso_nonces" (
+    "id" SERIAL PRIMARY KEY,
+    "nonce" TEXT NOT NULL,
+    "consumed_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "dmc_sso_nonces_nonce_key" ON "dmc_sso_nonces"("nonce")`,
 ];
 
 async function handle(request) {

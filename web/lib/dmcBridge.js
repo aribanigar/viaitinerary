@@ -11,9 +11,10 @@ import prisma from "@/lib/prisma";
  *
  * syncInventory() seeds/refreshes a DMC partner's PRIVATE destinations/
  * hotels/vehicles/activities rows from Via Kashmir's real, live inventory -
- * the partner never creates these rows themselves (see the isDmcBridge guard
- * in lib/catalog.js), they only pick from what gets synced here. Every price
- * synced is already the DMC price.
+ * the partner never creates new rows themselves (see the isDmcBridge guard
+ * in lib/catalog.js blocking POST), but they can still edit/customise what
+ * gets synced in (PUT is unguarded) - e.g. picking which of a destination's
+ * activities to keep. Every price synced is already the DMC price.
  */
 
 const TOKEN_TTL_MS = 120_000; // 2 minutes - matches ViaKashmir's SSO_TOKEN_TTL_SECONDS
@@ -52,6 +53,41 @@ export function verifyDmcSsoToken(token) {
   if (Date.now() - payload.ts > TOKEN_TTL_MS) return null; // expired
 
   return payload;
+}
+
+/**
+ * Marks a verified token's nonce as used, making the token single-use on
+ * top of its 2-minute TTL - without this, a leaked/logged SSO URL (browser
+ * history, a proxy log, a shared screenshot) could be replayed for a fresh
+ * session token for as long as the TTL window lasts. Returns false if this
+ * nonce was already consumed (a replay) or the token has no nonce at all.
+ *
+ * Best-effort on a missing nonce rather than a hard failure: this app can't
+ * verify ViaKashmir always includes one, and refusing every token over a
+ * missing field would turn a partial gap into a total outage. If it's ever
+ * confirmed ViaKashmir always sends one, tighten this to reject a missing
+ * nonce outright.
+ */
+export async function consumeDmcSsoNonce(payload) {
+  if (!payload?.nonce) {
+    console.warn("DMC SSO token has no nonce - replay protection skipped for this login.");
+    return true;
+  }
+
+  // Opportunistic cleanup of stale rows, fire-and-forget - keeps this table
+  // from growing forever without needing a cron job. Never blocks or fails
+  // the actual consume check below.
+  prisma.dmcSsoNonce
+    .deleteMany({ where: { consumedAt: { lt: new Date(Date.now() - 3_600_000) } } })
+    .catch(() => {});
+
+  try {
+    await prisma.dmcSsoNonce.create({ data: { nonce: String(payload.nonce) } });
+    return true;
+  } catch (e) {
+    if (e?.code === "P2002") return false; // unique violation - already consumed
+    throw e;
+  }
 }
 
 async function fetchCatalog(path, params = {}) {

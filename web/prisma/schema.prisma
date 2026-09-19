@@ -438,6 +438,20 @@ model RateLimitAttempt {
   @@map("rate_limit_attempts")
 }
 
+// One row per consumed DMC SSO token (see lib/dmcBridge.js) — the unique
+// constraint on `nonce` is what makes a token single-use: a second consume
+// attempt with the same nonce fails to insert and is rejected as a replay.
+// Rows past the token TTL are stale and opportunistically pruned rather than
+// needing a cron job — DMC logins are infrequent enough that this table
+// never gets large.
+model DmcSsoNonce {
+  id         Int      @id @default(autoincrement())
+  nonce      String   @unique
+  consumedAt DateTime @default(now()) @map("consumed_at")
+
+  @@map("dmc_sso_nonces")
+}
+
 model InclusionExclusion {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
