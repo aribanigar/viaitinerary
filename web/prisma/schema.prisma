@@ -28,6 +28,12 @@ model User {
   embedToken         String?   @map("embed_token")
   bypassSubscription Boolean   @default(false) @map("bypass_subscription")
   emailVerifiedAt    DateTime? @map("email_verified_at")
+  // Links this account to its DMC partner record on viakashmir.in - see
+  // lib/dmcBridge.js. isDmcBridge accounts can't add new destinations/
+  // hotels/vehicles (see lib/catalog.js) - only what Via Kashmir syncs in.
+  viaKashmirDmcUserId String?   @unique @map("via_kashmir_dmc_user_id")
+  isDmcBridge        Boolean   @default(false) @map("is_dmc_bridge")
+  dmcBridgeSyncedAt  DateTime? @map("dmc_bridge_synced_at")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
 

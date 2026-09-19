@@ -5,6 +5,7 @@ import { adminIdOf, teamIdOf } from "@/lib/scope";
 import { serializeTrip, currencySymbol } from "@/lib/serialize";
 import { buildTripScalars, syncTripRelations, TRIP_INCLUDE } from "@/lib/trips";
 import { canCreateTrip, incrementTripsUsed } from "@/lib/subscription";
+import { pushDmcItinerary } from "@/lib/dmcBridge";
 
 export const dynamic = "force-dynamic";
 
@@ -124,6 +125,7 @@ export async function POST(request) {
     });
     await syncTripRelations(trip.id, body);
     await incrementTripsUsed(adminId);
+    pushDmcItinerary(trip).catch(() => {});
 
     const full = await prisma.trip.findUnique({ where: { id: trip.id }, include: TRIP_INCLUDE });
     return NextResponse.json(serializeTrip(full), { status: 201 });

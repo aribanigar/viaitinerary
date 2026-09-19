@@ -30,6 +30,7 @@ const GenerateItinerary = lazy(
 const MyTrips = lazy(() => import("./components/dashboard/MyTrips"));
 const AIAssistant = lazy(() => import("./pages/assistant/AIAssistant"));
 const Packages = lazy(() => import("./components/dashboard/Packages"));
+const SsoLogin = lazy(() => import("./pages/SsoLogin"));
 const AgencySettings = lazy(
   () => import("./components/dashboard/AgencySettings"),
 );
@@ -331,6 +332,11 @@ function App() {
               <Suspense fallback={<Loader fullPage={true} />}>
                 <Routes>
                   <Route path="/" element={<LandingPage />} />
+
+                  {/* DMC partner login handoff from viakashmir.in - public,
+                      not gated by GuestRoute/ProtectedRoute since it's the
+                      thing that CREATES the session (see SsoLogin.jsx). */}
+                  <Route path="/sso-login" element={<SsoLogin />} />
 
                   {/* Guest-only Routes */}
                   <Route element={<GuestRoute />}>
