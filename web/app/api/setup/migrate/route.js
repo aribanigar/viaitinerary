@@ -128,6 +128,23 @@ const STATEMENTS = [
   `CREATE INDEX IF NOT EXISTS "activities_user_id_idx" ON "activities"("user_id")`,
   `CREATE INDEX IF NOT EXISTS "activities_destination_id_idx" ON "activities"("destination_id")`,
   `ALTER TABLE "activities" ADD CONSTRAINT "activities_destination_id_fkey" FOREIGN KEY ("destination_id") REFERENCES "destinations"("id") ON DELETE SET NULL`,
+
+  `CREATE TABLE IF NOT EXISTS "trip_activities" (
+    "id" SERIAL PRIMARY KEY,
+    "trip_id" INTEGER NOT NULL,
+    "activity_id" INTEGER,
+    "name" TEXT NOT NULL,
+    "day_number" INTEGER,
+    "ticket_count" INTEGER NOT NULL DEFAULT 1,
+    "price_per_ticket" DECIMAL(12,2) NOT NULL,
+    "markup_percentage" DECIMAL(6,2),
+    "notes" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS "trip_activities_trip_id_idx" ON "trip_activities"("trip_id")`,
+  `ALTER TABLE "trip_activities" ADD CONSTRAINT "trip_activities_trip_id_fkey" FOREIGN KEY ("trip_id") REFERENCES "trips"("id") ON DELETE CASCADE`,
+  `ALTER TABLE "trip_activities" ADD CONSTRAINT "trip_activities_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE SET NULL`,
 ];
 
 async function handle(request) {

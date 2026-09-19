@@ -21,6 +21,7 @@ const ModernTemplate = ({
   destinations = [],
   accommodations = [],
   transportation = [],
+  tripActivities = [],
   agencySettings = {},
   inclusions = [],
   exclusions = [],
@@ -141,6 +142,7 @@ const ModernTemplate = ({
         destinations={destinations}
         accommodations={accommodations}
         transportation={transportation}
+        tripActivities={tripActivities}
         agencySettings={agencySettings}
         inclusions={inclusions}
         exclusions={exclusions}
@@ -1044,6 +1046,56 @@ const ModernTemplate = ({
               No transportation details have been added to this quote.
             </p>
           </div>
+        )}
+
+        {tripActivities.length > 0 && (
+          <>
+            <div className="section-bar" style={{ marginTop: "24px" }}>
+              <h2>ACTIVITIES</h2>
+            </div>
+            <table className="itinerary-table">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Activity</th>
+                  <th>Tickets</th>
+                  <th>Price/Ticket</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tripActivities.map((item, index) => (
+                  <tr key={item.id || index}>
+                    <td>{item.dayNumber || item.day_number || "—"}</td>
+                    <td>{item.name}</td>
+                    <td
+                      style={{
+                        fontWeight: "800",
+                        color: "#000000",
+                        textAlign: "center",
+                      }}
+                    >
+                      {item.ticketCount || item.ticket_count || 1}
+                    </td>
+                    <td>
+                      ₹
+                      {Number(
+                        item.pricePerTicket || item.price_per_ticket || 0,
+                      ).toLocaleString("en-IN")}
+                    </td>
+                    <td style={{ fontWeight: "800", color: "#000000" }}>
+                      ₹
+                      {(
+                        Number(
+                          item.pricePerTicket || item.price_per_ticket || 0,
+                        ) * Number(item.ticketCount || item.ticket_count || 1)
+                      ).toLocaleString("en-IN")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
 
         <div style={{ flex: 1 }}></div>

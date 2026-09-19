@@ -1,5 +1,5 @@
 import React from "react";
-import { Briefcase, Hotel, MapPin, Pencil, Plus, Trash2, Layers } from "lucide-react";
+import { Briefcase, Hotel, MapPin, Pencil, Plus, Trash2, Layers, Ticket } from "lucide-react";
 
 const parseAccommodationDate = (dateValue) => {
   if (!dateValue) return null;
@@ -43,6 +43,13 @@ const LogisticsTab = ({
   setEditingTransportId,
   setIsTransportModalOpen,
   formatImageUrl,
+  tripActivities,
+  calculateActivityCost,
+  openEditActivityModal,
+  removeActivity,
+  setActivityForm,
+  setEditingActivityId,
+  setIsActivityModalOpen,
 }) => {
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
@@ -413,6 +420,98 @@ const LogisticsTab = ({
           >
             <Plus className="w-4 h-4" />
             Add Transport
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 bg-[#f3f3f4] text-[#181c22] rounded-lg flex items-center justify-center border border-black/5">
+            <Ticket className="w-5 h-5" />
+          </div>
+          <h3 className="text-xs font-semibold text-[#181c22] uppercase tracking-[0.2em]">
+            Activities
+          </h3>
+        </div>
+
+        <div className="space-y-4">
+          {tripActivities.map((item) => (
+            <div
+              key={item.id}
+              className="group relative bg-[#f9f9f9]/50 border border-black/5 rounded-xl p-5 transition-all hover:bg-white hover:shadow-lg hover:shadow-slate-200/40"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    {item.dayNumber && (
+                      <span className="text-[10px] font-semibold text-[#181c22] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                        Day {item.dayNumber}
+                      </span>
+                    )}
+                    <h4 className="text-sm font-semibold text-[#181c22]">
+                      {item.name}
+                    </h4>
+                    {item.markupPercentage !== "" && item.markupPercentage != null && (
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        {item.markupPercentage}% margin
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-[#8a93a2]">
+                      {item.ticketCount || 1} ticket{(item.ticketCount || 1) > 1 ? "s" : ""} × ₹{Number(item.pricePerTicket || 0).toLocaleString("en-IN")}
+                    </span>
+                    {item.notes && (
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
+                        <span className="text-[11px] font-medium text-[#9aa3b2]">
+                          {item.notes}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-white border border-black/5 px-3 py-1.5 rounded-lg text-[#5b6472] text-[10px] font-bold shadow-sm">
+                    ₹{calculateActivityCost(item).toLocaleString("en-IN")}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEditActivityModal(item)}
+                      className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#181c22] active:bg-[#f3f3f4] active:text-[#181c22] rounded-xl transition-all"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => removeActivity(item.id)}
+                      className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-red-50 hover:text-red-600 active:bg-red-50 active:text-red-600 rounded-xl transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <button
+            onClick={() => {
+              setActivityForm({
+                activityId: null,
+                name: "",
+                dayNumber: "",
+                ticketCount: "1",
+                pricePerTicket: "",
+                markupPercentage: "",
+                notes: "",
+              });
+              setEditingActivityId(null);
+              setIsActivityModalOpen(true);
+            }}
+            className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-[#181c22] hover:border-[#e2eea0] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
+          >
+            <Plus className="w-4 h-4" />
+            Add Activity
           </button>
         </div>
       </div>

@@ -15,6 +15,7 @@ export const useTripBuilderData = ({
   itinerary,
   accommodations,
   transportation,
+  tripActivities,
   inclusions,
   exclusions,
   otherCosts,
@@ -26,6 +27,7 @@ export const useTripBuilderData = ({
   setAvailableDestinations,
   setAvailableVehicles,
   setMasterHotels,
+  setAvailableActivities,
   setPolicies,
   setTripInfo,
   setIncludeGST,
@@ -35,6 +37,7 @@ export const useTripBuilderData = ({
   setItinerary,
   setAccommodations,
   setTransportation,
+  setTripActivities,
   setHasDraft,
   setGstPercentage,
   setProfitMarginPercentage,
@@ -54,6 +57,7 @@ export const useTripBuilderData = ({
         itinerary,
         accommodations,
         transportation,
+        tripActivities,
         inclusions,
         exclusions,
         otherCosts,
@@ -78,6 +82,7 @@ export const useTripBuilderData = ({
     itinerary,
     accommodations,
     transportation,
+    tripActivities,
     inclusions,
     exclusions,
     otherCosts,
@@ -155,6 +160,7 @@ export const useTripBuilderData = ({
         }
         if (initData.vehicles) setAvailableVehicles(initData.vehicles);
         if (initData.hotels) setMasterHotels(initData.hotels);
+        if (initData.activities) setAvailableActivities(initData.activities);
 
         if (initData.policies) {
           setPolicies({
@@ -328,6 +334,20 @@ export const useTripBuilderData = ({
           }));
           setTransportation(mappedTransportation);
 
+          const mappedTripActivities = (savedTrip.trip_activities || []).map(
+            (item) => ({
+              id: item.id,
+              activityId: item.activity_id ?? item.activityId ?? null,
+              name: item.name,
+              dayNumber: item.day_number ?? item.dayNumber ?? "",
+              ticketCount: item.ticket_count ?? item.ticketCount ?? 1,
+              pricePerTicket: item.price_per_ticket ?? item.pricePerTicket ?? "",
+              markupPercentage: item.markup_percentage ?? item.markupPercentage ?? "",
+              notes: item.notes || "",
+            }),
+          );
+          setTripActivities(mappedTripActivities);
+
           // Restore this trip's own GST%/margin% so the Pricing tab shows
           // what was actually quoted. Trips saved before these columns
           // existed have neither stored — fall back to the agency's
@@ -365,6 +385,7 @@ export const useTripBuilderData = ({
                   (draft.accommodations || []).map(normalizeAccommodation),
                 );
                 setTransportation(draft.transportation || []);
+                setTripActivities(draft.tripActivities || []);
                 setInclusions(draft.inclusions || []);
                 setExclusions(draft.exclusions || []);
                 setOtherCosts(draft.otherCosts || []);
@@ -407,6 +428,7 @@ export const useTripBuilderData = ({
           setItinerary([]);
           setAccommodations([]);
           setTransportation([]);
+          setTripActivities([]);
           setInclusions(
             Array.isArray(initData.policies?.default_inclusions)
               ? initData.policies.default_inclusions
@@ -447,6 +469,7 @@ export const useTripBuilderData = ({
     normalizeAccommodation,
     setAccommodations,
     setAgencySettings,
+    setAvailableActivities,
     setAvailableDestinations,
     setAvailableVehicles,
     setDefaultTripImage,
@@ -462,6 +485,7 @@ export const useTripBuilderData = ({
     setPolicies,
     setProfitMarginPercentage,
     setTransportation,
+    setTripActivities,
     setTripInfo,
     toast,
   ]);

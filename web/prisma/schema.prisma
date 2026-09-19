@@ -106,6 +106,7 @@ model Trip {
   itineraries     Itinerary[]
   accommodations  Accommodation[]
   transportations Transportation[]
+  tripActivities  TripActivity[]
   destinationRef  Destination? @relation(fields: [destinationId], references: [id])
   obligations     AccountingObligation[]
   settlements     AccountingSettlement[]
@@ -211,6 +212,30 @@ model Transportation {
   @@map("transportations")
 }
 
+// An Activity catalog entry picked into one specific trip, with the ticket
+// count actually being purchased for it. Price/name are copied onto the row
+// at add-time (like Accommodation/Transportation do for hotel/vehicle) so a
+// later catalog edit or deletion never changes an already-built itinerary.
+model TripActivity {
+  id               Int      @id @default(autoincrement())
+  tripId           Int      @map("trip_id")
+  activityId       Int?     @map("activity_id")
+  name             String
+  dayNumber        Int?     @map("day_number")
+  ticketCount      Int      @default(1) @map("ticket_count")
+  pricePerTicket   Decimal  @map("price_per_ticket") @db.Decimal(12, 2)
+  markupPercentage Decimal? @map("markup_percentage") @db.Decimal(6, 2)
+  notes            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  trip     Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  activity Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+
+  @@index([tripId])
+  @@map("trip_activities")
+}
+
 model Destination {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
@@ -257,6 +282,7 @@ model Activity {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   destination Destination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+  tripActivities TripActivity[]
 
   @@index([userId])
   @@index([destinationId])

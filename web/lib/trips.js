@@ -154,12 +154,39 @@ export async function syncTripRelations(tripDbId, body) {
       }
     }
   }
+
+  // Trip Activities
+  if (Array.isArray(body.tripActivities ?? body.trip_activities)) {
+    const items = body.tripActivities ?? body.trip_activities;
+    const keepIds = items.map((i) => i.id).filter((v) => typeof v === "number");
+    await prisma.tripActivity.deleteMany({
+      where: { tripId: tripDbId, id: { notIn: keepIds.length ? keepIds : [-1] } },
+    });
+    for (const item of items) {
+      const activityId = item.activityId ?? item.activity_id ?? null;
+      const data = {
+        activityId: activityId ? int(activityId, null) : null,
+        name: item.name ?? "Activity",
+        dayNumber: item.day_number !== undefined && item.day_number !== "" ? int(item.day_number, null) : null,
+        ticketCount: int(item.ticket_count, 1) || 1,
+        pricePerTicket: dec(item.price_per_ticket) ?? 0,
+        markupPercentage: item.markup_percentage !== undefined ? dec(item.markup_percentage) : undefined,
+        notes: item.notes ?? null,
+      };
+      if (typeof item.id === "number") {
+        await prisma.tripActivity.update({ where: { id: item.id }, data });
+      } else {
+        await prisma.tripActivity.create({ data: { ...data, tripId: tripDbId } });
+      }
+    }
+  }
 }
 
 const TRIP_INCLUDE = {
   itineraries: { orderBy: { dayNumber: "asc" } },
   accommodations: { include: { hotel: true } },
   transportations: { include: { vehicle: true } },
+  tripActivities: { include: { activity: true } },
 };
 
 export { TRIP_INCLUDE };
@@ -214,6 +241,17 @@ export function cloneTripChildren(src) {
         quantity: t.quantity,
         remarks: t.remarks,
         markupPercentage: t.markupPercentage,
+      })),
+    },
+    tripActivities: {
+      create: (src.tripActivities || []).map((a) => ({
+        activityId: a.activityId,
+        name: a.name,
+        dayNumber: a.dayNumber,
+        ticketCount: a.ticketCount,
+        pricePerTicket: a.pricePerTicket,
+        markupPercentage: a.markupPercentage,
+        notes: a.notes,
       })),
     },
   };

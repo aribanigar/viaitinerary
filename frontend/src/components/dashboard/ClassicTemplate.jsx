@@ -19,6 +19,7 @@ const ClassicTemplate = ({
   destinations = [],
   accommodations = [],
   transportation = [],
+  tripActivities = [],
   agencySettings = {},
   inclusions = [],
   exclusions = [],
@@ -1349,6 +1350,63 @@ const ClassicTemplate = ({
         )}
         <ClassicFooter />
       </div>
+
+      {tripActivities.length > 0 && (
+        <div className="classic-page">
+          <div className="classic-section-header">
+            <div className="classic-section-left">
+              <div className="classic-section-title">Activities</div>
+            </div>
+            {agencySettings.logo && (
+              <img
+                src={formatImageUrl(agencySettings.logo)}
+                alt="Logo"
+                className="classic-section-logo"
+              />
+            )}
+          </div>
+
+          <div className="classic-table-container" style={{ flex: 1 }}>
+            <table className="classic-table">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Activity</th>
+                  <th>Tickets</th>
+                  <th>Price/Ticket</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tripActivities.map((item, index) => {
+                  const ticketCount = item.ticketCount || item.ticket_count || 1;
+                  const pricePerTicket = Number(
+                    item.pricePerTicket || item.price_per_ticket || 0,
+                  );
+                  return (
+                    <tr key={item.id || index}>
+                      <td style={{ fontSize: "11px" }}>
+                        {item.dayNumber || item.day_number
+                          ? `Day ${item.dayNumber || item.day_number}`
+                          : "—"}
+                      </td>
+                      <td>{item.name}</td>
+                      <td style={{ fontWeight: "700", color: "#000000" }}>
+                        {ticketCount}
+                      </td>
+                      <td>₹{pricePerTicket.toLocaleString("en-IN")}</td>
+                      <td style={{ fontWeight: "700", color: "#000000" }}>
+                        ₹{(pricePerTicket * ticketCount).toLocaleString("en-IN")}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <ClassicFooter />
+        </div>
+      )}
 
       {/* PAGE 4-5: Day-by-Day Itinerary */}
       {itinerary.length > 0 &&

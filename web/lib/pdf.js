@@ -207,6 +207,7 @@ function ItineraryDoc({ trip, settings }) {
   const transports = arr(trip.transportations).sort(
     (a, b) => new Date(a.date || 0) - new Date(b.date || 0),
   );
+  const activities = arr(trip.tripActivities);
   const client = txt(trip.clientName) || "Guest";
   const kids = (trip.kidsCnb || 0) + (trip.kids5to12 || 0);
   const pax = `${trip.adults || 0} Adults${kids ? `, ${kids} Kids` : ""}`;
@@ -393,6 +394,37 @@ function ItineraryDoc({ trip, settings }) {
                 h(Text, { style: { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY } }, fmtDayLabel(t.date, i)),
                 h(Text, { style: { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY } }, txt(t.route || t.destination) || "—"),
                 h(Text, { style: { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY } }, `${t.quantity || 1} ${txt(t.vehicleType || t.vehicle?.name) || "Vehicle"}`),
+              ),
+            ),
+          ),
+          innerFooter(settings),
+        )
+      : null,
+
+    // ── Activities ──────────────────────────────────────────────────────
+    activities.length
+      ? h(
+          Page,
+          { size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
+          pageHeader(trip, settings),
+          sectionBar("ACTIVITIES", settings),
+          h(
+            View,
+            { style: { width: "90%", marginHorizontal: "auto", marginTop: 26 } },
+            h(
+              View,
+              { style: { flexDirection: "row", backgroundColor: "#f8f8f8", borderWidth: 1, borderColor: "#ddd" } },
+              ...["Day", "Activity", "Tickets"].map((hd, i) =>
+                h(Text, { key: i, style: { ...s.bold, flexGrow: 1, flexBasis: 0, padding: 14, color: green, fontSize: 11 } }, hd),
+              ),
+            ),
+            ...activities.map((a, i) =>
+              h(
+                View,
+                { key: i, wrap: false, style: { flexDirection: "row", borderWidth: 1, borderTopWidth: 0, borderColor: "#ddd" } },
+                h(Text, { style: { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY } }, a.dayNumber ? `Day ${a.dayNumber}` : "—"),
+                h(Text, { style: { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY } }, txt(a.name) || "—"),
+                h(Text, { style: { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY } }, `${a.ticketCount || 1} Ticket${(a.ticketCount || 1) > 1 ? "s" : ""}`),
               ),
             ),
           ),

@@ -963,3 +963,185 @@ export const TransportModal = ({
     </Modal>
   );
 };
+
+// Activities are filtered to ones tagged to the trip's own destination, plus
+// any not tied to a specific destination (agency-wide, e.g. a generic
+// photography add-on) — mirrors how Vehicles aren't destination-pinned.
+export const ActivityModal = ({
+  isOpen,
+  onClose,
+  isEditing,
+  onSubmit,
+  activityForm,
+  setActivityForm,
+  availableActivities,
+  tripInfo,
+  tripMarginPercentage,
+}) => {
+  const relevantActivities = availableActivities.filter(
+    (a) => !a.destination_id || a.destination_id === tripInfo.destinationId,
+  );
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Activity"
+      isEditing={isEditing}
+      onSubmit={onSubmit}
+    >
+      <div className="space-y-6 flex flex-col">
+        <div>
+          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+            Activity
+          </label>
+          <select
+            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-3 px-4 text-xs font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
+            value={activityForm.activityId || ""}
+            onChange={(e) => {
+              const selected = relevantActivities.find(
+                (a) => String(a.id) === e.target.value,
+              );
+              if (selected) {
+                setActivityForm({
+                  ...activityForm,
+                  activityId: selected.id,
+                  name: selected.name,
+                  pricePerTicket: selected.selling_price ?? "",
+                });
+              }
+            }}
+          >
+            <option value="">Select an Activity</option>
+            {relevantActivities.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+            Activity Name
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. Gondola Ride"
+            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
+            value={activityForm.name}
+            onChange={(e) =>
+              setActivityForm({ ...activityForm, name: e.target.value })
+            }
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+              Number of Tickets
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(activityForm.ticketCount || 1, 10);
+                  setActivityForm({
+                    ...activityForm,
+                    ticketCount: Math.max(1, current - 1),
+                  });
+                }}
+                className="w-8 h-8 rounded-lg bg-[#eef0f1] flex items-center justify-center hover:bg-[#e6e8eb] transition-colors"
+              >
+                <Minus className="w-3 h-3 text-[#5b6472]" />
+              </button>
+              <span className="font-semibold text-[#181c22] w-4 text-center text-sm">
+                {activityForm.ticketCount || 1}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  const current = parseInt(activityForm.ticketCount || 1, 10);
+                  setActivityForm({
+                    ...activityForm,
+                    ticketCount: current + 1,
+                  });
+                }}
+                className="w-8 h-8 rounded-lg bg-[#eef0f1] flex items-center justify-center hover:bg-[#e6e8eb] transition-colors"
+              >
+                <Plus className="w-3 h-3 text-[#5b6472]" />
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+              Price per Ticket (₹)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
+              value={activityForm.pricePerTicket}
+              onChange={(e) =>
+                setActivityForm({
+                  ...activityForm,
+                  pricePerTicket: e.target.value,
+                })
+              }
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+              Day (optional)
+            </label>
+            <input
+              type="number"
+              min="1"
+              placeholder="e.g. 2"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
+              value={activityForm.dayNumber}
+              onChange={(e) =>
+                setActivityForm({ ...activityForm, dayNumber: e.target.value })
+              }
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+              Markup Override %
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
+              placeholder={`Trip default: ${tripMarginPercentage || 0}%`}
+              value={activityForm.markupPercentage}
+              onChange={(e) =>
+                setActivityForm({
+                  ...activityForm,
+                  markupPercentage: e.target.value,
+                })
+              }
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+            Notes
+          </label>
+          <textarea
+            placeholder="e.g. Weather-dependent, min age 8"
+            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6] min-h-20 resize-none"
+            value={activityForm.notes}
+            onChange={(e) =>
+              setActivityForm({ ...activityForm, notes: e.target.value })
+            }
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+};

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import DatePicker from "../../common/DatePicker";
 import { CURRENCY_OPTIONS } from "../../../constants/currencies";
+import { daysBetween, shiftDateString } from "../../../utils/dateShift";
 
 const TripInfoTab = ({
   tripInfo,
@@ -24,6 +25,8 @@ const TripInfoTab = ({
   setHotelForm,
   transportForm,
   setTransportForm,
+  setAccommodations,
+  setTransportation,
   calculatedTotalCost,
   includeGST,
   setIncludeGST,
@@ -285,6 +288,7 @@ const TripInfoTab = ({
             value={tripInfo.startDate}
             minDate="today"
             onChange={(dateString) => {
+              const previousStartDate = tripInfo.startDate;
               setTripInfo({
                 ...tripInfo,
                 startDate: dateString,
@@ -302,6 +306,30 @@ const TripInfoTab = ({
                     ...prev,
                     date: dateString,
                   }));
+                }
+              }
+
+              // Preponing/postponing the trip carries every already-added
+              // hotel/cab date along with it by the same number of days —
+              // otherwise changing the start date (directly, or after
+              // duplicating a trip) leaves accommodation/transport dates
+              // stuck on the old schedule.
+              if (previousStartDate && dateString) {
+                const delta = daysBetween(previousStartDate, dateString);
+                if (delta) {
+                  setAccommodations((prev) =>
+                    prev.map((a) => ({
+                      ...a,
+                      checkIn: shiftDateString(a.checkIn, delta),
+                      checkOut: shiftDateString(a.checkOut, delta),
+                    })),
+                  );
+                  setTransportation((prev) =>
+                    prev.map((t) => ({
+                      ...t,
+                      date: shiftDateString(t.date, delta),
+                    })),
+                  );
                 }
               }
             }}

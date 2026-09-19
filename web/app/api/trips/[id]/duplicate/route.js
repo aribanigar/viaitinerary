@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf, teamIdOf } from "@/lib/scope";
 import { serializeTrip } from "@/lib/serialize";
-import { TRIP_INCLUDE } from "@/lib/trips";
+import { TRIP_INCLUDE, cloneTripChildren } from "@/lib/trips";
 import { canCreateTrip, incrementTripsUsed } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
@@ -63,55 +63,11 @@ export async function POST(request, { params }) {
         exclusions: original.exclusions ?? [],
         otherCosts: original.otherCosts ?? [],
         transportDetails: original.transportDetails ?? [],
-        itineraries: {
-          create: original.itineraries.map((i) => ({
-            dayNumber: i.dayNumber,
-            title: i.title,
-            location: i.location,
-            description: i.description,
-            imagePath: i.imagePath,
-          })),
-        },
-        accommodations: {
-          create: original.accommodations.map((a) => ({
-            hotelId: a.hotelId,
-            name: a.name,
-            city: a.city,
-            category: a.category,
-            rooms: a.rooms,
-            beds: a.beds,
-            cnbCount: a.cnbCount,
-            extraBeds5To12Count: a.extraBeds5To12Count,
-            extraBedsAbove12Count: a.extraBedsAbove12Count,
-            mealPlan: a.mealPlan,
-            roomType: a.roomType,
-            checkIn: a.checkIn,
-            checkOut: a.checkOut,
-            pricePerRoom: a.pricePerRoom,
-            bedPrices: a.bedPrices ?? [],
-            imagePath: a.imagePath,
-            extraAdultCount: a.extraAdultCount,
-            alternateOptions: a.alternateOptions ?? [],
-            markupPercentage: a.markupPercentage,
-            // Cancellation state is a booking-event fact about the
-            // original stay, not reusable config — a duplicate starts
-            // un-cancelled (cancelledAt/cancellationCharge/cancellationNote
-            // intentionally omitted, defaulting to null).
-          })),
-        },
-        transportations: {
-          create: original.transportations.map((t) => ({
-            vehicleId: t.vehicleId,
-            tripType: t.tripType,
-            destination: t.destination,
-            route: t.route,
-            date: t.date,
-            vehicleType: t.vehicleType,
-            quantity: t.quantity,
-            remarks: t.remarks,
-            markupPercentage: t.markupPercentage,
-          })),
-        },
+        // Cancellation state (cancelledAt/cancellationCharge/cancellationNote)
+        // is a booking-event fact about the *original* stay, not reusable
+        // config — cloneTripChildren omits it, so a duplicate always starts
+        // un-cancelled.
+        ...cloneTripChildren(original),
       },
       include: TRIP_INCLUDE,
     });

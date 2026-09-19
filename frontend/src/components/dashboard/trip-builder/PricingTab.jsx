@@ -4,6 +4,7 @@ import { IndianRupee, Percent, Plus, Trash2 } from "lucide-react";
 const PricingTab = ({
   totalHotelCost,
   totalVehicleCost,
+  totalActivityCost,
   otherCosts,
   setOtherCosts,
   gstPercentage,
@@ -25,7 +26,7 @@ const PricingTab = ({
         </div>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             <div className="bg-[#f3f3f4]/50 rounded-xl p-5 border border-black/5">
               <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest block mb-2">
                 Accommodation Total
@@ -40,6 +41,14 @@ const PricingTab = ({
               </span>
               <div className="text-xl font-semibold text-[#181c22]">
                 ₹ {totalVehicleCost.toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-[#f3f3f4]/50 rounded-xl p-5 border border-black/5">
+              <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest block mb-2">
+                Activities Total
+              </span>
+              <div className="text-xl font-semibold text-[#181c22]">
+                ₹ {(totalActivityCost || 0).toLocaleString()}
               </div>
             </div>
           </div>

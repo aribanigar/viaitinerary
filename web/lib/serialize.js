@@ -79,6 +79,21 @@ export function serializeTransportation(t) {
   };
 }
 
+export function serializeTripActivity(a) {
+  return {
+    id: a.id,
+    activity_id: a.activityId,
+    name: a.name,
+    day_number: a.dayNumber,
+    ticket_count: a.ticketCount,
+    price_per_ticket: num(a.pricePerTicket),
+    total_cost: num(a.pricePerTicket) * (a.ticketCount ?? 1),
+    markup_percentage: num(a.markupPercentage),
+    notes: a.notes,
+    activity: a.activity ? { id: a.activity.id, name: a.activity.name, selling_price: num(a.activity.sellingPrice) } : null,
+  };
+}
+
 export function serializeTrip(trip) {
   if (!trip) return null;
   return {
@@ -122,6 +137,7 @@ export function serializeTrip(trip) {
     itineraries: (trip.itineraries ?? []).map(serializeItinerary),
     accommodations: (trip.accommodations ?? []).map(serializeAccommodation),
     transportations: (trip.transportations ?? []).map(serializeTransportation),
+    trip_activities: (trip.tripActivities ?? []).map(serializeTripActivity),
   };
 }
 
@@ -162,6 +178,12 @@ export function serializeDestination(d) {
     id: d.id, name: d.name, activities: d.activities ?? [],
     country: d.country ?? null, state: d.state ?? null, city: d.city ?? null,
     image_path: d.imagePath, image_url: d.imagePath,
+  };
+}
+export function serializeActivityLite(a) {
+  return {
+    id: a.id, name: a.name, destination_id: a.destinationId ?? null,
+    selling_price: num(a.sellingPrice), duration_hours: num(a.durationHours),
   };
 }
 export function serializeHotel(h) {

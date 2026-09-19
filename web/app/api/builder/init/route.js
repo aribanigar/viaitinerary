@@ -7,6 +7,7 @@ import {
   serializeDestination,
   serializeHotel,
   serializeVehicle,
+  serializeActivityLite,
   serializeTrip,
 } from "@/lib/serialize";
 import { TRIP_INCLUDE } from "@/lib/trips";
@@ -19,11 +20,12 @@ export async function GET(request) {
   if (!user) return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
   const adminId = await adminIdOf(user);
 
-  const [settings, destinations, vehicles, hotels, policy] = await Promise.all([
+  const [settings, destinations, vehicles, hotels, activities, policy] = await Promise.all([
     prisma.agencySetting.findUnique({ where: { userId: adminId } }),
     prisma.destination.findMany({ where: { userId: adminId }, orderBy: { name: "asc" } }),
     prisma.vehicle.findMany({ where: { userId: adminId }, orderBy: { name: "asc" } }),
     prisma.hotel.findMany({ where: { userId: adminId }, orderBy: { name: "asc" } }),
+    prisma.activity.findMany({ where: { userId: adminId, isActive: true }, orderBy: { name: "asc" } }),
     prisma.policy.findUnique({ where: { userId: adminId } }),
   ]);
 
@@ -45,6 +47,7 @@ export async function GET(request) {
     destinations: destinations.map(serializeDestination),
     vehicles: vehicles.map(serializeVehicle),
     hotels: hotels.map(serializeHotel),
+    activities: activities.map(serializeActivityLite),
     policies: mappedPolicies,
   };
 
