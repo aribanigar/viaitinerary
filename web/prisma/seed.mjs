@@ -14,11 +14,17 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "password";
 async function main() {
   const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
 
+  // This runs on every production build (`prisma db seed` in web/package.json's
+  // `build` script), so it must never clobber a real password with the
+  // default on redeploy — only set the password when actually creating the
+  // account. Role/status are safe to keep enforcing on every run since they
+  // don't change out from under the person logging in.
   let user = await prisma.user.findFirst({ where: { email: ADMIN_EMAIL } });
+  const existed = !!user;
   if (user) {
     user = await prisma.user.update({
       where: { id: user.id },
-      data: { password: passwordHash, role: "super_admin", status: "active" },
+      data: { role: "super_admin", status: "active" },
     });
   } else {
     user = await prisma.user.create({
@@ -63,7 +69,10 @@ async function main() {
     });
   }
 
-  console.log(`Seeded super admin + ${plans.length} plans.\n  email:    ${ADMIN_EMAIL}\n  password: ${ADMIN_PASSWORD}`);
+  const passwordNote = existed
+    ? "unchanged (existing account — not reset on redeploy)"
+    : ADMIN_PASSWORD;
+  console.log(`Seeded super admin + ${plans.length} plans.\n  email:    ${ADMIN_EMAIL}\n  password: ${passwordNote}`);
 }
 
 main()

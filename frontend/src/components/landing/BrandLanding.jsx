@@ -25,7 +25,7 @@ const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 bac
 <img alt="A serene mountain sunrise viewed from an airy, minimalist interior space." class="absolute inset-0 w-full h-full object-cover" src="https://plus.unsplash.com/premium_photo-1669541884772-49c30fdee42c?q=80&amp;w=1675&amp;auto=format&amp;fit=crop&amp;ixlib=rb-4.1.0&amp;ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
 <div class="absolute inset-0 bg-black/45"></div>
 <div class="relative z-10 w-full px-8 text-center py-12 mx-8 rounded-[20px] max-w-4xl">
-<h1 class="text-4xl md:text-6xl font-light leading-tight tracking-tight mb-6 text-white">Run your entire travel<br>business on one platform</h1>
+<h1 class="text-4xl md:text-6xl font-light leading-tight tracking-tight mb-6 text-white">Run your entire travel business<br><span class="font-serif italic font-normal">on one platform</span></h1>
 <p class="text-base md:text-lg font-light text-white/85 mb-8 max-w-2xl mx-auto leading-relaxed">Travel CRM, itinerary builder and lead management for tour operators and travel agencies — capture enquiries, build quotes in minutes, and close more bookings.</p>
 <a href="/signup" class="inline-block text-xs font-medium px-6 py-2.5 rounded-[100px] hover:bg-primary/90 transition-all duration-300 tracking-wide bg-white text-black">Start Free Today</a>
 </div>
@@ -69,12 +69,35 @@ const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 bac
 </div>
 </div>
 </section>
+<!-- Highlights strip -->
+<section class="pb-16 px-[20px]">
+<div class="max-w-[1200px] mx-auto">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-outline-variant rounded-[20px] overflow-hidden border border-outline-variant">
+<div class="bg-surface p-8 text-center">
+<div class="text-4xl md:text-5xl font-light text-primary">2 min</div>
+<div class="text-xs text-secondary uppercase tracking-[0.15em] mt-2">Avg. itinerary build time</div>
+</div>
+<div class="bg-surface p-8 text-center">
+<div class="text-4xl md:text-5xl font-light text-primary">40%</div>
+<div class="text-xs text-secondary uppercase tracking-[0.15em] mt-2">Faster quote turnaround</div>
+</div>
+<div class="bg-surface p-8 text-center">
+<div class="text-4xl md:text-5xl font-light text-primary">10k+</div>
+<div class="text-xs text-secondary uppercase tracking-[0.15em] mt-2">Itineraries generated</div>
+</div>
+<div class="bg-surface p-8 text-center">
+<div class="text-4xl md:text-5xl font-light text-primary">24/7</div>
+<div class="text-xs text-secondary uppercase tracking-[0.15em] mt-2">Support for your team</div>
+</div>
+</div>
+</div>
+</section>
 <!-- Smart Insights Section (Replicated & Adjusted) -->
 <section id="insights" class="pt-32 pb-12 px-[20px] scroll-mt-20">
 <div class="max-w-[1200px] mx-auto">
 <div class="max-w-full">
 <span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
-<h2 class="font-light mt-4 leading-tight text-[42px] text-primary">Everything you need to<br>run your travel business</h2>
+<h2 class="font-light mt-4 leading-tight text-[42px] text-primary">Everything you need to<br>run your <span class="font-serif italic">travel business</span></h2>
 </div>
 </div>
 </section><section class="pb-12 pt-8 px-[20px]">
@@ -87,7 +110,7 @@ const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 bac
 <div>
 <div class="flex items-center gap-3 mb-6">
 <span class="material-symbols-outlined text-primary text-2xl">lightbulb</span>
-<h2 class="font-light text-primary tracking-tight text-[42px]">Smart Insights</h2>
+<h2 class="font-light text-primary tracking-tight text-[42px]"><span class="font-serif italic">Smart</span> Insights</h2>
 </div>
 <p class="text-secondary text-sm mb-10 leading-relaxed font-light">
             ViaItinerary surfaces the numbers that matter — costs, margins, conversions — and guides your next move from quote to confirmed booking.
@@ -212,7 +235,7 @@ const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 bac
 <img alt="A serene mountain landscape reflecting minimalist design principles." class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1454496522488-7a8e488e8606?q=80&amp;w=1600&amp;auto=format&amp;fit=crop">
 <div class="absolute inset-0 bg-black/40"></div>
 <div class="relative z-10 w-full px-8 text-center flex flex-col items-center justify-center h-full max-w-3xl mx-auto rounded-[20px]">
-<h2 class="text-3xl md:text-5xl font-light text-white leading-tight tracking-tight max-w-2xl mx-auto">Beautiful itineraries. Effortless workflow.</h2>
+<h2 class="text-3xl md:text-5xl font-light text-white leading-tight tracking-tight max-w-2xl mx-auto">Beautiful itineraries. <span class="font-serif italic">Effortless workflow.</span></h2>
 </div>
 </div>
 </div>
@@ -222,7 +245,7 @@ const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 bac
 <div class="max-w-[1200px] mx-auto">
 <div class="max-w-full">
 <span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
-<h2 class="font-light text-primary mt-4 leading-tight text-[42px]">Everything you need to<br>run your travel business</h2>
+<h2 class="font-light text-primary mt-4 leading-tight text-[42px]">Everything you need to<br>run your <span class="font-serif italic">travel business</span></h2>
 </div>
 </div>
 </section><section class="pb-12 pt-8 px-[20px]">
@@ -235,7 +258,7 @@ const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 bac
 <div>
 <div class="flex items-center gap-3 mb-6">
 <span class="material-symbols-outlined text-primary text-2xl">lightbulb</span>
-<h2 class="font-light text-primary tracking-tight text-[42px]">Smart Insights</h2>
+<h2 class="font-light text-primary tracking-tight text-[42px]"><span class="font-serif italic">Smart</span> Insights</h2>
 </div>
 <p class="text-secondary text-sm mb-10 leading-relaxed font-light">
             ViaItinerary surfaces the numbers that matter — costs, margins, conversions — and guides your next move from quote to confirmed booking.
@@ -347,7 +370,7 @@ const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 bac
 <div class="max-w-[1200px] mx-auto">
 <div class="mb-16">
 <span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
-<h2 class="md:text-4xl font-light text-primary mt-4 leading-tight font-sans text-[42px]">Advanced tools for<br>modern agencies</h2>
+<h2 class="md:text-4xl font-light text-primary mt-4 leading-tight font-sans text-[42px]">Advanced tools for<br><span class="font-serif italic">modern agencies</span></h2>
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pt-[80px]">
 <div class="flex flex-col relative">
@@ -387,7 +410,7 @@ const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 bac
 <!-- Centered Content Over Image -->
 <div class="relative z-10 flex flex-col items-center text-center px-8 py-12 rounded-[20px] mx-6">
 <span class="text-xs font-semibold tracking-[0.2em] uppercase mb-6 text-white">Core Capabilities</span>
-<h2 class="text-4xl md:text-5xl font-light leading-tight max-w-2xl text-white">Ready to elevate your<br>travel business?</h2>
+<h2 class="text-4xl md:text-5xl font-light leading-tight max-w-2xl text-white">Ready to elevate your<br><span class="font-serif italic">travel business?</span></h2>
 <a href="/signup" class="inline-block bg-primary text-on-primary text-xs font-medium px-6 py-2.5 rounded-[100px] hover:bg-primary/90 transition-all duration-300 tracking-wide mt-8">Start Free</a>
 </div>
 </div>
@@ -399,7 +422,7 @@ const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 bac
 <div class="max-w-[1200px] mx-auto">
 <div class="w-full h-[400px] md:h-[500px] rounded-[20px] flex flex-col justify-between relative border bg-surface-container-low border-outline-variant p-[20px]">
 <div class="max-w-md">
-<h3 class="text-3xl md:text-4xl font-light text-primary mb-4">Travel, simplified.</h3>
+<h3 class="text-3xl md:text-4xl font-light text-primary mb-4"><span class="font-serif italic">Travel,</span> simplified.</h3>
 <p class="text-secondary leading-relaxed font-light">
             Focus on what matters. ViaItinerary strips away the busywork so crafting and closing trips feels effortless.
         </p>

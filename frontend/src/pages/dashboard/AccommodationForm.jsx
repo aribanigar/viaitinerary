@@ -4,7 +4,7 @@ import DashboardLayout from "../../components/dashboard/DashboardLayout";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
-import { getHotel, createHotel, updateHotel } from "../../api/hotels";
+import { getHotel, createHotel, updateHotel, getHotelB2BRates } from "../../api/hotels";
 import {
   Hotel,
   MapPin,
@@ -58,6 +58,8 @@ const AccommodationForm = () => {
   const [priceSections, setPriceSections] = useState([]);
   const [marketPrices, setMarketPrices] = useState([]);
   const [marketPriceDraft, setMarketPriceDraft] = useState({ source: "", price: "", note: "" });
+  const [b2bMatches, setB2bMatches] = useState(null);
+  const [b2bLoading, setB2bLoading] = useState(false);
   const [paymentTerms, setPaymentTerms] = useState({ reference_event: "booking_date", installments: [] });
   const [googleRating, setGoogleRating] = useState(null);
   const [fetchingPlace, setFetchingPlace] = useState(false);
@@ -396,6 +398,30 @@ const AccommodationForm = () => {
 
   const removeMarketPrice = (index) => {
     setMarketPrices((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addB2BRatePrice = (price, note) => {
+    setMarketPrices((prev) => [
+      ...prev,
+      { source: "B2B Portal", price: Number(price), note: note || "", date: new Date().toISOString().slice(0, 10) },
+    ]);
+    toast.success("Added to market reference prices");
+  };
+
+  const checkB2BPortal = async () => {
+    setB2bLoading(true);
+    try {
+      const resp = await getHotelB2BRates(id, token);
+      setB2bMatches(resp.matches || []);
+      if (!resp.matches || resp.matches.length === 0) {
+        toast.error("No matching listing found on the B2B portal");
+      }
+    } catch (err) {
+      toast.error(err.message || "Couldn't reach the B2B portal");
+      setB2bMatches([]);
+    } finally {
+      setB2bLoading(false);
+    }
   };
 
   const marketAverage = marketPrices.length
@@ -1083,6 +1109,60 @@ const AccommodationForm = () => {
                   );
                 })}
               </div>
+
+              {isEditing && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={checkB2BPortal}
+                    disabled={b2bLoading}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 rounded-lg text-[10px] font-bold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    {b2bLoading ? "Checking…" : "Check B2B Portal (live rates)"}
+                  </button>
+
+                  {b2bMatches != null && b2bMatches.length > 0 && (
+                    <div className="space-y-1.5">
+                      {b2bMatches.map((match) => (
+                        <div key={match.id} className="bg-white rounded-lg p-2.5 space-y-1.5">
+                          <p className="text-[10px] font-bold text-slate-500">
+                            {match.name} · {match.location_label}
+                          </p>
+                          {(match.rooms || []).map((room) => {
+                            const price = room.cp || room.ep || room.map || room.ap || 0;
+                            if (!price) return null;
+                            return (
+                              <div
+                                key={room.id}
+                                className="flex items-center justify-between text-xs"
+                              >
+                                <span className="text-slate-700">
+                                  {room.category} ({room.meal}) — {room.status}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-slate-900">
+                                    ₹{Number(price).toLocaleString("en-IN")}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      addB2BRatePrice(price, `${room.category} (${room.meal})`)
+                                    }
+                                    className="text-[10px] font-black uppercase tracking-wider bg-[#e7f63c] text-[#181c22] px-2 py-1 rounded-md hover:bg-[#d4e42e]"
+                                  >
+                                    Use
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {marketPrices.length > 0 && (
                 <div className="space-y-1.5">

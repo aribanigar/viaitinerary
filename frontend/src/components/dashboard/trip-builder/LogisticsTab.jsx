@@ -151,6 +151,11 @@ const LogisticsTab = ({
                         {hotel.alternateOptions.length === 1 ? "" : "s"}
                       </span>
                     )}
+                    {hotel.markupPercentage !== "" && hotel.markupPercentage != null && (
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        {hotel.markupPercentage}% margin
+                      </span>
+                    )}
                   </h4>
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     <span className="text-xs font-bold text-[#9aa3b2] uppercase tracking-wider">
@@ -344,6 +349,11 @@ const LogisticsTab = ({
                             {item.destination}
                           </span>
                         </>
+                      )}
+                      {item.markupPercentage !== "" && item.markupPercentage != null && (
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                          {item.markupPercentage}% margin
+                        </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">

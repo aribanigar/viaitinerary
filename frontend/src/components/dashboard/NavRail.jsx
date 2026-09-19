@@ -25,6 +25,11 @@ import {
   ChevronsRight,
   ChevronsLeft,
   Aperture,
+  Building,
+  CalendarCheck,
+  Image as ImageIcon,
+  PenTool,
+  Tag,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import InstallAppButton from "../common/InstallAppButton";
@@ -37,6 +42,25 @@ const PIN_KEY = "nav_rail_pinned";
 // Accounting / Settings), gated by the same roles.
 const NAV_TREE = [
   { label: "Dashboard", icon: Home, to: "/dashboard" },
+  {
+    label: "Management",
+    icon: Building,
+    roles: ["super_admin"],
+    children: [
+      { label: "Businesses", icon: Building, to: "/businesses" },
+      { label: "Public Leads", icon: Inbox, to: "/public-leads" },
+      { label: "Demo Requests", icon: CalendarCheck, to: "/demo-requests" },
+      { label: "Showcase", icon: ImageIcon, to: "/admin/showcase" },
+      {
+        label: "Trusted By",
+        icon: ShieldCheck,
+        to: "/admin/trusted-companies",
+      },
+      { label: "Blog Posts", icon: PenTool, to: "/admin/blog/posts" },
+      { label: "Blog Categories", icon: Tag, to: "/admin/blog/categories" },
+      { label: "Subscription Plans", icon: Zap, to: "/admin/plans" },
+    ],
+  },
   {
     label: "Create a Trip",
     icon: Plus,

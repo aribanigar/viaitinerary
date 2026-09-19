@@ -36,3 +36,7 @@ export const searchDestinationPhotos = async (query, token) => {
   const params = new URLSearchParams({ q: query });
   return request(`/destinations/photos?${params.toString()}`, { token });
 };
+
+export const fillDestinationPhotos = async (token) => {
+  return request("/destinations/fill-photos", { method: "POST", token });
+};

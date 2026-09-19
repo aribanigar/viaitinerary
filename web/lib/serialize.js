@@ -12,6 +12,16 @@ export function currencySymbol(currency) {
   return m ? m[1].trim() : String(currency).trim();
 }
 
+export function serializeTripRevision(r) {
+  return {
+    id: r.id,
+    version_number: r.versionNumber,
+    trigger: r.trigger,
+    change_summary: r.changeSummary ?? [],
+    created_at: iso(r.createdAt),
+  };
+}
+
 export function serializeItinerary(it) {
   return {
     id: it.id,
@@ -48,6 +58,7 @@ export function serializeAccommodation(a) {
     cancellation_charge: num(a.cancellationCharge),
     cancellation_note: a.cancellationNote ?? null,
     alternate_options: a.alternateOptions ?? [],
+    markup_percentage: num(a.markupPercentage),
     hotel: a.hotel ? { id: a.hotel.id, name: a.hotel.name, city: a.hotel.city } : null,
   };
 }
@@ -63,6 +74,7 @@ export function serializeTransportation(t) {
     vehicle_type: t.vehicleType,
     quantity: t.quantity,
     remarks: t.remarks,
+    markup_percentage: num(t.markupPercentage),
     vehicle: t.vehicle ? { id: t.vehicle.id, name: t.vehicle.name, price: num(t.vehicle.price) } : null,
   };
 }
@@ -85,6 +97,8 @@ export function serializeTrip(trip) {
     duration: trip.duration,
     cost: num(trip.cost),
     gst_amount: num(trip.gstAmount),
+    gst_percentage: num(trip.gstPercentage),
+    profit_margin_percentage: num(trip.profitMarginPercentage),
     paid_amount: num(trip.paidAmount),
     refunded_amount: num(trip.refundedAmount),
     currency: trip.currency,
@@ -144,7 +158,11 @@ export function serializeSettings(s) {
 
 // --- Builder/init lite shapes ---
 export function serializeDestination(d) {
-  return { id: d.id, name: d.name, activities: d.activities ?? [], image_path: d.imagePath, image_url: d.imagePath };
+  return {
+    id: d.id, name: d.name, activities: d.activities ?? [],
+    country: d.country ?? null, state: d.state ?? null, city: d.city ?? null,
+    image_path: d.imagePath, image_url: d.imagePath,
+  };
 }
 export function serializeHotel(h) {
   return {

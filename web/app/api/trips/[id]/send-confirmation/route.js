@@ -4,6 +4,7 @@ import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
 import { TRIP_INCLUDE } from "@/lib/trips";
 import { currencySymbol } from "@/lib/serialize";
+import { recordTripRevision } from "@/lib/revisions";
 import { mailerForAdminId, sendMail, hotelBookingHtml, cabBookingHtml, confirmationHtml } from "@/lib/mailer";
 import { renderReceiptPdf, renderInvoicePdf, renderConfirmationPdf } from "@/lib/pdf";
 
@@ -113,7 +114,11 @@ export async function POST(request, { params }) {
     return NextResponse.json({ message: "Agency contact email is not set." }, { status: 422 });
   }
 
-  if (trip.status === "pending") {
+  // Trips created via duplicate/package-use/lead-conversion start at
+  // "draft" rather than "pending" — without including it here, sending a
+  // confirmation on one of those never actually marks the trip confirmed,
+  // silently excluding it from "confirmed" revenue/reporting filters forever.
+  if (trip.status === "pending" || trip.status === "draft") {
     await prisma.trip.update({ where: { id: trip.id }, data: { status: "confirmed", confirmationSent: true } });
   } else {
     await prisma.trip.update({ where: { id: trip.id }, data: { confirmationSent: true } });
@@ -134,6 +139,8 @@ export async function POST(request, { params }) {
     text: message,
     attachments: [{ filename: `${trip.tripId}_Confirmation.pdf`, content: confirmationPdf, contentType: "application/pdf" }],
   });
+
+  await recordTripRevision(trip.id, "confirmation_email");
 
   const response = { message: "Confirmation email sent for the client." };
   if (trip.clientPhone) {

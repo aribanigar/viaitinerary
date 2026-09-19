@@ -83,3 +83,15 @@ export async function fetchBuilderInit(token, tripId = null) {
   const url = tripId ? `/builder/init?trip_id=${tripId}` : "/builder/init";
   return request(url, { token });
 }
+
+export async function fetchTripRevisions(token, id) {
+  return request(`/trips/${id}/revisions`, { token });
+}
+
+export async function logTripSend(token, id, trigger) {
+  return request(`/trips/${id}/log-send`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({ trigger }),
+  });
+}

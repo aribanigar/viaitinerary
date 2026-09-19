@@ -59,6 +59,8 @@ export async function POST(request, { params }) {
         duration: pkg.duration,
         cost: pkg.cost,
         gstAmount: pkg.gstAmount,
+        gstPercentage: pkg.gstPercentage,
+        profitMarginPercentage: pkg.profitMarginPercentage,
         currency: pkg.currency,
         imagePath: pkg.imagePath,
         status: "draft",

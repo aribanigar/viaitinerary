@@ -277,33 +277,23 @@ const SuperAdminDashboard = () => {
           </div>
         ) : (
           <>
-            {/* ── Modern KPI Cards ─────────────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            {/* ── Stats strip ─────────────────────────────── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 rounded-xl overflow-hidden border border-slate-200 mb-10">
               {stats.map((card, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:border-indigo-300 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div
-                      className={`p-2 rounded-lg bg-${card.color}-50 text-${card.color}-600`}
-                    >
-                      <card.icon className="w-5 h-5" />
-                    </div>
-                    {/* Optional: Add percentage trend here if available */}
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">
+                <div key={i} className="bg-white p-5">
+                  <div className="flex items-center gap-1.5 mb-4">
+                    <card.icon className="w-3.5 h-3.5 text-slate-400" />
+                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
                       {card.label}
                     </p>
-                    <p className="text-2xl font-bold text-slate-900">
-                      {card.value}
-                    </p>
-                    <p className="text-[11px] font-medium text-slate-400 mt-2 flex items-center gap-1">
-                      <ArrowUpRight className="w-3 h-3 text-emerald-500" />
-                      {card.trend}
-                    </p>
                   </div>
+                  <p className="text-3xl font-light text-slate-900">
+                    {card.value}
+                  </p>
+                  <p className="text-[11px] font-medium text-slate-400 mt-2 flex items-center gap-1">
+                    <ArrowUpRight className="w-3 h-3 text-emerald-500" />
+                    {card.trend}
+                  </p>
                 </div>
               ))}
             </div>

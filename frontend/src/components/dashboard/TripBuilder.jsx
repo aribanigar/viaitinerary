@@ -31,12 +31,16 @@ import {
   ShieldCheck,
   Clock,
   Package as PackageIcon,
+  MessageCircle,
+  History as HistoryIcon,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
   createTrip,
   updateTrip,
   fetchTrips,
+  fetchTripRevisions,
+  logTripSend,
 } from "../../api/trips";
 import {
   createPackage,
@@ -57,6 +61,12 @@ import {
   DRAFT_KEY,
   useTripBuilderData,
 } from "./trip-builder/useTripBuilderData";
+
+const TRIGGER_LABELS = {
+  export: "PDF Export",
+  whatsapp_share: "WhatsApp Share",
+  confirmation_email: "Confirmation Email",
+};
 
 const TABS_KEY = "builder_open_tabs";
 const readTabs = () => {
@@ -95,6 +105,10 @@ const TripBuilder = ({ mode }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [amendmentsOpen, setAmendmentsOpen] = useState(false);
+  const [revisions, setRevisions] = useState([]);
+  const [revisionsLoading, setRevisionsLoading] = useState(false);
   const [hasDraft, setHasDraft] = useState(false);
   const [loadedTabId, setLoadedTabId] = useState(null);
   const [defaultTripImage, setDefaultTripImage] = useState("");
@@ -154,6 +168,21 @@ const TripBuilder = ({ mode }) => {
   const [includeGST, setIncludeGST] = useState(true);
   const [gstPercentage, setGstPercentage] = useState(0);
   const [profitMarginPercentage, setProfitMarginPercentage] = useState(0);
+  // Guards the auto-cost effect below from firing before gstPercentage/
+  // profitMarginPercentage have been restored for the trip being loaded —
+  // without this, reopening a saved trip briefly has both at their 0
+  // defaults, which the effect would treat as a real edit and use to
+  // silently overwrite (and then autosave) the trip's actual quoted price.
+  // Only flips true once the agent actually edits pricing themselves.
+  const [pricingTouched, setPricingTouched] = useState(false);
+  const handleGstPercentageChange = (value) => {
+    setPricingTouched(true);
+    setGstPercentage(value);
+  };
+  const handleProfitMarginPercentageChange = (value) => {
+    setPricingTouched(true);
+    setProfitMarginPercentage(value);
+  };
   const [otherCosts, setOtherCosts] = useState([]);
   const [itinerary, setItinerary] = useState([]);
 
@@ -284,6 +313,7 @@ const TripBuilder = ({ mode }) => {
       cancellationCharge: item.cancellationCharge ?? item.cancellation_charge ?? "",
       cancellationNote: item.cancellationNote ?? item.cancellation_note ?? "",
       alternateOptions: item.alternateOptions ?? item.alternate_options ?? [],
+      markupPercentage: item.markupPercentage ?? item.markup_percentage ?? "",
     };
   }, []);
 
@@ -322,6 +352,7 @@ const TripBuilder = ({ mode }) => {
     setHasDraft,
     setGstPercentage,
     setProfitMarginPercentage,
+    setPricingTouched,
     formatImageUrl,
     normalizeAccommodation,
     toast,
@@ -454,6 +485,7 @@ const TripBuilder = ({ mode }) => {
     cancellationCharge: "",
     cancellationNote: "",
     alternateOptions: [],
+    markupPercentage: "",
   });
 
   const uniqueCities = [...new Set(masterHotels.map((h) => h.city))]
@@ -472,6 +504,7 @@ const TripBuilder = ({ mode }) => {
     vehicleType: "",
     quantity: 1,
     remarks: "",
+    markupPercentage: "",
   });
 
   const handleHotelPhotoChange = (e) => {
@@ -521,6 +554,7 @@ const TripBuilder = ({ mode }) => {
         cancellationCharge: "",
         cancellationNote: "",
         alternateOptions: [],
+        markupPercentage: "",
       });
       setEditingHotelId(null);
       setIsHotelModalOpen(false);
@@ -553,6 +587,7 @@ const TripBuilder = ({ mode }) => {
         vehicleType: "",
         quantity: 1,
         remarks: "",
+        markupPercentage: "",
       });
       setEditingTransportId(null);
       setIsTransportModalOpen(false);
@@ -584,6 +619,7 @@ const TripBuilder = ({ mode }) => {
       cancellationCharge: normalizedHotel.cancellationCharge ?? "",
       cancellationNote: normalizedHotel.cancellationNote ?? "",
       alternateOptions: normalizedHotel.alternateOptions || [],
+      markupPercentage: normalizedHotel.markupPercentage ?? "",
     });
     setEditingHotelId(hotel.id);
     setIsHotelModalOpen(true);
@@ -600,6 +636,7 @@ const TripBuilder = ({ mode }) => {
       vehicleType: transport.vehicleType,
       quantity: transport.quantity || 1,
       remarks: transport.remarks,
+      markupPercentage: transport.markupPercentage ?? "",
     });
     setEditingTransportId(transport.id);
     setIsTransportModalOpen(true);
@@ -728,12 +765,41 @@ const TripBuilder = ({ mode }) => {
     0,
   );
 
-  const netCost = totalHotelCost + totalVehicleCost + totalOtherCost;
-  const gstAmountValue = includeGST ? netCost * (gstPercentage / 100) : 0;
-  const costWithGst = netCost + gstAmountValue;
-  const calculatedTotalCost = costWithGst * (1 + profitMarginPercentage / 100);
+  // Per-item markup override falls back to the trip-wide margin when unset —
+  // this is what lets one hotel/vehicle carry a different margin than the
+  // rest of the trip without touching the raw cost totals shown above.
+  const effectiveMarkup = (item) =>
+    item.markupPercentage !== undefined &&
+    item.markupPercentage !== null &&
+    item.markupPercentage !== ""
+      ? parseFloat(item.markupPercentage) || 0
+      : profitMarginPercentage || 0;
+
+  // Marked-up (client-facing) totals, used only for the grand total below —
+  // by the distributive property this equals totalHotelCost*(1+margin%) etc.
+  // when no item overrides the trip margin, so the final total is unchanged
+  // for every existing trip.
+  const totalHotelCostMarkedUp = accommodations.reduce(
+    (sum, item) => sum + calculateHotelCost(item) * (1 + effectiveMarkup(item) / 100),
+    0,
+  );
+  const totalVehicleCostMarkedUp = transportation.reduce(
+    (sum, item) => sum + calculateVehicleCost(item) * (1 + effectiveMarkup(item) / 100),
+    0,
+  );
+  const totalOtherCostMarkedUp = totalOtherCost * (1 + (profitMarginPercentage || 0) / 100);
+
+  const netCostMarkedUp = totalHotelCostMarkedUp + totalVehicleCostMarkedUp + totalOtherCostMarkedUp;
+  const gstAmountValue = includeGST ? netCostMarkedUp * (gstPercentage / 100) : 0;
+  const costWithGst = netCostMarkedUp + gstAmountValue;
+  const calculatedTotalCost = costWithGst;
 
   useEffect(() => {
+    // Don't touch the trip's saved cost until the agent has actually edited
+    // GST%/margin% themselves — otherwise this fires the instant a trip
+    // loads (before its real percentages, if any, have been restored) and
+    // silently overwrites its quoted price.
+    if (!pricingTouched) return;
     const nextCost = Math.max(0, Math.round(calculatedTotalCost)).toString();
     setTripInfo((prev) =>
       prev.cost === nextCost
@@ -743,7 +809,7 @@ const TripBuilder = ({ mode }) => {
             cost: nextCost,
           },
     );
-  }, [calculatedTotalCost]);
+  }, [calculatedTotalCost, pricingTouched]);
 
   const removeDay = (id) => {
     const updatedItinerary = itinerary
@@ -930,6 +996,7 @@ const TripBuilder = ({ mode }) => {
       cancellation_charge: item.cancellationCharge === "" ? null : item.cancellationCharge,
       cancellation_note: item.cancellationNote ?? null,
       alternate_options: item.alternateOptions ?? [],
+      markup_percentage: item.markupPercentage === "" ? null : item.markupPercentage,
     }));
 
     const formattedTransportations = sortedTransportation.map((item, index) => {
@@ -954,6 +1021,7 @@ const TripBuilder = ({ mode }) => {
         quantity: item.quantity || 1,
         remarks: item.remarks,
         day_number: dayNumber, // Include day_number for PDF rendering
+        markup_percentage: item.markupPercentage === "" ? null : item.markupPercentage,
       };
     });
 
@@ -961,6 +1029,8 @@ const TripBuilder = ({ mode }) => {
       ...tripInfo,
       include_gst: includeGST,
       gst_amount: includeGST ? Number(gstAmountValue.toFixed(2)) : 0,
+      gst_percentage: gstPercentage,
+      profit_margin_percentage: profitMarginPercentage,
       use_flight: tripInfo.useFlight,
       transport_details: (tripInfo.transportDetails || []).map((t) => ({
         ...t,
@@ -1057,11 +1127,87 @@ const TripBuilder = ({ mode }) => {
       // WYSIWYG: export exactly what the live preview shows (any template).
       const { exportPreviewToPdf } = await import("../../utils/exportPdf");
       await exportPreviewToPdf(`${tripInfo.tripId || "Trip"}_Itinerary.pdf`);
+      logSendForAmendmentHistory("export");
     } catch (err) {
       console.error("PDF generation error:", err);
       toast.error("There was an error generating your PDF. Please try again.");
     } finally {
       setExporting(false);
+    }
+  };
+
+  // Log a "sent" event for the amendment history — only meaningful once the
+  // trip actually has a saved server-side record (urlTripId). Fire-and-forget:
+  // a logging failure shouldn't block or fail the export/share the agent is
+  // actually waiting on.
+  const logSendForAmendmentHistory = (trigger) => {
+    if (!urlTripId) return;
+    logTripSend(token, urlTripId, trigger).catch((err) =>
+      console.warn("Failed to log amendment history:", err),
+    );
+  };
+
+  const openAmendments = async () => {
+    setAmendmentsOpen(true);
+    if (!urlTripId) return;
+    setRevisionsLoading(true);
+    try {
+      const res = await fetchTripRevisions(token, urlTripId);
+      setRevisions(res.data || []);
+    } catch (err) {
+      console.error("Failed to load amendment history:", err);
+      toast.error("Couldn't load amendment history.");
+    } finally {
+      setRevisionsLoading(false);
+    }
+  };
+
+  const handleShareWhatsApp = async () => {
+    const greeting = `Hi ${tripInfo.clientName || "there"}, here's your itinerary for ${tripInfo.tripTitle || "your trip"} from ${agencySettings.agencyName || "us"}.`;
+    try {
+      setSharing(true);
+      const { exportPreviewToPdfBlob } = await import("../../utils/exportPdf");
+      const blob = await exportPreviewToPdfBlob();
+      const filename = `${tripInfo.tripId || "Trip"}_Itinerary.pdf`;
+      const file = new File([blob], filename, { type: "application/pdf" });
+
+      // Web Share API (mobile Chrome/Safari): opens the native share sheet
+      // with WhatsApp as a target and the PDF attached directly — true
+      // one-click sharing. Not supported for files on desktop Chrome.
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: tripInfo.tripTitle || "Itinerary",
+          text: greeting,
+        });
+        logSendForAmendmentHistory("whatsapp_share");
+        return;
+      }
+
+      // Desktop fallback: WhatsApp's web/deep-link only pre-fills text, it
+      // can't attach a file — so download the PDF and open a WhatsApp chat
+      // with the greeting, and tell the agent to attach the file themselves.
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      const phone = (tripInfo.clientPhone || "").replace(/[^\d]/g, "");
+      const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(`${greeting} PDF downloaded — attach it here.`)}`;
+      window.open(waUrl, "_blank", "noopener,noreferrer");
+      toast.info("PDF downloaded — attach it in the WhatsApp chat that just opened.");
+      logSendForAmendmentHistory("whatsapp_share");
+    } catch (err) {
+      if (err?.name !== "AbortError") {
+        console.error("WhatsApp share error:", err);
+        toast.error("Couldn't share the itinerary. Please try again.");
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -1307,6 +1453,14 @@ const TripBuilder = ({ mode }) => {
           Locked
         </label>
       )}
+      {urlTripId && (
+        <button
+          onClick={openAmendments}
+          className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5"
+        >
+          <HistoryIcon className="w-3.5 h-3.5" /> Amendments
+        </button>
+      )}
       <button
         onClick={handleExport}
         disabled={loading || saving || exporting}
@@ -1320,6 +1474,22 @@ const TripBuilder = ({ mode }) => {
         ) : (
           <>
             <Download className="w-3.5 h-3.5" /> Export
+          </>
+        )}
+      </button>
+      <button
+        onClick={handleShareWhatsApp}
+        disabled={loading || saving || exporting || sharing}
+        className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {sharing ? (
+          <>
+            <Loader size="sm" text="" inline color="text-[#181c22]" />
+            <span>Sharing…</span>
+          </>
+        ) : (
+          <>
+            <MessageCircle className="w-3.5 h-3.5" /> Share
           </>
         )}
       </button>
@@ -1524,9 +1694,9 @@ const TripBuilder = ({ mode }) => {
                         otherCosts={otherCosts}
                         setOtherCosts={setOtherCosts}
                         gstPercentage={gstPercentage}
-                        setGstPercentage={setGstPercentage}
+                        setGstPercentage={handleGstPercentageChange}
                         profitMarginPercentage={profitMarginPercentage}
-                        setProfitMarginPercentage={setProfitMarginPercentage}
+                        setProfitMarginPercentage={handleProfitMarginPercentageChange}
                         calculatedTotalCost={calculatedTotalCost}
                       />
                     )}
@@ -1582,6 +1752,7 @@ const TripBuilder = ({ mode }) => {
         urlTripId={urlTripId}
         reservedAccommodationDates={reservedAccommodationDates}
         token={token}
+        tripMarginPercentage={profitMarginPercentage}
       />
 
       <TransportModal
@@ -1594,7 +1765,62 @@ const TripBuilder = ({ mode }) => {
         availableVehicles={availableVehicles}
         tripInfo={tripInfo}
         urlTripId={urlTripId}
+        tripMarginPercentage={profitMarginPercentage}
       />
+
+      {amendmentsOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-8">
+          <div className="bg-white rounded-[2rem] w-full max-w-lg p-8 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <button
+              onClick={() => setAmendmentsOpen(false)}
+              className="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="mb-6 flex-shrink-0">
+              <h2 className="text-xl font-black text-slate-900">Amendment History</h2>
+              <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-wider">
+                Every version sent to the client
+              </p>
+            </div>
+            <div className="flex-grow overflow-y-auto pr-2 -mr-2 custom-scrollbar space-y-4">
+              {revisionsLoading ? (
+                <Loader size="sm" text="Loading history…" />
+              ) : revisions.length === 0 ? (
+                <p className="text-sm text-slate-400 font-medium">
+                  Nothing sent yet — export, share, or send a confirmation to start the trail.
+                </p>
+              ) : (
+                revisions.map((rev) => (
+                  <div key={rev.id} className="border border-black/5 rounded-xl p-4 bg-[#f9f9f9]/60">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-black text-[#181c22]">
+                        Version {rev.version_number}
+                      </span>
+                      <span className="text-[10px] font-bold text-[#9aa3b2] uppercase tracking-wider">
+                        {TRIGGER_LABELS[rev.trigger] || rev.trigger}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#9aa3b2] font-medium mb-2">
+                      {new Date(rev.created_at).toLocaleString("en-IN", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </p>
+                    <ul className="list-disc list-inside space-y-1">
+                      {(rev.change_summary || []).map((line, idx) => (
+                        <li key={idx} className="text-xs text-[#5b6472] font-medium">
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
