@@ -10,10 +10,10 @@ import prisma from "@/lib/prisma";
  * sides run Node, so this is a near-literal port, not a re-implementation.
  *
  * syncInventory() seeds/refreshes a DMC partner's PRIVATE destinations/
- * hotels/vehicles rows from Via Kashmir's real, live inventory - the partner
- * never creates these rows themselves (see the isDmcBridge guard in
- * lib/catalog.js), they only pick from and customise activities within what
- * gets synced here. Every price synced is already the DMC price.
+ * hotels/vehicles/activities rows from Via Kashmir's real, live inventory -
+ * the partner never creates these rows themselves (see the isDmcBridge guard
+ * in lib/catalog.js), they only pick from what gets synced here. Every price
+ * synced is already the DMC price.
  */
 
 const TOKEN_TTL_MS = 120_000; // 2 minutes - matches ViaKashmir's SSO_TOKEN_TTL_SECONDS
@@ -70,10 +70,10 @@ async function fetchCatalog(path, params = {}) {
 }
 
 /**
- * Seeds/refreshes this agency's private destinations/hotels/vehicles rows
- * from Via Kashmir's real inventory. Safe to call repeatedly - upserts by
- * (userId, name), so re-running it (e.g. on every SSO login) refreshes DMC
- * prices without creating duplicates.
+ * Seeds/refreshes this agency's private destinations/hotels/vehicles/
+ * activities rows from Via Kashmir's real inventory. Safe to call repeatedly
+ * - upserts by (userId, name), so re-running it (e.g. on every SSO login)
+ * refreshes DMC prices without creating duplicates.
  */
 export async function syncDmcInventory(userId) {
   // Destinations - name + activities only, no pricing.
@@ -113,6 +113,35 @@ export async function syncDmcInventory(userId) {
     const data = { price: c.dmcPrice };
     if (existing) await prisma.vehicle.update({ where: { id: existing.id }, data });
     else await prisma.vehicle.create({ data: { ...data, userId, name: c.title } });
+  }
+
+  // Activities - priced, ticketed add-ons (Activity.sellingPrice = the DMC
+  // price, same convention as hotels'/cabs' dmcPrice above). Field names
+  // (title/dmcPrice/destinationName/description/durationHours) follow the
+  // same shape as destinations/hotels/cabs above by convention - not
+  // verified against ViaKashmir's actual /api/dmc-bridge/activities
+  // response, since that repo wasn't reachable from this session. If
+  // activities silently sync as empty, check these names first.
+  for (const a of await fetchCatalog("activities")) {
+    if (typeof a.dmcPrice !== "number") continue;
+    const name = a.title || a.name;
+    if (!name) continue;
+
+    let destinationId = null;
+    if (a.destinationName) {
+      const dest = await prisma.destination.findFirst({ where: { userId, name: a.destinationName } });
+      destinationId = dest?.id ?? null;
+    }
+
+    const existing = await prisma.activity.findFirst({ where: { userId, name } });
+    const data = {
+      sellingPrice: a.dmcPrice,
+      description: a.description || null,
+      durationHours: typeof a.durationHours === "number" ? a.durationHours : null,
+      destinationId,
+    };
+    if (existing) await prisma.activity.update({ where: { id: existing.id }, data });
+    else await prisma.activity.create({ data: { ...data, userId, name } });
   }
 
   await prisma.user.update({ where: { id: userId }, data: { dmcBridgeSyncedAt: new Date() } });

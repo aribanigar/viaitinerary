@@ -55,10 +55,20 @@ VIA_KASHMIR_API_URL=https://viakashmir.in   # this app calling ViaKashmir's brid
 ViaKashmir's side additionally needs `DMC_ITINERARY_BUILDER_URL` pointing
 back here (`https://crm.viakashmir.in`).
 
-## Known gap
+## Known gap (was; now partially closed)
 
-Activities (priced, ticketed add-ons) exist on the ViaKashmir side
-(`/admin/activities`, `/api/dmc-bridge/activities`) but have no equivalent
-model here yet — `syncDmcInventory()` does not sync them, and destinations'
-`activities` field stays a plain list of names. Deliberately deferred until
-this app's own priced-activity feature is built.
+This app now has its own priced, ticketed Activity catalog
+(`web/prisma/schema.prisma`'s `Activity`/`TripActivity` models,
+`/api/activities`, an "Activities" section in the Trip Builder's Logistics
+tab). `syncDmcInventory()` in `web/lib/dmcBridge.js` now calls
+`fetchCatalog("activities")` and upserts into it the same way hotels/cabs
+are upserted (by `(userId, name)`, DMC price only).
+
+**Not verified**: this session couldn't reach the ViaKashmir-side repo to
+confirm `/api/dmc-bridge/activities`'s actual response field names, so the
+sync assumes the same shape as `hotels`/`cabs` (`title`, `dmcPrice`) plus
+`destinationName` (matched against the destination rows synced just above
+it in the same function), `description`, `durationHours`. If activities
+sync as empty on a real SSO login, check these field names first against
+whatever `src/app/api/dmc-bridge/activities/route.ts` (or equivalent)
+actually returns on the ViaKashmir side.

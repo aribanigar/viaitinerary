@@ -69,10 +69,14 @@ export function catalogCollection({ model, mapBody, serialize, searchField = "na
       // DMC partners (provisioned via the ViaKashmir bridge - see
       // lib/dmcBridge.js) only get real Via Kashmir inventory, synced in by
       // syncInventory() on every SSO login - never a manually-added
-      // destination/hotel/vehicle.
+      // destination/hotel/vehicle/activity.
       if (user.isDmcBridge) {
+        const label =
+          model === "destination" ? "Destinations" :
+          model === "hotel" ? "Hotels" :
+          model === "activity" ? "Activities" : "Vehicles";
         return NextResponse.json({
-          message: `${model === "destination" ? "Destinations" : model === "hotel" ? "Hotels" : "Vehicles"} are managed by Via Kashmir for DMC partner accounts. Contact Via Kashmir to add a new one.`,
+          message: `${label} are managed by Via Kashmir for DMC partner accounts. Contact Via Kashmir to add a new one.`,
         }, { status: 403 });
       }
       if (limitKind) {
