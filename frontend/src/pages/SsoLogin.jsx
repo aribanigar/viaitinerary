@@ -3,8 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 
 /**
- * Lands here after SsoController::consume (backend/routes/web.php) redirects
- * a DMC partner in from viakashmir.in. Stores the token exactly the way
+ * Lands here after web/app/api/sso/consume/route.js redirects a DMC partner
+ * in from viakashmir.in. Stores the token exactly the way
  * AuthContext.login()/signup() do, then hard-navigates to /dashboard so
  * AuthProvider re-initialises from localStorage - no separate "SSO session"
  * concept on the frontend, it's the same auth state a normal login produces.
