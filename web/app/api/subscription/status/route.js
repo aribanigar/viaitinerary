@@ -16,15 +16,19 @@ export const dynamic = "force-dynamic";
 
 // GET /api/subscription/status — optional auth (guests get plans + offer).
 export async function GET(request) {
-  const user = await userFromRequest(request);
   const country = resolveCountry(request);
-  const offer = await getActiveOffer(country);
+  // Every branch below needs these three and none depend on each other.
+  const [user, offer, plans] = await Promise.all([
+    userFromRequest(request),
+    getActiveOffer(country),
+    getActivePlans(country),
+  ]);
 
   if (!user) {
     return NextResponse.json({
       plan_name: "guest",
       active_offer: offer,
-      available_plans: await getActivePlans(country),
+      available_plans: plans,
       country,
     });
   }
@@ -46,7 +50,7 @@ export async function GET(request) {
       is_paid: !!sub && sub.status === "active" && !isExpired(sub),
       subscription_ends_at: sub?.endsAt ?? null,
       is_expired: sub ? isExpired(sub) : false,
-      available_plans: await getActivePlans(country),
+      available_plans: plans,
       target_member: { id: team.id, user_id: member.id, name: member.name, email: member.email },
       country,
     });
@@ -54,13 +58,19 @@ export async function GET(request) {
 
   // Calling user's own (admin) subscription.
   const adminId = await resolveAdminId(user);
-  const admin = (await prisma.user.findUnique({ where: { id: adminId } })) ?? user;
-  let sub = await getSubscriptionForUser(adminId);
+  const [admin, existingSub, teamCount] = await Promise.all([
+    adminId === user.id
+      ? user
+      : prisma.user.findUnique({ where: { id: adminId } }).then((a) => a ?? user),
+    getSubscriptionForUser(adminId),
+    prisma.team.count({ where: { ownerId: adminId } }),
+  ]);
+  let sub = existingSub;
   if (!sub && (admin.role === "admin" || admin.role === "super_admin")) {
     sub = await initializeTrial(adminId);
   }
 
-  const seatsNeeded = 1 + (await prisma.team.count({ where: { ownerId: adminId } }));
+  const seatsNeeded = 1 + teamCount;
 
   if (!sub) {
     return NextResponse.json({
@@ -70,7 +80,7 @@ export async function GET(request) {
       can_create_trip: !!admin.bypassSubscription,
       is_trial_expired: false,
       seats_needed: seatsNeeded,
-      available_plans: await getActivePlans(country),
+      available_plans: plans,
       bypass_subscription: !!admin.bypassSubscription,
       active_offer: offer,
       country,
@@ -99,7 +109,7 @@ export async function GET(request) {
     trial_ends_at: sub.trialEndsAt,
     subscription_ends_at: sub.endsAt,
     seats_needed: seatsNeeded,
-    available_plans: await getActivePlans(country),
+    available_plans: plans,
     bypass_subscription: !!admin.bypassSubscription,
     active_offer: offer,
     country,

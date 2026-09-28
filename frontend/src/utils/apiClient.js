@@ -50,14 +50,18 @@ export const request = async (endpoint, options = {}) => {
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
 
-    // Check for authentication/authorization errors
-    if (response.status === 401) {
-      // Dispatch a custom event for status changes/logouts
+    // Only a 401 on a request that carried a session token means that
+    // session is dead. A 401 on a tokenless request (a wrong password on the
+    // login form) used to trip this too — wiping auth and bouncing the user
+    // to the homepage. `token` lets AuthContext ignore a late 401 from an
+    // older token after a newer login has already replaced it.
+    if (response.status === 401 && token) {
       window.dispatchEvent(
         new CustomEvent("unauthorized-access", {
           detail: {
             message: data.message || "Session expired",
             status: response.status,
+            token,
           },
         }),
       );

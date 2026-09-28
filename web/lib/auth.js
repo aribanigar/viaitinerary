@@ -7,8 +7,24 @@ export const TOKEN_COOKIE = "vi_token";
 const SECRET = process.env.JWT_SECRET || "dev-insecure-secret-change-me";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
+const BCRYPT_ROUNDS = 10;
+
 export async function hashPassword(password) {
-  return bcrypt.hash(password, 10);
+  return bcrypt.hash(password, BCRYPT_ROUNDS);
+}
+
+/**
+ * True when a stored hash is costlier than this app's own standard — e.g.
+ * cost-12 hashes carried over from the Laravel system, each ~4x slower to
+ * verify in pure-JS bcrypt. Rehashing on the next successful login brings
+ * them down to the same cost every new password already uses.
+ */
+export function needsRehash(hash) {
+  try {
+    return bcrypt.getRounds(hash) > BCRYPT_ROUNDS;
+  } catch {
+    return false;
+  }
 }
 
 /**

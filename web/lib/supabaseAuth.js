@@ -11,6 +11,13 @@ export function supabaseAuthEnabled() {
   return !!(SUPABASE_URL && SERVICE_KEY);
 }
 
+// Every call here sits on a user-facing request (login, signup, password
+// reset). Without a bound, a slow or rate-limited Supabase Auth held the
+// whole request open until the function timeout — an intermittent "login
+// just spins then fails" that looked random from the outside.
+const TIMEOUT_MS = 5000;
+const withTimeout = (init = {}) => ({ ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+
 const authHeaders = (extra = {}) => ({
   Authorization: `Bearer ${SERVICE_KEY}`,
   apikey: SERVICE_KEY,
@@ -27,11 +34,11 @@ const authHeaders = (extra = {}) => ({
 export async function supabaseSignIn(email, password) {
   if (!supabaseAuthEnabled()) return null;
   try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, withTimeout({
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ email, password }),
-    });
+    }));
     if (!res.ok) return null;
     const data = await res.json().catch(() => null);
     return data?.user || null;
@@ -46,7 +53,7 @@ export async function supabaseFindUserByEmail(email) {
   try {
     const res = await fetch(
       `${SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(email)}`,
-      { headers: authHeaders() }
+      withTimeout({ headers: authHeaders() })
     );
     if (!res.ok) return null;
     const data = await res.json().catch(() => null);
@@ -66,11 +73,11 @@ export async function supabaseFindUserByEmail(email) {
  */
 export async function supabaseCreateUser(email, password) {
   if (!supabaseAuthEnabled()) throw new Error("Supabase Auth is not configured.");
-  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, withTimeout({
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ email, password, email_confirm: true }),
-  });
+  }));
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error(data?.msg || data?.message || `Supabase user creation failed (${res.status})`);
@@ -82,11 +89,11 @@ export async function supabaseCreateUser(email, password) {
 export async function supabaseSetPassword(supabaseUserId, password) {
   if (!supabaseAuthEnabled() || !supabaseUserId) return false;
   try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${supabaseUserId}`, {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${supabaseUserId}`, withTimeout({
       method: "PUT",
       headers: authHeaders(),
       body: JSON.stringify({ password }),
-    });
+    }));
     return res.ok;
   } catch {
     return false;

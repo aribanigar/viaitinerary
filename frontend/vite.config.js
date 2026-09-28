@@ -76,12 +76,13 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
+        // Only group what every page loads anyway. Hand-grouping unrelated
+        // libraries (e.g. date-fns with xlsx) made any screen with a date
+        // picker download the whole Excel library — charts, the editor, and
+        // xlsx are left to split by where they're actually imported.
         manualChunks: {
           vendor: ["react", "react-dom", "react-router-dom"],
           ui: ["lucide-react", "framer-motion", "react-toastify"],
-          charts: ["recharts"],
-          utils: ["xlsx", "html2pdf.js", "date-fns"],
-          editor: ["@tiptap/react", "@tiptap/starter-kit"],
         },
       },
     },

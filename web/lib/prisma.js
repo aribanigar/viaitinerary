@@ -1,6 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 
-// Reuse a single PrismaClient across hot reloads / serverless invocations.
+// One PrismaClient per process — cached on globalThis in every environment,
+// not just dev: a warm serverless instance can load this module through more
+// than one route bundle, and each fresh client opens its own pool and pays
+// its own engine start-up.
 const globalForPrisma = globalThis;
 
 export const prisma =
@@ -9,8 +12,6 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma._prisma = prisma;
-}
+globalForPrisma._prisma = prisma;
 
 export default prisma;

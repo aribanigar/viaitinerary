@@ -29,6 +29,9 @@ export default function SsoLogin() {
     }
 
     localStorage.setItem("token", token);
+    // Drop any other account's cached profile — AuthContext renders from it
+    // before /api/user answers.
+    localStorage.removeItem("auth_user");
     localStorage.setItem("password_update_required", "false");
     const deviceId = searchParams.get("device_id");
     if (deviceId) localStorage.setItem("device_id", deviceId);

@@ -41,7 +41,11 @@ No test suite here either.
 
 ### One Vercel deploy, two apps glued together
 
-`web/` is the only thing deployed. Its build script (`npm run build`) first builds the Vite SPA into `web/public/` (git-ignored, regenerated every build), then builds the Next app. `next.config.mjs` rewrites every non-`/api` path to `/index.html` so React Router handles client-side routing while `/api/*` hits Next's route handlers. The SPA calls same-origin `/api` (`VITE_API_URL=/api` in `frontend/.env.*`) — no CORS, one origin.
+`web/` is the only thing deployed. Its build script (`npm run build`) first builds the Vite SPA into `web/public/` (git-ignored, regenerated every build), then builds the Next app. `next.config.mjs` rewrites every non-`/api`, non-`/assets` path to `/index.html` so React Router handles client-side routing while `/api/*` hits Next's route handlers. The SPA calls same-origin `/api` (`VITE_API_URL=/api` in `frontend/.env.*`) — no CORS, one origin.
+
+**Function region is pinned to `hnd1` (Tokyo) in `web/vercel.json` because the Supabase database is in `ap-northeast-1` (Tokyo).** Every API request makes several sequential DB round trips; Vercel's default region (US East) put ~150 ms of trans-Pacific latency on each one. If the database ever moves, move `regions` with it.
+
+`/assets/*` (Vite's content-hashed output) is served `immutable`, and a missing chunk 404s rather than falling through to `index.html`. Lazy routes use `frontend/src/utils/lazyWithReload.js`, which reloads the page once when a chunk from a previous deploy is gone — keep using it instead of plain `React.lazy` for route-level splits.
 
 ### Request flow: Prisma (camelCase) → serialize.js (snake_case) → frontend
 
@@ -53,7 +57,11 @@ Two shapes of the same model often coexist and must be kept in sync independentl
 
 `web/lib/scope.js`'s `adminIdOf(user)` is the tenant-scoping primitive mirrored from the original Laravel `BelongsToAdmin` trait: an admin/super_admin's tenant is their own `id`; a `team`-role user's tenant is the `id` of the admin who owns their team. Every query that touches tenant-owned data (`Trip`, `Hotel`, `Vehicle`, `Destination`, `AgencySetting`, `Policy`, etc.) must filter `where: { userId: await adminIdOf(user) }` (or scope through a relation that does). Skipping this is a cross-tenant data leak, not just a bug — check it explicitly when reviewing or writing any new route.
 
-Auth itself (`web/lib/auth.js`): JWT in an httpOnly cookie (`vi_token`) or `Authorization: Bearer`, verified by `userFromRequest(request)`. Passwords use bcrypt and `verifyPassword` accepts the `$2y$` hash format Laravel produces, so accounts migrated from the old system log in unchanged.
+Auth itself (`web/lib/auth.js`): JWT in an httpOnly cookie (`vi_token`) or `Authorization: Bearer`, verified by `userFromRequest(request)`. Passwords use bcrypt and `verifyPassword` accepts the `$2y$` hash format Laravel produces, so accounts migrated from the old system log in unchanged (and are rehashed down to cost 10 on their next login).
+
+`/api/login` verifies **only** the local bcrypt hash — the one store every password-changing path writes. Supabase Auth (`web/lib/supabaseAuth.js`) is kept as a synced mirror of credentials (signup, team members, resets, and a one-time link at login), never as a second way in: accepting a Supabase match too let changed passwords keep working wherever a path forgot to sync Supabase. Any new path that sets a password must call `hashPassword` and, if the user has a `supabaseId`, `supabaseSetPassword`.
+
+On the frontend, `apiClient` only raises the global "session expired" event for 401s on requests that carried a token, and `AuthContext` ignores 401s/responses for a token that's already been replaced — both were causes of fresh logins getting wiped and bounced to `/`.
 
 ### Generic catalog CRUD factory
 

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import lazy from "../../utils/lazyWithReload";
 import { Link } from "react-router-dom";
 import AssistantFrame from "./AssistantFrame";
 import {
@@ -27,7 +28,9 @@ import { fetchTrips } from "../../api/trips";
 import { getTeams } from "../../api/teams";
 import Loader from "../common/Loader";
 import Modal from "../common/Modal";
-import SuperAdminDashboard from "./SuperAdminDashboard";
+// Lazy: it's the only thing here that pulls in the charts library, and only
+// super admins ever see it — agency admins shouldn't download it.
+const SuperAdminDashboard = lazy(() => import("./SuperAdminDashboard"));
 
 // Quick-access destinations that used to live only in the sidebar's nested
 // Operations / Resources / Accounting submenus. Surfaced here as tiles since
@@ -166,7 +169,11 @@ const DashboardMain = () => {
 
   // If user is super admin, render super admin dashboard
   if (user?.role === "super_admin") {
-    return <SuperAdminDashboard />;
+    return (
+      <Suspense fallback={<Loader text="Loading dashboard..." />}>
+        <SuperAdminDashboard />
+      </Suspense>
+    );
   }
 
   const quickAccess = QUICK_ACCESS.filter((item) =>

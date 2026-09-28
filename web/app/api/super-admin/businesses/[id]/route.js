@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireSuperAdmin, hashPassword } from "@/lib/auth";
+import { supabaseSetPassword } from "@/lib/supabaseAuth";
 import { isTrial, isExpired, isActive } from "@/lib/subscription";
 import { planInfo } from "@/lib/superadmin";
 
@@ -135,6 +136,9 @@ export async function PUT(request, { params }) {
   }
 
   const updated = await prisma.user.update({ where: { id }, data });
+  if (b.password && updated.supabaseId) {
+    await supabaseSetPassword(updated.supabaseId, b.password);
+  }
   return NextResponse.json({
     message: "Business updated successfully",
     user: { id: updated.id, name: updated.name, email: updated.email },

@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyPassword, signToken, publicUser, cookieOptions, TOKEN_COOKIE } from "@/lib/auth";
 import {
-  supabaseSignIn,
+  verifyPassword,
+  hashPassword,
+  needsRehash,
+  signToken,
+  publicUser,
+  cookieOptions,
+  TOKEN_COOKIE,
+} from "@/lib/auth";
+import {
+  supabaseAuthEnabled,
   supabaseFindUserByEmail,
   supabaseCreateUser,
   supabaseSetPassword,
@@ -11,39 +19,41 @@ import {
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
+// Longest a login response will wait on the one-time Supabase mirror sync
+// below; past this the sync keeps going on its own and the login returns.
+const SUPABASE_SYNC_BUDGET_MS = 1500;
+
 /**
- * Migrate this account's password into Supabase Auth after a successful
- * legacy bcrypt check, so subsequent logins verify via Supabase directly.
- * Best-effort: never throws, never blocks the login response — a failure
- * here just means the account tries again on its next successful login.
+ * Keep this account's Supabase Auth identity in step with the password that
+ * just verified. Only runs for accounts not yet linked (one time each).
+ * Never throws — a failure just means it's retried on the next login.
  */
-async function migrateToSupabase(user, password) {
+async function linkSupabaseIdentity(user, password) {
   try {
-    let supabaseId = user.supabaseId;
-    if (!supabaseId) {
-      const existing = await supabaseFindUserByEmail(user.email);
-      if (existing) {
-        supabaseId = existing.id;
-        await supabaseSetPassword(supabaseId, password);
-      } else {
-        const created = await supabaseCreateUser(user.email, password);
-        supabaseId = created?.id || null;
-      }
-    } else {
+    const existing = await supabaseFindUserByEmail(user.email);
+    let supabaseId = existing?.id || null;
+    if (supabaseId) {
       await supabaseSetPassword(supabaseId, password);
+    } else {
+      supabaseId = (await supabaseCreateUser(user.email, password))?.id || null;
     }
-    if (supabaseId && supabaseId !== user.supabaseId) {
+    if (supabaseId) {
       await prisma.user.update({ where: { id: user.id }, data: { supabaseId } });
     }
   } catch (err) {
-    console.error(`Supabase Auth migration failed for ${user.email}:`, err.message);
+    console.error(`Supabase identity link failed for ${user.email}:`, err.message);
   }
 }
 
 // POST /api/login — email + password, returns a bearer token (Sanctum-compatible
-// shape the existing frontend expects) and sets a session cookie. Credentials
-// are verified via Supabase Auth first, falling back to (and lazily migrating)
-// the legacy bcrypt hash for accounts not yet moved over.
+// shape the existing frontend expects) and sets a session cookie.
+//
+// Verified against the local bcrypt hash only. Every password-changing path
+// in this app writes that hash, but not all of them also update Supabase — so
+// accepting a Supabase match too let a changed (revoked) password keep
+// working, and put a cross-network call to Supabase Auth (with its own
+// per-IP rate limit, shared by every login coming out of Vercel) on every
+// single login. Supabase stays a synced mirror of credentials, not a gate.
 export async function POST(request) {
   try {
     const { email, password } = await request.json();
@@ -52,24 +62,12 @@ export async function POST(request) {
     }
 
     const user = await prisma.user.findFirst({
-      where: { email: { equals: String(email), mode: "insensitive" } },
+      where: { email: { equals: String(email).trim(), mode: "insensitive" } },
+      include: { membershipTeam: true },
     });
 
-    const supabaseUser = user ? await supabaseSignIn(email, password) : null;
-    let verified = Boolean(supabaseUser);
-
-    if (!verified && user && (await verifyPassword(password, user.password))) {
-      verified = true;
-      await migrateToSupabase(user, password);
-    }
-
-    if (!user || !verified) {
+    if (!user || !(await verifyPassword(password, user.password))) {
       return NextResponse.json({ message: "Invalid login details" }, { status: 401 });
-    }
-    if (supabaseUser && !user.supabaseId) {
-      // Verified via Supabase but this row was never linked (e.g. created
-      // there some other way) — link it now.
-      await prisma.user.update({ where: { id: user.id }, data: { supabaseId: supabaseUser.id } });
     }
     if (["inactive", "suspended"].includes(user.status)) {
       return NextResponse.json(
@@ -78,20 +76,35 @@ export async function POST(request) {
       );
     }
 
-    const team = user.teamId
-      ? await prisma.team.findUnique({ where: { id: user.teamId } })
-      : null;
+    const followUps = [];
+    if (needsRehash(user.password)) {
+      followUps.push(
+        hashPassword(password)
+          .then((hash) => prisma.user.update({ where: { id: user.id }, data: { password: hash } }))
+          .catch((err) => console.error(`Password rehash failed for ${user.email}:`, err.message))
+      );
+    }
+    if (!user.supabaseId && supabaseAuthEnabled()) {
+      followUps.push(
+        Promise.race([
+          linkSupabaseIdentity(user, password),
+          new Promise((resolve) => setTimeout(resolve, SUPABASE_SYNC_BUDGET_MS)),
+        ])
+      );
+    }
+    await Promise.all(followUps);
 
     const token = signToken({ sub: String(user.id), role: user.role });
     const res = NextResponse.json({
       token,
       access_token: token,
       token_type: "Bearer",
-      user: publicUser(user, team),
+      user: publicUser(user, user.membershipTeam),
     });
     res.cookies.set(TOKEN_COOKIE, token, cookieOptions());
     return res;
   } catch (err) {
-    return NextResponse.json({ message: err.message || "Login failed" }, { status: 500 });
+    console.error("Login failed:", err);
+    return NextResponse.json({ message: "Login failed. Please try again." }, { status: 500 });
   }
 }
