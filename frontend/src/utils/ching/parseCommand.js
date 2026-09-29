@@ -115,7 +115,7 @@ const TRAIL_TRIM = new Set(['and', 'the', 'stay', 'of', 'in', 'at'])
 const isNum = (t) => /^\d+$/.test(t || '')
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 
-function prepareCatalog(catalog) {
+export function prepareCatalog(catalog) {
   const c = catalog || {}
   const hotels = (Array.isArray(c.hotels) ? c.hotels : [])
     .filter((h) => h && h.name)
@@ -142,7 +142,7 @@ function prepareCatalog(catalog) {
   return { hotels, destinations, vehicles, cities }
 }
 
-function cityLookup(words, cat) {
+export function cityLookup(words, cat) {
   const key = normKey(Array.isArray(words) ? words.join(' ') : words)
   if (!key) return ''
   if (cat.cities.has(key)) return cat.cities.get(key)
@@ -159,7 +159,7 @@ function cityLookup(words, cat) {
   return best
 }
 
-const sameCity = (a, b) => !!a && !!b && (normKey(a) === normKey(b) || levRatio(normKey(a), normKey(b)) >= 0.85)
+export const sameCity = (a, b) => !!a && !!b && (normKey(a) === normKey(b) || levRatio(normKey(a), normKey(b)) >= 0.85)
 
 function splitCity(words, cat) {
   for (let i = 1; i < words.length - 1; i++) {
@@ -182,7 +182,7 @@ function splitCity(words, cat) {
   return { city: '', hotelWords: words }
 }
 
-function matchHotel(words, city, cat) {
+export function matchHotel(words, city, cat) {
   if (!words.length || !cat.hotels.length) return { hotel: null, ambiguous: [] }
   const tokens = normTokens(words.join(' '))
   if (city) {
@@ -198,7 +198,7 @@ function matchHotel(words, city, cat) {
 }
 
 /** Resolve the raw words of one stay to a catalog hotel / city. */
-function resolveStay(nights, words, cat) {
+export function resolveStay(nights, words, cat) {
   const heard = words.join(' ')
   const { city, hotelWords } = splitCity(words, cat)
   const warnings = []
@@ -230,7 +230,7 @@ function resolveStay(nights, words, cat) {
   return { stay, warnings, cityOnly: false }
 }
 
-function extractMealPlan(s) {
+export function extractMealPlan(s) {
   for (const [plan, patterns] of MEAL_RULES) {
     for (const re of patterns) {
       const m = re.exec(s)
@@ -240,7 +240,7 @@ function extractMealPlan(s) {
   return { plan: '', s }
 }
 
-function extractEmail(s) {
+export function extractEmail(s) {
   const typed = /(?:\b(?:e-?mail|mail)(?:\s+(?:id|address))?\s*(?:is\s+|:\s*|-\s*)?)?\b([a-z0-9._%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,})\b/
   let m = typed.exec(s)
   if (m) return { email: m[1], s: s.slice(0, m.index) + ' | ' + s.slice(m.index + m[0].length) }
@@ -254,7 +254,7 @@ function extractEmail(s) {
   return { email: '', s }
 }
 
-function extractPhone(s) {
+export function extractPhone(s) {
   const keyed =
     /\b(?:phone|mobile|mob|contact|cell|whatsapp|ph)\.?(?:\s+(?:number|no\.?|num))?\s*(?:is\s+|:\s*|-\s*)?(\+?\d(?:[\s-]?\d){9,12})(?!\d)/
   let m = keyed.exec(s)

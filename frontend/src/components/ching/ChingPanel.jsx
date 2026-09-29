@@ -1,7 +1,12 @@
 import React, { useMemo, useState } from "react";
 import {
   AudioLines,
+  Check,
   CircleAlert,
+  FileDown,
+  Mail,
+  Save,
+  Undo2,
   Hotel,
   Loader2,
   Mic,
@@ -582,6 +587,131 @@ function BigMic({ listening, disabled, onClick, supported }) {
   );
 }
 
+// ── voice editing ────────────────────────────────────────────────────────
+const COMMAND_LINES = {
+  EXPORT_PDF: { label: "Download the PDF", icon: FileDown },
+  EMAIL_ME: { label: "Email the PDF to you", icon: Mail },
+  SAVE: { label: "Save the trip", icon: Save },
+  UNDO: { label: "Undo the last change", icon: Undo2 },
+};
+
+const EDIT_EXAMPLES =
+  "“make Gulmarg 2 nights”, “add Shikara ride on day 2”, “give me 20% margin”, “email it to me”";
+
+const Unrecognized = ({ items }) =>
+  items?.length ? (
+    <ul className="space-y-1">
+      {items.map((u, i) => (
+        <li key={i} className="text-xs text-[#181c22]/50 break-words">
+          Didn't understand: “{u}”
+        </li>
+      ))}
+    </ul>
+  ) : null;
+
+function EditCard({ edit }) {
+  const nothing = edit.changes.length === 0 && edit.commands.length === 0;
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl p-4" style={{ background: INK }}>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: LIME }}>
+          Voice edit
+        </div>
+        <div className="mt-1 text-[15px] font-semibold leading-snug text-white break-words">
+          Edit {edit.tripLabel}
+        </div>
+      </div>
+      {nothing ? (
+        <p className="text-xs text-[#181c22]/55">Nothing on this trip would change.</p>
+      ) : (
+        <ul className="rounded-2xl border border-black/[0.07] bg-[#fafafa] p-3 space-y-2">
+          {edit.changes.map((c, i) => (
+            <li key={`c${i}`} className="flex gap-2 text-[13px] leading-snug text-[#181c22]">
+              <span className="grid place-items-center w-[18px] h-[18px] mt-px shrink-0 rounded-full bg-[#e7f63c]">
+                <Check className="w-3 h-3" strokeWidth={3} />
+              </span>
+              <span className="min-w-0 break-words">{c}</span>
+            </li>
+          ))}
+          {edit.commands.map((c, i) => {
+            const meta = COMMAND_LINES[c.type] || { label: c.type, icon: Check };
+            const Icon = meta.icon;
+            return (
+              <li key={`k${i}`} className="flex gap-2 text-[13px] leading-snug text-[#181c22]">
+                <span className="grid place-items-center w-[18px] h-[18px] mt-px shrink-0 rounded-full bg-[#181c22] text-white">
+                  <Icon className="w-2.5 h-2.5" strokeWidth={2.6} />
+                </span>
+                <span className="min-w-0">{meta.label}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {edit.warnings.length > 0 && (
+        <ul className="rounded-2xl border border-amber-300/60 bg-amber-50 p-3 space-y-1.5">
+          {edit.warnings.map((w, i) => (
+            <li key={i} className="flex gap-2 text-xs font-medium text-amber-800">
+              <TriangleAlert className="w-3.5 h-3.5 mt-px shrink-0" /> {w}
+            </li>
+          ))}
+        </ul>
+      )}
+      <Unrecognized items={edit.unrecognized} />
+    </div>
+  );
+}
+
+// After applying: a small pill in place of the sheet, so the builder's
+// preview stays visible. Tap the text to reopen the full panel.
+function ResultPill({ outcome, canUndo, onUndo, onExpand, onClose, speech }) {
+  return (
+    <div
+      role="status"
+      className="fixed z-[90] left-4 right-4 sm:left-auto sm:right-4 lg:right-6 bottom-[calc(env(safe-area-inset-bottom)+68px)] sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:max-w-[400px] flex items-center gap-1.5 rounded-full bg-[#181c22] text-white pl-2 pr-1.5 py-1.5 shadow-[0_16px_40px_-14px_rgba(16,24,42,0.7)]"
+    >
+      <span className="grid place-items-center w-7 h-7 shrink-0 rounded-full bg-[#e7f63c] text-[#181c22]">
+        <Check className="w-4 h-4" strokeWidth={3} />
+      </span>
+      <button
+        type="button"
+        onClick={onExpand}
+        className="flex-1 min-w-0 text-left text-[13px] font-semibold truncate px-1"
+        title={(outcome.lines || []).join("\n") || outcome.title}
+      >
+        {outcome.title}
+      </button>
+      {canUndo && (
+        <button
+          type="button"
+          onClick={onUndo}
+          className="flex items-center gap-1 h-8 px-3 shrink-0 rounded-full bg-white/10 hover:bg-white/15 text-xs font-semibold"
+        >
+          <Undo2 className="w-3.5 h-3.5" /> Undo
+        </button>
+      )}
+      {speech.supported && (
+        <button
+          type="button"
+          onClick={speech.startCommand}
+          className="grid place-items-center w-8 h-8 shrink-0 rounded-full bg-[#e7f63c] text-[#181c22]"
+          aria-label="Speak the next edit"
+          title="Speak the next edit (Alt+C)"
+        >
+          <Mic className="w-4 h-4" />
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={onClose}
+        className="grid place-items-center w-8 h-8 shrink-0 rounded-full text-white/60 hover:text-white"
+        aria-label="Close Ching"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 // ── panel ────────────────────────────────────────────────────────────────
 export default function ChingPanel({
   speech,
@@ -598,12 +728,24 @@ export default function ChingPanel({
   onConfirm,
   onDiscard,
   onClose,
+  editor,
+  edit,
+  outcome,
+  compact,
+  canUndo,
+  progress,
+  onApply,
+  onDiscardEdit,
+  onUndo,
+  onExpand,
 }) {
   const [draft, setDraft] = useState("");
   const { supported, phase, interim, error, wakeBlocked } = speech;
   const listening = phase === "command";
   const thinking = status === "thinking";
   const building = status === "building";
+  const running = status === "running";
+  const busy = building || running;
   const validation = useMemo(
     () => (command ? safeValidate(command, init) : { ok: false, problems: [], warnings: [] }),
     [command, init],
@@ -613,7 +755,7 @@ export default function ChingPanel({
   const submitDraft = (e) => {
     e.preventDefault();
     const text = draft.trim();
-    if (!text || building) return;
+    if (!text || busy) return;
     speech.clearError();
     setDraft("");
     onSubmitText(text);
@@ -629,9 +771,26 @@ export default function ChingPanel({
           ? "Say “Hello Ching” — or tap the mic"
           : "Tap the mic and speak · Alt+C";
 
-  const showHero = !command || listening || thinking;
+  const showHero = (!command && !edit) || listening || thinking;
+  const heardText = command ? command.transcript : edit?.text;
+  const idleHint = editor
+    ? `Editing ${editor.tripLabel || "this trip"} — try: ${EDIT_EXAMPLES}.`
+    : `“${example}”`;
   const parserNotes =
     !edited && Array.isArray(command?.warnings) ? command.warnings.filter(Boolean) : [];
+
+  if (compact && outcome && !edit && !command && !listening && !thinking && !running) {
+    return (
+      <ResultPill
+        outcome={outcome}
+        canUndo={canUndo}
+        onUndo={onUndo}
+        onExpand={onExpand}
+        onClose={onClose}
+        speech={speech}
+      />
+    );
+  }
 
   return (
     <>
@@ -702,7 +861,7 @@ export default function ChingPanel({
               <BigMic
                 listening={listening}
                 supported={supported}
-                disabled={!supported || thinking || building}
+                disabled={!supported || thinking || busy}
                 onClick={speech.toggleCommand}
               />
               <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#181c22]/45 flex items-center gap-1.5">
@@ -717,7 +876,7 @@ export default function ChingPanel({
                   <span className="text-[#181c22]">{interim}</span>
                 ) : (
                   <span className="text-[#181c22]/40">
-                    {listening ? "Go ahead — I'm listening…" : `“${example}”`}
+                    {listening ? "Go ahead — I'm listening…" : idleHint}
                   </span>
                 )}
               </div>
@@ -727,7 +886,7 @@ export default function ChingPanel({
               <button
                 type="button"
                 onClick={speech.startCommand}
-                disabled={!supported || building}
+                disabled={!supported || busy}
                 className="grid place-items-center w-10 h-10 shrink-0 rounded-full bg-[#181c22] text-white disabled:opacity-40"
                 aria-label="Speak a new request"
                 title="Speak a new request (Alt+C)"
@@ -739,7 +898,7 @@ export default function ChingPanel({
                   Heard
                 </div>
                 <p className="text-[13px] leading-snug text-[#181c22]/75 break-words">
-                  “{command.transcript}”
+                  “{heardText}”
                 </p>
                 {parserNotes.length > 0 && (
                   <ul className="mt-1 space-y-0.5">
@@ -751,6 +910,47 @@ export default function ChingPanel({
                   </ul>
                 )}
               </div>
+            </div>
+          )}
+
+          {running && (
+            <div className="flex items-center gap-2.5 rounded-2xl bg-[#f4f5f6] p-3 text-[13px] font-medium">
+              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              {progress || "Working on it…"}
+            </div>
+          )}
+
+          {outcome && !edit && !command && !listening && !thinking && !running && (
+            <div className="rounded-2xl border border-black/[0.07] bg-[#fafafa] p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="grid place-items-center w-[18px] h-[18px] shrink-0 rounded-full bg-[#e7f63c]">
+                  <Check className="w-3 h-3" strokeWidth={3} />
+                </span>
+                <span className="flex-1 min-w-0 text-[13px] font-semibold truncate">{outcome.title}</span>
+                {canUndo && (
+                  <button
+                    type="button"
+                    onClick={onUndo}
+                    className="flex items-center gap-1 h-8 px-3 shrink-0 rounded-full border border-black/10 bg-white text-xs font-semibold hover:bg-black/[0.03]"
+                  >
+                    <Undo2 className="w-3.5 h-3.5" /> Undo
+                  </button>
+                )}
+              </div>
+              {outcome.lines?.length > 0 && (
+                <ul className="space-y-1 pl-[26px]">
+                  {outcome.lines.map((l, i) => (
+                    <li key={i} className="text-xs text-[#181c22]/65 break-words">
+                      {l}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {outcome.warnings?.map((w, i) => (
+                <p key={i} className="flex gap-2 text-xs font-medium text-amber-800">
+                  <TriangleAlert className="w-3.5 h-3.5 mt-px shrink-0" /> {w}
+                </p>
+              ))}
             </div>
           )}
 
@@ -774,12 +974,31 @@ export default function ChingPanel({
             >
               <div className="flex items-start gap-2">
                 <span className="flex-1 font-semibold text-[13px]">
-                  {notice.kind === "error" ? notice.text : "I didn't catch a trip request."}
+                  {notice.kind === "error"
+                    ? notice.text
+                    : notice.kind === "no-editor"
+                      ? "Open a trip in the Trip Builder to edit it by voice."
+                      : notice.kind === "edit-unknown"
+                        ? "I didn't catch a change to make."
+                        : "I didn't catch a trip request."}
                 </span>
                 <button type="button" onClick={onDismissNotice} aria-label="Dismiss" className="shrink-0 opacity-60">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
+              {notice.kind === "edit-unknown" && (
+                <div className="mt-1 space-y-2">
+                  {notice.unrecognized?.length ? (
+                    <Unrecognized items={notice.unrecognized} />
+                  ) : (
+                    <p className="text-[#181c22]/55">Heard: “{notice.text}”</p>
+                  )}
+                  <p className="text-[#181c22]/70">Try: {EDIT_EXAMPLES}.</p>
+                </div>
+              )}
+              {notice.kind === "no-editor" && (
+                <p className="mt-1 text-[#181c22]/55">Heard: “{notice.text}”</p>
+              )}
               {notice.kind === "unknown" && (
                 <>
                   <p className="mt-1 text-[#181c22]/55">Heard: “{notice.text}”</p>
@@ -797,6 +1016,8 @@ export default function ChingPanel({
               )}
             </div>
           )}
+
+          {edit && !thinking && !listening && <EditCard edit={edit} />}
 
           {command && !thinking && (
             <>
@@ -852,6 +1073,26 @@ export default function ChingPanel({
               </button>
             </div>
           )}
+          {edit && !thinking && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onDiscardEdit}
+                disabled={busy}
+                className="h-11 px-4 rounded-full text-xs font-semibold text-[#181c22]/60 hover:text-[#181c22] hover:bg-black/[0.04] disabled:opacity-40"
+              >
+                Discard
+              </button>
+              <button
+                type="button"
+                onClick={onApply}
+                disabled={busy || (edit.changes.length === 0 && edit.commands.length === 0)}
+                className="flex-1 h-11 rounded-full bg-[#e7f63c] text-[#181c22] text-sm font-semibold shadow-sm shadow-[#e7f63c]/40 hover:bg-[#d4e42e] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4" strokeWidth={2.6} /> Apply
+              </button>
+            </div>
+          )}
           {building && (
             <p className="text-[11px] text-center text-[#181c22]/50">
               Creating the itinerary, hotels and transport — the PDF follows in the Trip Builder.
@@ -861,15 +1102,21 @@ export default function ChingPanel({
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder={command ? "Type a new request…" : "Type your request…"}
+              placeholder={
+                editor && !command
+                  ? "Type an edit, e.g. make Gulmarg 2 nights…"
+                  : command
+                    ? "Type a new request…"
+                    : "Type your request…"
+              }
               autoFocus={!supported}
-              disabled={building}
+              disabled={busy}
               enterKeyHint="send"
               className="flex-1 min-w-0 bg-transparent outline-none text-[16px] sm:text-sm text-[#181c22] placeholder:text-[#181c22]/40"
             />
             <button
               type="submit"
-              disabled={!draft.trim() || building || thinking}
+              disabled={!draft.trim() || busy || thinking}
               className="grid place-items-center w-9 h-9 rounded-full bg-[#181c22] text-white shrink-0 disabled:opacity-30"
               aria-label="Send"
             >

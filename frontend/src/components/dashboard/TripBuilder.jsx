@@ -58,6 +58,8 @@ import LogisticsTab from "./trip-builder/LogisticsTab";
 import PricingTab from "./trip-builder/PricingTab";
 import { HotelModal, TransportModal, ActivityModal } from "./trip-builder/TripBuilderModals";
 import TripInfoTab from "./trip-builder/TripInfoTab";
+import { registerChingEditor } from "../../utils/ching/editorBridge";
+import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
 import {
   DRAFT_KEY,
   useTripBuilderData,
@@ -1263,6 +1265,39 @@ const TripBuilder = ({ mode }) => {
     );
   };
 
+  // ── Ching: PDF helpers shared by the voice hand-off and voice commands.
+  const exportPreviewBlob = async () => {
+    const { exportPreviewToPdfBlob } = await import("../../utils/exportPdf");
+    return exportPreviewToPdfBlob();
+  };
+  const downloadBlob = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+  // Emails `blob` to the signed-in user. Too big to upload (Vercel's 4.5 MB
+  // body cap) → the server renders its own copy from the saved trip.
+  const emailBlobToMe = async (tripId, blob) => {
+    const pdfBase64 =
+      blob && blob.size <= 3 * 1024 * 1024
+        ? await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result).split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          })
+        : null;
+    return emailItineraryToMe(token, tripId, {
+      pdfBase64,
+      filename: `${tripId}_Itinerary.pdf`,
+    });
+  };
+
   // ── Ching hand-off: a trip built by voice opens here with ?ching=deliver.
   // Once it has loaded and the preview has rendered, download the exact
   // preview PDF to the device and email the same file to the signed-in user.
@@ -1280,32 +1315,12 @@ const TripBuilder = ({ mode }) => {
         setExporting(true);
         // Give the preview a moment to settle (images, fonts) before capture.
         await new Promise((r) => setTimeout(r, 1200));
-        const { exportPreviewToPdfBlob } = await import("../../utils/exportPdf");
-        const blob = await exportPreviewToPdfBlob();
-        const filename = `${tripId}_Itinerary.pdf`;
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        const blob = await exportPreviewBlob();
+        downloadBlob(blob, `${tripId}_Itinerary.pdf`);
         logSendForAmendmentHistory("export");
 
         toast.update(status, { render: "Ching: PDF downloaded — emailing it to you…" });
-        // Too big to upload (Vercel's 4.5 MB body cap) → the server renders its own copy.
-        const pdfBase64 =
-          blob.size <= 3 * 1024 * 1024
-            ? await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(String(reader.result).split(",")[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-              })
-            : null;
-        const res = await emailItineraryToMe(token, tripId, { pdfBase64, filename });
+        const res = await emailBlobToMe(tripId, blob);
         toast.update(status, {
           render: `Ching: itinerary downloaded and emailed to ${res?.to || "you"}.`,
           type: "success",
@@ -1326,6 +1341,117 @@ const TripBuilder = ({ mode }) => {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chingDeliver, urlTripId, loading, dataIsCurrent]);
+
+  // ── Ching voice editing: expose this trip to the Ching widget while it's
+  // open. Edits run through editTrip.js against a snapshot of the builder's
+  // own state and are committed back through the normal setters, so the
+  // preview, pricing and autosave all react exactly as for a manual edit.
+  const chingState = useRef({});
+  chingState.current = {
+    snapshot: {
+      tripInfo,
+      itinerary,
+      accommodations,
+      transportation,
+      tripActivities,
+      profitMarginPercentage,
+      gstPercentage,
+      includeGST,
+    },
+    catalog: {
+      hotels: masterHotels,
+      destinations: availableDestinations,
+      vehicles: availableVehicles,
+      activities: availableActivities,
+    },
+    settings: {
+      gst_percentage: gstPercentage,
+      profit_percentage: profitMarginPercentage,
+      include_gst: includeGST,
+    },
+    label: `${currentTitle}${urlTripId ? ` · ${urlTripId}` : ""}`,
+    urlTripId,
+    saveTrip,
+    handleExport,
+  };
+  const chingUndo = useRef([]);
+  useEffect(() => {
+    if (loading || !dataIsCurrent) return undefined;
+    chingUndo.current = []; // undo history belongs to the trip it was made on
+    const run = (actions) => {
+      const { snapshot, catalog, settings } = chingState.current;
+      return { before: snapshot, ...applyEditActions(snapshot, actions, { catalog, settings }) };
+    };
+    const commit = (next) => {
+      setPricingTouched(true);
+      setTripInfo(next.tripInfo);
+      setItinerary(next.itinerary);
+      setAccommodations(next.accommodations);
+      setTransportation(next.transportation);
+      setTripActivities(next.tripActivities);
+      setProfitMarginPercentage(next.profitMarginPercentage);
+      setGstPercentage(next.gstPercentage);
+      setIncludeGST(next.includeGST);
+    };
+    // Let React render the committed edit before capturing the preview.
+    const settle = () => new Promise((r) => setTimeout(r, 700));
+    // Email needs a saved trip that matches the preview: persist first.
+    const saveForEmail = async () => {
+      if (!(await chingState.current.saveTrip({ silent: true }))) {
+        throw new Error(
+          isPackageMode
+            ? "Save the package first."
+            : "Save the trip first — client name, phone and email are required.",
+        );
+      }
+    };
+
+    return registerChingEditor({
+      get tripLabel() {
+        return chingState.current.label;
+      },
+      getContext: () => buildEditContext(chingState.current.snapshot),
+      preview: (actions) => {
+        const { changes, warnings } = run(actions);
+        return { changes, warnings };
+      },
+      apply: (actions) => {
+        const { before, snapshot, changes, warnings } = run(actions);
+        if (changes.length) {
+          chingUndo.current = [...chingUndo.current.slice(-19), { before, label: changes.join("; ") }];
+          commit(snapshot);
+        }
+        return { changes, warnings };
+      },
+      undo: () => {
+        const last = chingUndo.current.pop();
+        if (!last) return null;
+        commit(last.before);
+        return last.label;
+      },
+      canUndo: () => chingUndo.current.length > 0,
+      exportPdf: async () => {
+        await settle();
+        await chingState.current.handleExport();
+      },
+      emailMe: async () => {
+        await settle();
+        await saveForEmail();
+        // A new trip's first save navigates to its real id — use that one.
+        await settle();
+        const tripId = chingState.current.urlTripId;
+        // A brand-new trip's first save reopens the builder under its real id.
+        if (!tripId) throw new Error("Trip saved. Say “email it to me” again to send it.");
+        const blob = await exportPreviewBlob();
+        return emailBlobToMe(tripId, blob);
+      },
+      save: async () => {
+        await settle();
+        return chingState.current.saveTrip();
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, dataIsCurrent]);
 
   const openAmendments = async () => {
     setAmendmentsOpen(true);
