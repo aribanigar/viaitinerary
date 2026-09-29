@@ -16,6 +16,7 @@ import {
   supabaseCreateUser,
   supabaseSetPassword,
 } from "@/lib/supabaseAuth";
+import { isConfiguredSuperAdmin } from "@/lib/superAdmins.mjs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -84,6 +85,11 @@ export async function POST(request) {
         { message: `Your account has been ${user.status}. Please contact support.` },
         { status: 403 }
       );
+    }
+
+    if (user.role !== "super_admin" && isConfiguredSuperAdmin(user.email)) {
+      await prisma.user.update({ where: { id: user.id }, data: { role: "super_admin" } });
+      user.role = "super_admin";
     }
 
     const followUps = [];

@@ -5,20 +5,18 @@
  */
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { SUPER_ADMIN_EMAILS } from "../lib/superAdmins.mjs";
 
 const prisma = new PrismaClient();
 
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "viakashmir.in@gmail.com").toLowerCase();
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "password";
 
-// Other accounts kept at super_admin on every deploy. Promote-only: these are
-// never created here — this repo is public, so an account seeded with a
-// default password would be a super admin anyone could log into. The person
-// signs up normally first; the next deploy promotes them.
-const EXTRA_SUPER_ADMINS = ["aribanigar034@gmail.com"];
-
 async function main() {
-  for (const email of EXTRA_SUPER_ADMINS) {
+  // Promote-only (never created here — this repo is public, so an account
+  // seeded with a default password would be a super admin anyone could log
+  // into). The login route enforces the same list, so this is a backup.
+  for (const email of SUPER_ADMIN_EMAILS.filter((e) => e !== ADMIN_EMAIL)) {
     const { count } = await prisma.user.updateMany({
       where: { email: { equals: email, mode: "insensitive" } },
       data: { role: "super_admin", status: "active" },

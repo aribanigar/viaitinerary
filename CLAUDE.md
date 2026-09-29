@@ -61,6 +61,8 @@ Auth itself (`web/lib/auth.js`): JWT in an httpOnly cookie (`vi_token`) or `Auth
 
 `/api/login` checks the local bcrypt hash first (no network). Only if that fails does it ask Supabase Auth (`web/lib/supabaseAuth.js`), for the account's linked `supabaseId` only — and a Supabase match rewrites the local hash, so that account's next login is local again. That fallback exists because until 2026-09-19 the deploy-time seed reset the super admin's local hash to `password` on every build while Supabase kept the real one. Every path that sets a password must call `hashPassword` **and**, if the user has a `supabaseId`, `supabaseSetPassword` — a path that skips Supabase leaves the old password working through the fallback.
 
+Platform super admins are listed in `web/lib/superAdmins.mjs` and promoted at login (promote-only, never created). The deploy-time seed applies the same list, but it's silently skipped whenever the build's `prisma db push` fails, so don't rely on the seed alone for anything that must happen.
+
 On the frontend, `apiClient` only raises the global "session expired" event for 401s on requests that carried a token, and `AuthContext` ignores 401s/responses for a token that's already been replaced — both were causes of fresh logins getting wiped and bounced to `/`. Signed-out users hitting a protected page go to `/login` (with `state.from`, and back there after signing in), never the marketing homepage.
 
 ### Generic catalog CRUD factory
