@@ -503,6 +503,22 @@ const MyTrips = () => {
                         <option value="confirmed">Confirmed</option>
                         <option value="completed">Completed</option>
                       </select>
+                      {trip.proposal_response === "approved" ? (
+                        <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-emerald-600">
+                          Client approved
+                        </div>
+                      ) : trip.proposal_response === "changes_requested" ? (
+                        <div
+                          className="mt-1 text-[9px] font-bold uppercase tracking-wider text-amber-600"
+                          title={trip.proposal_message || ""}
+                        >
+                          Changes requested
+                        </div>
+                      ) : trip.proposal_viewed_at ? (
+                        <div className="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-400">
+                          Client viewed
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">

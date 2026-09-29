@@ -105,3 +105,17 @@ export async function emailItineraryToMe(token, id, { pdfBase64, filename } = {}
     body: JSON.stringify({ pdf_base64: pdfBase64 || null, filename }),
   });
 }
+
+// Client proposal link (/p/:token) — status, and create/send it.
+export async function fetchProposal(token, id) {
+  return request(`/trips/${id}/proposal`, { token });
+}
+
+// body: {} (just ensure a link) | { send: "whatsapp" } | { send: "email", pdf_base64 } | { regenerate: true }
+export async function sendProposal(token, id, body = {}) {
+  return request(`/trips/${id}/proposal`, {
+    method: "POST",
+    token,
+    body: JSON.stringify(body),
+  });
+}

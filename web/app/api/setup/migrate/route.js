@@ -147,6 +147,16 @@ const STATEMENTS = [
   `ALTER TABLE "trip_activities" ADD CONSTRAINT "trip_activities_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE SET NULL`,
 
   `ALTER TABLE "trip_activities" ADD COLUMN IF NOT EXISTS "location" TEXT`,
+  // Client proposal link + approval
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "proposal_token" TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "trips_proposal_token_key" ON "trips"("proposal_token")`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "proposal_sent_at" TIMESTAMP(3)`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "proposal_viewed_at" TIMESTAMP(3)`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "proposal_view_count" INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "proposal_response" TEXT`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "proposal_responded_at" TIMESTAMP(3)`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "proposal_message" TEXT`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "proposal_responder" TEXT`,
 
   // DMC partner bridge (viakashmir.in SSO handoff) — see docs/dmc-bridge.md
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "via_kashmir_dmc_user_id" TEXT`,

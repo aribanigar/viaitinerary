@@ -35,6 +35,9 @@ import DashboardLayout from "./DashboardLayout";
 import { useNotifications } from "../../context/NotificationContext";
 import Pagination from "../common/Pagination";
 
+// Notifications about one trip (client name · trip id · phone chips + WhatsApp).
+const TRIP_NOTIFICATION_TYPES = ["follow_up", "proposal_viewed", "proposal_approved", "proposal_changes"];
+
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -266,7 +269,7 @@ const Notifications = () => {
                       </div>
                     </td>
                     <td className="px-6 py-5">
-                      {notification.data.type === "follow_up" && (
+                      {TRIP_NOTIFICATION_TYPES.includes(notification.data.type) && (
                         <div className="flex flex-wrap gap-2">
                           <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-1">
                             <User className="w-3 h-3" />
@@ -310,7 +313,7 @@ const Notifications = () => {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {(notification.data.type === "follow_up" ||
+                        {(TRIP_NOTIFICATION_TYPES.includes(notification.data.type) ||
                           notification.data.type === "new_lead" ||
                           notification.data.type === "lead_assigned") &&
                           notification.data.client_phone && (

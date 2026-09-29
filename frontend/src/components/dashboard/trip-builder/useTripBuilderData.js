@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { fetchBuilderInit } from "../../../api/trips";
+import { mapAgencySettings, mapPolicies, mapSavedTrip } from "../../../utils/tripView";
 
 export const DRAFT_KEY = "trip_builder_draft";
 
@@ -114,28 +115,7 @@ export const useTripBuilderData = ({
         setDefaultTripImage(configuredDefaultTripImage || "");
 
         if (initData.settings) {
-          setAgencySettings({
-            agencyName: initData.settings.agency_name,
-            phone: initData.settings.contact_phone,
-            website: initData.settings.website,
-            companyAddress: initData.settings.company_address || "",
-            email: initData.settings.contact_email,
-            whatsapp: initData.settings.whatsapp,
-            brandColor: initData.settings.brand_color,
-            secondaryColor: initData.settings.secondary_color,
-            fontFamily: initData.settings.font_family,
-            logo: initData.settings.logo_url || initData.settings.logo_path,
-            tagline:
-              initData.settings.tagline ||
-              "BOOK VERIFIED HOTELS, CABS, TOUR PACKAGES, ACTIVITIES & EXPERIENCES",
-            greetingMessage: initData.settings.greeting_message,
-            beneficiaryName: initData.settings.beneficiary_name,
-            bankName: initData.settings.bank_name || initData.settings.bankName,
-            accountNumber: initData.settings.account_number,
-            ifscCode: initData.settings.ifsc_code,
-            currency: initData.settings.currency || "INR (₹)",
-            defaultTripImage: configuredDefaultTripImage || null,
-          });
+          setAgencySettings(mapAgencySettings(initData.settings, configuredDefaultTripImage));
         }
 
         // Seed GST%/margin% from the agency's own settings — Trip only ever
@@ -163,208 +143,29 @@ export const useTripBuilderData = ({
         if (initData.activities) setAvailableActivities(initData.activities);
 
         if (initData.policies) {
-          setPolicies({
-            termsConditions: initData.policies.terms_conditions || "",
-            mustHaves: initData.policies.must_haves || "",
-            rolesResponsibilities:
-              initData.policies.roles_responsibilities || "",
-            cancellationPolicy: initData.policies.cancellation_policy || "",
-            additionalExpenses: initData.policies.additional_expenses || "",
-            defaultInclusions: initData.policies.default_inclusions || [],
-            defaultExclusions: initData.policies.default_exclusions || [],
-          });
+          setPolicies(mapPolicies(initData.policies));
         }
 
         const savedTrip = initData.trip;
 
         if (savedTrip) {
-          setTripInfo({
-            tripId: savedTrip.trip_id || savedTrip.tripId,
-            tripTitle: savedTrip.trip_title || savedTrip.tripTitle,
-            destination: savedTrip.destination || "",
-            destinationId:
-              savedTrip.destination_id || savedTrip.destinationId || null,
-            clientName: savedTrip.client_name || savedTrip.clientName,
-            clientPhone: savedTrip.client_phone || savedTrip.clientPhone || "",
-            clientEmail: savedTrip.client_email || savedTrip.clientEmail || "",
-            locked: savedTrip.locked ?? false,
-            adults: savedTrip.adults || 2,
-            kidsUpto5: savedTrip.kids_cnb || 0,
-            kids5to12: savedTrip.kids_5_to_12 || 0,
-            startDate:
-              savedTrip.start_date ||
-              savedTrip.startDate ||
-              new Date().toISOString().split("T")[0],
-            duration: savedTrip.duration,
-            cost: savedTrip.cost || "0",
-            currency:
-              savedTrip.currency || initData.settings?.currency || "INR (₹)",
-            image:
-              formatImageUrl(
-                savedTrip.image_url || savedTrip.image_path || savedTrip.image,
-              ) ||
-              configuredDefaultTripImage ||
-              "",
-            status: savedTrip.status,
-            template: savedTrip.template || "ModernTemplate",
-            useFlight: savedTrip.use_flight ?? false,
-            tagline:
-              savedTrip.tagline ||
-              initData.settings?.tagline ||
-              "BOOK VERIFIED HOTELS, CABS, TOUR PACKAGES, ACTIVITIES & EXPERIENCES",
-            transportDetails: (savedTrip.transport_details || []).map(
-              (transport) => ({
-                ...transport,
-                departureDateTime: transport.departure_date_time
-                  ? new Date(
-                      new Date(transport.departure_date_time).getTime() -
-                        new Date().getTimezoneOffset() * 60000,
-                    )
-                      .toISOString()
-                      .slice(0, 16)
-                  : "",
-                arrivalDateTime: transport.arrival_date_time
-                  ? new Date(
-                      new Date(transport.arrival_date_time).getTime() -
-                        new Date().getTimezoneOffset() * 60000,
-                    )
-                      .toISOString()
-                      .slice(0, 16)
-                  : "",
-              }),
-            ),
+          const mapped = mapSavedTrip(initData, {
+            formatImageUrl,
+            configuredDefaultTripImage,
           });
-
-          setIncludeGST(savedTrip.include_gst ?? true);
-          setInclusions(savedTrip.inclusions || []);
-          setExclusions(savedTrip.exclusions || []);
-
-          if (savedTrip.other_costs) {
-            setOtherCosts(
-              (
-                (typeof savedTrip.other_costs === "string"
-                  ? JSON.parse(savedTrip.other_costs)
-                  : savedTrip.other_costs) || []
-              ).map((c, idx) => ({
-                id: c.id || Date.now() + idx,
-                name: c.name || "",
-                price: c.price || 0,
-              })),
-            );
-          } else {
-            setOtherCosts([]);
-          }
-
-          const mappedItinerary = (
-            savedTrip.itineraries ||
-            savedTrip.itinerary ||
-            []
-          ).map((item) => ({
-            id: item.id,
-            day: item.day_number || item.day,
-            title: item.title,
-            location: item.location,
-            destinationId:
-              item.destination_id ||
-              initData.destinations.find((d) => d.name === item.location)?.id ||
-              null,
-            description: item.description,
-            activities:
-              item.description && typeof item.description === "string"
-                ? item.description.split("\n").filter((a) => a.trim() !== "")
-                : [],
-            photo: formatImageUrl(
-              item.image_url || item.image_path || item.photo,
-            ),
-          }));
-          setItinerary(mappedItinerary);
-
-          const mappedAccommodations = (savedTrip.accommodations || []).map(
-            (item) =>
-              normalizeAccommodation({
-                id: item.id,
-                hotelId: item.hotel_id || item.hotelId,
-                name: item.hotel?.name ?? item.name,
-                city: item.hotel?.city ?? item.city,
-                category: item.category,
-                rooms: item.rooms || "1",
-                mealPlan: item.meal_plan || item.mealPlan,
-                roomType: item.room_type || item.roomType || "Deluxe",
-                pricePerRoom: item.price_per_room || item.pricePerRoom || "",
-                cnbCount: item.cnb_count || item.cnbCount || "0",
-                extraBeds5To12Count:
-                  item.extra_beds_5_to_12_count ||
-                  item.extraBeds5To12Count ||
-                  "0",
-                extraBedsAbove12Count:
-                  item.extra_beds_above_12_count ||
-                  item.extraBedsAbove12Count ||
-                  "0",
-                bedPrices: item.bed_prices || item.bedPrices || [],
-                checkIn: item.check_in || item.checkIn,
-                checkOut: item.check_out || item.checkOut,
-                photo: formatImageUrl(
-                  item.image_url || item.image_path || item.photo,
-                ),
-                extra_adult_count: item.extra_adult_count,
-                cancelled_at: item.cancelled_at,
-                cancellation_charge: item.cancellation_charge,
-                cancellation_note: item.cancellation_note,
-                alternate_options: item.alternate_options,
-                markup_percentage: item.markup_percentage,
-              }),
-          );
-          setAccommodations(mappedAccommodations);
-
-          const mappedTransportation = (
-            savedTrip.transportations ||
-            savedTrip.transportation ||
-            []
-          ).map((item) => ({
-            id: item.id,
-            vehicleId: item.vehicle_id || item.vehicleId,
-            tripType: item.trip_type || item.tripType || "Transfer",
-            destination: item.destination,
-            route: item.route,
-            date: item.date,
-            vehicleType: item.vehicle_type || item.vehicleType,
-            quantity: item.quantity || 1,
-            remarks: item.remarks,
-            markupPercentage: item.markup_percentage ?? item.markupPercentage ?? "",
-          }));
-          setTransportation(mappedTransportation);
-
-          const mappedTripActivities = (savedTrip.trip_activities || []).map(
-            (item) => ({
-              id: item.id,
-              activityId: item.activity_id ?? item.activityId ?? null,
-              name: item.name,
-              location: item.location || "",
-              dayNumber: item.day_number ?? item.dayNumber ?? "",
-              ticketCount: item.ticket_count ?? item.ticketCount ?? 1,
-              pricePerTicket: item.price_per_ticket ?? item.pricePerTicket ?? "",
-              markupPercentage: item.markup_percentage ?? item.markupPercentage ?? "",
-              notes: item.notes || "",
-            }),
-          );
-          setTripActivities(mappedTripActivities);
-
-          // Restore this trip's own GST%/margin% so the Pricing tab shows
-          // what was actually quoted. Trips saved before these columns
-          // existed have neither stored — fall back to the agency's
-          // configured defaults for display only; the auto-cost effect
-          // won't touch the trip's saved cost regardless, until the agent
-          // edits pricing themselves (see pricingTouched).
-          setGstPercentage(
-            savedTrip.gst_percentage != null
-              ? Number(savedTrip.gst_percentage)
-              : Number(initData.settings?.gst_percentage ?? 0),
-          );
-          setProfitMarginPercentage(
-            savedTrip.profit_margin_percentage != null
-              ? Number(savedTrip.profit_margin_percentage)
-              : Number(initData.settings?.profit_percentage ?? 0),
-          );
+          setTripInfo(mapped.tripInfo);
+          setIncludeGST(mapped.includeGST);
+          setInclusions(mapped.inclusions);
+          setExclusions(mapped.exclusions);
+          setOtherCosts(mapped.otherCosts);
+          setItinerary(mapped.itinerary);
+          setAccommodations(mapped.accommodations);
+          setTransportation(mapped.transportation);
+          setTripActivities(mapped.tripActivities);
+          // Restore this trip's own GST%/margin% (agency defaults for trips
+          // saved before those columns existed) — see pricingTouched.
+          setGstPercentage(mapped.gstPercentage);
+          setProfitMarginPercentage(mapped.profitMarginPercentage);
         } else if (urlTripId) {
           toast.error("You are not allowed to access this trip.");
           navigate("/trip-builder", { replace: true });

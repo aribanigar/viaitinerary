@@ -48,7 +48,7 @@ const writeHandsFree = (on) => {
 
 const uniq = (list) => [...new Set((list || []).filter(Boolean))];
 
-// Command actions (EXPORT_PDF / EMAIL_ME / SAVE / UNDO) against the open Trip
+// Command actions (EXPORT_PDF / EMAIL_ME / SEND_PROPOSAL / SAVE / UNDO) against the open Trip
 // Builder, in order. Resolves to the result lines; throws on the first failure.
 async function runEditorCommands(commands, editor, setProgress) {
   const lines = [];
@@ -69,6 +69,11 @@ async function runEditorCommands(commands, editor, setProgress) {
       const line = `PDF emailed to ${res?.to || "you"}`;
       toast.success(line);
       lines.push(line);
+    } else if (c.type === "SEND_PROPOSAL") {
+      setProgress(c.channel === "email" ? "Emailing the proposal to the client…" : "Preparing the approval link…");
+      const res = await editor.sendProposal(c.channel);
+      toast.success(res.message);
+      lines.push(res.message);
     } else if (c.type === "SAVE") {
       setProgress("Saving the trip…");
       const ok = await editor.save();

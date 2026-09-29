@@ -106,6 +106,16 @@ model Trip {
   confirmationSent Boolean  @default(false) @map("confirmation_sent")
   isPackage       Boolean   @default(false) @map("is_package")
   locked          Boolean   @default(false)
+  // Client proposal link (/p/:token): the client views the itinerary and
+  // approves it or asks for changes. proposalResponse: approved | changes_requested.
+  proposalToken       String?   @unique @map("proposal_token")
+  proposalSentAt      DateTime? @map("proposal_sent_at")
+  proposalViewedAt    DateTime? @map("proposal_viewed_at")
+  proposalViewCount   Int       @default(0) @map("proposal_view_count")
+  proposalResponse    String?   @map("proposal_response")
+  proposalRespondedAt DateTime? @map("proposal_responded_at")
+  proposalMessage     String?   @map("proposal_message")
+  proposalResponder   String?   @map("proposal_responder")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 

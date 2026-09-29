@@ -33,6 +33,11 @@ import {
   Package as PackageIcon,
   MessageCircle,
   History as HistoryIcon,
+  Send,
+  Link2,
+  Mail,
+  Eye,
+  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -42,6 +47,8 @@ import {
   fetchTripRevisions,
   logTripSend,
   emailItineraryToMe,
+  fetchProposal,
+  sendProposal as sendProposalApi,
 } from "../../api/trips";
 import {
   createPackage,
@@ -59,6 +66,7 @@ import PricingTab from "./trip-builder/PricingTab";
 import { HotelModal, TransportModal, ActivityModal } from "./trip-builder/TripBuilderModals";
 import TripInfoTab from "./trip-builder/TripInfoTab";
 import { registerChingEditor } from "../../utils/ching/editorBridge";
+import { formatTripImageUrl, normalizeAccommodation } from "../../utils/tripView";
 import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
 import {
   DRAFT_KEY,
@@ -88,21 +96,8 @@ const TripBuilder = ({ mode }) => {
   const draftKey = searchParams.get("d") || "default";
   const navigate = useNavigate();
 
-  // Helper to format image URLs
-  const formatImageUrl = useCallback((path) => {
-    if (!path) return null;
-    if (path.startsWith("http") || path.startsWith("data:")) return path;
-
-    // Clean up the path (remove leading slashes)
-    const cleanPath = path.startsWith("/") ? path.substring(1) : path;
-
-    // Construct base URL from API_URL (removing /api and any trailing slashes)
-    const apiBase = (
-      import.meta.env.VITE_API_URL || "http://localhost:8000/api"
-    ).replace(/\/$/, ""); // Remove trailing slash if any
-
-    return `${apiBase}/storage/${cleanPath}`;
-  }, []);
+  // Stable module-level helper (shared with the client proposal page).
+  const formatImageUrl = formatTripImageUrl;
 
   const [activeTab, setActiveTab] = useState("Trip Info");
   const [loading, setLoading] = useState(true);
@@ -298,37 +293,6 @@ const TripBuilder = ({ mode }) => {
     if (value === "cnb") return "CNB";
     return value;
   };
-  const normalizeAccommodation = useCallback((item = {}) => {
-    const legacyCnbSelected =
-      (item.extraBedCategory || item.extra_bed_category) === "cnb";
-    const legacyAbove12Selected =
-      (item.extraBedCategory || item.extra_bed_category) === "above_12";
-    const cnbCount =
-      item.cnbCount ??
-      item.cnb_count ??
-      (legacyCnbSelected ? item.beds || "0" : "0");
-    const extraBeds5To12Count =
-      item.extraBeds5To12Count ??
-      item.extra_beds_5_to_12_count ??
-      (!legacyCnbSelected && !legacyAbove12Selected ? item.beds || "0" : "0");
-    const extraBedsAbove12Count =
-      item.extraBedsAbove12Count ??
-      item.extra_beds_above_12_count ??
-      (legacyAbove12Selected ? item.beds || "0" : "0");
-
-    return {
-      ...item,
-      cnbCount,
-      extraBeds5To12Count,
-      extraBedsAbove12Count,
-      extraAdultCount: item.extraAdultCount ?? item.extra_adult_count ?? "0",
-      cancelledAt: item.cancelledAt ?? item.cancelled_at ?? null,
-      cancellationCharge: item.cancellationCharge ?? item.cancellation_charge ?? "",
-      cancellationNote: item.cancellationNote ?? item.cancellation_note ?? "",
-      alternateOptions: item.alternateOptions ?? item.alternate_options ?? [],
-      markupPercentage: item.markupPercentage ?? item.markup_percentage ?? "",
-    };
-  }, []);
 
   useTripBuilderData({
     token,
@@ -1298,6 +1262,146 @@ const TripBuilder = ({ mode }) => {
     });
   };
 
+  // ── Client proposal link (/p/:token): the client opens the itinerary,
+  // approves it or asks for changes; the chip in the header shows where it is.
+  const [proposal, setProposal] = useState(null);
+  const refreshProposal = useCallback(async () => {
+    if (!urlTripId || isPackageMode || !token) {
+      setProposal(null);
+      return;
+    }
+    try {
+      setProposal(await fetchProposal(token, urlTripId));
+    } catch {
+      /* status chip is optional — never block the builder on it */
+    }
+  }, [token, urlTripId, isPackageMode]);
+  useEffect(() => {
+    refreshProposal();
+    // Pick up the client's answer when the agent comes back to this tab.
+    window.addEventListener("focus", refreshProposal);
+    return () => window.removeEventListener("focus", refreshProposal);
+  }, [refreshProposal]);
+
+  const blobToBase64 = (blob) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+
+  /**
+   * Share the proposal link with the client. channel: "whatsapp" | "email" |
+   * "link" (copy) | "preview". `popup` is a window opened synchronously in the
+   * click handler (browsers block window.open after an await); without one
+   * (e.g. a voice command) we try to open and fall back to a clickable toast.
+   * Resolves to { message, url }.
+   */
+  const shareProposal = async (channel, { popup = null } = {}) => {
+    // The link shows the SAVED trip, so persist the latest edits first.
+    if (!(await saveTrip({ silent: true }))) {
+      throw new Error("Save the trip first — client name, phone and email are required.");
+    }
+    const tripId = urlTripId;
+    if (!tripId) throw new Error("Trip saved — send it again to share the link.");
+
+    if (channel === "email") {
+      const blob = await exportPreviewBlob();
+      const res = await sendProposalApi(token, tripId, {
+        send: "email",
+        pdf_base64: blob.size <= 3 * 1024 * 1024 ? await blobToBase64(blob) : null,
+      });
+      setProposal(res);
+      return { message: `Proposal emailed to ${res.sent_to}.`, url: `${window.location.origin}${res.path}` };
+    }
+
+    const res = await sendProposalApi(token, tripId, channel === "whatsapp" ? { send: "whatsapp" } : {});
+    setProposal(res);
+    const url = `${window.location.origin}${res.path}`;
+
+    if (channel === "link") {
+      try {
+        await navigator.clipboard.writeText(url);
+        return { message: "Approval link copied.", url };
+      } catch {
+        return { message: `Approval link: ${url}`, url };
+      }
+    }
+
+    let target = url + (channel === "preview" ? "?preview=1" : "");
+    if (channel === "whatsapp") {
+      const greeting = `Hi ${tripInfo.clientName || "there"}, your ${tripInfo.tripTitle || "trip"} itinerary from ${agencySettings.agencyName || "us"} is ready. You can view it and approve it here: ${url}`;
+      const phone = (tripInfo.clientPhone || "").replace(/[^\d]/g, "");
+      target = `https://wa.me/${phone}?text=${encodeURIComponent(greeting)}`;
+      logSendForAmendmentHistory("whatsapp_share");
+    }
+    const win = popup || window.open(target, "_blank", "noopener,noreferrer");
+    if (popup) popup.location.href = target;
+    if (!win) {
+      toast.info(
+        <a href={target} target="_blank" rel="noopener noreferrer" className="underline font-semibold">
+          {channel === "whatsapp" ? "Tap to open WhatsApp and send the link" : "Tap to open the client view"}
+        </a>,
+        { autoClose: false },
+      );
+    }
+    return {
+      message: channel === "whatsapp" ? "WhatsApp opened with the approval link." : "Opened the client view.",
+      url,
+    };
+  };
+
+  const handleShareProposal = async (channel) => {
+    setOpenMenu(null);
+    // Open the tab now, inside the click, so it isn't popup-blocked later.
+    const popup = channel === "whatsapp" || channel === "preview" ? window.open("about:blank", "_blank") : null;
+    if (popup) popup.opener = null;
+    setSharing(true);
+    try {
+      const { message } = await shareProposal(channel, { popup });
+      toast.success(message);
+    } catch (err) {
+      popup?.close();
+      toast.error(err.message || "Couldn't share the proposal.");
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const proposalChip = (() => {
+    if (!proposal || !proposal.token) return null;
+    const when = (d) => (d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "");
+    let label;
+    let tone = "bg-black/[0.04] text-[#5b6472]";
+    if (proposal.response === "approved") {
+      label = `Approved${proposal.responder ? ` by ${proposal.responder}` : ""} · ${when(proposal.responded_at)}`;
+      tone = "bg-emerald-50 text-emerald-700";
+    } else if (proposal.response === "changes_requested") {
+      label = `Changes requested · ${when(proposal.responded_at)}`;
+      tone = "bg-amber-50 text-amber-700";
+    } else if (proposal.viewed_at) {
+      label = `Client viewed${proposal.view_count > 1 ? ` ${proposal.view_count}×` : ""}`;
+    } else if (proposal.sent_at) {
+      label = `Sent ${when(proposal.sent_at)}`;
+    } else {
+      return null;
+    }
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          if (proposal.message) toast.info(`Client: “${proposal.message}”`, { autoClose: 10000 });
+        }}
+        title={proposal.message ? `Client: ${proposal.message}` : "Client proposal status"}
+        className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${tone}`}
+      >
+        <CheckCircle className="w-3.5 h-3.5" />
+        {label}
+      </button>
+    );
+  })();
+
   // ── Ching hand-off: a trip built by voice opens here with ?ching=deliver.
   // Once it has loaded and the preview has rendered, download the exact
   // preview PDF to the device and email the same file to the signed-in user.
@@ -1373,6 +1477,7 @@ const TripBuilder = ({ mode }) => {
     urlTripId,
     saveTrip,
     handleExport,
+    shareProposal,
   };
   const chingUndo = useRef([]);
   useEffect(() => {
@@ -1448,6 +1553,11 @@ const TripBuilder = ({ mode }) => {
       save: async () => {
         await settle();
         return chingState.current.saveTrip();
+      },
+      // channel: "whatsapp" | "email" | "link" → { message, url }
+      sendProposal: async (channel) => {
+        await settle();
+        return chingState.current.shareProposal(channel);
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1760,6 +1870,7 @@ const TripBuilder = ({ mode }) => {
           Locked
         </label>
       )}
+      {proposalChip}
       {urlTripId && (
         <button
           onClick={openAmendments}
@@ -1784,22 +1895,81 @@ const TripBuilder = ({ mode }) => {
           </>
         )}
       </button>
-      <button
-        onClick={handleShareWhatsApp}
-        disabled={loading || saving || exporting || sharing}
-        className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {sharing ? (
-          <>
-            <Loader size="sm" text="" inline color="text-[#181c22]" />
-            <span>Sharing…</span>
-          </>
-        ) : (
-          <>
-            <MessageCircle className="w-3.5 h-3.5" /> Share
-          </>
-        )}
-      </button>
+      {isPackageMode ? (
+        <button
+          onClick={handleShareWhatsApp}
+          disabled={loading || saving || exporting || sharing}
+          className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {sharing ? (
+            <>
+              <Loader size="sm" text="" inline color="text-[#181c22]" />
+              <span>Sharing…</span>
+            </>
+          ) : (
+            <>
+              <MessageCircle className="w-3.5 h-3.5" /> Share
+            </>
+          )}
+        </button>
+      ) : (
+        <div className="relative">
+          <button
+            onClick={() => toggleMenu("send")}
+            disabled={loading || saving || exporting || sharing}
+            className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sharing ? (
+              <>
+                <Loader size="sm" text="" inline color="text-[#181c22]" />
+                <span>Sending…</span>
+              </>
+            ) : (
+              <>
+                <Send className="w-3.5 h-3.5" /> Send <ChevronDown className="w-3 h-3 opacity-60" />
+              </>
+            )}
+          </button>
+          {openMenu === "send" && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
+              <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden py-1">
+                <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45">
+                  Client approval link
+                </div>
+                {[
+                  { key: "whatsapp", icon: MessageCircle, label: "Send on WhatsApp", hint: "Opens a chat with the link" },
+                  { key: "email", icon: Mail, label: "Email to client", hint: tripInfo.clientEmail || "Add the client's email first" },
+                  { key: "link", icon: Link2, label: "Copy link" },
+                  { key: "preview", icon: Eye, label: "Preview as client" },
+                ].map(({ key, icon, label, hint }) => (
+                  <button
+                    key={key}
+                    onClick={() => handleShareProposal(key)}
+                    className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-start gap-3"
+                  >
+                    {React.createElement(icon, { className: "w-4 h-4 mt-0.5 text-[#181c22]/60" })}
+                    <span>
+                      <span className="block text-sm font-medium text-[#181c22]">{label}</span>
+                      {hint && <span className="block text-xs text-[#9aa3b2] truncate max-w-[13rem]">{hint}</span>}
+                    </span>
+                  </button>
+                ))}
+                <div className="border-t border-black/5 my-1" />
+                <button
+                  onClick={() => {
+                    setOpenMenu(null);
+                    handleShareWhatsApp();
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-[#181c22]"
+                >
+                  <Download className="w-4 h-4 text-[#181c22]/60" /> Share the PDF
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
       <button
         onClick={handleSaveTrip}
         disabled={loading || saving || exporting}

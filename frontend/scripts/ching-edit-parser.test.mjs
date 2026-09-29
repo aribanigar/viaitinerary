@@ -249,10 +249,41 @@ test('save / undo / undo that', () => {
   only('undo', [{ type: 'UNDO' }])
   only('undo that', [{ type: 'UNDO' }])
 })
-test('email it to the client is NOT email-me', () => {
-  const r = edit('email it to the client')
-  assert.deepEqual(r.actions, [])
-  assert.equal(r.unrecognized.length, 1)
+test('email it to the client -> SEND_PROPOSAL email (not EMAIL_ME)', () => {
+  only('email it to the client', [{ type: 'SEND_PROPOSAL', channel: 'email' }])
+  only('email it to the customer', [{ type: 'SEND_PROPOSAL', channel: 'email' }])
+  only('email it to Rahul', [{ type: 'SEND_PROPOSAL', channel: 'email' }])
+  only('email it to me', [{ type: 'EMAIL_ME' }])
+})
+test('send proposal: whatsapp', () => {
+  only('send it to the customer on WhatsApp', [{ type: 'SEND_PROPOSAL', channel: 'whatsapp' }])
+  only('send it to the client on whats app', [{ type: 'SEND_PROPOSAL', channel: 'whatsapp' }])
+  only('WhatsApp it to Rahul', [{ type: 'SEND_PROPOSAL', channel: 'whatsapp' }])
+})
+test('send proposal: email', () => {
+  only('send the proposal to the client', [{ type: 'SEND_PROPOSAL', channel: 'email' }])
+  only('send it to the client', [{ type: 'SEND_PROPOSAL', channel: 'email' }])
+  only('send it to rahul', [{ type: 'SEND_PROPOSAL', channel: 'email' }])
+})
+test('send proposal: link', () => {
+  only('send the approval link', [{ type: 'SEND_PROPOSAL', channel: 'link' }])
+  only('copy the link', [{ type: 'SEND_PROPOSAL', channel: 'link' }])
+  only('share the link', [{ type: 'SEND_PROPOSAL', channel: 'link' }])
+})
+test('send proposal goes last, after edits', () =>
+  only('whatsapp it to rahul, make gulmarg 2 nights and then add breakfast to all hotels', [
+    { type: 'SET_STAY_NIGHTS', stay: 1, nights: 2 },
+    { type: 'SET_MEAL_PLAN', stay: 'all', mealPlan: 'Only Room + Breakfast' },
+    { type: 'SEND_PROPOSAL', channel: 'whatsapp' },
+  ]))
+test('chained: make gulmarg 2 nights and whatsapp it to the client', () =>
+  only('make gulmarg 2 nights and whatsapp it to the client', [
+    { type: 'SET_STAY_NIGHTS', stay: 1, nights: 2 },
+    { type: 'SEND_PROPOSAL', channel: 'whatsapp' },
+  ]))
+test('email it to the client does not become SET_CLIENT or EMAIL_ME', () => {
+  const r = edit('email it to the client and download the pdf')
+  assert.deepEqual(r.actions, [{ type: 'SEND_PROPOSAL', channel: 'email' }, { type: 'EXPORT_PDF' }])
 })
 
 // ---- chaining ----

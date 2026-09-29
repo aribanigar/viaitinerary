@@ -72,6 +72,9 @@ export async function GET(request) {
     image_path: t.imagePath,
     image_url: t.imagePath,
     status: t.status,
+    proposal_response: t.proposalResponse ?? null,
+    proposal_message: t.proposalMessage ?? null,
+    proposal_viewed_at: t.proposalViewedAt ? t.proposalViewedAt.toISOString() : null,
     updated_at: t.updatedAt,
     created_by: t.userId === user.id ? "You" : ownerName.get(t.userId) || "—",
   }));

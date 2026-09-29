@@ -81,7 +81,7 @@ function probeEditContext(catalog) {
 }
 
 // Actions the Trip Builder runs as commands rather than state edits.
-export const COMMAND_TYPES = new Set(["EXPORT_PDF", "EMAIL_ME", "SAVE", "UNDO"]);
+export const COMMAND_TYPES = new Set(["EXPORT_PDF", "EMAIL_ME", "SAVE", "UNDO", "SEND_PROPOSAL"]);
 
 /**
  * Decide what a finished transcript is and parse it.

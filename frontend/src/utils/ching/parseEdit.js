@@ -15,19 +15,20 @@ import { extractDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
 import { prepareCatalog, cityLookup, sameCity, matchHotel, extractMealPlan, extractEmail, extractPhone } from './parseCommand.js'
 
-const COMMAND_TYPES = new Set(['EXPORT_PDF', 'EMAIL_ME', 'SAVE'])
+const COMMAND_TYPES = new Set(['EXPORT_PDF', 'EMAIL_ME', 'SAVE', 'SEND_PROPOSAL'])
 const STAY_STRUCTURE = new Set(['SET_STAY_NIGHTS', 'ADD_STAY', 'REMOVE_STAY'])
 const TRIP_NOUN = '(?:trip|itinerary|itineraries|tour|package|quotation|quote|holiday|vacation)'
 const SPLIT_VERBS = new Set([
   'change', 'make', 'reduce', 'increase', 'decrease', 'replace', 'swap', 'switch', 'remove', 'delete', 'skip',
   'drop', 'shift', 'move', 'export', 'download', 'undo', 'keep', 'set', 'give', 'add', 'use', 'extend',
-  'shorten', 'email', 'send', 'save', 'include', 'put', 'cancel', 'update', 'apply',
+  'shorten', 'email', 'send', 'save', 'include', 'put', 'cancel', 'update', 'apply', 'whatsapp', 'share',
+  'copy',
 ])
 // A verb right after one of these belongs to the same clause ("i want to change", "can you add").
 const NO_SPLIT_PREV = new Set([
   'to', 'you', 'i', 'we', 'please', 'pls', 'can', 'could', 'would', 'will', 'lets', "let's", 'kindly', 'and',
   'then', 'also', 'just', 'now', 'us', "i'd", 'me', 'should', 'must', 'not', "don't", 'dont', 'the',
-  'my', 'your', 'his', 'her', 'their', 'a', 'an', 'by', 'via', 'on', 'in', 'of', 'no', 'it',
+  'my', 'your', 'his', 'her', 'their', 'a', 'an', 'by', 'via', 'on', 'in', 'of', 'no', 'it', 'through', 'over',
 ])
 const LEAD_FILLER =
   /^(?:(?:please|pls|kindly|can you|could you|would you|will you|i want to|i want you to|i would like to|i'd like to|i need to|i need you to|let's|lets|just|now|ok|okay|also|and|then|so|ching|hey|hi|hello|go ahead and)\s+)+/
@@ -123,6 +124,8 @@ function prepareContext(context, cat) {
     infants: Number(c.infants) || 0,
     marginPercent: Number(c.marginPercent) || 0,
     vehicle: c.vehicle || null,
+    // Client's name words (3+ letters) so "whatsapp it to rahul" is recognised as the client.
+    clientTokens: normTokens(c.clientName).filter((t) => t.length >= 3 && !/^(?:mr|mrs|ms|miss|shri|smt)$/.test(t)),
     stays,
     days,
     activities,
@@ -237,10 +240,35 @@ function checkDay(day, S, warnings) {
 
 // ---------- clause handlers: (c, toks, env) -> Action[] | null ----------
 
-function hCommands(c) {
+/** Sending the client proposal / approval link: { type: 'SEND_PROPOSAL', channel } or null. */
+function proposalCommand(c, toks, env) {
+  const clientRef =
+    /\b(?:client|customer|guest|guests|him|her|them)\b/.test(c) ||
+    (env.S.clientTokens.length > 0 && toks.some((t) => env.S.clientTokens.includes(t)))
+  const proposal = /\b(?:proposal|approval|quote|quotation)\b/.test(c)
+  const link = /\b(?:link|url)\b/.test(c)
+  const toMe = /\b(?:me|my|myself|mine|inbox)\b/.test(c) && !clientRef
+  const emailWord = /\b(?:e-?mail|mail)\b/.test(c)
+  if (/\bwhatsapp\b/.test(c)) return toMe ? null : 'whatsapp'
+  if (link) {
+    if (toMe) return null
+    if (emailWord || (/\bsend\b/.test(c) && clientRef)) return 'email'
+    if (/\b(?:copy|share|send|get|give|open|show|generate|create)\b/.test(c) || proposal) return 'link'
+    return null
+  }
+  if (toMe) return null
+  if (emailWord && clientRef) return 'email'
+  if (/\bsend\b/.test(c) && (clientRef || proposal)) return 'email'
+  if (/\b(?:share|copy)\b/.test(c) && (clientRef || proposal)) return 'link'
+  return null
+}
+
+function hCommands(c, toks, env) {
   if (/\b(?:undo|revert)\b/.test(c) || /^(?:go back|cancel that|cancel the last change|take that back)$/.test(c)) {
     return [{ type: 'UNDO' }]
   }
+  const channel = proposalCommand(c, toks, env)
+  if (channel) return [{ type: 'SEND_PROPOSAL', channel }]
   if (/\b(?:e-?mail|mail|send)\b/.test(c)) {
     if (/\b(?:client|customer|guest|him|her|them)\b/.test(c)) return null
     if (/\b(?:me|my|myself|mine|inbox)\b/.test(c) || /^(?:e-?mail|mail|send)(?:\s+(?:it|this|that|the\s+(?:pdf|itinerary|trip|quote|quotation|file)))?$/.test(c)) {
@@ -867,6 +895,7 @@ export function parseChingEdit(text, context, catalog, { today } = {}) {
   s = s
     .replace(/\bg\s*\.?\s*s\s*\.?\s*t\b\.?/g, 'gst')
     .replace(/\bper\s+cent\b/g, 'percent')
+    .replace(/\b(?:whats|what's|what|wats|watts)\s*app\b|\bwhatsapp?\b|\bwatsapp\b/g, 'whatsapp')
     .replace(/([a-z])-(?=[a-z])/g, '$1 ')
     .replace(/(\d)-(?=[a-z])/g, '$1 ')
   s = convertNumberWords(s)

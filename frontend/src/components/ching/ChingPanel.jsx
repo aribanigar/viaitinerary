@@ -593,7 +593,11 @@ const COMMAND_LINES = {
   EMAIL_ME: { label: "Email the PDF to you", icon: Mail },
   SAVE: { label: "Save the trip", icon: Save },
   UNDO: { label: "Undo the last change", icon: Undo2 },
+  SEND_PROPOSAL_whatsapp: { label: "Send the approval link to the client on WhatsApp", icon: SendHorizontal },
+  SEND_PROPOSAL_email: { label: "Email the proposal to the client", icon: Mail },
+  SEND_PROPOSAL_link: { label: "Copy the client approval link", icon: SendHorizontal },
 };
+const commandKey = (c) => (c.type === "SEND_PROPOSAL" ? `SEND_PROPOSAL_${c.channel}` : c.type);
 
 const EDIT_EXAMPLES =
   "“make Gulmarg 2 nights”, “add Shikara ride on day 2”, “give me 20% margin”, “email it to me”";
@@ -634,7 +638,7 @@ function EditCard({ edit }) {
             </li>
           ))}
           {edit.commands.map((c, i) => {
-            const meta = COMMAND_LINES[c.type] || { label: c.type, icon: Check };
+            const meta = COMMAND_LINES[commandKey(c)] || { label: c.type, icon: Check };
             const Icon = meta.icon;
             return (
               <li key={`k${i}`} className="flex gap-2 text-[13px] leading-snug text-[#181c22]">

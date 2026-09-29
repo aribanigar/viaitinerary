@@ -115,6 +115,7 @@ const AboutUs = lazy(() => import("./pages/AboutUs"));
 const Solutions = lazy(() => import("./pages/Solutions"));
 const LeadInquiryForm = lazy(() => import("./pages/LeadInquiryForm"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Proposal = lazy(() => import("./pages/Proposal"));
 
 import ScrollToHashElement from "./components/utils/ScrollToHashElement";
 import ChingWidget from "./components/ching/ChingWidget";
@@ -307,7 +308,10 @@ const PortalChing = () => {
 const PublicWhatsAppCTA = () => {
   const location = useLocation();
 
-  const shouldHide = isPortalPath(location.pathname);
+  // Also hidden on client proposals (/p/:token): those pages belong to the
+  // agency, and this bubble is the platform's own.
+  const shouldHide =
+    isPortalPath(location.pathname) || location.pathname.startsWith("/p/");
 
   if (shouldHide) {
     return null;
@@ -371,6 +375,8 @@ function App() {
                   <Route path="/about-us" element={<AboutUs />} />
                   <Route path="/solutions" element={<Solutions />} />
                   <Route path="/lead-inquiry" element={<LeadInquiryForm />} />
+                  {/* Client proposal — public, no auth guard either way. */}
+                  <Route path="/p/:token" element={<Proposal />} />
 
                   {/* Protected Routes - All authenticated users */}
                   <Route element={<ProtectedRoute />}>
