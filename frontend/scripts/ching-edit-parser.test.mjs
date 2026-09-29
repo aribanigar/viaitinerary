@@ -285,6 +285,13 @@ test('nothing understood -> intent unknown', () => {
   assert.deepEqual(r.actions, [])
   assert.equal(r.unrecognized.length, 1)
 })
+test('questions are never turned into edits', () => {
+  for (const t of ['is breakfast included in gulmarg', 'how many nights in gulmarg', 'what is the total price']) {
+    const r = edit(t)
+    assert.deepEqual(r.actions, [], t)
+    assert.equal(r.unrecognized.length, 1, t)
+  }
+})
 test('empty / wake phrase only', () => {
   assert.equal(edit('').intent, 'unknown')
   assert.equal(edit('hello ching').intent, 'unknown')

@@ -118,6 +118,7 @@ const numericDay = (value) => (value === '' || value == null ? NaN : Number(valu
 export function insertDays(st, pivot, k, city, { extendAcc = null, cab = null } = {}) {
   const { s } = st
   const pivotDay = dayOfDate(st, pivot)
+  addKnown(st, city)
 
   for (const acc of s.accommodations) {
     if (acc === extendAcc) continue
@@ -216,7 +217,7 @@ export function retitle(st) {
   for (let i = 0; i < N; i += 1) {
     const date = dateOfDay(st, i + 1)
     const stay = stays.find((a) => a.checkIn && a.checkOut && a.checkIn <= date && date < a.checkOut)
-    cities[i] = stay?.city || cities[i - 1] || days[i].location || ''
+    cities[i] = stay?.city || days[i].location || cities[i - 1] || ''
   }
   const lastNight = N >= 2 ? cities[N - 2] : cities[0]
 

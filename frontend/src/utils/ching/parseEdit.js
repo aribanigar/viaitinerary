@@ -888,6 +888,11 @@ export function parseChingEdit(text, context, catalog, { today } = {}) {
   for (const raw of splitClauses(s)) {
     const c = cleanClause(raw)
     if (NOISE.test(c)) continue
+    // Questions ("is breakfast included in gulmarg?") are never turned into edits.
+    if (/^(?:what|what's|whats|how|why|when|which|who|where|is|are|does|did|was|were|will|should)\b/.test(c)) {
+      result.unrecognized.push(c)
+      continue
+    }
     const toks = toksOf(c)
     let acts = null
     for (const h of HANDLERS) {
