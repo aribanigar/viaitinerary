@@ -70,14 +70,11 @@ export const AuthProvider = ({ children }) => {
         handlingUnauthorizedRef.current = true;
 
         // Clear stale auth values first so header/guards immediately switch to guest UI.
+        // No hard redirect: clearing auth makes ProtectedRoute send the user
+        // to /login (and back afterwards). The old full-page jump to the
+        // marketing homepage also reloaded away this toast before it showed.
         clearAuthState();
-        toast.error(
-          event.detail.message || "Session expired. Please login again.",
-        );
-
-        if (window.location.pathname !== "/") {
-          window.location.assign("/");
-        }
+        toast.error("Your session has expired. Please sign in again.");
 
         setTimeout(() => {
           handlingUnauthorizedRef.current = false;

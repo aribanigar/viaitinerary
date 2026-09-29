@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth";
 import {
   supabaseAuthEnabled,
+  supabaseSignIn,
   supabaseFindUserByEmail,
   supabaseCreateUser,
   supabaseSetPassword,
@@ -48,12 +49,13 @@ async function linkSupabaseIdentity(user, password) {
 // POST /api/login — email + password, returns a bearer token (Sanctum-compatible
 // shape the existing frontend expects) and sets a session cookie.
 //
-// Verified against the local bcrypt hash only. Every password-changing path
-// in this app writes that hash, but not all of them also update Supabase — so
-// accepting a Supabase match too let a changed (revoked) password keep
-// working, and put a cross-network call to Supabase Auth (with its own
-// per-IP rate limit, shared by every login coming out of Vercel) on every
-// single login. Supabase stays a synced mirror of credentials, not a gate.
+// The local bcrypt hash is checked first — no network, and the right answer
+// for almost every login. Supabase Auth is only asked when that fails, to
+// recover accounts whose local hash went stale while Supabase kept the real
+// password: until 2026-09-19 the deploy-time seed reset the super admin's
+// local hash to "password" on every build, and logins kept working only
+// through Supabase. A Supabase match rewrites the local hash, so the next
+// login for that account is local again.
 export async function POST(request) {
   try {
     const { email, password } = await request.json();
@@ -65,9 +67,17 @@ export async function POST(request) {
       where: { email: { equals: String(email).trim(), mode: "insensitive" } },
       include: { membershipTeam: true },
     });
+    if (!user) {
+      return NextResponse.json({ message: "Incorrect email or password." }, { status: 401 });
+    }
 
-    if (!user || !(await verifyPassword(password, user.password))) {
-      return NextResponse.json({ message: "Invalid login details" }, { status: 401 });
+    let localHashStale = false;
+    if (!(await verifyPassword(password, user.password))) {
+      const supabaseUser = user.supabaseId ? await supabaseSignIn(user.email, password) : null;
+      if (!supabaseUser || supabaseUser.id !== user.supabaseId) {
+        return NextResponse.json({ message: "Incorrect email or password." }, { status: 401 });
+      }
+      localHashStale = true;
     }
     if (["inactive", "suspended"].includes(user.status)) {
       return NextResponse.json(
@@ -77,7 +87,7 @@ export async function POST(request) {
     }
 
     const followUps = [];
-    if (needsRehash(user.password)) {
+    if (localHashStale || needsRehash(user.password)) {
       followUps.push(
         hashPassword(password)
           .then((hash) => prisma.user.update({ where: { id: user.id }, data: { password: hash } }))

@@ -59,9 +59,9 @@ Two shapes of the same model often coexist and must be kept in sync independentl
 
 Auth itself (`web/lib/auth.js`): JWT in an httpOnly cookie (`vi_token`) or `Authorization: Bearer`, verified by `userFromRequest(request)`. Passwords use bcrypt and `verifyPassword` accepts the `$2y$` hash format Laravel produces, so accounts migrated from the old system log in unchanged (and are rehashed down to cost 10 on their next login).
 
-`/api/login` verifies **only** the local bcrypt hash — the one store every password-changing path writes. Supabase Auth (`web/lib/supabaseAuth.js`) is kept as a synced mirror of credentials (signup, team members, resets, and a one-time link at login), never as a second way in: accepting a Supabase match too let changed passwords keep working wherever a path forgot to sync Supabase. Any new path that sets a password must call `hashPassword` and, if the user has a `supabaseId`, `supabaseSetPassword`.
+`/api/login` checks the local bcrypt hash first (no network). Only if that fails does it ask Supabase Auth (`web/lib/supabaseAuth.js`), for the account's linked `supabaseId` only — and a Supabase match rewrites the local hash, so that account's next login is local again. That fallback exists because until 2026-09-19 the deploy-time seed reset the super admin's local hash to `password` on every build while Supabase kept the real one. Every path that sets a password must call `hashPassword` **and**, if the user has a `supabaseId`, `supabaseSetPassword` — a path that skips Supabase leaves the old password working through the fallback.
 
-On the frontend, `apiClient` only raises the global "session expired" event for 401s on requests that carried a token, and `AuthContext` ignores 401s/responses for a token that's already been replaced — both were causes of fresh logins getting wiped and bounced to `/`.
+On the frontend, `apiClient` only raises the global "session expired" event for 401s on requests that carried a token, and `AuthContext` ignores 401s/responses for a token that's already been replaced — both were causes of fresh logins getting wiped and bounced to `/`. Signed-out users hitting a protected page go to `/login` (with `state.from`, and back there after signing in), never the marketing homepage.
 
 ### Generic catalog CRUD factory
 

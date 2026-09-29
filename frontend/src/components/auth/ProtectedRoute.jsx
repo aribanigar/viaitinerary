@@ -12,7 +12,7 @@ const ProtectedRoute = ({ allowedRoles = [] }) => {
   }
 
   if (!token) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   if (passwordUpdateRequired && location.pathname !== "/profile") {

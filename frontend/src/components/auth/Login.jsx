@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import Loader from "../common/Loader";
 import { toast } from "react-toastify";
@@ -9,6 +9,11 @@ import logoLight from "../../assets/logo-light.png";
 const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Where ProtectedRoute bounced the user from, so they land back there.
+  const returnTo = location.state?.from?.pathname
+    ? `${location.state.from.pathname}${location.state.from.search || ""}`
+    : "/dashboard";
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -35,11 +40,15 @@ const Login = () => {
         navigate("/profile?password-update=1", { replace: true });
       } else {
         toast.success("Welcome back!");
-        navigate("/dashboard");
+        navigate(returnTo, { replace: true });
       }
     } catch (err) {
-      toast.error(err.message || "Login failed");
-      setError(err.message || "Login failed");
+      // Stay on this page and say what went wrong — never navigate away.
+      const message =
+        err?.status === 401
+          ? "Incorrect email or password."
+          : err.message || "Login failed. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }
