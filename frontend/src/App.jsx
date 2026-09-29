@@ -117,6 +117,7 @@ const LeadInquiryForm = lazy(() => import("./pages/LeadInquiryForm"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 import ScrollToHashElement from "./components/utils/ScrollToHashElement";
+import ChingWidget from "./components/ching/ChingWidget";
 
 const Login = lazy(() => import("./components/auth/Login"));
 const Signup = lazy(() => import("./components/auth/Signup"));
@@ -257,46 +258,56 @@ const LandingPage = () => {
   );
 };
 
+// Signed-in app ("portal") routes: no public WhatsApp bubble there; Ching
+// (the voice trip builder) shows only there.
+const PORTAL_ROUTE_PREFIXES = [
+  "/dashboard",
+  "/assistant",
+  "/trip-builder",
+  "/my-trips",
+  "/packages",
+  "/package-builder",
+  "/profile",
+  "/subscription",
+  "/notifications",
+  "/destinations",
+  "/accommodation",
+  "/transportation",
+  "/complementary-services",
+  "/activities",
+  "/team",
+  "/team-report",
+  "/quotes",
+  "/settings",
+  "/payment-details",
+  "/ledger",
+  "/typography",
+  "/accounting",
+  "/confirmation-email",
+  "/lead-inquiries",
+  "/integrations",
+  "/embed-settings",
+  "/policies",
+  "/businesses",
+  "/public-leads",
+  "/admin",
+  "/demo-requests",
+];
+
+const isPortalPath = (pathname) =>
+  PORTAL_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+const PortalChing = () => {
+  const { token, passwordUpdateRequired } = useAuth();
+  const { pathname } = useLocation();
+  if (!token || passwordUpdateRequired || !isPortalPath(pathname)) return null;
+  return <ChingWidget />;
+};
+
 const PublicWhatsAppCTA = () => {
   const location = useLocation();
 
-  const portalRoutePrefixes = [
-    "/dashboard",
-    "/assistant",
-    "/trip-builder",
-    "/my-trips",
-    "/packages",
-    "/package-builder",
-    "/profile",
-    "/subscription",
-    "/notifications",
-    "/destinations",
-    "/accommodation",
-    "/transportation",
-    "/complementary-services",
-    "/activities",
-    "/team",
-    "/team-report",
-    "/quotes",
-    "/settings",
-    "/payment-details",
-    "/ledger",
-    "/typography",
-    "/accounting",
-    "/confirmation-email",
-    "/lead-inquiries",
-    "/integrations",
-    "/embed-settings",
-    "/policies",
-    "/businesses",
-    "/public-leads",
-    "/admin",
-    "/demo-requests",
-  ];
-
-  const shouldHide = portalRoutePrefixes.some((prefix) =>
-    location.pathname.startsWith(prefix),
-  );
+  const shouldHide = isPortalPath(location.pathname);
 
   if (shouldHide) {
     return null;
@@ -524,6 +535,7 @@ function App() {
                 </Routes>
               </Suspense>
               <PublicWhatsAppCTA />
+              <PortalChing />
             </Router>
             <ToastContainer
               position="top-right"

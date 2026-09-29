@@ -1,0 +1,269 @@
+import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Mic, X } from "lucide-react";
+import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext";
+import lazyWithReload, {
+  reloadOnceForStaleChunks,
+} from "../../utils/lazyWithReload";
+import useSpeech, { primeAudio } from "./useSpeech";
+
+// Ching — voice trip builder. This file is the always-mounted light part: the
+// floating mic, the speech engine (so "Hello Ching" works with the panel
+// closed), shortcuts, and state. The panel UI and the parser/builder are
+// fetched on first use.
+//
+// Other code can open Ching with:
+//   window.dispatchEvent(new CustomEvent("ching:open", { detail: { listen: true } }))
+
+const ChingPanel = lazyWithReload(() => import("./ChingPanel"));
+
+const loadCore = () =>
+  import("./chingCore").catch((err) => {
+    if (reloadOnceForStaleChunks()) return new Promise(() => {});
+    throw err;
+  });
+
+const HANDSFREE_KEY = "ching_handsfree";
+
+const readHandsFree = () => {
+  try {
+    return localStorage.getItem(HANDSFREE_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const writeHandsFree = (on) => {
+  try {
+    localStorage.setItem(HANDSFREE_KEY, on ? "1" : "0");
+  } catch {
+    // Blocked storage — the toggle just won't be remembered.
+  }
+};
+
+const PanelFallback = () => (
+  <div className="fixed z-[90] inset-x-0 bottom-0 sm:inset-x-auto sm:right-4 lg:right-6 sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:w-[400px] h-48 rounded-t-[28px] sm:rounded-[24px] bg-white border border-black/5 shadow-2xl grid place-items-center">
+    <span className="w-6 h-6 rounded-full border-2 border-[#181c22]/15 border-t-[#181c22] animate-spin" />
+  </div>
+);
+
+export default function ChingWidget() {
+  const { token } = useAuth();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [handsFree, setHandsFree] = useState(readHandsFree);
+  const [status, setStatus] = useState("idle"); // idle | thinking | building
+  const [command, setCommand] = useState(null);
+  // The parser's own notes describe the transcript; once the card is edited
+  // they can be stale, so the panel hides them.
+  const [edited, setEdited] = useState(false);
+  const [init, setInit] = useState(null);
+  const [notice, setNotice] = useState(null); // { kind: "unknown"|"error", text }
+  const seqRef = useRef(0);
+
+  // Warm the parser chunk + catalog as soon as Ching is opened, so the
+  // command is parsed instantly when the speaker stops.
+  const warmUp = useCallback(() => {
+    loadCore()
+      .then((core) => core.getInit(token))
+      .then((data) => setInit(data))
+      .catch(() => {});
+  }, [token]);
+
+  const openPanel = useCallback(() => {
+    setOpen(true);
+    warmUp();
+  }, [warmUp]);
+
+  const handleText = useCallback(
+    async (raw) => {
+      const text = String(raw || "").trim();
+      if (!text) return;
+      const seq = ++seqRef.current;
+      setOpen(true);
+      setStatus("thinking");
+      setNotice(null);
+      try {
+        const core = await loadCore();
+        const { init: data, command: cmd } = await core.interpret(text, token);
+        if (seq !== seqRef.current) return;
+        setInit(data);
+        if (cmd && cmd.intent === "create_trip") {
+          setCommand({ ...cmd, transcript: cmd.transcript || text });
+          setEdited(false);
+        } else {
+          setNotice({ kind: "unknown", text });
+        }
+      } catch (err) {
+        if (seq !== seqRef.current) return;
+        setNotice({
+          kind: "error",
+          text: err?.message || "Ching couldn't load your hotels and vehicles.",
+        });
+      } finally {
+        if (seq === seqRef.current) setStatus("idle");
+      }
+    },
+    [token],
+  );
+
+  const editCommand = useCallback((updater) => {
+    setCommand(updater);
+    setEdited(true);
+  }, []);
+
+  const handleWake = useCallback(() => {
+    setNotice(null);
+    openPanel();
+  }, [openPanel]);
+
+  const speech = useSpeech({
+    handsFree,
+    paused: status === "building",
+    onCommand: handleText,
+    onWake: handleWake,
+  });
+  const {
+    supported,
+    phase,
+    startCommand,
+    toggleCommand,
+    cancelCommand,
+    setWakeEnabled,
+  } = speech;
+  const listening = phase === "command";
+
+  const closePanel = useCallback(() => {
+    cancelCommand();
+    setOpen(false);
+  }, [cancelCommand]);
+
+  const toggleHandsFree = useCallback(() => {
+    const next = !handsFree;
+    if (next) primeAudio(); // unlock audio inside the tap, for the beep later
+    setHandsFree(next);
+    writeHandsFree(next);
+    setWakeEnabled(next); // start inside the tap too (iOS wants a gesture)
+  }, [handsFree, setWakeEnabled]);
+
+  const handleConfirm = useCallback(async () => {
+    if (!command || status === "building") return;
+    setStatus("building");
+    try {
+      const core = await loadCore();
+      const data = init || (await core.getInit(token));
+      const { ok, problems } = core.validateChingCommand(command, core.catalogOf(data));
+      if (!ok) {
+        toast.error(problems?.[0] || "Please fix the highlighted details first.");
+        return;
+      }
+      const nights = Number(command.nights) || 0;
+      const { tripId } = await core.createChingTrip({
+        token,
+        command: { ...command, days: nights + 1 },
+        init: data,
+      });
+      setCommand(null);
+      setNotice(null);
+      setOpen(false);
+      navigate(`/trip-builder/${tripId}?ching=deliver`);
+    } catch (err) {
+      toast.error(err?.message || "Ching couldn't build the trip. Please try again.");
+    } finally {
+      setStatus("idle");
+    }
+  }, [command, init, navigate, status, token]);
+
+  const handleFab = () => {
+    if (open) {
+      closePanel();
+      return;
+    }
+    openPanel();
+    if (supported && !command && status === "idle") startCommand();
+  };
+
+  // Alt+C / ⌥C toggles listening, Esc stops listening / closes.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === "KeyC") {
+        e.preventDefault();
+        if (!open) openPanel();
+        if (supported && status !== "building") toggleCommand();
+        return;
+      }
+      if (e.key === "Escape" && (open || listening)) {
+        if (listening) cancelCommand();
+        else setOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, listening, supported, status, openPanel, toggleCommand, cancelCommand]);
+
+  // Anything in the app can open Ching (e.g. the Assistant page's mic).
+  useEffect(() => {
+    const onOpen = (e) => {
+      openPanel();
+      if (e?.detail?.listen && supported && status !== "building") startCommand();
+    };
+    window.addEventListener("ching:open", onOpen);
+    return () => window.removeEventListener("ching:open", onOpen);
+  }, [openPanel, startCommand, supported, status]);
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={handleFab}
+        aria-label={open ? "Close Ching" : "Talk to Ching (Alt+C)"}
+        title={open ? "Close Ching" : "Ching — build a trip by voice (Alt+C)"}
+        className={`fixed z-[45] right-4 lg:right-6 bottom-[calc(env(safe-area-inset-bottom)+68px)] lg:bottom-6 grid place-items-center w-14 h-14 rounded-full border border-black/5 shadow-[0_14px_34px_-10px_rgba(16,24,42,0.6)] transition-all duration-200 hover:scale-105 active:scale-95 ${
+          listening
+            ? "bg-[#e7f63c] text-[#181c22]"
+            : "bg-[#181c22] text-white"
+        } ${open ? "max-sm:hidden" : ""}`}
+      >
+        {listening && (
+          <span className="absolute inset-0 rounded-full bg-[#e7f63c] opacity-50 animate-ping" />
+        )}
+        {open ? (
+          <X className="relative w-5 h-5" strokeWidth={2.2} />
+        ) : (
+          <Mic className="relative w-[22px] h-[22px]" strokeWidth={2.1} />
+        )}
+        {phase === "wake" && !open && (
+          <span
+            className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-[#e7f63c] ring-2 ring-[#181c22] animate-pulse"
+            aria-hidden
+          />
+        )}
+      </button>
+
+      {open && (
+        <Suspense fallback={<PanelFallback />}>
+          <ChingPanel
+            speech={speech}
+            handsFree={handsFree}
+            onToggleHandsFree={toggleHandsFree}
+            status={status}
+            command={command}
+            setCommand={editCommand}
+            edited={edited}
+            init={init}
+            notice={notice}
+            onDismissNotice={() => setNotice(null)}
+            onSubmitText={handleText}
+            onConfirm={handleConfirm}
+            onDiscard={() => {
+              setCommand(null);
+              setNotice(null);
+            }}
+            onClose={closePanel}
+          />
+        </Suspense>
+      )}
+    </>
+  );
+}

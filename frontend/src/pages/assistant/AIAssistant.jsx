@@ -188,7 +188,16 @@ const AIAssistant = () => {
             {/* waveform + mic */}
             <div className="flex flex-col items-center gap-6 mt-8 mb-2">
               <Waveform />
-              <button className="grid place-items-center w-14 h-14 rounded-full bg-[#181c22] text-white shadow-xl hover:scale-105 transition-transform">
+              <button
+                type="button"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("ching:open", { detail: { listen: true } }),
+                  )
+                }
+                aria-label="Talk to Ching"
+                className="grid place-items-center w-14 h-14 rounded-full bg-[#181c22] text-white shadow-xl hover:scale-105 transition-transform"
+              >
                 <Mic className="w-5 h-5" />
               </button>
             </div>

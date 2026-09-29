@@ -77,6 +77,14 @@ On the frontend, `apiClient` only raises the global "session expired" event for 
 
 `tripInfo.cost` (what the templates print and what gets saved/exported) only follows `calculatedTotalCost` once `pricingTouched` is true, so every price-affecting edit (adding/removing a hotel, cab or activity, GST toggle, other costs) must call `setPricingTouched(true)` — see `touchesPricing` in `TripBuilder.jsx`. Activities are optional: none added means no section, no page and no cost; once added they're included in the total and get their own table page after Transportation (`frontend/src/utils/activityRows.js` paginates 9 rows/page for Modern + Classic templates; `web/lib/pdf.js` mirrors it for the server PDF). `ticketCount` = number of persons, `pricePerTicket` = per-person price; prices are deliberately not printed in the PDF tables (the total already carries the margin).
 
+### Ching (voice trip builder)
+
+No external AI and no API keys: speech-to-text is the browser's Web Speech API (`en-IN`; Firefox has none, so typing is always offered) and understanding is our own rule-based parser.
+- `frontend/src/utils/ching/parseCommand.js` — `parseChingCommand(text, catalog)` → a command (client, guests, start date, nights, hotel stays fuzzy-matched to the agency's own catalog, cab, meal plan) and `validateChingCommand(cmd, catalog)`. Pure JS; tests: `node frontend/scripts/ching-parser.test.mjs`.
+- `frontend/src/utils/ching/buildTrip.js` — confirmed command → full priced trip via `POST /api/trips`. Its price formula must stay identical to `TripBuilder.jsx`'s; hotel rate lookup is shared through `frontend/src/utils/hotelRates.js`.
+- `frontend/src/components/ching/` — floating mic + panel (mounted in `App.jsx` on portal routes only), tap-to-talk, Alt+C, and the opt-in "Hello Ching" hands-free mode (`hasWakePhrase` requires the greeting word).
+- After building, the SPA opens `/trip-builder/:id?ching=deliver`: the builder downloads the live-preview PDF and posts the same file to `POST /api/trips/:id/email-itinerary`, which emails the signed-in user through the agency's SMTP settings (server-rendered PDF if the upload would exceed Vercel's body limit).
+
 ### Images
 
 `web/lib/storage.js`'s `persistImage(value, prefix)` is the standard path for any image field: if given a `data:` URL it uploads to Supabase Storage and returns the public URL; if Storage isn't configured (`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` unset) it falls back to storing the value inline; it never throws. Call this on any new image-bearing field before writing to Prisma.

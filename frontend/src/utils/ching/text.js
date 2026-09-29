@@ -89,7 +89,7 @@ export function convertNumberWords(input) {
 
 // Wake phrase. At the start of the text the greeting is optional ("ching, create ...");
 // anywhere else a greeting is required so words like "chin" aren't mistaken for it.
-const WAKE_NAME = "(?:ching(?:'s|s)?|chin|jing|jin|cheng|chang|cheeng|chingu)"
+const WAKE_NAME = "(?:ching(?:'s|s)?|chink?|jing|jin|cheng|chang|cheeng|chingu)"
 const GREETING = '(?:hello|hallo|helo|hey|hi|ok|okay|oye)'
 const WAKE_START_RE = new RegExp(`^\\s*(?:${GREETING}[\\s,.!-]+)?${WAKE_NAME}\\b[\\s,.!:?-]*`, 'i')
 const WAKE_ANY_RE = new RegExp(`\\b${GREETING}[\\s,.!-]+${WAKE_NAME}\\b[\\s,.!:?-]*`, 'i')
@@ -108,9 +108,13 @@ export function stripWakePhrase(input) {
   return { text: s.trim(), woke: false }
 }
 
-/** True when the text contains the wake phrase (for hands-free listening). */
+/**
+ * True when the text contains the wake phrase (for hands-free listening).
+ * Needs the greeting ("hello/hey … ching"): a bare "ching"/"chin"/"jin" at the
+ * start of an overheard sentence is too easy to hit by accident.
+ */
 export function hasWakePhrase(input) {
-  return stripWakePhrase(input).woke
+  return WAKE_ANY_RE.test(String(input ?? ''))
 }
 
 export function titleCase(s) {

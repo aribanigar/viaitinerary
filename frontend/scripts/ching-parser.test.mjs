@@ -282,8 +282,18 @@ test('wake phrase stripped (hello ching / hey ching / hello chin / hello jing)',
   }
   assert.equal(stripWakePhrase('Hello Ching, make a trip').text, 'make a trip')
   assert.equal(hasWakePhrase('blah blah hey ching'), true)
-  assert.equal(hasWakePhrase('chin up'), true) // at the very start the greeting is optional
+  assert.equal(hasWakePhrase('hello chink create a trip'), true)
+  // hands-free needs the greeting: an overheard "chin up" / "Jin said" must not wake Ching
+  assert.equal(hasWakePhrase('chin up'), false)
+  assert.equal(hasWakePhrase('jin said the hotel is full'), false)
   assert.equal(hasWakePhrase('rub your chin'), false)
+})
+test('vehicle named right after a hotel is not swallowed into the hotel phrase', () => {
+  const c = parse('4 night trip for Ravi from 10 nov 2026 2 nights at lalit grand palace 2 nights at pine n peak innova breakfast and dinner')
+  assert.equal(c.vehicleId, 21)
+  assert.deepEqual(c.stays.map((s) => s.hotelId).every(Boolean), true)
+  assert.ok(!c.stays.some((s) => /innova/.test(s.heard)))
+  assert.equal(c.mealPlan, 'Breakfast + Dinner')
 })
 test('intent unknown when nothing trip-like', () => {
   assert.equal(parse('hello ching what is the weather like').intent, 'unknown')

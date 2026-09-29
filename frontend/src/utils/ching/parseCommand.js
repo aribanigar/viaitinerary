@@ -446,6 +446,37 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     return { words, start: k + 1, before: at(k) }
   }
 
+  // Vehicle. Exact names are taken before the stays so "… at pine spring innova"
+  // doesn't swallow the cab into the hotel phrase; near-misses are tried after.
+  let vehicleId = null
+  let vehicleName = ''
+  const findVehicle = (fuzzy) => {
+    if (!cat.vehicles.length) return
+    let best = null
+    for (const v of cat.vehicles) {
+      const hits = []
+      v.tokens.forEach((vt) => {
+        const idx = tok.findIndex(
+          (t, i) =>
+            !used[i] &&
+            (t === vt || t === vt + 's' || (fuzzy && vt.length >= 5 && t.length >= 5 && levRatio(t, vt) >= 0.8)),
+        )
+        if (idx >= 0) hits.push(idx)
+      })
+      if (!hits.length) continue
+      const ratio = hits.length / v.tokens.length
+      if (!best || hits.length > best.hits.length || (hits.length === best.hits.length && ratio > best.ratio)) {
+        best = { v, hits, ratio }
+      }
+    }
+    if (best) {
+      vehicleId = best.v.id
+      vehicleName = best.v.name
+      best.hits.forEach((i) => (used[i] = true))
+    }
+  }
+  findVehicle(false)
+
   // Stays
   const stays = []
   const addStay = (n, words, from, to) => {
@@ -518,31 +549,8 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     }
   }
 
-  // Vehicle
-  let vehicleId = null
-  let vehicleName = ''
-  if (cat.vehicles.length) {
-    let best = null
-    for (const v of cat.vehicles) {
-      const hits = []
-      v.tokens.forEach((vt) => {
-        const idx = tok.findIndex(
-          (t, i) => !used[i] && (t === vt || t === vt + 's' || (vt.length >= 5 && t.length >= 5 && levRatio(t, vt) >= 0.8)),
-        )
-        if (idx >= 0) hits.push(idx)
-      })
-      if (!hits.length) continue
-      const ratio = hits.length / v.tokens.length
-      if (!best || hits.length > best.hits.length || (hits.length === best.hits.length && ratio > best.ratio)) {
-        best = { v, hits, ratio }
-      }
-    }
-    if (best) {
-      vehicleId = best.v.id
-      vehicleName = best.v.name
-      best.hits.forEach((i) => (used[i] = true))
-    }
-  }
+  // Vehicle (fuzzy pass — the exact pass already ran before the stays)
+  if (!vehicleId) findVehicle(true)
 
   // Client name
   let clientName = ''
