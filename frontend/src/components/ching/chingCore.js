@@ -97,7 +97,7 @@ function readsAsEdit(text, init) {
  * With no trip open: does this (possibly partial) text ask for a new trip?
  * "create a 5 day trip…" always does; otherwise the trip parser must hear
  * nights or stays, and — so "make Gulmarg 2 nights" isn't mistaken for a new
- * trip — either a client name or nothing that reads as an edit.
+ * trip — a client name, two or more stays, or nothing that reads as an edit.
  */
 export function looksLikeTripRequest(text, init) {
   if (isCreateRequest(text)) return true;
@@ -111,7 +111,11 @@ export function looksLikeTripRequest(text, init) {
   if (!cmd || cmd.intent !== "create_trip") return false;
   const heardLength = Number(cmd.nights) > 0 || (cmd.stays?.length || 0) > 0;
   if (!heardLength) return false;
-  return String(cmd.clientName || "").trim() !== "" || !readsAsEdit(text, init);
+  return (
+    String(cmd.clientName || "").trim() !== "" ||
+    (cmd.stays?.length || 0) >= 2 ||
+    !readsAsEdit(text, init)
+  );
 }
 
 /** With no trip open, a finished utterance is: "trip" | "edit" | "unknown". */

@@ -1441,7 +1441,11 @@ const TripBuilder = ({ mode }) => {
     };
     const commit = (next) => {
       setPricingTouched(true);
-      setTripInfo(next.tripInfo);
+      // The total is derived: keep the builder's current one and let the
+      // pricing effect recompute it (a snapshot's `cost` can be stale — e.g.
+      // a live session's base — and the effect only re-runs when the total
+      // itself changes).
+      setTripInfo((prev) => ({ ...next.tripInfo, cost: prev.cost }));
       setItinerary(next.itinerary);
       setAccommodations(next.accommodations);
       setTransportation(next.transportation);

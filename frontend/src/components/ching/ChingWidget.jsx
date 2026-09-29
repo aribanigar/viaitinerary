@@ -240,7 +240,14 @@ export default function ChingWidget() {
           return;
         }
         const ed = getChingEditor();
-        if (ed && (ed !== S.skip || safe(() => ed.isBlank(), false))) {
+        // A fresh draft is blank. A different editor that isn't blank yet
+        // (still loading / restoring) gets 2.5 s before we take it anyway —
+        // the editor itself fills the whole form for a full trip request.
+        const ready =
+          ed &&
+          (safe(() => ed.isBlank(), false) ||
+            (ed !== S.skip && Date.now() - started > 2500));
+        if (ready) {
           stop();
           attachRef.current?.(S, ed);
         } else if (Date.now() - started > DRAFT_TIMEOUT_MS) {
@@ -312,7 +319,12 @@ export default function ChingWidget() {
           attach(S, ed); // calls finish again
           return;
         }
-        const kind = core ? core.classifyWithoutEditor(text, initRef.current) : "unknown";
+        if (!core) {
+          endSession();
+          setNotice({ kind: "error", text: "Ching couldn't load. Check your connection and try again." });
+          return;
+        }
+        const kind = core.classifyWithoutEditor(text, initRef.current);
         if (kind === "trip") {
           openDraft(S); // finishes once the draft's editor appears
           return;
