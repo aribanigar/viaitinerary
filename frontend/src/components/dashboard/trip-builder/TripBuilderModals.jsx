@@ -3,16 +3,11 @@ import { Minus, Plus, AlertTriangle, Ban, X, Trash2, Layers } from "lucide-react
 import Modal from "../../common/Modal";
 import DatePicker from "../../common/DatePicker";
 import { getHotelBlackouts } from "../../../api/hotels";
-
-const normalizeRoomTypeValue = (value) => String(value || "").trim();
-
-// The Hotel catalog stores star rating as a bare digit ("5"); the trip
-// builder's Hotel Category field stores it as "5 Star" — convert when
-// pulling a category over from the master hotel record.
-const hotelCategoryLabel = (digit) => {
-  const n = String(digit || "").trim();
-  return n ? `${n} Star` : "";
-};
+import {
+  normalizeRoomTypeValue,
+  hotelCategoryLabel,
+  findRoomTypeSection,
+} from "../../../utils/hotelRates";
 
 const expandDateRange = (startStr, endStr) => {
   const dates = [];
@@ -26,9 +21,6 @@ const expandDateRange = (startStr, endStr) => {
   }
   return dates;
 };
-
-const toRoomTypeSlug = (value) =>
-  normalizeRoomTypeValue(value).toLowerCase().replace(/\s+/g, "_");
 
 const formatRoomTypeLabel = (value) => {
   const normalized = normalizeRoomTypeValue(value);
@@ -44,38 +36,6 @@ const formatRoomTypeLabel = (value) => {
   return normalized
     .replace(/[_\s]+/g, " ")
     .replace(/\b\w/g, (match) => match.toUpperCase());
-};
-
-const sectionMatchesSeason = (section, dateStr) => {
-  if (!section.valid_from && !section.valid_to) return true;
-  if (!dateStr) return false;
-  const date = new Date(dateStr);
-  if (section.valid_from && date < new Date(section.valid_from)) return false;
-  if (section.valid_to && date > new Date(section.valid_to)) return false;
-  return true;
-};
-
-// Matches by room type, then prefers whichever section's season (valid_from/
-// valid_to) actually covers the given date — falls back to an always-valid
-// (no date range) section, then to any matching-room-type section at all.
-const findRoomTypeSection = (hotel, roomTypeValue, dateStr) => {
-  if (!hotel || !roomTypeValue) return {};
-
-  const normalized = normalizeRoomTypeValue(roomTypeValue);
-  const sections = hotel.price_sections || [];
-
-  const matching = sections.filter(
-    (section) =>
-      normalizeRoomTypeValue(section.room_type) === normalized ||
-      toRoomTypeSlug(section.room_type) === toRoomTypeSlug(normalized),
-  );
-
-  return (
-    matching.find((section) => dateStr && sectionMatchesSeason(section, dateStr) && (section.valid_from || section.valid_to)) ||
-    matching.find((section) => !section.valid_from && !section.valid_to) ||
-    matching[0] ||
-    {}
-  );
 };
 
 export const HotelModal = ({

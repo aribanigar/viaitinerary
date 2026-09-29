@@ -41,6 +41,7 @@ import {
   fetchTrips,
   fetchTripRevisions,
   logTripSend,
+  emailItineraryToMe,
 } from "../../api/trips";
 import {
   createPackage,
@@ -1261,6 +1262,70 @@ const TripBuilder = ({ mode }) => {
       console.warn("Failed to log amendment history:", err),
     );
   };
+
+  // ── Ching hand-off: a trip built by voice opens here with ?ching=deliver.
+  // Once it has loaded and the preview has rendered, download the exact
+  // preview PDF to the device and email the same file to the signed-in user.
+  const chingDelivered = useRef(false);
+  const chingDeliver = searchParams.get("ching") === "deliver";
+  useEffect(() => {
+    if (!chingDeliver || !urlTripId || loading || !dataIsCurrent || chingDelivered.current) return;
+    chingDelivered.current = true;
+    // Drop the flag right away so a refresh doesn't download/email again.
+    navigate(`${builderBase}/${urlTripId}`, { replace: true });
+    const tripId = urlTripId;
+    (async () => {
+      const status = toast.loading("Ching: preparing your itinerary PDF…");
+      try {
+        setExporting(true);
+        // Give the preview a moment to settle (images, fonts) before capture.
+        await new Promise((r) => setTimeout(r, 1200));
+        const { exportPreviewToPdfBlob } = await import("../../utils/exportPdf");
+        const blob = await exportPreviewToPdfBlob();
+        const filename = `${tripId}_Itinerary.pdf`;
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        logSendForAmendmentHistory("export");
+
+        toast.update(status, { render: "Ching: PDF downloaded — emailing it to you…" });
+        // Too big to upload (Vercel's 4.5 MB body cap) → the server renders its own copy.
+        const pdfBase64 =
+          blob.size <= 3 * 1024 * 1024
+            ? await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(",")[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              })
+            : null;
+        const res = await emailItineraryToMe(token, tripId, { pdfBase64, filename });
+        toast.update(status, {
+          render: `Ching: itinerary downloaded and emailed to ${res?.to || "you"}.`,
+          type: "success",
+          isLoading: false,
+          autoClose: 6000,
+        });
+      } catch (err) {
+        console.error("Ching delivery failed:", err);
+        toast.update(status, {
+          render: `Ching: ${err?.message || "couldn't finish the export/email."}`,
+          type: "error",
+          isLoading: false,
+          autoClose: 8000,
+        });
+      } finally {
+        setExporting(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chingDeliver, urlTripId, loading, dataIsCurrent]);
 
   const openAmendments = async () => {
     setAmendmentsOpen(true);

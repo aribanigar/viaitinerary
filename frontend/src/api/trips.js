@@ -95,3 +95,13 @@ export async function logTripSend(token, id, trigger) {
     body: JSON.stringify({ trigger }),
   });
 }
+
+// Email the itinerary PDF to the signed-in user. `pdfBase64` is the exact PDF
+// exported from the live preview; omit it to have the server render one.
+export async function emailItineraryToMe(token, id, { pdfBase64, filename } = {}) {
+  return request(`/trips/${id}/email-itinerary`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({ pdf_base64: pdfBase64 || null, filename }),
+  });
+}

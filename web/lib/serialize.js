@@ -195,7 +195,7 @@ export function serializeHotel(h) {
   };
 }
 export function serializeVehicle(v) {
-  return { id: v.id, name: v.name, price: num(v.price) };
+  return { id: v.id, name: v.name, price: num(v.price), rate_type: v.rateType ?? null };
 }
 
 const userLite = (u) => (u ? { id: u.id, name: u.name, email: u.email } : null);
