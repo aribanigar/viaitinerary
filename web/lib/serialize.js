@@ -84,6 +84,7 @@ export function serializeTripActivity(a) {
     id: a.id,
     activity_id: a.activityId,
     name: a.name,
+    location: a.location ?? null,
     day_number: a.dayNumber,
     ticket_count: a.ticketCount,
     price_per_ticket: num(a.pricePerTicket),

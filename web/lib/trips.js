@@ -167,6 +167,7 @@ export async function syncTripRelations(tripDbId, body) {
       const data = {
         activityId: activityId ? int(activityId, null) : null,
         name: item.name ?? "Activity",
+        location: item.location ? String(item.location).trim() || null : null,
         dayNumber: item.day_number !== undefined && item.day_number !== "" ? int(item.day_number, null) : null,
         ticketCount: int(item.ticket_count, 1) || 1,
         pricePerTicket: dec(item.price_per_ticket) ?? 0,
@@ -247,6 +248,7 @@ export function cloneTripChildren(src) {
       create: (src.tripActivities || []).map((a) => ({
         activityId: a.activityId,
         name: a.name,
+        location: a.location,
         dayNumber: a.dayNumber,
         ticketCount: a.ticketCount,
         pricePerTicket: a.pricePerTicket,

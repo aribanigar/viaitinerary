@@ -73,6 +73,10 @@ On the frontend, `apiClient` only raises the global "session expired" event for 
 
 `web/lib/trips.js` builds/syncs a `Trip` and all its nested children (itineraries, accommodations, transportations) in one request via `buildTripScalars`/`syncTripRelations`, and `TRIP_INCLUDE` is the canonical Prisma `include` shape for a fully-loaded trip — reused everywhere a trip is fetched. On the frontend, `frontend/src/components/dashboard/TripBuilder.jsx` + `trip-builder/useTripBuilderData.js` own this same nested state; hotel/vehicle/destination picking pulls from `masterHotels` etc., which come from `/api/builder/init`'s lite `serializeHotel`/`serializeVehicle`/`serializeDestination` shapes — see the "two shapes" note above before assuming a catalog field is available there.
 
+### Trip Builder total price and Activities
+
+`tripInfo.cost` (what the templates print and what gets saved/exported) only follows `calculatedTotalCost` once `pricingTouched` is true, so every price-affecting edit (adding/removing a hotel, cab or activity, GST toggle, other costs) must call `setPricingTouched(true)` — see `touchesPricing` in `TripBuilder.jsx`. Activities are optional: none added means no section, no page and no cost; once added they're included in the total and get their own table page after Transportation (`frontend/src/utils/activityRows.js` paginates 9 rows/page for Modern + Classic templates; `web/lib/pdf.js` mirrors it for the server PDF). `ticketCount` = number of persons, `pricePerTicket` = per-person price; prices are deliberately not printed in the PDF tables (the total already carries the margin).
+
 ### Images
 
 `web/lib/storage.js`'s `persistImage(value, prefix)` is the standard path for any image field: if given a `data:` URL it uploads to Supabase Storage and returns the public URL; if Storage isn't configured (`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` unset) it falls back to storing the value inline; it never throws. Call this on any new image-bearing field before writing to Prisma.

@@ -185,6 +185,14 @@ const TripBuilder = ({ mode }) => {
   };
   const [otherCosts, setOtherCosts] = useState([]);
   const [itinerary, setItinerary] = useState([]);
+  // The quoted total (tripInfo.cost — what's saved, printed and exported) is
+  // recomputed only once pricingTouched is true. That has to cover EVERY edit
+  // that changes the price, not just GST%/margin%: otherwise adding a hotel,
+  // cab or activity left the exported total stale.
+  const touchesPricing = (setter) => (...args) => {
+    setPricingTouched(true);
+    return setter(...args);
+  };
 
   const standardInclusions = Array.isArray(policies.defaultInclusions)
     ? policies.defaultInclusions.filter((i) => i.trim() !== "")
@@ -514,15 +522,25 @@ const TripBuilder = ({ mode }) => {
     markupPercentage: "",
   });
 
-  const [activityForm, setActivityForm] = useState({
+  // A blank activity: priced per person, so the head-count starts at the
+  // people who'd actually buy a ticket (adults + kids 5-12; under-5s are
+  // normally free) and the location at the trip's destination.
+  const blankActivityForm = () => ({
     activityId: null,
     name: "",
+    location: tripInfo.destination || "",
     dayNumber: "",
-    ticketCount: "1",
+    ticketCount: String(
+      Math.max(
+        1,
+        (Number(tripInfo.adults) || 0) + (Number(tripInfo.kids5to12) || 0),
+      ),
+    ),
     pricePerTicket: "",
     markupPercentage: "",
     notes: "",
   });
+  const [activityForm, setActivityForm] = useState(blankActivityForm);
 
   const handleHotelPhotoChange = (e) => {
     const file = e.target.files[0];
@@ -537,6 +555,7 @@ const TripBuilder = ({ mode }) => {
 
   const handleAddHotel = () => {
     if (hotelForm.name && hotelForm.city) {
+      setPricingTouched(true);
       if (editingHotelId) {
         setAccommodations(
           accommodations.map((h) =>
@@ -580,6 +599,7 @@ const TripBuilder = ({ mode }) => {
 
   const handleAddTransport = () => {
     if (transportForm.route && transportForm.date) {
+      setPricingTouched(true);
       if (editingTransportId) {
         setTransportation(
           transportation.map((t) =>
@@ -611,8 +631,15 @@ const TripBuilder = ({ mode }) => {
     }
   };
 
+  const openNewActivityModal = () => {
+    setActivityForm(blankActivityForm());
+    setEditingActivityId(null);
+    setIsActivityModalOpen(true);
+  };
+
   const handleAddActivity = () => {
     if (activityForm.name && activityForm.pricePerTicket !== "") {
+      setPricingTouched(true);
       if (editingActivityId) {
         setTripActivities(
           tripActivities.map((a) =>
@@ -628,15 +655,7 @@ const TripBuilder = ({ mode }) => {
         ]);
       }
 
-      setActivityForm({
-        activityId: null,
-        name: "",
-        dayNumber: "",
-        ticketCount: "1",
-        pricePerTicket: "",
-        markupPercentage: "",
-        notes: "",
-      });
+      setActivityForm(blankActivityForm());
       setEditingActivityId(null);
       setIsActivityModalOpen(false);
     }
@@ -695,6 +714,7 @@ const TripBuilder = ({ mode }) => {
       id: activity.id,
       activityId: activity.activityId,
       name: activity.name,
+      location: activity.location || "",
       dayNumber: activity.dayNumber ?? "",
       ticketCount: activity.ticketCount || "1",
       pricePerTicket: activity.pricePerTicket ?? "",
@@ -706,14 +726,17 @@ const TripBuilder = ({ mode }) => {
   };
 
   const removeAccommodation = (id) => {
+    setPricingTouched(true);
     setAccommodations(accommodations.filter((hotel) => hotel.id !== id));
   };
 
   const removeTransportation = (id) => {
+    setPricingTouched(true);
     setTransportation(transportation.filter((item) => item.id !== id));
   };
 
   const removeActivity = (id) => {
+    setPricingTouched(true);
     setTripActivities(tripActivities.filter((item) => item.id !== id));
   };
 
@@ -1108,6 +1131,7 @@ const TripBuilder = ({ mode }) => {
       id: typeof item.id === "number" && item.id > 1000000000 ? null : item.id,
       activity_id: item.activityId,
       name: item.name,
+      location: item.location || null,
       day_number: item.dayNumber === "" ? null : item.dayNumber,
       ticket_count: item.ticketCount || 1,
       price_per_ticket: item.pricePerTicket,
@@ -1721,7 +1745,7 @@ const TripBuilder = ({ mode }) => {
                         setTransportation={setTransportation}
                         calculatedTotalCost={calculatedTotalCost}
                         includeGST={includeGST}
-                        setIncludeGST={setIncludeGST}
+                        setIncludeGST={touchesPricing(setIncludeGST)}
                         navigate={navigate}
                         standardInclusions={standardInclusions}
                         inclusions={inclusions}
@@ -1782,9 +1806,7 @@ const TripBuilder = ({ mode }) => {
                         calculateActivityCost={calculateActivityCost}
                         openEditActivityModal={openEditActivityModal}
                         removeActivity={removeActivity}
-                        setActivityForm={setActivityForm}
-                        setEditingActivityId={setEditingActivityId}
-                        setIsActivityModalOpen={setIsActivityModalOpen}
+                        openNewActivityModal={openNewActivityModal}
                       />
                     )}
 
@@ -1794,7 +1816,7 @@ const TripBuilder = ({ mode }) => {
                         totalVehicleCost={totalVehicleCost}
                         totalActivityCost={totalActivityCost}
                         otherCosts={otherCosts}
-                        setOtherCosts={setOtherCosts}
+                        setOtherCosts={touchesPricing(setOtherCosts)}
                         gstPercentage={gstPercentage}
                         setGstPercentage={handleGstPercentageChange}
                         profitMarginPercentage={profitMarginPercentage}
@@ -1879,6 +1901,7 @@ const TripBuilder = ({ mode }) => {
         activityForm={activityForm}
         setActivityForm={setActivityForm}
         availableActivities={availableActivities}
+        availableDestinations={availableDestinations}
         tripInfo={tripInfo}
         tripMarginPercentage={profitMarginPercentage}
       />

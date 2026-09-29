@@ -47,9 +47,7 @@ const LogisticsTab = ({
   calculateActivityCost,
   openEditActivityModal,
   removeActivity,
-  setActivityForm,
-  setEditingActivityId,
-  setIsActivityModalOpen,
+  openNewActivityModal,
 }) => {
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
@@ -429,9 +427,18 @@ const LogisticsTab = ({
           <div className="w-10 h-10 bg-[#f3f3f4] text-[#181c22] rounded-lg flex items-center justify-center border border-black/5">
             <Ticket className="w-5 h-5" />
           </div>
-          <h3 className="text-xs font-semibold text-[#181c22] uppercase tracking-[0.2em]">
-            Activities
-          </h3>
+          <div>
+            <h3 className="text-xs font-semibold text-[#181c22] uppercase tracking-[0.2em]">
+              Activities
+              <span className="ml-2 align-middle text-[9px] font-bold uppercase tracking-wider text-[#9aa3b2] bg-[#f3f3f4] px-2 py-0.5 rounded-full">
+                Optional
+              </span>
+            </h3>
+            <p className="text-[11px] text-[#9aa3b2] mt-1">
+              Leave empty to skip. Once you add one, it&apos;s included in the
+              total price and gets its own page in the itinerary.
+            </p>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -451,6 +458,15 @@ const LogisticsTab = ({
                     <h4 className="text-sm font-semibold text-[#181c22]">
                       {item.name}
                     </h4>
+                    {item.location && (
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-[#d4d8dd]"></span>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#181c22] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                          <MapPin className="w-3 h-3" />
+                          {item.location}
+                        </span>
+                      </>
+                    )}
                     {item.markupPercentage !== "" && item.markupPercentage != null && (
                       <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                         {item.markupPercentage}% margin
@@ -459,7 +475,7 @@ const LogisticsTab = ({
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-bold text-[#8a93a2]">
-                      {item.ticketCount || 1} ticket{(item.ticketCount || 1) > 1 ? "s" : ""} × ₹{Number(item.pricePerTicket || 0).toLocaleString("en-IN")}
+                      {item.ticketCount || 1} {(item.ticketCount || 1) > 1 ? "persons" : "person"} × ₹{Number(item.pricePerTicket || 0).toLocaleString("en-IN")} per person
                     </span>
                     {item.notes && (
                       <>
@@ -495,19 +511,7 @@ const LogisticsTab = ({
           ))}
 
           <button
-            onClick={() => {
-              setActivityForm({
-                activityId: null,
-                name: "",
-                dayNumber: "",
-                ticketCount: "1",
-                pricePerTicket: "",
-                markupPercentage: "",
-                notes: "",
-              });
-              setEditingActivityId(null);
-              setIsActivityModalOpen(true);
-            }}
+            onClick={openNewActivityModal}
             className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-[#181c22] hover:border-[#e2eea0] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
           >
             <Plus className="w-4 h-4" />

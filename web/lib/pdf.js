@@ -402,6 +402,8 @@ function ItineraryDoc({ trip, settings }) {
       : null,
 
     // ── Activities ──────────────────────────────────────────────────────
+    // Same shape as the transportation table: what/where/how many, no prices
+    // (the trip total already includes them, margin and all).
     activities.length
       ? h(
           Page,
@@ -414,19 +416,22 @@ function ItineraryDoc({ trip, settings }) {
             h(
               View,
               { style: { flexDirection: "row", backgroundColor: "#f8f8f8", borderWidth: 1, borderColor: "#ddd" } },
-              ...["Day", "Activity", "Tickets"].map((hd, i) =>
+              ...["Day", "Activity", "Location", "Tickets"].map((hd, i) =>
                 h(Text, { key: i, style: { ...s.bold, flexGrow: 1, flexBasis: 0, padding: 14, color: green, fontSize: 11 } }, hd),
               ),
             ),
-            ...activities.map((a, i) =>
-              h(
+            ...activities.map((a, i) => {
+              const persons = a.ticketCount || 1;
+              const cell = { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY };
+              return h(
                 View,
                 { key: i, wrap: false, style: { flexDirection: "row", borderWidth: 1, borderTopWidth: 0, borderColor: "#ddd" } },
-                h(Text, { style: { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY } }, a.dayNumber ? `Day ${a.dayNumber}` : "—"),
-                h(Text, { style: { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY } }, txt(a.name) || "—"),
-                h(Text, { style: { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY } }, `${a.ticketCount || 1} Ticket${(a.ticketCount || 1) > 1 ? "s" : ""}`),
-              ),
-            ),
+                h(Text, { style: cell }, a.dayNumber ? `Day ${a.dayNumber}` : "—"),
+                h(Text, { style: cell }, txt(a.name) || "—"),
+                h(Text, { style: cell }, txt(a.location) || "—"),
+                h(Text, { style: cell }, `${persons} ${persons > 1 ? "persons" : "person"}`),
+              );
+            }),
           ),
           innerFooter(settings),
         )

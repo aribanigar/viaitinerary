@@ -146,6 +146,8 @@ const STATEMENTS = [
   `ALTER TABLE "trip_activities" ADD CONSTRAINT "trip_activities_trip_id_fkey" FOREIGN KEY ("trip_id") REFERENCES "trips"("id") ON DELETE CASCADE`,
   `ALTER TABLE "trip_activities" ADD CONSTRAINT "trip_activities_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE SET NULL`,
 
+  `ALTER TABLE "trip_activities" ADD COLUMN IF NOT EXISTS "location" TEXT`,
+
   // DMC partner bridge (viakashmir.in SSO handoff) — see docs/dmc-bridge.md
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "via_kashmir_dmc_user_id" TEXT`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "users_via_kashmir_dmc_user_id_key" ON "users"("via_kashmir_dmc_user_id")`,

@@ -975,6 +975,7 @@ export const ActivityModal = ({
   activityForm,
   setActivityForm,
   availableActivities,
+  availableDestinations = [],
   tripInfo,
   tripMarginPercentage,
 }) => {
@@ -1003,11 +1004,15 @@ export const ActivityModal = ({
                 (a) => String(a.id) === e.target.value,
               );
               if (selected) {
+                const destination = availableDestinations.find(
+                  (d) => d.id === selected.destination_id,
+                );
                 setActivityForm({
                   ...activityForm,
                   activityId: selected.id,
                   name: selected.name,
                   pricePerTicket: selected.selling_price ?? "",
+                  location: destination?.name || activityForm.location,
                 });
               }
             }}
@@ -1036,10 +1041,25 @@ export const ActivityModal = ({
           />
         </div>
 
+        <div>
+          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+            Location
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. Gulmarg"
+            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
+            value={activityForm.location}
+            onChange={(e) =>
+              setActivityForm({ ...activityForm, location: e.target.value })
+            }
+          />
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-              Number of Tickets
+              Number of Persons (1 ticket each)
             </label>
             <div className="flex items-center gap-3">
               <button
@@ -1075,7 +1095,7 @@ export const ActivityModal = ({
           </div>
           <div>
             <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-              Price per Ticket (₹)
+              Price per Person (₹)
             </label>
             <input
               type="number"
@@ -1091,6 +1111,19 @@ export const ActivityModal = ({
             />
           </div>
         </div>
+
+        <p className="text-xs font-semibold text-[#5b6472] bg-[#f3f3f4] rounded-xl px-4 py-2.5">
+          {parseInt(activityForm.ticketCount, 10) || 1} ×{" "}
+          ₹{Number(activityForm.pricePerTicket || 0).toLocaleString("en-IN")} ={" "}
+          <span className="text-[#181c22] font-bold">
+            ₹
+            {(
+              (parseInt(activityForm.ticketCount, 10) || 1) *
+              Number(activityForm.pricePerTicket || 0)
+            ).toLocaleString("en-IN")}
+          </span>{" "}
+          added to the trip cost
+        </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

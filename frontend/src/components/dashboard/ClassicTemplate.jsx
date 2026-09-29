@@ -1,3 +1,4 @@
+import { activityPages } from "../../utils/activityRows";
 import React from "react";
 
 const WhatsAppIcon = ({ size = 16, className = "" }) => (
@@ -1351,8 +1352,10 @@ const ClassicTemplate = ({
         <ClassicFooter />
       </div>
 
-      {tripActivities.length > 0 && (
-        <div className="classic-page">
+      {/* ACTIVITIES — optional: pages exist only when activities were added.
+          Same table shape as Transportation Info (no prices; the total covers them). */}
+      {activityPages(tripActivities).map((rows, pageIndex) => (
+        <div className="classic-page" key={`activities-page-${pageIndex}`}>
           <div className="classic-section-header">
             <div className="classic-section-left">
               <div className="classic-section-title">Activities</div>
@@ -1372,41 +1375,27 @@ const ClassicTemplate = ({
                 <tr>
                   <th>Day</th>
                   <th>Activity</th>
+                  <th>Location</th>
                   <th>Tickets</th>
-                  <th>Price/Ticket</th>
-                  <th>Total</th>
                 </tr>
               </thead>
               <tbody>
-                {tripActivities.map((item, index) => {
-                  const ticketCount = item.ticketCount || item.ticket_count || 1;
-                  const pricePerTicket = Number(
-                    item.pricePerTicket || item.price_per_ticket || 0,
-                  );
-                  return (
-                    <tr key={item.id || index}>
-                      <td style={{ fontSize: "11px" }}>
-                        {item.dayNumber || item.day_number
-                          ? `Day ${item.dayNumber || item.day_number}`
-                          : "—"}
-                      </td>
-                      <td>{item.name}</td>
-                      <td style={{ fontWeight: "700", color: "#000000" }}>
-                        {ticketCount}
-                      </td>
-                      <td>₹{pricePerTicket.toLocaleString("en-IN")}</td>
-                      <td style={{ fontWeight: "700", color: "#000000" }}>
-                        ₹{(pricePerTicket * ticketCount).toLocaleString("en-IN")}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {rows.map((row, index) => (
+                  <tr key={row.key || index}>
+                    <td style={{ fontSize: "11px" }}>{row.day}</td>
+                    <td>{row.name}</td>
+                    <td>{row.location}</td>
+                    <td style={{ fontWeight: "700", color: "#000000" }}>
+                      {row.personsLabel}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
           <ClassicFooter />
         </div>
-      )}
+      ))}
 
       {/* PAGE 4-5: Day-by-Day Itinerary */}
       {itinerary.length > 0 &&

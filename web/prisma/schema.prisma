@@ -227,7 +227,9 @@ model TripActivity {
   tripId           Int      @map("trip_id")
   activityId       Int?     @map("activity_id")
   name             String
+  location         String?
   dayNumber        Int?     @map("day_number")
+  // ticketCount is the number of persons the per-person price is charged for.
   ticketCount      Int      @default(1) @map("ticket_count")
   pricePerTicket   Decimal  @map("price_per_ticket") @db.Decimal(12, 2)
   markupPercentage Decimal? @map("markup_percentage") @db.Decimal(6, 2)

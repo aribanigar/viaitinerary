@@ -1,3 +1,4 @@
+import { activityPages } from "../../utils/activityRows";
 import React from "react";
 import { Star } from "lucide-react";
 import ClassicTemplate from "./ClassicTemplate";
@@ -1048,56 +1049,6 @@ const ModernTemplate = ({
           </div>
         )}
 
-        {tripActivities.length > 0 && (
-          <>
-            <div className="section-bar" style={{ marginTop: "24px" }}>
-              <h2>ACTIVITIES</h2>
-            </div>
-            <table className="itinerary-table">
-              <thead>
-                <tr>
-                  <th>Day</th>
-                  <th>Activity</th>
-                  <th>Tickets</th>
-                  <th>Price/Ticket</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tripActivities.map((item, index) => (
-                  <tr key={item.id || index}>
-                    <td>{item.dayNumber || item.day_number || "—"}</td>
-                    <td>{item.name}</td>
-                    <td
-                      style={{
-                        fontWeight: "800",
-                        color: "#000000",
-                        textAlign: "center",
-                      }}
-                    >
-                      {item.ticketCount || item.ticket_count || 1}
-                    </td>
-                    <td>
-                      ₹
-                      {Number(
-                        item.pricePerTicket || item.price_per_ticket || 0,
-                      ).toLocaleString("en-IN")}
-                    </td>
-                    <td style={{ fontWeight: "800", color: "#000000" }}>
-                      ₹
-                      {(
-                        Number(
-                          item.pricePerTicket || item.price_per_ticket || 0,
-                        ) * Number(item.ticketCount || item.ticket_count || 1)
-                      ).toLocaleString("en-IN")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
-
         <div style={{ flex: 1 }}></div>
         <div className="footer-line"></div>
         <div className="footer">
@@ -1109,6 +1060,82 @@ const ModernTemplate = ({
           <span>{agencySettings.website}</span>
         </div>
       </div>
+
+      {/* ACTIVITIES — optional: pages exist only when activities were added.
+          Same table shape as Transportations (no prices; the total covers them). */}
+      {activityPages(tripActivities).map((rows, pageIndex) => (
+        <div className="page" key={`activities-page-${pageIndex}`}>
+          <div className="orange-header-label secondary">
+            <h1>
+              {tripInfo.duration || "0"} NIGHT{" "}
+              {parseInt(tripInfo.duration || 0) + 1} DAYS
+            </h1>
+            <p>
+              TRAVEL ITINERARY BY{" "}
+              {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
+            </p>
+          </div>
+          <div className="brand-logo-right" style={{ top: "10px" }}>
+            {agencySettings.logo ? (
+              <img
+                src={formatImageUrl(agencySettings.logo)}
+                alt="Logo"
+                className="header-logo"
+              />
+            ) : (
+              <>
+                <h2>
+                  {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
+                </h2>
+                <span>TRAVEL SIMPLIFIED</span>
+              </>
+            )}
+          </div>
+          <div className="section-bar">
+            <h2>ACTIVITIES</h2>
+          </div>
+
+          <table className="itinerary-table">
+            <thead>
+              <tr>
+                <th>Day</th>
+                <th>Activity</th>
+                <th>Location</th>
+                <th>Tickets</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={row.key || index}>
+                  <td>{row.day}</td>
+                  <td>{row.name}</td>
+                  <td>{row.location}</td>
+                  <td
+                    style={{
+                      fontWeight: "800",
+                      color: "#000000",
+                      textAlign: "center",
+                    }}
+                  >
+                    {row.personsLabel}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div style={{ flex: 1 }}></div>
+          <div className="footer-line"></div>
+          <div className="footer">
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <WhatsAppIcon size={14} /> WhatsApp
+            </span>
+            <span>{agencySettings.whatsapp}</span>
+            <span>{agencySettings.email}</span>
+            <span>{agencySettings.website}</span>
+          </div>
+        </div>
+      ))}
 
       {/* DAY WISE ITINERARY PAGES */}
       {itinerary.map((day, index) => (

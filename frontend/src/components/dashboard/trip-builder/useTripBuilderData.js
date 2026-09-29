@@ -339,6 +339,7 @@ export const useTripBuilderData = ({
               id: item.id,
               activityId: item.activity_id ?? item.activityId ?? null,
               name: item.name,
+              location: item.location || "",
               dayNumber: item.day_number ?? item.dayNumber ?? "",
               ticketCount: item.ticket_count ?? item.ticketCount ?? 1,
               pricePerTicket: item.price_per_ticket ?? item.pricePerTicket ?? "",
