@@ -1,18 +1,15 @@
-// Turns a confirmed ChingCommand into a complete, priced trip and saves it
-// through the same POST /api/trips contract the Trip Builder uses, so the
-// result opens in the builder fully editable like a hand-built trip.
-//
-// Pricing mirrors TripBuilder.jsx's formula exactly (hotels + cabs, each
-// marked up by the trip margin, then GST on top), so the saved cost matches
-// what the builder shows the moment the trip is opened.
-import { createTrip } from "../../api/trips";
+// Turns a ChingCommand (a spoken new-trip request) into the Trip Builder's
+// own state — hotels back to back from the start date, a day-wise plan, cab
+// bookings — so Ching can fill the open builder form live. Nothing is saved
+// here: pricing is the builder's own (it recomputes the total from these
+// items), and the agent presses Save / Export when happy.
 import {
   hotelRoomTypes,
   findRoomTypeSection,
   bedPricesFromSection,
   hotelCategoryLabel,
-} from "../hotelRates";
-import { destinationActivityLabels } from "../destinationActivities";
+} from "../hotelRates.js";
+import { destinationActivityLabels } from "../destinationActivities.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -25,38 +22,6 @@ export function addDays(ymd, n) {
 
 const sameName = (a, b) =>
   String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
-
-/** Hotel stay → the builder's accommodation shape, priced off the rate sheet. */
-function stayAccommodation(stay, hotel, checkIn, command) {
-  const roomType = hotelRoomTypes(hotel)[0] || "Deluxe";
-  const section = findRoomTypeSection(hotel, roomType, checkIn);
-  return {
-    hotelId: hotel.id,
-    name: hotel.name,
-    city: hotel.city,
-    category: hotelCategoryLabel(hotel.category) || "4 Star",
-    roomType,
-    rooms: String(Math.max(1, Math.ceil((command.adults || 1) / 2))),
-    // Kids 5–12 share the parents' room (child-no-bed rate); under-5s are free.
-    cnbCount: String(command.children || 0),
-    extraBeds5To12Count: "0",
-    extraBedsAbove12Count: "0",
-    extraAdultCount: "0",
-    mealPlan: command.mealPlan || "",
-    pricePerRoom: section.price || 0,
-    bedPrices: bedPricesFromSection(section),
-    photo: hotel.image_url || hotel.image_path || null,
-    checkIn,
-    checkOut: addDays(checkIn, stay.nights),
-  };
-}
-
-function hotelCost(acc) {
-  const rooms = parseInt(acc.rooms || 1, 10);
-  const cnbPrice = parseFloat(acc.bedPrices.find((bp) => bp.category === "cnb")?.price || 0);
-  const nights = Math.round((new Date(acc.checkOut) - new Date(acc.checkIn)) / 86400000) || 1;
-  return parseFloat(acc.pricePerRoom || 0) * rooms * nights + cnbPrice * parseInt(acc.cnbCount || 0, 10) * nights;
-}
 
 /**
  * The city the travellers are in on each night (index 0 = night of day 1),
@@ -74,31 +39,68 @@ function nightlyCities(command, hotels) {
   return cities.slice(0, command.nights);
 }
 
-/** Pure: ChingCommand + /api/builder/init payload → POST /api/trips body. */
-export function buildChingTripPayload(command, init) {
-  const hotels = init.hotels || [];
-  const vehicles = init.vehicles || [];
-  const destinations = init.destinations || [];
-  const settings = init.settings || {};
+/**
+ * Pure: ChingCommand + catalog → the builder's state for that trip:
+ * { tripInfo (fields to merge), itinerary, accommodations, transportation }.
+ * Partial commands (still being spoken) give partial trips: no start date →
+ * no dated hotels/cabs yet, no nights → no day plan yet.
+ * catalog = { hotels, destinations, vehicles }.
+ */
+export function buildChingTripParts(command, catalog) {
+  const hotels = catalog.hotels || [];
+  const vehicles = catalog.vehicles || [];
+  const destinations = catalog.destinations || [];
+  let seq = Date.now();
+  const newId = () => (seq += 1); // > 1e9: the builder saves these as new rows
 
-  const nights = Math.max(1, Number(command.nights) || 1);
-  const days = nights + 1;
-  const start = command.startDate;
+  const nights = Math.max(0, Number(command.nights) || 0);
+  const days = nights ? nights + 1 : 0;
+  const start = /^\d{4}-\d{2}-\d{2}$/.test(command.startDate || "") ? command.startDate : "";
   const cities = nightlyCities({ ...command, nights }, hotels);
   const lastCity = cities[cities.length - 1] || command.destinationName || "";
   const destinationFor = (city) => destinations.find((d) => sameName(d.name, city));
 
-  // ── Hotels: one accommodation per stay, back to back from the start date.
+  // ── Hotels: one stay per hotel, back to back from the start date.
   const accommodations = [];
-  let cursor = start;
-  for (const stay of command.stays || []) {
-    const hotel = hotels.find((h) => h.id === stay.hotelId);
-    if (hotel && stay.nights > 0) accommodations.push(stayAccommodation(stay, hotel, cursor, command));
-    cursor = addDays(cursor, stay.nights || 0);
+  if (start) {
+    let cursor = start;
+    for (const stay of command.stays || []) {
+      const hotel = hotels.find((h) => h.id === stay.hotelId);
+      if (hotel && stay.nights > 0) {
+        const roomType = hotelRoomTypes(hotel)[0] || "Deluxe";
+        const section = findRoomTypeSection(hotel, roomType, cursor);
+        accommodations.push({
+          id: newId(),
+          hotelId: hotel.id,
+          name: hotel.name,
+          city: hotel.city,
+          category: hotelCategoryLabel(hotel.category) || "4 Star",
+          roomType,
+          rooms: String(Math.max(1, Math.ceil((command.adults || 1) / 2))),
+          // Kids 5–12 share the parents' room (child-no-bed rate); under-5s are free.
+          cnbCount: String(command.children || 0),
+          extraBeds5To12Count: "0",
+          extraBedsAbove12Count: "0",
+          extraAdultCount: "0",
+          mealPlan: command.mealPlan || "",
+          pricePerRoom: section.price || 0,
+          bedPrices: bedPricesFromSection(section),
+          photo: hotel.image_url || hotel.image_path || null,
+          checkIn: cursor,
+          checkOut: addDays(cursor, stay.nights),
+          cancelled: false,
+          cancellationCharge: "",
+          cancellationNote: "",
+          alternateOptions: [],
+          markupPercentage: "",
+        });
+      }
+      cursor = addDays(cursor, stay.nights || 0);
+    }
   }
 
   // ── Day-wise plan: arrival, moves between cities, local days, departure.
-  const itineraries = [];
+  const itinerary = [];
   for (let day = 1; day <= days; day += 1) {
     const here = cities[day - 1] ?? lastCity;
     const prev = day > 1 ? cities[day - 2] : null;
@@ -109,120 +111,60 @@ export function buildChingTripPayload(command, init) {
     else title = `${here} Sightseeing`;
     const location = day === days ? lastCity : here;
     const dest = destinationFor(location);
-    const labels = day === days ? [] : destinationActivityLabels(dest?.activities);
-    itineraries.push({
-      id: null,
-      day_number: day,
+    const activities = day === days ? [] : destinationActivityLabels(dest?.activities);
+    itinerary.push({
+      id: newId(),
+      day,
       title: `Day ${day}: ${title}`,
       location,
-      destination_id: dest?.id ?? null,
-      description: labels.join("\n"),
-      image: dest?.image_url || dest?.image_path || null,
+      destination: dest?.name || location,
+      destinationId: dest?.id ?? null,
+      description: activities.join("\n"),
+      activities,
+      photo: dest?.image_url || dest?.image_path || null,
     });
   }
 
   // ── Cab: per-trip rate → one booking; otherwise (per day / unset) one per day.
   const vehicle = vehicles.find((v) => v.id === command.vehicleId);
-  const transportations = [];
-  if (vehicle) {
-    const entry = (dayNumber, tripType, route) => ({
-      id: null,
+  const transportation = [];
+  if (vehicle && start && days) {
+    const booking = (day, tripType, route) => ({
+      id: newId(),
       vehicleId: vehicle.id,
-      trip_type: tripType,
-      destination: cities[dayNumber - 1] ?? lastCity,
+      tripType,
       route,
-      date: addDays(start, dayNumber - 1),
-      vehicle_type: vehicle.name,
+      destination: cities[day - 1] ?? lastCity,
+      date: addDays(start, day - 1),
+      vehicleType: vehicle.name,
       quantity: 1,
       remarks: "",
-      day_number: dayNumber,
-      markup_percentage: null,
+      markupPercentage: "",
     });
     if (vehicle.rate_type === "per_trip") {
-      transportations.push(entry(1, "Transfer", `Full trip: ${[...new Set(cities)].join(" → ")}`));
+      transportation.push(booking(1, "Transfer", `Full trip: ${[...new Set(cities)].join(" → ")}`));
     } else {
-      itineraries.forEach((it) => {
+      itinerary.forEach((it) => {
         const route = it.title.replace(/^Day \d+: /, "").replace(" to ", " → ");
-        const type = /Sightseeing/.test(route) ? "Sightseeing" : "Transfer";
-        transportations.push(entry(it.day_number, type, route));
+        transportation.push(booking(it.day, /Sightseeing/.test(route) ? "Sightseeing" : "Transfer", route));
       });
     }
   }
 
-  // ── Price, identical to the builder: marked-up items, then GST.
-  const margin = Number(settings.profit_percentage) || 0;
-  const gstPct = Number(settings.gst_percentage) || 0;
-  const includeGst = settings.include_gst ?? true;
-  const net =
-    accommodations.reduce((s, a) => s + hotelCost(a), 0) +
-    transportations.reduce((s, t) => s + (parseFloat(vehicle?.price || 0) * (t.quantity || 1)), 0);
-  const marked = net * (1 + margin / 100);
-  const gst = includeGst ? marked * (gstPct / 100) : 0;
-
-  const place = command.destinationName || [...new Set(cities)].join(" - ") || "Holiday";
+  const place = command.destinationName || [...new Set(cities)].filter(Boolean).join(" - ");
   const destination = destinationFor(command.destinationName) || destinationFor(cities[0]);
-
-  return {
-    tripTitle: `${place} ${nights}N/${days}D`,
-    destination: command.destinationName || cities[0] || "",
-    destinationId: command.destinationId ?? destination?.id ?? null,
-    clientName: command.clientName,
-    clientPhone: command.clientPhone || "",
-    clientEmail: command.clientEmail || "",
-    adults: command.adults,
-    kidsUpto5: command.infants || 0,
+  const tripInfo = {
+    ...(command.clientName ? { clientName: command.clientName } : {}),
+    ...(command.clientPhone ? { clientPhone: command.clientPhone } : {}),
+    ...(command.clientEmail ? { clientEmail: command.clientEmail } : {}),
+    adults: command.adults || 2,
     kids5to12: command.children || 0,
-    startDate: start,
-    duration: String(nights),
-    cost: String(Math.max(0, Math.round(marked + gst))),
-    currency: settings.currency || "INR (₹)",
-    image: settings.default_trip_image_url || destination?.image_url || "",
-    tagline: settings.tagline || undefined,
-    status: "pending",
-    template: "ModernTemplate",
-    include_gst: includeGst,
-    gst_amount: Number(gst.toFixed(2)),
-    gst_percentage: gstPct,
-    profit_margin_percentage: margin,
-    use_flight: false,
-    transport_details: [],
-    itineraries,
-    accommodations: accommodations.map((a) => ({
-      id: null,
-      hotelId: a.hotelId,
-      name: a.name,
-      city: a.city,
-      category: a.category,
-      rooms: a.rooms,
-      cnb_count: a.cnbCount,
-      extra_beds_5_to_12_count: a.extraBeds5To12Count,
-      extra_beds_above_12_count: a.extraBedsAbove12Count,
-      extra_adult_count: a.extraAdultCount,
-      meal_plan: a.mealPlan,
-      room_type: a.roomType,
-      price_per_room: a.pricePerRoom,
-      bed_prices: a.bedPrices,
-      check_in: a.checkIn,
-      check_out: a.checkOut,
-      image: a.photo,
-      cancelled_at: null,
-      cancellation_charge: null,
-      cancellation_note: null,
-      alternate_options: [],
-      markup_percentage: null,
-    })),
-    transportations,
-    trip_activities: [],
-    other_costs: [],
-    inclusions: [],
-    exclusions: [],
+    kidsUpto5: command.infants || 0,
+    ...(start ? { startDate: start } : {}),
+    ...(nights ? { duration: String(nights) } : {}),
+    ...(place ? { destination: place, destinationId: command.destinationId ?? destination?.id ?? null } : {}),
+    ...(place && nights ? { tripTitle: `${place} ${nights}N/${days}D` } : {}),
   };
-}
 
-/** Save a confirmed command as a real trip. Resolves to { tripId }. */
-export async function createChingTrip({ token, command, init }) {
-  const created = await createTrip(token, buildChingTripPayload(command, init));
-  const tripId = created?.trip_id || created?.tripId;
-  if (!tripId) throw new Error("The trip was not created. Please try again.");
-  return { tripId };
+  return { tripInfo, itinerary, accommodations, transportation, vehicle };
 }

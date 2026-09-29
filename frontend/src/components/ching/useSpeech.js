@@ -141,7 +141,7 @@ class SpeechEngine {
       wakeBlocked: false,
     };
     this.listeners = new Set();
-    this.handlers = { onCommand: null, onWake: null };
+    this.handlers = { onCommand: null, onWake: null, onStart: null, onAbort: null };
     this.rec = null;
     this.recMode = null; // mode of this.rec: "wake" | "command" | null
     this.cmd = freshCommand();
@@ -276,6 +276,7 @@ class SpeechEngine {
     this.clearTimer("resume");
     this.cmd = freshCommand({ beepOnStart: true });
     this.set({ phase: "command", interim: "", error: "", errorCode: "" });
+    this.handlers.onStart?.();
     if (!this.spawn("command")) {
       // Chrome can refuse while the previous recognizer is still tearing down.
       this.recMode = "command";
@@ -311,6 +312,7 @@ class SpeechEngine {
     this.cmd.cancelled = true;
     this.reset();
     this.set({ phase: "idle", interim: "" });
+    this.handlers.onAbort?.();
     this.resumeWake(400);
   }
 
@@ -364,8 +366,11 @@ class SpeechEngine {
     this.set({ phase: "idle", interim: "" });
     if (text) {
       this.handlers.onCommand?.(text);
-    } else if (text === "" && this.state.errorCode === "") {
-      this.set({ error: ERROR_TEXT["no-speech"], errorCode: "no-speech" });
+    } else {
+      if (text === "" && this.state.errorCode === "") {
+        this.set({ error: ERROR_TEXT["no-speech"], errorCode: "no-speech" });
+      }
+      this.handlers.onAbort?.();
     }
     this.resumeWake(600);
   }
@@ -439,6 +444,7 @@ class SpeechEngine {
       beep();
       this.set({ phase: "command", interim: "", error: "", errorCode: "" });
       this.handlers.onWake?.();
+      this.handlers.onStart?.();
       this.onCommandResult(e);
       return;
     }
@@ -493,6 +499,7 @@ class SpeechEngine {
     if (err && FATAL_ERRORS.has(err)) {
       this.reset();
       this.set({ phase: "idle", interim: "" });
+      if (mode === "command") this.handlers.onAbort?.();
       return;
     }
 
@@ -535,22 +542,35 @@ class SpeechEngine {
 }
 
 /**
- * useSpeech({ handsFree, paused, onCommand, onWake })
+ * useSpeech({ handsFree, paused, onCommand, onWake, onStart, onAbort })
  *   handsFree — keep a "Hello Ching" wake listener running
  *   paused    — temporarily stop the wake listener (e.g. while building)
  *   onCommand(text) — a finished command transcript
  *   onWake()  — the wake phrase was heard (command capture has started)
+ *   onStart() — command capture started (tap, Alt+C or after the wake phrase)
+ *   onAbort() — command capture ended with nothing to deliver (cancelled,
+ *               silence, or a mic error); onCommand is not called then
+ * `interim` is the running transcript of the current command (every final
+ * segment so far + the current interim, wake phrase stripped) while
+ * phase === "command"; it resets to "" when the capture ends.
  * Returns { supported, phase, interim, error, errorCode, wakeBlocked,
  *   startCommand, finishCommand, cancelCommand, toggleCommand,
  *   setWakeEnabled, clearError }.
  */
-export default function useSpeech({ handsFree = false, paused = false, onCommand, onWake } = {}) {
+export default function useSpeech({
+  handsFree = false,
+  paused = false,
+  onCommand,
+  onWake,
+  onStart,
+  onAbort,
+} = {}) {
   const [engine] = useState(() => new SpeechEngine());
   const state = useSyncExternalStore(engine.subscribe, engine.getSnapshot, engine.getSnapshot);
 
   useEffect(() => {
-    engine.setHandlers({ onCommand, onWake });
-  }, [engine, onCommand, onWake]);
+    engine.setHandlers({ onCommand, onWake, onStart, onAbort });
+  }, [engine, onCommand, onWake, onStart, onAbort]);
 
   useEffect(() => {
     engine.attach();

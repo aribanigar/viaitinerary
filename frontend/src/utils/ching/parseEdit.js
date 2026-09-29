@@ -871,14 +871,15 @@ function cleanClause(c) {
 }
 
 /**
- * Parse an edit utterance against the open trip.
+ * Parse an edit utterance against the open trip. `force` skips the new-trip
+ * check (used to pick extras like activities/margin out of a full trip request).
  * @returns {{ intent: 'edit'|'create'|'unknown', actions: object[], unrecognized: string[], warnings: string[] }}
  */
-export function parseChingEdit(text, context, catalog, { today } = {}) {
+export function parseChingEdit(text, context, catalog, { today, force = false } = {}) {
   const result = { intent: 'unknown', actions: [], unrecognized: [], warnings: [] }
   let s = normalizeSpeech(text)
   if (!s) return result
-  if (isCreateRequest(s)) return { ...result, intent: 'create' }
+  if (!force && isCreateRequest(s)) return { ...result, intent: 'create' }
 
   const cat = prepareEditCatalog(catalog)
   const S = prepareContext(context, cat)

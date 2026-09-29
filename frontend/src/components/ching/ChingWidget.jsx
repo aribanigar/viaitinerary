@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import {
   getChingEditor,
+  subscribeChingEditor,
   useChingEditor,
 } from "../../utils/ching/editorBridge";
 import lazyWithReload, {
@@ -12,10 +13,16 @@ import lazyWithReload, {
 } from "../../utils/lazyWithReload";
 import useSpeech, { primeAudio } from "./useSpeech";
 
-// Ching — voice trip builder. This file is the always-mounted light part: the
-// floating mic, the speech engine (so "Hello Ching" works with the panel
-// closed), shortcuts, and state. The panel UI and the parser/builder are
-// fetched on first use.
+// Ching — voice trip builder, always mounted on portal routes (App.jsx), so it
+// survives route changes mid-sentence.
+//
+// LIVE MODE: while the agent speaks, the running transcript is streamed to the
+// open Trip Builder's editor (editorBridge.js → editor.live.begin / update /
+// finish / cancel), which fills or edits the form as the words arrive. There
+// are no confirmation cards: at the end of the utterance the result collapses
+// to a small "Filled the trip · Undo" pill and the agent saves/exports as
+// usual. A new-trip request heard anywhere else (or over a trip that already
+// has content) opens a fresh draft Trip Builder and fills that instead.
 //
 // Other code can open Ching with:
 //   window.dispatchEvent(new CustomEvent("ching:open", { detail: { listen: true } }))
@@ -29,6 +36,8 @@ const loadCore = () =>
   });
 
 const HANDSFREE_KEY = "ching_handsfree";
+const LIVE_THROTTLE_MS = 250;
+const DRAFT_TIMEOUT_MS = 15000;
 
 const readHandsFree = () => {
   try {
@@ -46,7 +55,16 @@ const writeHandsFree = (on) => {
   }
 };
 
-const uniq = (list) => [...new Set((list || []).filter(Boolean))];
+const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
+const safe = (fn, fallback) => {
+  try {
+    return fn();
+  } catch {
+    return fallback;
+  }
+};
+const newDraftPath = () =>
+  `/trip-builder?d=${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
 
 // Command actions (EXPORT_PDF / EMAIL_ME / SEND_PROPOSAL / SAVE / UNDO) against the open Trip
 // Builder, in order. Resolves to the result lines; throws on the first failure.
@@ -86,47 +104,58 @@ async function runEditorCommands(commands, editor, setProgress) {
 }
 
 const PanelFallback = () => (
-  <div className="fixed z-[90] inset-x-0 bottom-0 sm:inset-x-auto sm:right-4 lg:right-6 sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:w-[400px] h-48 rounded-t-[28px] sm:rounded-[24px] bg-white border border-black/5 shadow-2xl grid place-items-center">
+  <div className="fixed z-[90] inset-x-0 bottom-0 sm:inset-x-auto sm:right-4 lg:right-6 sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:w-[400px] h-40 rounded-t-[28px] sm:rounded-[24px] bg-white border border-black/5 shadow-2xl grid place-items-center">
     <span className="w-6 h-6 rounded-full border-2 border-[#181c22]/15 border-t-[#181c22] animate-spin" />
   </div>
 );
 
+const EMPTY_LIVE = { phase: "listening", mode: null, changes: [], warnings: [], unrecognized: [] };
+
 export default function ChingWidget() {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const editor = useChingEditor();
   const [open, setOpen] = useState(false);
   const [handsFree, setHandsFree] = useState(readHandsFree);
-  const [status, setStatus] = useState("idle"); // idle | thinking | building | running
-  const [command, setCommand] = useState(null);
-  // The parser's own notes describe the transcript; once the card is edited
-  // they can be stale, so the panel hides them.
-  const [edited, setEdited] = useState(false);
+  const [status, setStatus] = useState("idle"); // idle | running (commands)
   const [init, setInit] = useState(null);
-  const [notice, setNotice] = useState(null); // { kind, text, unrecognized? }
-  // Voice editing of the trip open in the Trip Builder (see editorBridge.js).
-  const editor = useChingEditor();
-  const [edit, setEdit] = useState(null); // pending edit card
-  const [outcome, setOutcome] = useState(null); // { title, lines, warnings }
+  const [notice, setNotice] = useState(null); // { kind: unknown|no-editor|error, text, unrecognized? }
+  // The live session shown in the panel: phase "listening" | "opening" | "finishing".
+  const [live, setLive] = useState(null);
+  const [outcome, setOutcome] = useState(null); // { title, lines, warnings, unrecognized }
   const [compact, setCompact] = useState(false); // collapse to the result pill
   const [progress, setProgress] = useState("");
   const [, setUndoTick] = useState(0);
-  const seqRef = useRef(0);
-  const canUndo = Boolean(editor?.canUndo?.());
 
-  // Warm the parser chunk + catalog as soon as Ching is opened, so the
-  // command is parsed instantly when the speaker stops.
-  const warmUp = useCallback(() => {
-    loadCore()
-      .then((core) => core.getInit(token))
-      .then((data) => setInit(data))
-      .catch(() => {});
-  }, [token]);
+  // The current utterance. Plain object in a ref: speech events, the throttle
+  // timer and the draft-opening watcher all mutate it outside React renders.
+  //   { text, ended, finalText, editor, baseBlank, navigating, skip, finishing, stopWatch }
+  const sessionRef = useRef(null);
+  const coreRef = useRef(null);
+  const initRef = useRef(null);
+  const latestTextRef = useRef("");
+  const throttleRef = useRef(null);
+  const canUndo = Boolean(safe(() => editor?.canUndo?.(), false));
+
+  const ensureCore = useCallback(
+    () =>
+      loadCore().then(async (core) => {
+        coreRef.current = core;
+        if (!initRef.current) {
+          const data = await core.getInit(token);
+          initRef.current = data;
+          setInit(data);
+        }
+        return core;
+      }),
+    [token],
+  );
 
   const openPanel = useCallback(() => {
     setOpen(true);
     setCompact(false);
-    warmUp();
-  }, [warmUp]);
+    ensureCore().catch(() => {});
+  }, [ensureCore]);
 
   const runCommands = useCallback(async (commands, ed) => {
     setStatus("running");
@@ -142,130 +171,236 @@ export default function ChingWidget() {
     }
   }, []);
 
-  const handleText = useCallback(
-    async (raw) => {
-      const text = String(raw || "").trim();
-      if (!text) return;
-      const seq = ++seqRef.current;
-      setOpen(true);
-      setCompact(false);
-      setStatus("thinking");
-      setNotice(null);
-      let res;
-      try {
-        const core = await loadCore();
-        res = await core.interpret(text, token, getChingEditor());
-      } catch (err) {
-        if (seq !== seqRef.current) return;
-        setNotice({
-          kind: "error",
-          text: err?.message || "Ching couldn't load your hotels and vehicles.",
-        });
-        setStatus("idle");
-        return;
-      }
-      if (seq !== seqRef.current) return;
-      setInit(res.init);
+  // ── live session plumbing ──────────────────────────────────────────────
+  const showLive = useCallback((res, phase = "listening") => {
+    setLive({
+      phase,
+      mode: res?.mode || null,
+      changes: list(res?.changes),
+      warnings: list(res?.warnings),
+      unrecognized: list(res?.unrecognized),
+    });
+  }, []);
 
-      if (res.kind === "create") {
-        setCommand({ ...res.command, transcript: res.command.transcript || text });
-        setEdited(false);
-        setEdit(null);
-        setOutcome(null);
-        setStatus("idle");
-        return;
-      }
+  const endSession = useCallback(() => {
+    const S = sessionRef.current;
+    S?.stopWatch?.();
+    sessionRef.current = null;
+    setLive(null);
+  }, []);
 
-      const ed = getChingEditor();
-      if (res.kind !== "edit" || !ed) {
-        setNotice(
-          res.kind === "edit-unknown"
-            ? { kind: "edit-unknown", text, unrecognized: res.unrecognized }
-            : { kind: res.kind === "unknown" ? "unknown" : "no-editor", text },
-        );
-        setStatus("idle");
-        return;
-      }
+  const cancelSession = useCallback(() => {
+    const S = sessionRef.current;
+    if (!S) return;
+    if (S.editor && safe(() => S.editor.live.active(), false)) {
+      safe(() => S.editor.live.cancel());
+    }
+    endSession();
+  }, [endSession]);
 
-      // Only commands ("email it to me", "undo", "export"): just do them.
-      if (!res.stateActions.length) {
-        setEdit(null);
-        const lines = await runCommands(res.commands, ed);
-        if (lines && seq === seqRef.current) {
-          setOutcome({ title: lines.length === 1 ? lines[0] : "Done", lines, warnings: [] });
-          setCompact(true);
-        }
-        return;
-      }
+  // Refs to the two mutually recursive steps, so either can call the other.
+  const attachRef = useRef(null);
+  const finishRef = useRef(null);
 
-      let preview;
-      try {
-        preview = ed.preview(res.stateActions) || {};
-      } catch (err) {
-        setNotice({ kind: "error", text: err?.message || "Ching couldn't work out those changes." });
-        setStatus("idle");
-        return;
-      }
-      setEdit({
-        text,
-        tripLabel: ed.tripLabel || "this trip",
-        stateActions: res.stateActions,
-        commands: res.commands,
-        changes: Array.isArray(preview.changes) ? preview.changes : [],
-        warnings: uniq([...(res.warnings || []), ...(preview.warnings || [])]),
-        unrecognized: res.unrecognized || [],
-      });
-      setCommand(null);
-      setOutcome(null);
-      setStatus("idle");
+  const liveUpdate = useCallback(
+    (S, text) => {
+      const res = safe(() => S.editor.live.update(text), null);
+      if (res) showLive(res);
     },
-    [token, runCommands],
+    [showLive],
   );
 
-  const handleApply = useCallback(async () => {
-    if (!edit || status !== "idle") return;
-    const ed = getChingEditor();
-    if (!ed) {
-      toast.error("That trip isn't open any more.");
-      setEdit(null);
-      return;
-    }
-    let res = { changes: [], warnings: [] };
-    try {
-      if (edit.stateActions.length) res = ed.apply(edit.stateActions) || res;
-    } catch (err) {
-      toast.error(err?.message || "Ching couldn't apply those changes.");
-      return;
-    }
-    const pending = edit;
-    setEdit(null);
-    const changes = Array.isArray(res.changes) ? res.changes : [];
-    const lines = pending.commands.length
-      ? (await runCommands(pending.commands, ed)) || []
-      : [];
-    const n = changes.length;
-    setOutcome({
-      title: n ? `Applied ${n} change${n === 1 ? "" : "s"}` : lines[0] || "Done",
-      lines: [...changes, ...lines],
-      warnings: Array.isArray(res.warnings) ? res.warnings : [],
-    });
-    setCompact(true); // let the agent see the updated preview
-    setUndoTick((t) => t + 1);
-  }, [edit, status, runCommands]);
+  // Open a fresh draft Trip Builder (keeping the recognizer running) and fill
+  // it once its editor registers.
+  const openDraft = useCallback(
+    (S) => {
+      const previous = S.editor || getChingEditor();
+      if (S.editor && safe(() => S.editor.live.active(), false)) {
+        safe(() => S.editor.live.cancel()); // never overwrite the open trip
+      }
+      S.editor = null;
+      S.skip = previous;
+      S.navigating = true;
+      S.finishing = false;
+      const started = Date.now();
+      showLive(null, "opening");
+      navigate(newDraftPath());
 
-  const handleUndo = useCallback(() => {
-    const ed = getChingEditor();
-    if (!ed) return;
-    const label = ed.undo();
-    toast.info(label ? `Undone: ${label}` : "Nothing to undo");
-    if (label) setOutcome((o) => (o ? { ...o, title: `Undone: ${label}` } : o));
-    setUndoTick((t) => t + 1);
-  }, []);
+      let iv = null;
+      let unsub = null;
+      const stop = () => {
+        if (iv) clearInterval(iv);
+        if (unsub) unsub();
+        iv = null;
+        unsub = null;
+      };
+      const tryAttach = () => {
+        if (sessionRef.current !== S || !S.navigating) {
+          stop();
+          return;
+        }
+        const ed = getChingEditor();
+        if (ed && (ed !== S.skip || safe(() => ed.isBlank(), false))) {
+          stop();
+          attachRef.current?.(S, ed);
+        } else if (Date.now() - started > DRAFT_TIMEOUT_MS) {
+          stop();
+          endSession();
+          setNotice({ kind: "error", text: "The new trip didn't open in time. Please try again." });
+        }
+      };
+      S.stopWatch = stop;
+      unsub = subscribeChingEditor(tryAttach);
+      iv = setInterval(tryAttach, 250);
+    },
+    [endSession, navigate, showLive],
+  );
 
-  const editCommand = useCallback((updater) => {
-    setCommand(updater);
-    setEdited(true);
-  }, []);
+  const attach = useCallback(
+    (S, ed) => {
+      S.editor = ed;
+      S.navigating = false;
+      S.baseBlank = safe(() => ed.isBlank(), true);
+      safe(() => ed.live.begin());
+      if (S.text) liveUpdate(S, S.text);
+      else showLive(null);
+      if (S.ended) finishRef.current?.(S);
+    },
+    [liveUpdate, showLive],
+  );
+
+  // A new running transcript (throttled while speaking).
+  const pump = useCallback(
+    (text) => {
+      const S = sessionRef.current;
+      if (!S || S.ended || !text) return;
+      S.text = text;
+      if (S.navigating) return;
+      const core = coreRef.current;
+      if (!S.editor) {
+        const ed = getChingEditor();
+        if (ed) {
+          attach(S, ed);
+          return;
+        }
+        if (core && core.looksLikeTripRequest(text, initRef.current)) openDraft(S);
+        return;
+      }
+      if (!S.baseBlank && core && core.isCreateRequest(text)) {
+        openDraft(S);
+        return;
+      }
+      liveUpdate(S, text);
+    },
+    [attach, liveUpdate, openDraft],
+  );
+
+  // The utterance is over: commit (or decide there was nothing to do).
+  const finish = useCallback(
+    async (S) => {
+      if (S.finishing || S.navigating || sessionRef.current !== S) return;
+      S.finishing = true;
+      const text = S.finalText || S.text;
+      let core = coreRef.current;
+      if (!core) core = await ensureCore().catch(() => null);
+      if (sessionRef.current !== S) return;
+
+      if (!S.editor) {
+        const ed = getChingEditor();
+        if (ed) {
+          S.finishing = false;
+          attach(S, ed); // calls finish again
+          return;
+        }
+        const kind = core ? core.classifyWithoutEditor(text, initRef.current) : "unknown";
+        if (kind === "trip") {
+          openDraft(S); // finishes once the draft's editor appears
+          return;
+        }
+        endSession();
+        setNotice({ kind: kind === "edit" ? "no-editor" : "unknown", text });
+        return;
+      }
+
+      if (!S.baseBlank && core && core.isCreateRequest(text)) {
+        openDraft(S);
+        return;
+      }
+
+      const ed = S.editor;
+      showLive(null, "finishing");
+      let res;
+      try {
+        res = ed.live.finish(text) || {};
+      } catch (err) {
+        safe(() => ed.live.cancel());
+        endSession();
+        toast.error(err?.message || "Ching couldn't update the trip.");
+        return;
+      }
+      endSession();
+
+      const changes = list(res.changes);
+      const commands = list(res.commands);
+      if (!changes.length && !commands.length) {
+        setNotice({ kind: "unknown", text, editing: true, unrecognized: list(res.unrecognized) });
+        return;
+      }
+      const lines = commands.length ? (await runCommands(commands, ed)) || [] : [];
+      const n = changes.length;
+      setOutcome({
+        title:
+          res.mode === "fill" && n
+            ? "Filled the trip"
+            : n
+              ? `Applied ${n} change${n === 1 ? "" : "s"}`
+              : lines[0] || "Done",
+        lines: [...changes, ...lines],
+        warnings: list(res.warnings),
+        unrecognized: list(res.unrecognized),
+      });
+      setCompact(true); // let the agent see the filled form / preview
+      setUndoTick((t) => t + 1);
+    },
+    [attach, endSession, ensureCore, openDraft, runCommands, showLive],
+  );
+
+  useEffect(() => {
+    attachRef.current = attach;
+    finishRef.current = finish;
+  }, [attach, finish]);
+
+  const startSession = useCallback(() => {
+    const prev = sessionRef.current;
+    if (prev && !prev.finishing) cancelSession();
+    const S = { text: "", ended: false, finalText: "", editor: null, baseBlank: true };
+    sessionRef.current = S;
+    setNotice(null);
+    setOutcome(null);
+    setCompact(false);
+    showLive(null);
+    ensureCore().catch(() => {});
+    const ed = getChingEditor();
+    if (ed) attach(S, ed);
+    return S;
+  }, [attach, cancelSession, ensureCore, showLive]);
+
+  // ── speech events ──────────────────────────────────────────────────────
+  const handleStart = useCallback(() => {
+    setOpen(true);
+    startSession();
+  }, [startSession]);
+
+  const handleCommand = useCallback(
+    (text) => {
+      const S = sessionRef.current || startSession();
+      S.ended = true;
+      S.text = text;
+      S.finalText = text;
+      finish(S);
+    },
+    [finish, startSession],
+  );
 
   const handleWake = useCallback(() => {
     setNotice(null);
@@ -274,13 +409,16 @@ export default function ChingWidget() {
 
   const speech = useSpeech({
     handsFree,
-    paused: status === "building" || status === "running",
-    onCommand: handleText,
+    paused: status === "running",
+    onCommand: handleCommand,
     onWake: handleWake,
+    onStart: handleStart,
+    onAbort: cancelSession,
   });
   const {
     supported,
     phase,
+    interim,
     startCommand,
     toggleCommand,
     cancelCommand,
@@ -288,10 +426,41 @@ export default function ChingWidget() {
   } = speech;
   const listening = phase === "command";
 
+  // Stream the running transcript to the editor, at most every 250 ms.
+  useEffect(() => {
+    if (phase !== "command" || !interim) return;
+    latestTextRef.current = interim;
+    if (throttleRef.current) return;
+    throttleRef.current = setTimeout(() => {
+      throttleRef.current = null;
+      pump(latestTextRef.current);
+    }, LIVE_THROTTLE_MS);
+  }, [phase, interim, pump]);
+
+  useEffect(
+    () => () => {
+      if (throttleRef.current) clearTimeout(throttleRef.current);
+    },
+    [],
+  );
+
+  // Typed input = one finished utterance.
+  const handleTyped = useCallback(
+    (raw) => {
+      const text = String(raw || "").trim();
+      if (!text || status === "running") return;
+      if (listening) cancelCommand();
+      startSession();
+      handleCommand(text);
+    },
+    [cancelCommand, handleCommand, listening, startSession, status],
+  );
+
   const closePanel = useCallback(() => {
     cancelCommand();
+    cancelSession();
     setOpen(false);
-  }, [cancelCommand]);
+  }, [cancelCommand, cancelSession]);
 
   const toggleHandsFree = useCallback(() => {
     const next = !handsFree;
@@ -301,33 +470,14 @@ export default function ChingWidget() {
     setWakeEnabled(next); // start inside the tap too (iOS wants a gesture)
   }, [handsFree, setWakeEnabled]);
 
-  const handleConfirm = useCallback(async () => {
-    if (!command || status === "building") return;
-    setStatus("building");
-    try {
-      const core = await loadCore();
-      const data = init || (await core.getInit(token));
-      const { ok, problems } = core.validateChingCommand(command, core.catalogOf(data));
-      if (!ok) {
-        toast.error(problems?.[0] || "Please fix the highlighted details first.");
-        return;
-      }
-      const nights = Number(command.nights) || 0;
-      const { tripId } = await core.createChingTrip({
-        token,
-        command: { ...command, days: nights + 1 },
-        init: data,
-      });
-      setCommand(null);
-      setNotice(null);
-      setOpen(false);
-      navigate(`/trip-builder/${tripId}?ching=deliver`);
-    } catch (err) {
-      toast.error(err?.message || "Ching couldn't build the trip. Please try again.");
-    } finally {
-      setStatus("idle");
-    }
-  }, [command, init, navigate, status, token]);
+  const handleUndo = useCallback(() => {
+    const ed = getChingEditor();
+    if (!ed) return;
+    const label = safe(() => ed.undo(), null);
+    toast.info(label ? `Undone: ${label}` : "Nothing to undo");
+    if (label) setOutcome((o) => (o ? { ...o, title: `Undone: ${label}` } : o));
+    setUndoTick((t) => t + 1);
+  }, []);
 
   const handleFab = () => {
     if (open) {
@@ -335,26 +485,27 @@ export default function ChingWidget() {
       return;
     }
     openPanel();
-    if (supported && !command && !edit && status === "idle") startCommand();
+    if (supported && status === "idle") startCommand();
   };
 
-  // Alt+C / ⌥C toggles listening, Esc stops listening / closes.
+  // Alt+C / ⌥C toggles listening; Esc stops listening (restoring the trip), then closes.
   useEffect(() => {
     const onKey = (e) => {
       if (e.altKey && !e.ctrlKey && !e.metaKey && e.code === "KeyC") {
         e.preventDefault();
         if (!open) openPanel();
-        if (supported && status !== "building" && status !== "running") toggleCommand();
+        if (supported && status !== "running") toggleCommand();
         return;
       }
       if (e.key === "Escape" && (open || listening)) {
         if (listening) cancelCommand();
+        else if (sessionRef.current) cancelSession();
         else setOpen(false);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, listening, supported, status, openPanel, toggleCommand, cancelCommand]);
+  }, [open, listening, supported, status, openPanel, toggleCommand, cancelCommand, cancelSession]);
 
   // Anything in the app can open Ching (e.g. the Assistant page's mic).
   useEffect(() => {
@@ -376,7 +527,7 @@ export default function ChingWidget() {
           open
             ? "Close Ching"
             : editor
-              ? "Ching — edit this trip by voice (Alt+C)"
+              ? "Ching — fill or edit this trip by voice (Alt+C)"
               : "Ching — build a trip by voice (Alt+C)"
         }
         className={`fixed z-[45] right-4 lg:right-6 bottom-[calc(env(safe-area-inset-bottom)+68px)] lg:bottom-6 grid place-items-center w-14 h-14 rounded-full border border-black/5 shadow-[0_14px_34px_-10px_rgba(16,24,42,0.6)] transition-all duration-200 hover:scale-105 active:scale-95 ${
@@ -408,27 +559,17 @@ export default function ChingWidget() {
             handsFree={handsFree}
             onToggleHandsFree={toggleHandsFree}
             status={status}
-            command={command}
-            setCommand={editCommand}
-            edited={edited}
             init={init}
             notice={notice}
             onDismissNotice={() => setNotice(null)}
-            onSubmitText={handleText}
-            onConfirm={handleConfirm}
-            onDiscard={() => {
-              setCommand(null);
-              setNotice(null);
-            }}
+            onSubmitText={handleTyped}
             onClose={closePanel}
             editor={editor}
-            edit={edit}
+            live={live}
             outcome={outcome}
             compact={compact}
             canUndo={canUndo}
             progress={progress}
-            onApply={handleApply}
-            onDiscardEdit={() => setEdit(null)}
             onUndo={handleUndo}
             onExpand={() => setCompact(false)}
           />

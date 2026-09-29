@@ -68,6 +68,7 @@ import TripInfoTab from "./trip-builder/TripInfoTab";
 import { registerChingEditor } from "../../utils/ching/editorBridge";
 import { formatTripImageUrl, normalizeAccommodation } from "../../utils/tripView";
 import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
+import { planLive, isBlankTrip } from "../../utils/ching/liveFill";
 import {
   DRAFT_KEY,
   useTripBuilderData,
@@ -1186,7 +1187,8 @@ const TripBuilder = ({ mode }) => {
   useEffect(() => {
     if (loading) return;
     const t = setTimeout(() => {
-      if (!savingRef.current) saveRef.current?.({ silent: true });
+      // Not mid-sentence: a live voice session is still reshaping the trip.
+      if (!savingRef.current && !chingLive.current) saveRef.current?.({ silent: true });
     }, 2500);
     return () => clearTimeout(t);
   }, [
@@ -1233,16 +1235,6 @@ const TripBuilder = ({ mode }) => {
   const exportPreviewBlob = async () => {
     const { exportPreviewToPdfBlob } = await import("../../utils/exportPdf");
     return exportPreviewToPdfBlob();
-  };
-  const downloadBlob = (blob, filename) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
   };
   // Emails `blob` to the signed-in user. Too big to upload (Vercel's 4.5 MB
   // body cap) → the server renders its own copy from the saved trip.
@@ -1402,50 +1394,6 @@ const TripBuilder = ({ mode }) => {
     );
   })();
 
-  // ── Ching hand-off: a trip built by voice opens here with ?ching=deliver.
-  // Once it has loaded and the preview has rendered, download the exact
-  // preview PDF to the device and email the same file to the signed-in user.
-  const chingDelivered = useRef(false);
-  const chingDeliver = searchParams.get("ching") === "deliver";
-  useEffect(() => {
-    if (!chingDeliver || !urlTripId || loading || !dataIsCurrent || chingDelivered.current) return;
-    chingDelivered.current = true;
-    // Drop the flag right away so a refresh doesn't download/email again.
-    navigate(`${builderBase}/${urlTripId}`, { replace: true });
-    const tripId = urlTripId;
-    (async () => {
-      const status = toast.loading("Ching: preparing your itinerary PDF…");
-      try {
-        setExporting(true);
-        // Give the preview a moment to settle (images, fonts) before capture.
-        await new Promise((r) => setTimeout(r, 1200));
-        const blob = await exportPreviewBlob();
-        downloadBlob(blob, `${tripId}_Itinerary.pdf`);
-        logSendForAmendmentHistory("export");
-
-        toast.update(status, { render: "Ching: PDF downloaded — emailing it to you…" });
-        const res = await emailBlobToMe(tripId, blob);
-        toast.update(status, {
-          render: `Ching: itinerary downloaded and emailed to ${res?.to || "you"}.`,
-          type: "success",
-          isLoading: false,
-          autoClose: 6000,
-        });
-      } catch (err) {
-        console.error("Ching delivery failed:", err);
-        toast.update(status, {
-          render: `Ching: ${err?.message || "couldn't finish the export/email."}`,
-          type: "error",
-          isLoading: false,
-          autoClose: 8000,
-        });
-      } finally {
-        setExporting(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chingDeliver, urlTripId, loading, dataIsCurrent]);
-
   // ── Ching voice editing: expose this trip to the Ching widget while it's
   // open. Edits run through editTrip.js against a snapshot of the builder's
   // own state and are committed back through the normal setters, so the
@@ -1480,9 +1428,13 @@ const TripBuilder = ({ mode }) => {
     shareProposal,
   };
   const chingUndo = useRef([]);
+  // Live (real-time) voice session: { base } = the trip as it was when the
+  // agent started speaking; every update re-plans base + all text so far.
+  const chingLive = useRef(null);
   useEffect(() => {
     if (loading || !dataIsCurrent) return undefined;
     chingUndo.current = []; // undo history belongs to the trip it was made on
+    chingLive.current = null;
     const run = (actions) => {
       const { snapshot, catalog, settings } = chingState.current;
       return { before: snapshot, ...applyEditActions(snapshot, actions, { catalog, settings }) };
@@ -1535,6 +1487,41 @@ const TripBuilder = ({ mode }) => {
         return last.label;
       },
       canUndo: () => chingUndo.current.length > 0,
+      isBlank: () => isBlankTrip(chingState.current.snapshot),
+      live: {
+        active: () => !!chingLive.current,
+        begin: () => {
+          if (!chingLive.current) chingLive.current = { base: chingState.current.snapshot };
+        },
+        update: (text) => {
+          if (!chingLive.current) chingLive.current = { base: chingState.current.snapshot };
+          const { catalog, settings } = chingState.current;
+          const plan = planLive(chingLive.current.base, text, { catalog, settings });
+          commit(plan.snapshot);
+          const { mode, changes, warnings, unrecognized } = plan;
+          return { mode, changes, warnings, unrecognized };
+        },
+        finish: (text) => {
+          const live = chingLive.current || { base: chingState.current.snapshot };
+          chingLive.current = null;
+          const { catalog, settings } = chingState.current;
+          const plan = planLive(live.base, text, { catalog, settings });
+          commit(plan.snapshot);
+          if (plan.changes.length) {
+            chingUndo.current = [
+              ...chingUndo.current.slice(-19),
+              { before: live.base, label: plan.mode === "fill" ? "voice fill" : plan.changes.join("; ") },
+            ];
+          }
+          const { mode, changes, warnings, unrecognized, commands } = plan;
+          return { mode, changes, warnings, unrecognized, commands };
+        },
+        cancel: () => {
+          const live = chingLive.current;
+          chingLive.current = null;
+          if (live) commit(live.base);
+        },
+      },
       exportPdf: async () => {
         await settle();
         await chingState.current.handleExport();

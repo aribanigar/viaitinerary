@@ -1,14 +1,16 @@
 // Ching's non-UI logic, loaded on demand (dynamic import from ChingWidget) so
-// the parsers/builder never weigh on the first paint of any dashboard page.
+// the parsers never weigh on the first paint of any dashboard page.
+//
+// Live mode: the Trip Builder's editor (editorBridge.js → editor.live.*) does
+// the parsing and filling while the agent speaks. This module only answers the
+// questions the widget has to decide *before* there is an editor to ask: is
+// this a new-trip request (→ open a fresh draft and fill it), an edit with no
+// trip open, or nothing at all.
 import { fetchBuilderInit } from "../../api/trips";
-import {
-  parseChingCommand,
-  validateChingCommand,
-} from "../../utils/ching/parseCommand";
+import { parseChingCommand } from "../../utils/ching/parseCommand";
 import { parseChingEdit, isCreateRequest } from "../../utils/ching/parseEdit";
-import { createChingTrip } from "../../utils/ching/buildTrip";
 
-export { validateChingCommand, createChingTrip };
+export { isCreateRequest };
 
 // /api/builder/init is cached for the rest of the page session (per token);
 // a failed load is forgotten so the next request retries.
@@ -24,7 +26,7 @@ export function getInit(token) {
   return promise;
 }
 
-export const catalogOf = (init) => ({
+const catalogOf = (init) => ({
   hotels: init?.hotels || [],
   destinations: init?.destinations || [],
   vehicles: init?.vehicles || [],
@@ -80,59 +82,40 @@ function probeEditContext(catalog) {
   };
 }
 
-// Actions the Trip Builder runs as commands rather than state edits.
-export const COMMAND_TYPES = new Set(["EXPORT_PDF", "EMAIL_ME", "SAVE", "UNDO", "SEND_PROPOSAL"]);
+function readsAsEdit(text, init) {
+  if (!init) return false;
+  try {
+    const catalog = editCatalogOf(init);
+    const r = parseChingEdit(text, probeEditContext(catalog), catalog);
+    return Boolean(r && r.intent === "edit" && r.actions?.length);
+  } catch {
+    return false;
+  }
+}
 
 /**
- * Decide what a finished transcript is and parse it.
- * Resolves to one of
- *   { kind: "edit", stateActions, commands, unrecognized, warnings }
- *   { kind: "edit-unknown", unrecognized, warnings }
- *   { kind: "no-editor" }
- *   { kind: "create", command }
- *   { kind: "unknown" }
- * each with `init` (the cached builder init).
+ * With no trip open: does this (possibly partial) text ask for a new trip?
+ * "create a 5 day trip…" always does; otherwise the trip parser must hear
+ * nights or stays, and — so "make Gulmarg 2 nights" isn't mistaken for a new
+ * trip — either a client name or nothing that reads as an edit.
  */
-export async function interpret(text, token, editor) {
-  const init = await getInit(token);
-  const creating = isCreateRequest(text);
-
-  if (editor && !creating) {
-    const r = parseChingEdit(text, editor.getContext(), editCatalogOf(init)) || {};
-    if (r.intent !== "create") {
-      const actions = Array.isArray(r.actions) ? r.actions : [];
-      const unrecognized = Array.isArray(r.unrecognized) ? r.unrecognized : [];
-      const warnings = Array.isArray(r.warnings) ? r.warnings : [];
-      if (!actions.length) return { init, kind: "edit-unknown", unrecognized, warnings };
-      return {
-        init,
-        kind: "edit",
-        stateActions: actions.filter((a) => !COMMAND_TYPES.has(a?.type)),
-        commands: actions.filter((a) => COMMAND_TYPES.has(a?.type)),
-        unrecognized,
-        warnings,
-      };
-    }
+export function looksLikeTripRequest(text, init) {
+  if (isCreateRequest(text)) return true;
+  if (!init) return false;
+  let cmd;
+  try {
+    cmd = parseChingCommand(text, catalogOf(init));
+  } catch {
+    return false;
   }
+  if (!cmd || cmd.intent !== "create_trip") return false;
+  const heardLength = Number(cmd.nights) > 0 || (cmd.stays?.length || 0) > 0;
+  if (!heardLength) return false;
+  return String(cmd.clientName || "").trim() !== "" || !readsAsEdit(text, init);
+}
 
-  const command = parseChingCommand(text, catalogOf(init));
-  const looksLikeNewTrip =
-    command?.intent === "create_trip" && String(command.clientName || "").trim() !== "";
-
-  // No trip open and it reads as an edit ("make Gulmarg 2 nights") — unless
-  // the create parser also heard a client name ("trip for Rahul, 4 nights…").
-  if (!editor && !creating && !looksLikeNewTrip) {
-    try {
-      const catalog = editCatalogOf(init);
-      const r = parseChingEdit(text, probeEditContext(catalog), catalog);
-      if (r && r.intent !== "unknown" && r.intent !== "create") {
-        return { init, kind: "no-editor" };
-      }
-    } catch {
-      // Fall through to the create parser's verdict.
-    }
-  }
-
-  if (command?.intent === "create_trip") return { init, kind: "create", command };
-  return { init, kind: "unknown" };
+/** With no trip open, a finished utterance is: "trip" | "edit" | "unknown". */
+export function classifyWithoutEditor(text, init) {
+  if (looksLikeTripRequest(text, init)) return "trip";
+  return readsAsEdit(text, init) ? "edit" : "unknown";
 }
