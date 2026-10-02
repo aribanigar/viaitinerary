@@ -1,46 +1,108 @@
 import React from "react";
-import Navbar from "../components/landing/Navbar";
-import Footer from "../components/landing/Footer";
+import { Check, Download } from "lucide-react";
+import MarketingPage from "../components/landing/MarketingPage";
+import { CtaBand } from "../components/landing/BrandLanding";
 import pdfFile from "../assets/itinerary-solutions.pdf";
 
-const Solutions = () => {
-  return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <Navbar />
-      <main className="flex-grow pt-24 md:pt-28 flex flex-col items-center">
-        <div className="w-full max-w-7xl px-2 sm:px-4 py-4 md:py-8 flex-grow flex flex-col">
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden flex-grow flex flex-col border border-gray-200">
-            <div className="bg-[#1a1c1c] p-3 sm:p-4 flex flex-col sm:flex-row justify-between items-center text-white gap-3 sm:gap-4">
-              <h1 className="text-lg sm:text-xl font-bold text-center sm:text-left">
-                ViaItinerary Itinerary Solutions
-              </h1>
-              <a
-                href={pdfFile}
-                download="itinerary-solutions.pdf"
-                className="w-full sm:w-auto bg-[#1b1b1b] hover:bg-[#0a0a0a] text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex justify-center items-center gap-2 text-sm sm:text-base"
-              >
-                Download PDF
-              </a>
-            </div>
+const SOLUTIONS = [
+  {
+    id: "dmc",
+    title: "For Destination Management Companies",
+    lead: "You know your destination better than anyone. ViaItinerary turns that knowledge into fast, accurate quotes.",
+    points: [
+      "Load your contracted hotels, room categories and meal plans once",
+      "Price transfers and sightseeing from your own vehicle rates",
+      "Quote B2B partners and direct clients from the same catalog",
+      "Track room availability on the hotel booking calendar",
+    ],
+  },
+  {
+    id: "tour-operators",
+    title: "For Tour Operators",
+    lead: "Your best-selling routes are already proven. Stop rebuilding them for every enquiry.",
+    points: [
+      "Save fixed and custom trips as reusable packages",
+      "Clone a package into a client quote and adjust dates and pax",
+      "Inclusions, exclusions and policies attached automatically",
+      "Vouchers and confirmations sent once the client pays",
+    ],
+  },
+  {
+    id: "agencies",
+    title: "For Travel Agencies",
+    lead: "Enquiries arrive on WhatsApp, Instagram, your website and the phone. Bring them into one inbox.",
+    points: [
+      "Embed an enquiry form on your own website",
+      "Every lead with its status, owner and follow-up date",
+      "Branded PDF itineraries that look like your agency, not a template",
+      "Send quotes and confirmations from your own Gmail",
+    ],
+  },
+  {
+    id: "teams",
+    title: "For Multi-agent Sales Teams",
+    lead: "When several agents sell, you need to see who is handling what and where deals stall.",
+    points: [
+      "Assign leads to agents and reassign in one click",
+      "Admin and team roles with scoped access",
+      "Team reports on leads, quotes and conversions",
+      "Ledger and accounting summary across all bookings",
+    ],
+  },
+];
 
-            {/* Mobile Helper Message */}
-            <div className="block md:hidden bg-amber-50 p-2 text-xs text-amber-800 text-center border-b border-amber-100">
-              On mobile? Use the download button for the best experience.
-            </div>
+const Solutions = () => (
+  <MarketingPage
+    title="Solutions for DMCs, Tour Operators & Travel Agencies | ViaItinerary"
+    description="How ViaItinerary's travel CRM and itinerary builder works for DMCs, tour operators, travel agencies and multi-agent sales teams."
+    path="/solutions"
+    crumb="Solutions"
+    eyebrow="Solutions"
+    heading="Built for every kind of travel business"
+    intro="The same core platform, set up around how your business quotes, books and collects payments."
+  >
+    <section className="px-4 sm:px-6 py-14 md:py-16">
+      <div className="max-w-6xl mx-auto">
+        <nav aria-label="On this page" className="flex flex-wrap gap-2 mb-10">
+          {SOLUTIONS.map((s) => (
+            <a key={s.id} href={`#${s.id}`} className="h-9 px-4 inline-flex items-center rounded-full border border-black/[0.1] bg-white text-[14px] font-medium text-[#4c4546] hover:border-black/30">
+              {s.title.replace("For ", "")}
+            </a>
+          ))}
+        </nav>
 
-            <div className="flex-grow relative h-[500px] sm:h-[600px] md:min-h-[70vh]">
-              <iframe
-                src={`${pdfFile}#view=FitH`}
-                title="ViaItinerary Itinerary Solutions"
-                className="absolute inset-0 w-full h-full border-none"
-              />
-            </div>
-          </div>
+        <div className="grid md:grid-cols-2 gap-5">
+          {SOLUTIONS.map((s) => (
+            <article id={s.id} key={s.id} className="scroll-mt-24 p-6 md:p-7 rounded-2xl bg-white border border-black/[0.07]">
+              <h2 className="text-[21px] font-semibold tracking-tight">{s.title}</h2>
+              <p className="mt-2 text-[15px] leading-relaxed text-[#5e5e5e]">{s.lead}</p>
+              <ul className="mt-5 space-y-2.5">
+                {s.points.map((p) => (
+                  <li key={p} className="flex gap-2.5 text-[15px]">
+                    <span className="mt-0.5 w-5 h-5 rounded-full bg-[#e7f63c] flex items-center justify-center shrink-0">
+                      <Check className="w-3 h-3" />
+                    </span>
+                    {p}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
         </div>
-      </main>
-      <Footer />
-    </div>
-  );
-};
+
+        <div className="mt-8 p-5 rounded-2xl bg-white border border-black/[0.07] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-[16px] font-semibold">Solutions brochure</h2>
+            <p className="text-[14px] text-[#5e5e5e]">A printable overview to share with your partners or team.</p>
+          </div>
+          <a href={pdfFile} download="viaitinerary-solutions.pdf" className="btn-secondary self-start sm:self-auto">
+            <Download className="w-4 h-4" /> Download PDF
+          </a>
+        </div>
+      </div>
+    </section>
+    <CtaBand />
+  </MarketingPage>
+);
 
 export default Solutions;

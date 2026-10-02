@@ -1,181 +1,101 @@
-import React, { useEffect } from "react";
-import Navbar from "../components/landing/Navbar";
-import Footer from "../components/landing/Footer";
+import React from "react";
+import { Mail, MessageCircle, Globe } from "lucide-react";
+import MarketingPage from "../components/landing/MarketingPage";
+import { CtaBand } from "../components/landing/BrandLanding";
+import { CONTACT_EMAIL, CONTACT_PHONE, WHATSAPP_URL, AUDIENCES } from "../components/landing/siteContent";
 
-const AboutUs = () => {
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+const PRINCIPLES = [
+  {
+    title: "Structure over chaos",
+    text: "Travel businesses rarely fail for lack of enquiries. They lose money in missed follow-ups, mispriced quotes and payments nobody chased. We build the structure that stops those leaks.",
+  },
+  {
+    title: "Your rates, your brand",
+    text: "Quotes are priced from the hotel and transport rates you negotiated, and every document carries your logo, colours and policies.",
+  },
+  {
+    title: "Simple enough for the whole team",
+    text: "If a new agent cannot build a quote on day one, the software has failed. We keep screens focused and workflows short.",
+  },
+];
 
-  return (
-    <div className="min-h-screen bg-white text-gray-700 font-sans">
-      <Navbar decoration={true} />
-      <main className="py-24 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-[#1a1c1c] mb-8 uppercase">
-          About ViaItinerary
-        </h1>
-
-        <div className="space-y-8 leading-relaxed">
-          <section>
-            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4">
-              Enterprise-Grade CRM & Itinerary Automation
-            </h2>
-            <p className="text-xl font-medium text-gray-900 mb-6">
-              Stop Losing Travel Leads. Start Closing More Bookings.
-            </p>
-            <p>
-              India’s Smart CRM & Itinerary Builder for Travel Companies. All
-              your leads. All your follow-ups. All your bookings. Inside one
-              powerful system.
-            </p>
-          </section>
-
-          <section>
-            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
-              The Problem We Solve
-            </h3>
-            <p>
-              You receive inquiries daily from WhatsApp, Instagram, Facebook
-              Ads, Website Forms, and Referrals. But without structure:
-            </p>
-            <ul className="list-disc ml-6 mt-4忽视 space-y-2">
-              <li>Follow-ups get missed</li>
-              <li>Pricing gets confused</li>
-              <li>Leads go cold</li>
-              <li>Revenue leaks silently</li>
-            </ul>
-            <p className="mt-4 font-bold text-red-600 uppercase tracking-wide">
-              That ends now.
-            </p>
-          </section>
-
-          <section>
-            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
-              Built for Travel Sales Teams
-            </h3>
-            <p>
-              ViaItinerary is a complete system engineered for serious travel
-              companies that want structured growth and operational control.
-            </p>
-            <ul className="list-disc ml-6 mt-4忽视 space-y-2">
-              <li>Track every inquiry from source to confirmation</li>
-              <li>Assign leads to specific agents & monitor performance</li>
-              <li>Set automated follow-up reminders</li>
-              <li>Build professional itineraries instantly</li>
-              <li>Monitor payments & booking confirmations</li>
-              <li>Track conversion rates and revenue growth</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
-              Engineered for Scale
-            </h3>
-            <p className="italic border-l-4 border-[#1b1b1b] pl-4 py-2 bg-gray-50">
-              "Travel businesses don’t fail due to lack of inquiries. They fail
-              due to lack of structure."
-            </p>
-            <div className="mt-6">
-              <p className="font-semibold mb-2 text-[#1a1c1c]">
-                Core Capabilities:
+const AboutUs = () => (
+  <MarketingPage
+    title="About ViaItinerary | Travel CRM Built by Travel Operators"
+    description="ViaItinerary is a travel CRM and itinerary builder made by people who run travel operations. Learn why we built it, how we work and how to reach us."
+    path="/about-us"
+    crumb="About us"
+    pageType="AboutPage"
+    eyebrow="About us"
+    heading="We build the software we wanted when we were quoting trips on WhatsApp"
+    intro="ViaItinerary is a travel CRM and itinerary builder for travel agencies, tour operators and DMCs. It brings leads, quotes, bookings and payments into one system."
+  >
+    <section className="px-4 sm:px-6 py-14 md:py-16">
+      <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.4fr_1fr] gap-12">
+        <div className="space-y-10">
+          <div>
+            <h2 className="text-[24px] font-semibold tracking-tight">Why we built ViaItinerary</h2>
+            <div className="mt-4 space-y-4 text-[16px] leading-relaxed text-[#4c4546]">
+              <p>
+                Enquiries come in every day from WhatsApp, Instagram, ads, website forms and referrals. Without a
+                system, follow-ups slip, pricing gets inconsistent between agents, and leads go cold before anyone
+                notices.
               </p>
-              <ul className="list-disc ml-6 space-y-1">
-                <li>Advanced Lead Pipeline Management</li>
-                <li>Intelligent Follow-up Automation</li>
-                <li>Dynamic Itinerary Generation Engine</li>
-                <li>Revenue & Conversion Analytics</li>
-                <li>Multi-User Role-Based Access</li>
-                <li>Admin-Level Control Dashboard</li>
-              </ul>
+              <p>
+                ViaItinerary started as an internal tool to fix exactly that inside a working travel business. Every
+                module, from the lead inbox to the booking ledger, was shaped by real bookings before it was offered
+                to other agencies.
+              </p>
             </div>
-          </section>
+          </div>
 
-          <section>
-            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
-              Itinerary Automation Engine
-            </h3>
-            <p>
-              Create structured, client-ready itineraries in minutes, not hours:
-            </p>
-            <ul className="list-disc ml-6 mt-2 space-y-1">
-              <li>Modular day-wise builder</li>
-              <li>Dynamic pricing control</li>
-              <li>Reusable itinerary templates</li>
-              <li>PDF export for client delivery</li>
-              <li>Centralized package database</li>
-            </ul>
-          </section>
-
-          <section>
-            <h3 className="text-xl font-bold text-[#1a1c1c] mb-4">
-              Who is it for?
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                "Domestic Tour Operators",
-                "International Travel Planners",
-                "Growing Travel Agencies",
-                "Multi-Agent Sales Teams",
-                "DMCs",
-                "Corporate Travel Firms",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="p-4 border border-gray-100 rounded-lg bg-gray-50 font-medium text-[#1a1c1c]"
-                >
-                  {item}
+          <div>
+            <h2 className="text-[24px] font-semibold tracking-tight">What we believe</h2>
+            <div className="mt-5 grid gap-4">
+              {PRINCIPLES.map((p) => (
+                <div key={p.title} className="p-5 rounded-2xl bg-white border border-black/[0.07]">
+                  <h3 className="text-[16px] font-semibold">{p.title}</h3>
+                  <p className="mt-1.5 text-[15px] leading-relaxed text-[#5e5e5e]">{p.text}</p>
                 </div>
               ))}
             </div>
-          </section>
+          </div>
 
-          <section className="bg-[#e7f63c] text-[#181c22] p-8 rounded-2xl shadow-sm">
-            <h3 className="text-2xl font-bold mb-4 text-[#1b1b1b]">
-              Operate like a modern travel brand.
-            </h3>
-            <p className="mb-6 opacity-90">
-              The Travel Industry Is Competitive. Your System Shouldn’t Be Weak.
-              Scale with structure. Sell with confidence.
-            </p>
-            <a
-              href="/signup"
-              className="inline-block bg-[#e7f63c] text-[#181c22] px-8 py-3 rounded-lg font-bold hover:scale-[1.02] transition-transform shadow-md"
-            >
-              Start Your Free Trial
-            </a>
-          </section>
-
-          <section>
-            <h2 className="text-2xl font-semibold text-[#1a1c1c] mb-4 border-t pt-8">
-              Contact Information
-            </h2>
-            <div className="mt-4 p-6 bg-gray-50 rounded-xl border border-gray-100">
-              <p className="font-bold text-[#1a1c1c]">ViaItinerary</p>
-              <p>
-                Website:{" "}
-                <a
-                  href="https://www.viaitinerary.in"
-                  className="text-blue-600 hover:underline"
-                >
-                  https://www.viaitinerary.in
-                </a>
-              </p>
-              <p>
-                Email:{" "}
-                <a
-                  href="mailto:contact@viaitinerary.com"
-                  className="text-blue-600 hover:underline"
-                >
-                  contact@viaitinerary.com
-                </a>
-              </p>
-            </div>
-          </section>
+          <div>
+            <h2 className="text-[24px] font-semibold tracking-tight">Who uses it</h2>
+            <ul className="mt-5 grid sm:grid-cols-2 gap-3">
+              {AUDIENCES.map((a) => (
+                <li key={a.title} className="p-4 rounded-xl bg-white border border-black/[0.07] text-[15px] font-medium">
+                  {a.title}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </main>
-      <Footer />
-    </div>
-  );
-};
+
+        <aside className="lg:sticky lg:top-24 self-start p-6 rounded-2xl bg-white border border-black/[0.07]">
+          <h2 className="text-[18px] font-semibold">Talk to us</h2>
+          <p className="mt-1.5 text-[14px] text-[#5e5e5e]">Questions, a demo or help setting up. You will reach the team directly.</p>
+          <ul className="mt-5 space-y-3 text-[15px]">
+            <li>
+              <a href={`mailto:${CONTACT_EMAIL}`} className="flex items-center gap-3 hover:underline underline-offset-4">
+                <Mail className="w-4 h-4 text-[#7e7576]" /> {CONTACT_EMAIL}
+              </a>
+            </li>
+            <li>
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 hover:underline underline-offset-4">
+                <MessageCircle className="w-4 h-4 text-[#7e7576]" /> {CONTACT_PHONE} (WhatsApp)
+              </a>
+            </li>
+            <li className="flex items-center gap-3">
+              <Globe className="w-4 h-4 text-[#7e7576]" /> viaitinerary.in
+            </li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+    <CtaBand />
+  </MarketingPage>
+);
 
 export default AboutUs;

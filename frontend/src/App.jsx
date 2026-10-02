@@ -9,7 +9,6 @@ import {
   useLocation,
 } from "react-router-dom";
 import Navbar from "./components/landing/Navbar";
-import Hero from "./components/landing/Hero";
 import BrandLanding from "./components/landing/BrandLanding";
 import Modal from "./components/common/Modal";
 
@@ -17,8 +16,6 @@ import Modal from "./components/common/Modal";
 const DashboardMain = lazy(
   () => import("./components/dashboard/DashboardMain"),
 );
-const TrustedBy = lazy(() => import("./components/landing/TrustedBy"));
-const Features = lazy(() => import("./components/landing/Features"));
 const Showcase = lazy(() => import("./components/landing/Showcase"));
 const Footer = lazy(() => import("./components/landing/Footer"));
 const FilteredTrips = lazy(
@@ -138,13 +135,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { HelmetProvider } from "react-helmet-async";
 import Loader from "./components/common/Loader";
 
-import { Helmet } from "react-helmet-async";
-
 const LandingPage = () => {
   const { token } = useAuth();
   const [showOffer, setShowOffer] = useState(false);
   const [offerData, setOfferData] = useState(null);
-  const [renderBelowFold, setRenderBelowFold] = useState(false);
 
   useEffect(() => {
     const checkOffer = async () => {
@@ -171,61 +165,8 @@ const LandingPage = () => {
     checkOffer();
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    const enableBelowFold = () => {
-      if (!cancelled) {
-        setRenderBelowFold(true);
-      }
-    };
-
-    if (typeof window !== "undefined") {
-      if ("requestIdleCallback" in window) {
-        const idleId = window.requestIdleCallback(enableBelowFold, {
-          timeout: 2000,
-        });
-        return () => {
-          cancelled = true;
-          if ("cancelIdleCallback" in window) {
-            window.cancelIdleCallback(idleId);
-          }
-        };
-      }
-
-      const timeoutId = window.setTimeout(enableBelowFold, 1200);
-      return () => {
-        cancelled = true;
-        window.clearTimeout(timeoutId);
-      };
-    }
-
-    setRenderBelowFold(true);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
-    <div className="min-h-screen bg-white">
-      <Helmet>
-        <title>
-          ViaItinerary: Travel CRM, Itinerary Builder & Lead Management Software
-        </title>
-        <meta
-          name="description"
-          content="Automate your travel business with ViaItinerary. Professional itinerary planning, client management, and real-time cost calculation for travel agents."
-        />
-        <meta
-          name="keywords"
-          content="Best Travel CRM Agency, travel software, travel agency software, travel agent crm, crm software company, crm Systems, travel itinerary, crm for travel agents, travel website development, software development, ViaItinerary, travel packages, tour packages, honeymoon packages, family packages, best tour operator, hotel booking, cab booking"
-        />
-        <link rel="canonical" href={window.location.href} />
-        <meta name="robots" content="index, follow" />
-        <meta name="X-Robots-Tag" content="index, follow" />
-        <meta name="author" content="ViaItinerary" />
-        <meta name="publisher" content="ViaItinerary" />
-        <link rel="publisher" href={window.location.href} />
-      </Helmet>
+    <div className="min-h-screen bg-[#f9f9f9]">
       <BrandLanding />
 
       {/* Offer Popup Modal */}
