@@ -13,6 +13,7 @@ export const Wordmark = ({ className = "" }) => (
 
 const NAV_LINKS = [
   { name: "Features", to: "/#features" },
+  { name: "Voice", to: "/#voice" },
   { name: "Solutions", to: "/solutions" },
   { name: "About", to: "/about-us" },
   { name: "FAQ", to: "/#faq" },

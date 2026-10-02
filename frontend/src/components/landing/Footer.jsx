@@ -10,6 +10,7 @@ const COLUMNS = [
     links: [
       { name: "Lead management", to: "/#features" },
       { name: "Itinerary builder", to: "/#features" },
+      { name: "Voice trip builder", to: "/#voice" },
       { name: "Packages & quotes", to: "/#features" },
       { name: "Payments & vouchers", to: "/#features" },
     ],

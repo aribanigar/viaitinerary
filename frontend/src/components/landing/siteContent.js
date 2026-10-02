@@ -20,6 +20,34 @@ export const SOCIAL_LINKS = [
   "https://www.youtube.com/@ViaItinerary_official",
 ];
 
+// Ching, the voice trip builder. Copy mirrors what the app really does
+// (components/ching, utils/ching): browser speech recognition in English (India),
+// live form filling, voice edits with undo, and export / email / WhatsApp commands.
+export const VOICE = {
+  name: "Ching",
+  wake: "Hello Ching",
+  example:
+    "Create a 5 day trip for Rahul Sharma, 2 adults and 1 child, from 10 November, 2 nights in Srinagar, 2 nights in Pahalgam, with Innova, breakfast and dinner.",
+  capabilities: [
+    {
+      title: "Speak the trip, watch it fill",
+      text: "Client, guests, dates, hotels from your own catalog, day-wise plan, cab and meals are filled in while you are still talking.",
+    },
+    {
+      title: "Edit by voice",
+      text: "Say \u201cmake Gulmarg 2 nights\u201d, \u201cadd Shikara ride on day 2\u201d or \u201cgive me 20% margin\u201d. Days shift, the total recalculates and Undo is one tap away.",
+    },
+    {
+      title: "Deliver without touching the keyboard",
+      text: "Say \u201cexport\u201d, \u201cemail it to me\u201d or \u201csend it to the client on WhatsApp\u201d when you finish.",
+    },
+    {
+      title: "Hands-free when you want it",
+      text: "Turn on \u201cHello Ching\u201d and start a trip from any page of the app. Prefer to type? The same request works typed.",
+    },
+  ],
+};
+
 // The six modules shown in the home page tab switcher. `preview` picks which
 // product mock renders on the right.
 export const MODULES = [
@@ -44,7 +72,7 @@ export const MODULES = [
     points: [
       "Day-wise plan with destinations and activities",
       "Live hotel and transport costing with your markup",
-      "AI draft from a short brief, then edit freely",
+      "Speak the trip aloud and it fills in live",
     ],
   },
   {
@@ -114,6 +142,8 @@ export const FEATURE_GROUPS = [
     title: "Itinerary & Quoting",
     items: [
       "Day-by-day itinerary builder",
+      "Voice trip builder (\u201cHello Ching\u201d)",
+      "Voice edits with undo",
       "AI itinerary draft",
       "Pricing with markup control",
       "Reusable package templates",
@@ -216,8 +246,12 @@ export const FAQS = [
     a: "It is built for travel agencies, tour operators, destination management companies (DMCs) and multi-agent sales teams who quote custom trips and packages and want to stop managing leads in WhatsApp and spreadsheets.",
   },
   {
+    q: "Can I build an itinerary by voice?",
+    a: "Yes. Inside the app, tap the mic or say \u201cHello Ching\u201d and describe the trip, for example the client name, guests, dates, hotels, cab and meals. The Trip Builder fills in while you speak, and you can then change it by voice, undo, export the PDF, email it to yourself or send it to the client on WhatsApp. Voice uses your browser\u2019s speech recognition in English (India), so it works in browsers that support it, such as Chrome and Edge. Where it is not available you can type the same request.",
+  },
+  {
     q: "How fast can I build an itinerary?",
-    a: "Once your hotels, vehicles and destinations are in the catalog, an agent can build a priced day-by-day itinerary in a few minutes, or start from a saved package or an AI draft and edit it.",
+    a: "Once your hotels, vehicles and destinations are in the catalog, an agent can build a priced day-by-day itinerary in a few minutes, or start from a saved package, an AI draft or a spoken request, and edit it.",
   },
   {
     q: "Can I send quotes with my own branding?",

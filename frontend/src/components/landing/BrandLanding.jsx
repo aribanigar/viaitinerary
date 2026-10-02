@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, ChevronDown, ShieldCheck, Users, Headphones } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ShieldCheck, Users, Headphones, Mic, Pencil, FileText, Hand } from "lucide-react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import Seo from "./Seo";
@@ -12,6 +12,7 @@ import {
   AUDIENCES,
   TRUST_PILLARS,
   FAQS,
+  VOICE,
 } from "./siteContent";
 
 // Home page. Layout follows a compact B2B SaaS pattern: hero with product
@@ -265,7 +266,17 @@ const Hero = () => (
             Book a 30 min demo
           </Link>
         </div>
-        <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-[#5e5e5e]">
+        <a
+          href="#voice"
+          className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-[#e7f63c] pl-1.5 pr-4 py-1.5 text-[13px] font-medium text-[#181c22] hover:bg-[#d4e42e] transition-colors"
+        >
+          <span className="w-6 h-6 rounded-full bg-[#181c22] flex items-center justify-center">
+            <Mic className="w-3.5 h-3.5 text-[#e7f63c]" />
+          </span>
+          New: say the trip out loud and it fills itself in
+          <ArrowRight className="w-3.5 h-3.5" />
+        </a>
+        <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-[#5e5e5e]">
           {["Free trial to start", "Works on phone and desktop", "Your branding on every PDF"].map((t) => (
             <li key={t} className="inline-flex items-center gap-1.5">
               <Check className="w-4 h-4 text-[#181c22]" /> {t}
@@ -347,6 +358,149 @@ const ModuleTabs = () => {
     </Section>
   );
 };
+
+/* Voice: Ching ------------------------------------------------------- */
+
+const DEMO_CHUNKS = [
+  { text: "Create a 5 day trip for ", field: null },
+  { text: "Rahul Sharma", field: "client" },
+  { text: ", 2 adults and 1 child", field: "guests" },
+  { text: ", from 10 November", field: "dates" },
+  { text: ", 2 nights in Srinagar, 2 nights in Pahalgam", field: "stays" },
+  { text: ", with Innova, breakfast and dinner.", field: "cab" },
+];
+
+const DEMO_FIELDS = [
+  ["client", "Client", "Rahul Sharma"],
+  ["guests", "Guests", "2 adults, 1 child"],
+  ["dates", "Dates", "10 Nov, 5 days"],
+  ["stays", "Stays", "Srinagar 2N, Pahalgam 2N"],
+  ["cab", "Cab and meals", "Innova, breakfast + dinner"],
+];
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+const VoiceDemo = () => {
+  const last = DEMO_CHUNKS.length;
+  const [step, setStep] = useState(prefersReducedMotion() ? last + 1 : 0);
+
+  useEffect(() => {
+    if (prefersReducedMotion()) return undefined;
+    // Reveal one phrase per tick, hold the finished state a little, then replay.
+    const id = window.setInterval(() => setStep((n) => (n >= last + 3 ? 0 : n + 1)), 1100);
+    return () => window.clearInterval(id);
+  }, [last]);
+
+  const spoken = DEMO_CHUNKS.slice(0, Math.min(step, last));
+  const filled = new Set(spoken.map((c) => c.field).filter(Boolean));
+  const done = step > last;
+  const listening = step <= last;
+
+  return (
+    <div aria-hidden="true" className="rounded-2xl bg-white text-[#181c22] overflow-hidden shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-black/[0.06] bg-[#fafafa]">
+        <div className="flex items-center gap-2.5">
+          <span className="relative w-8 h-8 rounded-full bg-[#181c22] flex items-center justify-center">
+            {listening && <span className="absolute inset-0 rounded-full bg-[#e7f63c]/50 animate-ping" />}
+            <Mic className="relative w-4 h-4 text-[#e7f63c]" />
+          </span>
+          <div>
+            <div className="text-[13px] font-semibold leading-tight">Ching</div>
+            <div className="text-[11px] text-[#7e7576] leading-tight">{listening ? "Listening..." : "Done"}</div>
+          </div>
+        </div>
+        <span className="text-[11px] text-[#7e7576]">Sample data</span>
+      </div>
+
+      <div className="px-4 pt-4 pb-3 min-h-[92px] text-[14px] leading-relaxed">
+        {spoken.length === 0 ? (
+          <span className="text-[#7e7576]">Say &ldquo;Hello Ching&rdquo;...</span>
+        ) : (
+          spoken.map((c) => (
+            <span key={c.text} className={c.field ? "rounded-sm bg-[#e7f63c]/70" : ""}>
+              {c.text}
+            </span>
+          ))
+        )}
+      </div>
+
+      <div className="mx-4 mb-4 rounded-xl border border-black/[0.08] divide-y divide-black/[0.06]">
+        {DEMO_FIELDS.map(([key, label, value]) => (
+          <div key={key} className="px-3 py-2 flex items-center justify-between gap-3 text-[13px]">
+            <span className="text-[#7e7576]">{label}</span>
+            <span
+              className={`font-medium text-right transition-all duration-500 ${
+                filled.has(key) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
+              }`}
+            >
+              {value}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className={`px-4 pb-4 transition-opacity duration-500 ${done ? "opacity-100" : "opacity-0"}`}>
+        <div className="flex items-center justify-between rounded-full bg-[#181c22] text-white pl-4 pr-1.5 py-1.5 text-[12px]">
+          <span>Filled the trip</span>
+          <span className="rounded-full bg-[#e7f63c] text-[#181c22] font-semibold px-3 py-1">Undo</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VOICE_ICONS = [Mic, Pencil, FileText, Hand];
+
+const VoiceSection = () => (
+  <section id="voice" className="px-4 sm:px-6 py-16 md:py-20 scroll-mt-16 bg-[#181c22] text-white">
+    <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-14 items-center">
+      <div>
+        <p className="eyebrow !text-[#e7f63c]">Voice trip builder</p>
+        <h2 className="mt-3 text-[30px] md:text-[40px] leading-[1.1] font-semibold tracking-tight">
+          Say the trip. <span className="font-serif italic font-normal">Ching builds it.</span>
+        </h2>
+        <p className="mt-4 text-[17px] leading-relaxed text-white/70 max-w-xl">
+          Stop clicking through forms while a client waits on the phone. Describe the trip out loud and the Trip
+          Builder fills itself in as you speak, priced from your own hotel and cab rates.
+        </p>
+
+        <blockquote className="mt-6 border-l-2 border-[#e7f63c] pl-4 text-[15px] leading-relaxed text-white/85 max-w-xl">
+          &ldquo;{VOICE.example}&rdquo;
+        </blockquote>
+
+        <ul className="mt-8 grid sm:grid-cols-2 gap-x-6 gap-y-6">
+          {VOICE.capabilities.map((c, i) => {
+            const Icon = VOICE_ICONS[i];
+            return (
+              <li key={c.title} className="flex gap-3">
+                <span className="mt-0.5 w-8 h-8 rounded-lg bg-white/[0.07] flex items-center justify-center shrink-0">
+                  <Icon className="w-4 h-4 text-[#e7f63c]" />
+                </span>
+                <div>
+                  <h3 className="text-[15px] font-semibold">{c.title}</h3>
+                  <p className="mt-1 text-[14px] leading-relaxed text-white/65">{c.text}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <Link to="/signup" className="btn-primary !bg-[#e7f63c] !text-[#181c22] hover:!bg-[#d4e42e] !h-11 !px-5">
+            Start free trial <ArrowRight className="w-4 h-4" />
+          </Link>
+          <p className="text-[13px] text-white/50 max-w-xs">
+            Works in English (India) in browsers with speech recognition, like Chrome and Edge. You can always type the same request.
+          </p>
+        </div>
+      </div>
+
+      <VoiceDemo />
+    </div>
+  </section>
+);
 
 const Workflow = () => (
   <Section>
@@ -486,7 +640,7 @@ const BrandLanding = () => (
   <div className="bg-[#f9f9f9] text-[#181c22] font-sans antialiased">
     <Seo
       title="ViaItinerary: Travel CRM, Itinerary Builder & Lead Management Software"
-      description="Travel CRM and itinerary builder for travel agencies, tour operators and DMCs. Manage leads, build priced itineraries, send branded quotes and track payments in one place."
+      description="Travel CRM and itinerary builder for travel agencies, tour operators and DMCs. Manage leads, build priced itineraries by voice or form, send branded quotes and track payments in one place."
       path="/"
       schema={[
         softwareSchema(FEATURE_GROUPS.flatMap((g) => g.items)),
@@ -496,6 +650,7 @@ const BrandLanding = () => (
     <Navbar />
     <main>
       <Hero />
+      <VoiceSection />
       <ModuleTabs />
       <Workflow />
       <FeatureGrid />
