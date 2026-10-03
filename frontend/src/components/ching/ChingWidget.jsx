@@ -20,6 +20,8 @@ import {
   navigatingTo,
   pendingReply,
 } from "../../utils/ching/assistant";
+import { handleAssist } from "./assistActions";
+import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
 import {
   speak,
   stopSpeaking,
@@ -188,6 +190,7 @@ export default function ChingWidget() {
     () =>
       loadCore().then(async (core) => {
         coreRef.current = core;
+        loadChingMemory(token); // what Ching has learned / been told (cached, refreshed when stale)
         if (!initRef.current) {
           const data = await core.getInit(token);
           initRef.current = data;
@@ -413,6 +416,13 @@ export default function ChingWidget() {
       const changes = list(res.changes);
       const commands = list(res.commands);
       if (!changes.length && !commands.length) {
+        // Understood but nothing to change ("already in the inclusions", "no such hotel"):
+        // say why instead of pretending not to understand.
+        const why = list(res.warnings);
+        if (why.length && !list(res.unrecognized).length) {
+          respond(why.slice(0, 2).join(". "));
+          return;
+        }
         setNotice({ kind: "unknown", text, editing: true, unrecognized: list(res.unrecognized) });
         say(notUnderstood());
         return;
@@ -447,13 +457,22 @@ export default function ChingWidget() {
         say(reply);
       }, 700);
     },
-    [attach, endSession, ensureCore, openDraft, runCommands, showLive, say],
+    [attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond],
   );
 
   // Requests that aren't about building a trip (see utils/ching/assistant.js).
   const assist = useCallback(
     async (ask) => {
       const ed = getChingEditor();
+      const handled = await handleAssist(ask, {
+        token,
+        navigate,
+        respond,
+        editor: ed,
+        init: initRef.current,
+        core: () => ensureCore().catch(() => null),
+      });
+      if (handled) return;
       if (ask.type === "navigate") {
         navigate(ask.path === "/trip-builder" ? newDraftPath() : ask.path);
         respond(navigatingTo(ask.label));
@@ -492,10 +511,12 @@ export default function ChingWidget() {
         setVoiceOn(ask.on);
         respond(ask.on ? "I'm back! I'll talk again." : "Okay, I'll keep quiet. Say “talk to me” when you miss me.");
       } else if (ask.type === "smalltalk") {
-        respond(ask.reply);
+        // Greet by the name the agent asked to be called ("call me Arif").
+        const name = getChingMemory()?.callMe;
+        respond(name ? ask.reply.replace(/^(Hello|Hi|Namaste|Hey)!/, `$1, ${name}!`) : ask.reply);
       }
     },
-    [navigate, respond, token],
+    [ensureCore, navigate, respond, token],
   );
   const assistRef = useRef(null);
 

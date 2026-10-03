@@ -100,7 +100,7 @@ export function tripChecklist(snapshot, { packageMode = false } = {}) {
   }
   const cabs = s.transportation || [];
   if (!cabs.length) add("cab", "Cab / transport", "Logistics", "recommended");
-  else if (cabs.some((t) => !t.vehicleId)) add("cabVehicle", "A transport booking has no vehicle", "Logistics", "recommended");
+  else if (cabs.some((t) => !t.vehicleId && !(t.vehicleType && /full-trip cab rate/i.test(t.remarks || "")))) add("cabVehicle", "A transport booking has no vehicle", "Logistics", "recommended");
 
   // ── Pricing
   if (!(Number(info.cost) > 0)) add("price", "Total price", "Pricing");

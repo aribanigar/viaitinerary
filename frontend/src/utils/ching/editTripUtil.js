@@ -1,5 +1,6 @@
 // Ching trip-edit helpers: dates, formatting, lookups. Pure JS (no React/DOM).
 import { destinationActivityLabels } from '../destinationActivities.js'
+import { findDestinationFor } from './places.js'
 
 const pad = (n) => String(n).padStart(2, '0')
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -139,8 +140,7 @@ export function setLines(day, lines) {
 
 export const LEISURE_LINE = 'Day at leisure'
 
-export const findDestination = (catalog, city) =>
-  (catalog?.destinations || []).find((d) => sameName(d.name, city)) || null
+export const findDestination = (catalog, city) => findDestinationFor(catalog?.destinations, city)
 
 /** Default sightseeing lines for a city from the catalog destination (may be empty). */
 export const cityLines = (catalog, city) => destinationActivityLabels(findDestination(catalog, city)?.activities)

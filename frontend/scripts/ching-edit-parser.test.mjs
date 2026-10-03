@@ -225,7 +225,7 @@ test('make it 3 adults and 1 child', () =>
   only('make it 3 adults and 1 child', [{ type: 'SET_GUESTS', adults: 3, children: 1, infants: null }]))
 test('add one infant (context + 1)', () => only('add one infant', [{ type: 'SET_GUESTS', adults: null, children: null, infants: 1 }]))
 test('client phone', () =>
-  only('client phone 98765 43210', [{ type: 'SET_CLIENT', clientName: null, clientPhone: '9876543210', clientEmail: null }]))
+  only('client phone 98765 43210', [{ type: 'SET_CLIENT', clientName: null, clientPhone: '+919876543210', clientEmail: null }]))
 test('email is x@y.com', () =>
   only('email is rahul.v@gmail.com', [{ type: 'SET_CLIENT', clientName: null, clientPhone: null, clientEmail: 'rahul.v@gmail.com' }]))
 test('change the name to Rahul Verma', () =>

@@ -67,9 +67,11 @@ import ItineraryTab from "./trip-builder/ItineraryTab";
 import LogisticsTab from "./trip-builder/LogisticsTab";
 import PricingTab from "./trip-builder/PricingTab";
 import TripPayments from "./trip-builder/TripPayments";
+import TripBookings from "./trip-builder/TripBookings";
 import { HotelModal, TransportModal, ActivityModal } from "./trip-builder/TripBuilderModals";
 import TripInfoTab from "./trip-builder/TripInfoTab";
 import { registerChingEditor } from "../../utils/ching/editorBridge";
+import { getChingMemory, invalidateChingMemory } from "../../utils/ching/memoryStore";
 import { formatTripImageUrl, normalizeAccommodation } from "../../utils/tripView";
 import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
 import { planLive, isBlankTrip } from "../../utils/ching/liveFill";
@@ -1173,6 +1175,7 @@ const TripBuilder = ({ mode }) => {
       }
       setAutoState("saved");
       setLastSavedAt(Date.now());
+      invalidateChingMemory(); // a saved trip teaches Ching new habits
       return true;
     } catch (err) {
       console.error("Save failed:", err);
@@ -1480,6 +1483,8 @@ const TripBuilder = ({ mode }) => {
       accommodations,
       transportation,
       tripActivities,
+      inclusions,
+      exclusions,
       profitMarginPercentage,
       gstPercentage,
       includeGST,
@@ -1489,6 +1494,10 @@ const TripBuilder = ({ mode }) => {
       destinations: availableDestinations,
       vehicles: availableVehicles,
       activities: availableActivities,
+      // What Ching has learned / been told (utils/ching/memoryStore.js) and
+      // the agency's standard inclusion lines (Policies page).
+      memory: getChingMemory(),
+      standard: { inclusions: standardInclusions, exclusions: standardExclusions },
     },
     settings: {
       gst_percentage: gstPercentage,
@@ -1532,6 +1541,8 @@ const TripBuilder = ({ mode }) => {
       setAccommodations(next.accommodations);
       setTransportation(next.transportation);
       setTripActivities(next.tripActivities);
+      if (Array.isArray(next.inclusions)) setInclusions(next.inclusions);
+      if (Array.isArray(next.exclusions)) setExclusions(next.exclusions);
       setProfitMarginPercentage(next.profitMarginPercentage);
       setGstPercentage(next.gstPercentage);
       setIncludeGST(next.includeGST);
@@ -1552,6 +1563,10 @@ const TripBuilder = ({ mode }) => {
     return registerChingEditor({
       get tripLabel() {
         return chingState.current.label;
+      },
+      // The saved trip's id (null for an unsaved draft) — for "email the invoice", "send hotel requests"…
+      get tripId() {
+        return chingState.current.urlTripId || null;
       },
       getContext: () => buildEditContext(chingState.current.snapshot),
       preview: (actions) => {
@@ -2368,6 +2383,11 @@ const TripBuilder = ({ mode }) => {
                         removeActivity={removeActivity}
                         openNewActivityModal={openNewActivityModal}
                       />
+                    )}
+                    {activeTab === "Logistics" && !isPackageMode && urlTripId && (
+                      <div className="mt-6">
+                        <TripBookings token={token} tripId={urlTripId} refreshKey={lastSavedAt} />
+                      </div>
                     )}
 
                     {activeTab === "Pricing" && (

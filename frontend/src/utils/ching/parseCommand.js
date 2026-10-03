@@ -10,6 +10,7 @@
 import { convertNumberWords, stripWakePhrase, hasWakePhrase, titleCase } from './text.js'
 import { extractDate, isValidIsoDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
+import { placeKey } from './places.js'
 
 export { stripWakePhrase, hasWakePhrase }
 
@@ -122,7 +123,7 @@ const FALLBACK_NAME_SKIP = new Set([
   'sightseeing', 'margin', 'gst', 'percent', 'rupees', 'rs', 'inr', 'nov', 'dec', 'jan', 'feb', 'mar', 'apr',
   'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'next', 'this', 'week', 'month', 'year', 'today', 'tomorrow',
 ])
-const VEHICLE_GENERIC = new Set(['car', 'cab', 'taxi', 'vehicle', 'ac', 'non', 'with', 'and', 'the', 'seater', 'driver'])
+const VEHICLE_GENERIC = new Set(['car', 'cab', 'taxi', 'vehicle', 'ac', 'non', 'with', 'and', 'the', 'seater', 'driver', 'full', 'trip', 'day', 'days', 'per', 'rate', 'package', 'tour', 'basis', 'km', 'only', 'for'])
 const TRAIL_TRIM = new Set(['and', 'the', 'stay', 'of', 'in', 'at'])
 
 const isNum = (t) => /^\d+$/.test(t || '')
@@ -148,6 +149,9 @@ export function prepareCatalog(catalog) {
   const addCity = (name) => {
     const k = normKey(name)
     if (k && !cities.has(k)) cities.set(k, String(name).trim())
+    // "Pahalgam, Kashmir" / "Srinagar City" are also just "pahalgam" / "srinagar".
+    const short = placeKey(name)
+    if (short && short !== k && !cities.has(short)) cities.set(short, titleCase(short))
   }
   destinations.forEach((d) => addCity(d.name))
   ;(Array.isArray(c.destinations) ? c.destinations : []).forEach((d) => d && d.city && addCity(d.city))
@@ -267,14 +271,75 @@ export function extractEmail(s) {
   return { email: '', s }
 }
 
-export function extractPhone(s) {
-  const keyed =
-    /\b(?:phone|mobile|mob|contact|cell|whatsapp|ph)\.?(?:\s+(?:number|no\.?|num))?\s*(?:is\s+|:\s*|-\s*)?(\+?\d(?:[\s-]?\d){9,12})(?!\d)/
-  let m = keyed.exec(s)
-  if (!m) m = /(?<![\d/.-])((?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5})(?![\d/.-])/.exec(s)
-  if (!m) return { phone: '', s }
-  const phone = m[1].replace(/[\s-]/g, '')
-  return { phone, s: s.slice(0, m.index) + ' | ' + s.slice(m.index + m[0].length) }
+/**
+ * A spoken/typed phone number → E.164-ish "+919876543210". The Trip Builder's
+ * phone field (react-international-phone, India by default) needs the dial
+ * code: a bare "9876543210" would be read as a foreign number and reset to
+ * "+91". 10 digits → +91…; 0 + 10 digits → +91…; 91 + 10 digits → +91….
+ */
+export function formatPhone(raw) {
+  const plus = /^\s*\+/.test(String(raw || ''))
+  let d = String(raw || '').replace(/\D/g, '')
+  if (!d) return ''
+  if (plus) return `+${d}`
+  if (d.length === 11 && d.startsWith('0')) d = d.slice(1)
+  if (d.length === 10) return `+91${d}`
+  if (d.length === 12 && d.startsWith('91')) return `+${d}`
+  return `+${d}`
+}
+
+// Digit groups after a phone keyword: "98765 43210", "98,765-43210", "+91 98765.43210".
+const DIGIT_RUN = /\+?\d[\d\s,.()-]*\d/g
+
+/** Take digit groups from `run` until a whole number is collected → { digits, length } (chars used). */
+function takePhone(run) {
+  const re = /\d+/g
+  let digits = ''
+  let end = 0
+  let m
+  while ((m = re.exec(run))) {
+    const enough =
+      digits.length >= 10 &&
+      !(digits.startsWith('91') && digits.length < 12) &&
+      !(digits.startsWith('0') && digits.length < 11)
+    if (enough) break
+    // A gap of more than one separator char ends the number ("98765 43210, 2 adults").
+    if (digits && /[^\s,.\-()]|\s{2,}|,\s|\.\s/.test(run.slice(end, m.index)) && digits.length >= 10) break
+    digits += m[0]
+    end = m.index + m[0].length
+  }
+  return { digits, length: end }
+}
+
+const okPhone = (digits) => digits.length >= 10 && digits.length <= 13
+
+export function extractPhone(input) {
+  // Spoken repeats: "double 4" → "4 4", "triple 0" → "0 0 0"; "oh" between digits → 0.
+  let s = String(input ?? '')
+    .replace(/\b(double|triple)\s+(\d)\b(?=[\s,.-]*\d)|(?<=\d[\s,.-]*)\b(double|triple)\s+(\d)\b/g, (m, k1, d1, k2, d2) => {
+      const k = k1 || k2
+      const d = d1 || d2
+      return k === 'double' ? `${d} ${d}` : `${d} ${d} ${d}`
+    })
+    .replace(/(?<=\d)\s+(?:oh|o)\s+(?=\d)/g, ' 0 ')
+  const KEY =
+    /\b(?:phone|mobile|mob|contact|cell|whatsapp|ph|number)\.?(?:\s+(?:number|no\.?|num))?(?:\s+(?:of\s+(?:the\s+)?(?:client|customer|guest)|for\s+(?:the\s+)?(?:client|customer|guest)))?\s*(?:is\s+|:\s*|-\s*|=\s*)?(?=\+?\d)/g
+  let k
+  while ((k = KEY.exec(s))) {
+    const from = k.index + k[0].length
+    DIGIT_RUN.lastIndex = from
+    const r = DIGIT_RUN.exec(s)
+    if (!r || r.index !== from) continue
+    const { digits, length } = takePhone(r[0])
+    const plus = r[0].startsWith('+')
+    if (okPhone(digits)) {
+      return { phone: formatPhone((plus ? '+' : '') + digits), s: s.slice(0, k.index) + ' | ' + s.slice(from + length) }
+    }
+  }
+  // No keyword: an Indian mobile on its own ("… 98765 43210 …").
+  const bare = /(?<![\d/.-])((?:\+?91[\s-]?)?[6-9]\d{4}[\s,-]?\d{5}|[6-9]\d{2}[\s-]\d{3}[\s-]\d{4}|[6-9]\d(?:\s\d\d){4})(?![\d/.-])/.exec(s)
+  if (!bare) return { phone: '', s }
+  return { phone: formatPhone(bare[1]), s: s.slice(0, bare.index) + ' | ' + s.slice(bare.index + bare[0].length) }
 }
 
 function extractGuests(input) {

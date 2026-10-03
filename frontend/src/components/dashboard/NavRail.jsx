@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  CalendarClock,
   Home,
   Plus,
   Search,
@@ -79,6 +80,7 @@ const NAV_TREE = [
     roles: ["admin", "team"],
     children: [
       { label: "Trips", icon: FileText, to: "/my-trips" },
+      { label: "Daily Ops", icon: CalendarClock, to: "/operations" },
       { label: "Packages", icon: Package, to: "/packages" },
       {
         label: "Lead Inquiries",

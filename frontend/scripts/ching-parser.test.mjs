@@ -264,7 +264,7 @@ test('meal plan does not leak into the hotel name', () => {
 })
 test('phone and email', () => {
   const c = parse('trip for Ravi Kumar phone 98765 43210 email ravi.k@gmail.com 2 nights in hotel a')
-  assert.equal(c.clientPhone, '9876543210')
+  assert.equal(c.clientPhone, '+919876543210')
   assert.equal(c.clientEmail, 'ravi.k@gmail.com')
   assert.equal(c.clientName, 'Ravi Kumar')
   assert.deepEqual(staysOf(c), [[2, 1]])

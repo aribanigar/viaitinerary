@@ -210,6 +210,16 @@ model Accommodation {
   cancellationNote      String?   @map("cancellation_note")
   alternateOptions      Json?     @map("alternate_options")
   markupPercentage      Decimal?  @map("markup_percentage") @db.Decimal(6, 2)
+  // Supplier confirmation (Phase 3): the hotel/cab is sent a request with a
+  // no-login link (/s/:supplierToken) and confirms or declines it there, or
+  // the agent marks it. status: requested | confirmed | declined | changed
+  // ("changed" = the booking was edited after it was requested/confirmed).
+  supplierStatus        String?   @map("supplier_status")
+  supplierToken         String?   @unique @map("supplier_token")
+  supplierRequestedAt   DateTime? @map("supplier_requested_at")
+  supplierRespondedAt   DateTime? @map("supplier_responded_at")
+  supplierRef           String?   @map("supplier_ref")
+  supplierNote          String?   @map("supplier_note")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
@@ -232,6 +242,17 @@ model Transportation {
   quantity    Int       @default(1)
   remarks     String?
   markupPercentage Decimal? @map("markup_percentage") @db.Decimal(6, 2)
+  // Supplier confirmation — same fields and meaning as on Accommodation.
+  supplierStatus      String?   @map("supplier_status")
+  supplierToken       String?   @unique @map("supplier_token")
+  supplierRequestedAt DateTime? @map("supplier_requested_at")
+  supplierRespondedAt DateTime? @map("supplier_responded_at")
+  supplierRef         String?   @map("supplier_ref")
+  supplierNote        String?   @map("supplier_note")
+  // Driver assigned to this day (from the cab supplier's confirmation or the agent).
+  driverName       String?   @map("driver_name")
+  driverPhone      String?   @map("driver_phone")
+  vehicleNumber    String?   @map("vehicle_number")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -859,4 +880,24 @@ model ClientPayment {
   @@index([tripId])
   @@index([userId, status])
   @@map("client_payments")
+}
+
+// What an agency has told Ching to remember: aliases ("when I say Heaven I
+// mean Heevan Resort"), a preferred hotel per city, notes, how to address the
+// agent. Learned habits (usual hotels, cabs, meal plan, routes, returning
+// clients) are NOT stored here — they're computed from the agency's own saved
+// trips on every read (lib/chingMemory.js), so Ching keeps learning as trips are made.
+model ChingMemory {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id") // agency (tenant) id
+  kind      String // alias | hotel | note | name
+  key       String
+  value     String
+  createdBy Int?     @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, kind, key])
+  @@index([userId])
+  @@map("ching_memories")
 }

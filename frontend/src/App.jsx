@@ -113,6 +113,8 @@ const Solutions = lazy(() => import("./pages/Solutions"));
 const LeadInquiryForm = lazy(() => import("./pages/LeadInquiryForm"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Proposal = lazy(() => import("./pages/Proposal"));
+const SupplierConfirm = lazy(() => import("./pages/SupplierConfirm"));
+const Operations = lazy(() => import("./components/dashboard/Operations"));
 
 import ScrollToHashElement from "./components/utils/ScrollToHashElement";
 import ChingWidget from "./components/ching/ChingWidget";
@@ -234,6 +236,7 @@ const PORTAL_ROUTE_PREFIXES = [
   "/public-leads",
   "/admin",
   "/demo-requests",
+  "/operations",
 ];
 
 const isPortalPath = (pathname) =>
@@ -252,7 +255,7 @@ const PublicWhatsAppCTA = () => {
   // Also hidden on client proposals (/p/:token): those pages belong to the
   // agency, and this bubble is the platform's own.
   const shouldHide =
-    isPortalPath(location.pathname) || location.pathname.startsWith("/p/");
+    isPortalPath(location.pathname) || location.pathname.startsWith("/p/") || location.pathname.startsWith("/s/");
 
   if (shouldHide) {
     return null;
@@ -318,6 +321,7 @@ function App() {
                   <Route path="/lead-inquiry" element={<LeadInquiryForm />} />
                   {/* Client proposal — public, no auth guard either way. */}
                   <Route path="/p/:token" element={<Proposal />} />
+                  <Route path="/s/:token" element={<SupplierConfirm />} />
 
                   {/* Protected Routes - All authenticated users */}
                   <Route element={<ProtectedRoute />}>
@@ -336,6 +340,7 @@ function App() {
                       element={<TripBuilder />}
                     />
                     <Route path="/my-trips" element={<MyTrips />} />
+                    <Route path="/operations" element={<Operations />} />
                     <Route path="/assistant" element={<AIAssistant />} />
                     <Route path="/packages" element={<Packages />} />
                     <Route path="/package-builder" element={<TripBuilder mode="package" />} />

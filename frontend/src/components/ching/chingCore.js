@@ -7,7 +7,7 @@
 // this a new-trip request (→ open a fresh draft and fill it), an edit with no
 // trip open, or nothing at all.
 import { fetchBuilderInit } from "../../api/trips";
-import { parseChingCommand } from "../../utils/ching/parseCommand";
+import { parseChingCommand, prepareCatalog, cityLookup, matchHotel } from "../../utils/ching/parseCommand";
 import { parseChingEdit, isCreateRequest } from "../../utils/ching/parseEdit";
 
 export { isCreateRequest };
@@ -122,4 +122,19 @@ export function looksLikeTripRequest(text, init) {
 export function classifyWithoutEditor(text, init) {
   if (looksLikeTripRequest(text, init)) return "trip";
   return readsAsEdit(text, init) ? "edit" : "unknown";
+}
+
+/**
+ * "the vintage" (+ optional city) → the agency's hotel, for "my usual hotel in
+ * Gulmarg is the Vintage". Uses the same fuzzy matcher as trip parsing.
+ */
+export function matchHotelName(hotelText, city, init) {
+  try {
+    const cat = prepareCatalog(catalogOf(init));
+    const words = String(hotelText || "").toLowerCase().split(/\s+/).filter(Boolean);
+    const cityName = city ? cityLookup(String(city).toLowerCase().split(/\s+/), cat) || city : "";
+    return matchHotel(words, cityName, cat).hotel?.raw || null;
+  } catch {
+    return null;
+  }
 }

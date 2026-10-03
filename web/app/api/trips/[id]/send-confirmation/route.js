@@ -5,13 +5,15 @@ import { adminIdOf } from "@/lib/scope";
 import { TRIP_INCLUDE } from "@/lib/trips";
 import { currencySymbol } from "@/lib/serialize";
 import { recordTripRevision } from "@/lib/revisions";
-import { mailerForAdminId, sendMail, hotelBookingHtml, cabBookingHtml, confirmationHtml } from "@/lib/mailer";
-import { renderReceiptPdf, renderInvoicePdf, renderConfirmationPdf } from "@/lib/pdf";
+import { mailerForAdminId, sendMail, confirmationHtml } from "@/lib/mailer";
+import { renderReceiptPdf, renderInvoicePdf, renderConfirmationPdf, renderVouchersPdf } from "@/lib/pdf";
+import { requestSupplierConfirmations } from "@/lib/operations";
+import { appOrigin } from "@/lib/followups";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const RECIPIENTS = ["client", "hotel", "cab", "payment_voucher", "invoice"];
+const RECIPIENTS = ["client", "hotel", "cab", "payment_voucher", "invoice", "vouchers"];
 const applyVars = (tpl, vars) => Object.entries(vars).reduce((s, [k, v]) => s.split(k).join(v), tpl);
 
 // POST /api/trips/:tripId/send-confirmation { recipient }
@@ -34,38 +36,30 @@ export async function POST(request, { params }) {
     return NextResponse.json({ message: "SMTP credentials are not configured." }, { status: 422 });
   }
 
-  // ── Hotel vendor notifications ──
-  if (recipient === "hotel") {
-    let queued = 0;
-    for (const acc of trip.accommodations) {
-      const email = acc.hotel?.email;
-      if (!email) continue;
-      const { subject, html } = hotelBookingHtml(trip, acc, settings);
-      await sendMail(mailer, { to: email, subject, html });
-      queued++;
-    }
-    return NextResponse.json({
-      message: queued > 0 ? "Hotel booking email notifications sent successfully." : "No hotel email addresses found for this trip.",
+  // ── Hotel / cab supplier requests (each with a one-tap confirm link, /s/:token) ──
+  if (recipient === "hotel" || recipient === "cab") {
+    const rows = await requestSupplierConfirmations(trip, {
+      kinds: [recipient],
+      email: true,
+      origin: appOrigin(request),
+      mailer,
+      settings,
     });
-  }
-
-  // ── Cab vendor notifications ──
-  if (recipient === "cab") {
-    let queued = 0;
-    for (const trans of trip.transportations) {
-      const email = trans.vehicle?.email;
-      if (!email) continue;
-      const { subject, html } = cabBookingHtml(trip, trans, settings);
-      await sendMail(mailer, { to: email, subject, html });
-      queued++;
-    }
+    const emailed = rows.filter((r) => r.emailed).length;
+    const noEmail = rows.filter((r) => !r.email && !r.skipped).length;
+    const label = recipient === "hotel" ? "hotel" : "cab";
     return NextResponse.json({
-      message: queued > 0 ? "Cab booking email notifications sent successfully." : "No cab vendor email addresses found for this trip.",
+      message: emailed
+        ? `Booking request${emailed === 1 ? "" : "s"} sent to ${emailed} ${label}${emailed === 1 ? "" : "s"}${noEmail ? ` (${noEmail} without an email — use WhatsApp from Operations)` : ""}.`
+        : rows.length
+          ? `No ${label} email addresses found for this trip — send the requests on WhatsApp from Operations.`
+          : `This trip has no ${label} bookings.`,
+      requests: rows,
     });
   }
 
   // ── Payment voucher / invoice (emailed to the client with the PDF attached) ──
-  if (recipient === "payment_voucher" || recipient === "invoice") {
+  if (recipient === "payment_voucher" || recipient === "invoice" || recipient === "vouchers") {
     if (!trip.clientEmail) {
       return NextResponse.json({ message: "Client email is not set for this trip." }, { status: 422 });
     }
@@ -88,6 +82,13 @@ export async function POST(request, { params }) {
       pdf = await renderReceiptPdf(trip, settings, payments);
       fileName = `${trip.tripId}_Payment_Voucher.pdf`;
       successMessage = "Payment voucher emailed to the client.";
+    } else if (recipient === "vouchers") {
+      subjectTpl = "Your travel vouchers - {tripId}";
+      messageTpl =
+        "Dear {clientName},\n\nPlease find your hotel and transport vouchers attached. Show the hotel voucher at check-in; your driver's details are on the transport voucher.\n\nHave a wonderful trip!\n{agencyName}";
+      pdf = await renderVouchersPdf(trip, settings);
+      fileName = `${trip.tripId}_Vouchers.pdf`;
+      successMessage = "Vouchers emailed to the client.";
     } else {
       subjectTpl = "Trip Invoice - {tripId}";
       messageTpl = settings?.invoiceEmailMessage ||

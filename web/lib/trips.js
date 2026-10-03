@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
 import { persistImage } from "@/lib/storage";
+import { bookingChanged } from "@/lib/operations";
 
 /** Parse "YYYY-MM-DD" or "DD-MM-YYYY" (or anything Date understands) to a Date. */
 export function parseDate(value) {
@@ -131,6 +132,9 @@ export async function syncTripRelations(tripDbId, body) {
   // Accommodations
   if (Array.isArray(body.accommodations)) {
     const keepIds = body.accommodations.map((i) => i.id).filter((v) => typeof v === "number");
+    const existingAcc = new Map(
+      (await prisma.accommodation.findMany({ where: { tripId: tripDbId, supplierStatus: { not: null } } })).map((a) => [a.id, a]),
+    );
     await prisma.accommodation.deleteMany({
       where: { tripId: tripDbId, id: { notIn: keepIds.length ? keepIds : [-1] } },
     });
@@ -162,6 +166,11 @@ export async function syncTripRelations(tripDbId, body) {
       const img = await imageValue(item.image, "accommodations");
       if (img !== undefined) data.imagePath = img;
       if (typeof item.id === "number") {
+        // A booking the hotel was asked to confirm (or confirmed) changed → re-confirm.
+        const before = existingAcc.get(item.id);
+        if (before && ["requested", "confirmed"].includes(before.supplierStatus) && bookingChanged("hotel", before, { ...before, ...data, cancelledAt: data.cancelledAt === undefined ? before.cancelledAt : data.cancelledAt })) {
+          data.supplierStatus = "changed";
+        }
         await prisma.accommodation.update({ where: { id: item.id }, data });
       } else {
         await prisma.accommodation.create({ data: { ...data, tripId: tripDbId } });
@@ -172,6 +181,9 @@ export async function syncTripRelations(tripDbId, body) {
   // Transportations
   if (Array.isArray(body.transportations)) {
     const keepIds = body.transportations.map((i) => i.id).filter((v) => typeof v === "number");
+    const existingCab = new Map(
+      (await prisma.transportation.findMany({ where: { tripId: tripDbId, supplierStatus: { not: null } } })).map((t) => [t.id, t]),
+    );
     await prisma.transportation.deleteMany({
       where: { tripId: tripDbId, id: { notIn: keepIds.length ? keepIds : [-1] } },
     });
@@ -188,6 +200,10 @@ export async function syncTripRelations(tripDbId, body) {
         markupPercentage: item.markup_percentage !== undefined ? dec(item.markup_percentage) : undefined,
       };
       if (typeof item.id === "number") {
+        const before = existingCab.get(item.id);
+        if (before && ["requested", "confirmed"].includes(before.supplierStatus) && bookingChanged("cab", before, { ...before, ...data })) {
+          data.supplierStatus = "changed";
+        }
         await prisma.transportation.update({ where: { id: item.id }, data });
       } else {
         await prisma.transportation.create({ data: { ...data, tripId: tripDbId } });

@@ -13,6 +13,7 @@
 import { convertNumberWords, stripWakePhrase, titleCase } from './text.js'
 import { extractDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
+import { parseInclusionClause } from './inclusions.js'
 import { prepareCatalog, cityLookup, sameCity, matchHotel, extractMealPlan, extractEmail, extractPhone } from './parseCommand.js'
 
 const COMMAND_TYPES = new Set([
@@ -862,8 +863,19 @@ function hGuests(c, toks, env) {
   return [action]
 }
 
+// "add airport pickup to inclusions", "flights are not included", "standard exclusions".
+function hInclusions(c) {
+  // "add airport pickup to inclusions and flights are not included" → two edits.
+  const parts = c.split(/\s+and\s+(?=(?:also\s+)?(?:add|remove|move|put|include|exclude|[a-z ]+?\s+(?:is|are)\s+(?:not\s+)?(?:included|excluded)\b))/)
+  if (parts.length > 1) {
+    const acts = parts.map((p) => parseInclusionClause(p))
+    if (acts.every(Boolean)) return acts.flat()
+  }
+  return parseInclusionClause(c)
+}
+
 const HANDLERS = [
-  hCommands, hMargin, hGst, hClientName, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
+  hInclusions, hCommands, hMargin, hGst, hClientName, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
   hAddActivity, hGuests,
 ]
 

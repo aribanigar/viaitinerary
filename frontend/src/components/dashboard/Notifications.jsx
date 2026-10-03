@@ -43,6 +43,8 @@ const TRIP_NOTIFICATION_TYPES = [
   "proposal_changes",
   "payment_received",
   "payment_claimed",
+  "supplier_confirmed",
+  "supplier_declined",
 ];
 
 const Notifications = () => {

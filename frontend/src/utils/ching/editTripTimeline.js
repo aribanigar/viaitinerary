@@ -20,6 +20,7 @@ import {
   sameLines,
   plural,
 } from './editTripUtil.js'
+import { INCLUDED_NOTE } from './cabPlan.js'
 
 export const dateOfDay = (st, n) => addDays(st.s.tripInfo.startDate, n - 1)
 export const dayOfDate = (st, date) => diffDays(st.s.tripInfo.startDate, date) + 1
@@ -84,7 +85,7 @@ function sightseeingCab(template, date, city) {
     date,
     vehicleType: template.vehicleType || '',
     quantity: template.quantity || 1,
-    remarks: '',
+    remarks: template.remarks === INCLUDED_NOTE ? INCLUDED_NOTE : '',
     markupPercentage: template.markupPercentage ?? '',
   }
 }

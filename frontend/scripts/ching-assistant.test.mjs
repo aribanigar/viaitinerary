@@ -1,6 +1,7 @@
 // Ching assistant + trip checklist tests: node frontend/scripts/ching-assistant.test.mjs
 import assert from 'node:assert/strict'
-import { understandAssistant as u, replyAfter, pendingReply } from '../src/utils/ching/assistant.js'
+import { understandAssistant, replyAfter, pendingReply } from '../src/utils/ching/assistant.js'
+const u = (t, o) => understandAssistant(t, o)
 import { tripChecklist } from '../src/utils/tripChecklist.js'
 import { parseChingCommand } from '../src/utils/ching/parseCommand.js'
 
@@ -100,6 +101,55 @@ test('client name without a lead-in word', () => {
   assert.equal(name("for rahul sharma's family 2 nights in pahalgam"), 'Rahul Sharma')
   assert.equal(name('rahul ka 2 night pahalgam package banao'), 'Rahul')
   assert.equal(name('2 night pahalgam trip'), '')
+})
+
+
+test('memory: name, aliases, usual hotel, notes, recall, forget', () => {
+  assert.deepEqual(u('call me Arif'), { type: 'remember', kind: 'name', value: 'Arif' })
+  assert.deepEqual(u('when I say heaven I mean Heevan Resort'), { type: 'remember', kind: 'alias', key: 'heaven', value: 'heevan resort' })
+  assert.deepEqual(u('my usual hotel in gulmarg is the vintage'), { type: 'remember', kind: 'hotel', city: 'gulmarg', hotel: 'the vintage' })
+  assert.equal(u('remember that Rahul likes window seats').kind, 'note')
+  assert.equal(u('what do you remember').type, 'recall')
+  assert.deepEqual(u('forget everything'), { type: 'forget', all: true })
+  // In the builder a bare "forget the gondola" is a trip edit, not memory.
+  assert.equal(understandAssistant('forget the gondola', { inBuilder: true }), null)
+})
+
+test('documents for any trip', () => {
+  assert.deepEqual(u('email the invoice to rahul'), { type: 'doc', doc: 'invoice', action: 'email', query: 'rahul', toMe: false })
+  assert.equal(u("download rahul sharma's vouchers").query, 'rahul sharma')
+  assert.equal(u('send the payment receipt to rahul on whatsapp').action, 'whatsapp')
+  assert.equal(u('send vouchers for TRP123456').query, 'TRP123456')
+  // The builder's own commands stay the builder's.
+  for (const t of ['export the pdf', 'email it to me', 'export excel', 'send the itinerary to the client']) {
+    assert.equal(understandAssistant(t, { inBuilder: true }), null, t)
+  }
+})
+
+test('operations, suppliers, drivers', () => {
+  assert.deepEqual(u("today's arrivals"), { type: 'ops', when: 'today', focus: 'arrivals' })
+  assert.equal(u('who is arriving tomorrow').when, 'tomorrow')
+  assert.equal(u('any pending confirmations').focus, 'confirmations')
+  assert.equal(u("who hasn't paid").focus, 'unpaid')
+  assert.deepEqual(u("send hotel requests for rahul's trip"), { type: 'supplier', kinds: ['hotel'], query: 'rahul' })
+  assert.deepEqual(u('ask the cabs to confirm'), { type: 'supplier', kinds: ['cab'], query: null })
+  assert.deepEqual(u("the driver for rahul's trip is ramesh 98765 43210 jk01ab1234"), {
+    type: 'driver', name: 'Ramesh', phone: '9876543210', vehicleNumber: 'JK01AB1234', query: 'rahul',
+  })
+  assert.equal(u('open daily ops').path, '/operations')
+})
+
+test('trip search with filters', () => {
+  const r = u('find unpaid trips to gulmarg in october')
+  assert.equal(r.type, 'find-trips')
+  assert.equal(r.params.payment, 'unpaid')
+  assert.equal(r.params.q, 'gulmarg')
+  assert.match(r.params.from, /-10-01$/)
+  assert.deepEqual(u('show confirmed bookings for rahul').params, { status: 'confirmed', q: 'rahul' })
+  assert.deepEqual(u("rahul's trips").params, { q: 'rahul' })
+  // Trip requests are never searches.
+  assert.equal(u('show me a 3 night trip for rahul'), null)
+  assert.equal(u('5 day kashmir trip for rahul'), null)
 })
 
 console.log(`\n${pass} passed, ${fail} failed`)

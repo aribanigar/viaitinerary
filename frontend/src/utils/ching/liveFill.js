@@ -11,6 +11,8 @@ import { parseChingCommand, validateChingCommand } from "./parseCommand.js";
 import { parseChingEdit } from "./parseEdit.js";
 import { buildEditContext, applyEditActions } from "./editTrip.js";
 import { buildChingTripParts } from "./buildTrip.js";
+import { startingInclusions } from "./inclusions.js";
+import { placeKey } from "./places.js";
 
 // Commands run once, when the agent stops speaking — never live.
 export const COMMAND_TYPES = new Set([
@@ -36,7 +38,23 @@ const FILL_EXTRAS = new Set([
   "SET_MARGIN",
   "SET_GST",
   "SET_ROOMS",
+  "INCLUSION",
 ]);
+
+/**
+ * The agent's own words for things ("when I say Heaven I mean Heevan Resort"),
+ * learned through Ching's memory: whole-word replacements before parsing.
+ */
+export function applyAliases(text, memory) {
+  const aliases = memory?.aliases || {};
+  let out = String(text || "");
+  for (const [said, meant] of Object.entries(aliases)) {
+    if (!said || !meant) continue;
+    const esc = said.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    out = out.replace(new RegExp(`\\b${esc}\\b`, "gi"), meant);
+  }
+  return out;
+}
 
 const AUTO_TITLE = /\d+\s*N\s*\/\s*\d+\s*D\s*$/i;
 
@@ -69,8 +87,8 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 function planFill(base, text, { catalog, settings, today }) {
   const createCatalog = { hotels: catalog.hotels, destinations: catalog.destinations, vehicles: catalog.vehicles };
-  const command = parseChingCommand(text, createCatalog, { today });
-  const parts = buildChingTripParts(command, createCatalog);
+  const command = parseChingCommand(applyAliases(text, catalog.memory), createCatalog, { today });
+  const parts = buildChingTripParts(command, { ...createCatalog, memory: catalog.memory });
 
   const tripInfo = { ...base.tripInfo, ...parts.tripInfo };
   // Keep a title the agent typed; replace only an empty or auto one ("Kashmir 4N/5D").
@@ -84,6 +102,13 @@ function planFill(base, text, { catalog, settings, today }) {
     accommodations: parts.accommodations.length ? parts.accommodations : base.accommodations,
     transportation: parts.transportation.length ? parts.transportation : base.transportation,
   };
+  // Inclusions / exclusions: a blank list starts from the agency's standard
+  // lines, else lines written from this trip (nights, meals, cab).
+  const start = startingInclusions(snapshot, catalog.standard);
+  const incBlank = !(base.inclusions || []).length;
+  const excBlank = !(base.exclusions || []).length;
+  if (incBlank) snapshot.inclusions = start.inclusions;
+  if (excBlank) snapshot.exclusions = start.exclusions;
 
   const changes = [];
   if (command.clientName) changes.push(`Client: ${command.clientName}`);
@@ -98,26 +123,46 @@ function planFill(base, text, { catalog, settings, today }) {
   } else if (command.startDate) {
     changes.push(`Starts: ${command.startDate}`);
   }
-  const autoHotel = new Set(parts.autoPicked.filter((p) => p.hotel).map((p) => p.hotel));
+  const autoHotel = new Map(parts.autoPicked.filter((p) => p.hotel).map((p) => [p.hotel, p]));
   const autoCab = parts.autoPicked.find((p) => p.cab);
   parts.accommodations.forEach((a) => {
     const n = Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 86400000);
-    changes.push(`${a.city}: ${a.name} · ${plural(n, "night")}${autoHotel.has(a.name) ? " (picked for you)" : ""}`);
+    const pick = autoHotel.get(a.name);
+    const how = !pick ? "" : pick.favourite ? " (your usual)" : pick.overBudget ? " (nothing under budget — cheapest)" : " (picked for you)";
+    changes.push(`${a.city}: ${a.name} · ${plural(n, "night")}${how}`);
   });
-  if (parts.itinerary.length) changes.push(`Day-wise plan: ${plural(parts.itinerary.length, "day")}`);
-  if (parts.transportation.length) {
-    changes.push(
-      `Cab: ${parts.vehicle.name} · ${plural(parts.transportation.length, "booking")}${autoCab ? ` (picked for ${autoCab.guests} guests)` : ""}`,
-    );
+  if (parts.itinerary.length) {
+    const route = [...new Set(parts.itinerary.map((d) => d.location).filter(Boolean))];
+    changes.push(`Day-wise plan: ${plural(parts.itinerary.length, "day")}${route.length > 1 ? ` · ${route.join(" → ")}` : ""}`);
   }
+  if (parts.transportation.length) {
+    const how = !autoCab ? "" : autoCab.favourite ? " (your usual)" : ` (picked for ${autoCab.guests} guests)`;
+    changes.push(`Cab: ${parts.vehicle.name} · ${plural(parts.transportation.length, "day")}${how}`);
+  }
+  const meal = parts.remembered.find((r) => r.meal);
   if (command.mealPlan) changes.push(`Meals: ${command.mealPlan}`);
+  else if (meal) changes.push(`Meals: ${meal.meal} (your usual)`);
+  const rememberedPhone = parts.remembered.find((r) => r.phone);
+  const rememberedEmail = parts.remembered.find((r) => r.email);
   if (command.clientPhone) changes.push(`Phone: ${command.clientPhone}`);
+  else if (rememberedPhone) changes.push(`Phone: ${rememberedPhone.phone} (from ${rememberedPhone.client}'s last trip)`);
   if (command.clientEmail) changes.push(`Email: ${command.clientEmail}`);
+  else if (rememberedEmail) changes.push(`Email: ${rememberedEmail.email} (remembered)`);
+  if (incBlank && snapshot.inclusions.length) changes.push(`Inclusions: ${plural(snapshot.inclusions.length, "line")}`);
+  if (excBlank && snapshot.exclusions.length) changes.push(`Exclusions: ${plural(snapshot.exclusions.length, "line")}`);
 
   // A city-only stay that got a hotel picked isn't a problem any more.
-  const pickedCities = parts.autoPicked.filter((p) => p.city).map((p) => String(p.city).toLowerCase());
-  const warnings = (command.warnings || []).filter(
-    (w) => !(/^No hotel named/.test(w) && pickedCities.some((c) => w.toLowerCase().includes(c))),
+  // (and "Couldn't find "pahalgam" in your hotels" when it was a city after all).
+  const pickedCities = parts.autoPicked.filter((p) => p.city).map((p) => placeKey(p.city));
+  const stayCities = parts.accommodations.map((a) => placeKey(a.city));
+  const warnings = (command.warnings || []).filter((w) => {
+    const lw = ` ${placeKey(w)} `;
+    if (/^No hotel named/.test(w)) return !pickedCities.some((c) => c && lw.includes(` ${c} `));
+    const m = /^Couldn't find "(.+?)" in your hotels/.exec(w);
+    return !(m && stayCities.includes(placeKey(m[1])));
+  });
+  (parts.missingHotels || []).forEach((city) =>
+    warnings.push(`No hotel in ${city} in your catalog — add one in Logistics (or to Accommodation)`),
   );
   if (command.intent === "create_trip") {
     const v = validateChingCommand(command, createCatalog);
@@ -156,6 +201,7 @@ function planFill(base, text, { catalog, settings, today }) {
 }
 
 function planEdit(base, text, { catalog, settings, today }) {
+  text = applyAliases(text, catalog.memory);
   const r = parseChingEdit(text, buildEditContext(base), catalog, { today, force: true }) || {};
   const actions = Array.isArray(r.actions) ? r.actions : [];
   const stateActions = actions.filter((a) => !COMMAND_TYPES.has(a?.type));
@@ -183,6 +229,8 @@ export function planLive(base, text, { catalog, settings, today } = {}) {
     destinations: catalog?.destinations || [],
     vehicles: catalog?.vehicles || [],
     activities: catalog?.activities || [],
+    memory: catalog?.memory || null,
+    standard: catalog?.standard || {},
   };
   const opts = { catalog: cat, settings: settings || {}, today };
   if (!String(text || "").trim()) {

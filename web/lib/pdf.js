@@ -629,6 +629,87 @@ function InvoiceDoc({ trip, settings }) {
     simpleFooter(settings)));
 }
 
+
+// Service vouchers (Phase 3): one page per hotel stay (with the hotel's
+// confirmation number once it's confirmed), then a transport sheet with each
+// day's driver. Client-facing — no prices.
+const VOUCHER_MEAL = {
+  "Only Room": "Room only (EP)",
+  "Only Room + Breakfast": "Breakfast (CP)",
+  "Breakfast + Dinner": "Breakfast & dinner (MAP)",
+  "Breakfast + Lunch + Dinner": "All meals (AP)",
+};
+const stayNights = (a) =>
+  a.checkIn && a.checkOut ? Math.max(0, Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 86400000)) : 0;
+function VouchersDoc({ trip, settings }) {
+  const stays = (trip.accommodations || [])
+    .filter((a) => !a.cancelledAt)
+    .sort((a, b) => new Date(a.checkIn || 0) - new Date(b.checkIn || 0));
+  const cabs = (trip.transportations || [])
+    .filter((t) => !t.cancelledAt)
+    .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  const guests = [`${trip.adults || 0} adult${trip.adults === 1 ? "" : "s"}`]
+    .concat(trip.kids5to12 ? [`${trip.kids5to12} child (5-12)`] : [])
+    .concat(trip.kidsCnb ? [`${trip.kidsCnb} child (under 5)`] : [])
+    .join(", ");
+  const statusText = (row) =>
+    row.supplierStatus === "confirmed" ? `Confirmed${row.supplierRef ? ` · ${row.supplierRef}` : ""}` : "To be confirmed";
+  const hotelPage = (a, i) =>
+    h(Page, { size: "A4", style: simpleStyles.page, key: `h${i}` },
+      brandHead(settings),
+      h(Text, { style: { ...simpleStyles.banner, backgroundColor: greenOf(settings) } }, "HOTEL VOUCHER"),
+      h(View, { style: simpleStyles.section },
+        infoRow("Voucher No.", `${trip.tripId}-H${i + 1}`),
+        infoRow("Guest Name", trip.clientName),
+        infoRow("Guests", guests),
+        infoRow("Booking Status", statusText(a))),
+      h(View, { style: simpleStyles.section },
+        h(Text, { style: { ...simpleStyles.title, color: greenOf(settings) } }, txt(a.name || a.hotel?.name || "Hotel")),
+        infoRow("City", a.city || a.hotel?.city),
+        infoRow("Address", a.hotel?.address),
+        infoRow("Hotel Phone", a.hotel?.phone),
+        infoRow("Check-in", fmtDate(a.checkIn)),
+        infoRow("Check-out", fmtDate(a.checkOut)),
+        infoRow("Nights", String(stayNights(a))),
+        infoRow("Rooms", [a.rooms, a.roomType].filter(Boolean).join(" × ")),
+        infoRow("Meal Plan", VOUCHER_MEAL[a.mealPlan] || a.mealPlan),
+        (a.extraBeds5To12Count || 0) + (a.extraBedsAbove12Count || 0) + (a.extraAdultCount || 0)
+          ? infoRow("Extra Beds", String((a.extraBeds5To12Count || 0) + (a.extraBedsAbove12Count || 0) + (a.extraAdultCount || 0)))
+          : null),
+      h(Text, { style: { marginTop: 18, color: "#666", lineHeight: 1.5 } },
+        "Please present this voucher at check-in along with a valid photo ID for every guest. Standard check-in and check-out times of the hotel apply."),
+      simpleFooter(settings));
+  const transportPage = cabs.length
+    ? h(Page, { size: "A4", style: simpleStyles.page, key: "cabs" },
+        brandHead(settings),
+        h(Text, { style: { ...simpleStyles.banner, backgroundColor: brandOf(settings) } }, "TRANSPORT VOUCHER"),
+        h(View, { style: simpleStyles.section },
+          infoRow("Voucher No.", `${trip.tripId}-T`),
+          infoRow("Guest Name", trip.clientName),
+          infoRow("Guests", guests)),
+        h(View, { style: simpleStyles.section },
+          table(
+            ["Date", "Route", "Vehicle", "Driver", "Vehicle No."],
+            cabs.map((t) => [
+              fmtDate(t.date),
+              t.route || t.destination,
+              t.vehicleType || t.vehicle?.name,
+              [t.driverName, t.driverPhone].filter(Boolean).join(" · ") || "To be assigned",
+              t.vehicleNumber,
+            ]),
+          )),
+        h(Text, { style: { marginTop: 18, color: "#666", lineHeight: 1.5 } },
+          "Driver details are shared a day before each journey if not shown here. Timings as per the itinerary; please be ready at the pickup point."),
+        simpleFooter(settings))
+    : null;
+  const pages = [...stays.map(hotelPage), transportPage].filter(Boolean);
+  if (!pages.length) {
+    pages.push(h(Page, { size: "A4", style: simpleStyles.page, key: "empty" }, brandHead(settings),
+      h(Text, {}, "This trip has no hotel or transport bookings yet."), simpleFooter(settings)));
+  }
+  return h(Document, {}, ...pages);
+}
+
 export const renderItineraryPdf = async (trip, settings) => {
   // DMC partner itineraries carry the Via Kashmir mark; decided from the owning
   // agency's own flag so no caller (download, email, client proposal) can skip it.
@@ -638,3 +719,4 @@ export const renderItineraryPdf = async (trip, settings) => {
 export const renderConfirmationPdf = (trip, settings, message) => renderToBuffer(h(ConfirmationDoc, { trip, settings, message }));
 export const renderReceiptPdf = (trip, settings, payments) => renderToBuffer(h(ReceiptDoc, { trip, settings, payments }));
 export const renderInvoicePdf = (trip, settings) => renderToBuffer(h(InvoiceDoc, { trip, settings }));
+export const renderVouchersPdf = (trip, settings) => renderToBuffer(h(VouchersDoc, { trip, settings }));

@@ -59,7 +59,13 @@ export function serializeAccommodation(a) {
     cancellation_note: a.cancellationNote ?? null,
     alternate_options: a.alternateOptions ?? [],
     markup_percentage: num(a.markupPercentage),
-    hotel: a.hotel ? { id: a.hotel.id, name: a.hotel.name, city: a.hotel.city } : null,
+    supplier_status: a.supplierStatus ?? null,
+    supplier_token: a.supplierToken ?? null,
+    supplier_requested_at: iso(a.supplierRequestedAt),
+    supplier_responded_at: iso(a.supplierRespondedAt),
+    supplier_ref: a.supplierRef ?? null,
+    supplier_note: a.supplierNote ?? null,
+    hotel: a.hotel ? { id: a.hotel.id, name: a.hotel.name, city: a.hotel.city, email: a.hotel.email ?? null, phone: a.hotel.phone ?? null } : null,
   };
 }
 
@@ -75,7 +81,16 @@ export function serializeTransportation(t) {
     quantity: t.quantity,
     remarks: t.remarks,
     markup_percentage: num(t.markupPercentage),
-    vehicle: t.vehicle ? { id: t.vehicle.id, name: t.vehicle.name, price: num(t.vehicle.price) } : null,
+    supplier_status: t.supplierStatus ?? null,
+    supplier_token: t.supplierToken ?? null,
+    supplier_requested_at: iso(t.supplierRequestedAt),
+    supplier_responded_at: iso(t.supplierRespondedAt),
+    supplier_ref: t.supplierRef ?? null,
+    supplier_note: t.supplierNote ?? null,
+    driver_name: t.driverName ?? null,
+    driver_phone: t.driverPhone ?? null,
+    vehicle_number: t.vehicleNumber ?? null,
+    vehicle: t.vehicle ? { id: t.vehicle.id, name: t.vehicle.name, price: num(t.vehicle.price), email: t.vehicle.email ?? null, phone: t.vehicle.phone ?? null } : null,
   };
 }
 

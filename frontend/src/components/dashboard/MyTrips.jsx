@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
 import {
   FileText,
@@ -73,8 +73,21 @@ const MyTrips = () => {
 
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  // Filters can arrive in the URL (Ching: "find unpaid trips to Gulmarg in October"
+  // → /my-trips?q=gulmarg&payment=unpaid&from=…&to=…).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "");
+  const urlFilters = {
+    from: searchParams.get("from") || "",
+    to: searchParams.get("to") || "",
+    payment: searchParams.get("payment") || "",
+  };
+  const urlFilterKey = `${urlFilters.from}|${urlFilters.to}|${urlFilters.payment}`;
+  useEffect(() => {
+    setSearchQuery(searchParams.get("q") || "");
+    setStatusFilter(searchParams.get("status") || "");
+  }, [searchParams]);
   const [createdByFilter, setCreatedByFilter] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [duplicatingId, setDuplicatingId] = useState(null);
@@ -103,6 +116,10 @@ const MyTrips = () => {
         page,
         per_page: pageSize,
         search: searchQuery,
+        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(urlFilters.from ? { from: urlFilters.from } : {}),
+        ...(urlFilters.to ? { to: urlFilters.to } : {}),
+        ...(urlFilters.payment ? { payment: urlFilters.payment } : {}),
       });
       setTrips(resp.data);
       setPagination({
@@ -135,7 +152,7 @@ const MyTrips = () => {
       loadTrips(1);
       loadSubscription();
     }
-  }, [token, searchQuery, pageSize]);
+  }, [token, searchQuery, pageSize, statusFilter, urlFilterKey]);
 
   const handlePageSizeChange = (value) => {
     setPageSize(value);
@@ -357,6 +374,29 @@ const MyTrips = () => {
           </Link>
         </div>
       </PageHeader>
+
+      {(urlFilters.from || urlFilters.to || urlFilters.payment) && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-semibold text-slate-500">Filtered:</span>
+          {urlFilters.payment && (
+            <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 font-semibold">
+              {urlFilters.payment === "unpaid" ? "Balance due" : "Fully paid"}
+            </span>
+          )}
+          {(urlFilters.from || urlFilters.to) && (
+            <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold">
+              Travel {urlFilters.from || "…"} → {urlFilters.to || "…"}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setSearchParams({})}
+            className="px-2.5 py-1 rounded-full border border-slate-200 font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
         <div className="p-6 border-b border-slate-50 flex items-center gap-3">

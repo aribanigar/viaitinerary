@@ -35,7 +35,38 @@ export async function GET(request) {
       { tripTitle: { contains: search, mode: "insensitive" } },
       { clientName: { contains: search, mode: "insensitive" } },
       { tripId: { contains: search, mode: "insensitive" } },
+      { destination: { contains: search, mode: "insensitive" } },
+      { clientPhone: { contains: search.replace(/[^\d+]/g, "") || search } },
+      { clientEmail: { contains: search, mode: "insensitive" } },
     ];
+  }
+  // Filters (My Trips and Ching's "find trips…"): status, travel dates, payment.
+  const status = searchParams.get("status");
+  if (status) where.status = status;
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(from || "") || /^\d{4}-\d{2}-\d{2}$/.test(to || "")) {
+    where.startDate = {
+      ...(from ? { gte: new Date(`${from}T00:00:00Z`) } : {}),
+      ...(to ? { lte: new Date(`${to}T23:59:59Z`) } : {}),
+    };
+  }
+  // payment=unpaid|paid compares two columns, which Prisma can't express in
+  // `where` — resolve the matching ids first (tenant-scoped, capped).
+  const payment = searchParams.get("payment");
+  if (payment === "unpaid" || payment === "paid") {
+    const rows = await prisma.trip.findMany({
+      where: { ...where, cost: { gt: 0 } },
+      select: { id: true, cost: true, paidAmount: true, refundedAmount: true },
+      take: 2000,
+    });
+    const ids = rows
+      .filter((r) => {
+        const due = Number(r.cost) - (Number(r.paidAmount) - Number(r.refundedAmount));
+        return payment === "unpaid" ? due > 0.5 : due <= 0.5;
+      })
+      .map((r) => r.id);
+    where.id = { in: ids.length ? ids : [-1] };
   }
 
   const [total, trips] = await Promise.all([

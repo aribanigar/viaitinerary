@@ -1,6 +1,7 @@
 ﻿import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
+  CalendarClock,
   LayoutDashboard,
   Plus,
   Sparkles,
@@ -44,6 +45,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const [isOperationsSubmenuOpen, setIsOperationsSubmenuOpen] = useState(
     location.pathname.startsWith("/my-trips") ||
+      location.pathname.startsWith("/operations") ||
       location.pathname.startsWith("/lead-inquiries") ||
       location.pathname.startsWith("/integrations") ||
       location.pathname.startsWith("/team") ||
@@ -328,6 +330,19 @@ const Sidebar = ({ isOpen, onClose }) => {
                     >
                       <FileText className="w-5 h-5" />
                       <span>Trips</span>
+                    </Link>
+
+                    <Link
+                      to="/operations"
+                      onClick={onClose}
+                      className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                        isActive("/operations")
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                      }`}
+                    >
+                      <CalendarClock className="w-5 h-5" />
+                      <span>Daily Ops</span>
                     </Link>
 
                     <Link

@@ -536,13 +536,16 @@ test('no cabs yet → per-day bookings like buildTrip', () => {
   ])
   assert.equal(changes[0], 'Cabs: all 5 bookings removed')
 })
-test('per-trip vehicle → one booking whose route follows stay changes', () => {
+test('per-trip vehicle → a booking every day, priced once; still priced after removing a stay', () => {
   const r = run([{ type: 'REMOVE_VEHICLE' }, { type: 'SET_VEHICLE', vehicleId: 23, vehicleName: null }])
-  assert.equal(r.snapshot.transportation.length, 1)
-  assert.equal(r.snapshot.transportation[0].route, 'Full trip: Srinagar → Gulmarg → Pahalgam')
-  const r2 = run([{ type: 'REMOVE_STAY', stay: 1 }], r.snapshot)
-  assert.equal(r2.snapshot.transportation.length, 1)
-  assert.equal(r2.snapshot.transportation[0].route, 'Full trip: Srinagar → Pahalgam')
+  const cabs = r.snapshot.transportation
+  assert.equal(cabs.length, r.snapshot.itinerary.length)
+  assert.equal(cabs.filter((t) => t.vehicleId).length, 1)
+  assert.equal(cabs[0].vehicleId, 23)
+  assert.ok(cabs.slice(1).every((t) => t.remarks === 'Included in the full-trip cab rate'))
+  const r2 = run([{ type: 'REMOVE_STAY', stay: 0 }], r.snapshot)
+  assert.equal(r2.snapshot.transportation.filter((t) => t.vehicleId).length, 1)
+  assert.equal(r2.snapshot.transportation.length, r2.snapshot.itinerary.length)
 })
 
 // ── Pricing / client ──────────────────────────────────────────────────────

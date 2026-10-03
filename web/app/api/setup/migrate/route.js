@@ -197,6 +197,37 @@ const STATEMENTS = [
   `CREATE INDEX IF NOT EXISTS "client_payments_trip_id_idx" ON "client_payments"("trip_id")`,
   `CREATE INDEX IF NOT EXISTS "client_payments_user_id_status_idx" ON "client_payments"("user_id", "status")`,
 
+  // Phase 3 operations (supplier confirmations, drivers) and Ching memory.
+  `ALTER TABLE "accommodations" ADD COLUMN IF NOT EXISTS "supplier_status" TEXT`,
+  `ALTER TABLE "accommodations" ADD COLUMN IF NOT EXISTS "supplier_token" TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "accommodations_supplier_token_key" ON "accommodations"("supplier_token")`,
+  `ALTER TABLE "accommodations" ADD COLUMN IF NOT EXISTS "supplier_requested_at" TIMESTAMP(3)`,
+  `ALTER TABLE "accommodations" ADD COLUMN IF NOT EXISTS "supplier_responded_at" TIMESTAMP(3)`,
+  `ALTER TABLE "accommodations" ADD COLUMN IF NOT EXISTS "supplier_ref" TEXT`,
+  `ALTER TABLE "accommodations" ADD COLUMN IF NOT EXISTS "supplier_note" TEXT`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "supplier_status" TEXT`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "supplier_token" TEXT`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "transportations_supplier_token_key" ON "transportations"("supplier_token")`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "supplier_requested_at" TIMESTAMP(3)`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "supplier_responded_at" TIMESTAMP(3)`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "supplier_ref" TEXT`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "supplier_note" TEXT`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "driver_name" TEXT`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "driver_phone" TEXT`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "vehicle_number" TEXT`,
+  `CREATE TABLE IF NOT EXISTS "ching_memories" (
+    "id" SERIAL PRIMARY KEY,
+    "user_id" INTEGER NOT NULL,
+    "kind" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "created_by" INTEGER,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "ching_memories_user_id_kind_key_key" ON "ching_memories"("user_id", "kind", "key")`,
+  `CREATE INDEX IF NOT EXISTS "ching_memories_user_id_idx" ON "ching_memories"("user_id")`,
+
   // DMC partner bridge (viakashmir.in SSO handoff) — see docs/dmc-bridge.md
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "via_kashmir_dmc_user_id" TEXT`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "users_via_kashmir_dmc_user_id_key" ON "users"("via_kashmir_dmc_user_id")`,

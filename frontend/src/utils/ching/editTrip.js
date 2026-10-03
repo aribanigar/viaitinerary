@@ -47,7 +47,6 @@ import {
 import {
   dateOfDay,
   isFullTripCab,
-  routeOf,
   isAutoTitle,
   addKnown,
   staySequence,
@@ -58,6 +57,9 @@ import {
   finishStructural,
   cabLine,
 } from './editTripTimeline.js'
+import { formatPhone } from './parseCommand.js'
+import { dayWiseCabs, repriceCabs, isIncludedCab, keepPerTripPriced } from './cabPlan.js'
+import { applyInclusion } from './inclusions.js'
 
 const COMMANDS = new Set(['EXPORT_PDF', 'EMAIL_ME', 'SAVE', 'UNDO'])
 
@@ -601,48 +603,26 @@ const HANDLERS = {
     if (!v) return st.warnings.push(`${a.vehicleName || `Vehicle #${a.vehicleId}`} is not in your vehicle list`)
     const cabs = st.s.transportation
     if (cabs.length) {
-      const changed = cabs.filter((t) => String(t.vehicleId) !== String(v.id) || t.vehicleType !== v.name)
-      if (!changed.length) return
+      const changed = cabs.filter((t) => t.vehicleType !== v.name || (t.vehicleId != null && String(t.vehicleId) !== String(v.id)))
+      const wasPerTrip = cabs.some(isIncludedCab)
+      if (!changed.length && wasPerTrip === (v.rate_type === 'per_trip')) return
       const oldName = mostCommonVehicle(cabs)?.name || 'cab'
-      cabs.forEach((t) => {
-        t.vehicleId = v.id
-        t.vehicleType = v.name
-      })
+      repriceCabs(cabs, v)
       st.changes.push(`Vehicle: ${oldName} → ${v.name} (${plural(cabs.length, 'booking')})`)
-      if (v.rate_type === 'per_trip' && cabs.length > 1) {
-        st.warnings.push(`${v.name} is priced per trip but there are ${cabs.length} cab bookings, each charged — check the Transport tab`)
-      } else if (v.rate_type !== 'per_trip' && cabs.length === 1 && isFullTripCab(cabs[0]) && st.nights > 0) {
+      if (v.rate_type !== 'per_trip' && cabs.length === 1 && isFullTripCab(cabs[0]) && st.nights > 0) {
         st.warnings.push(`${v.name} is priced per day but the trip has one full-trip booking — check the Transport tab`)
       }
       return
     }
     if (!needDates(st)) return
-    const days = st.s.itinerary
-    const entry = (n, tripType, route, destination) => ({
-      id: newId(),
-      vehicleId: v.id,
-      tripType,
-      route,
-      destination,
-      date: dateOfDay(st, n),
-      vehicleType: v.name,
-      quantity: 1,
-      remarks: '',
-      markupPercentage: '',
-    })
-    if (v.rate_type === 'per_trip') {
-      const seq = staySequence(st)
-      const cities = seq.length ? seq : [...new Set(days.map((d) => d.location).filter(Boolean))]
-      cabs.push(entry(1, 'Transfer', `Full trip: ${cities.join(' → ')}`, cities[0] || days[0]?.location || ''))
-      st.changes.push(`Vehicle: ${v.name} added (1 full-trip booking)`)
-      return
-    }
+    const days = sortDays(st.s.itinerary)
     if (!days.length) return st.warnings.push('The trip has no day plan to book cabs against')
-    days.forEach((day, i) => {
-      const route = routeOf(stripDayPrefix(day.title))
-      cabs.push(entry(i + 1, /Sightseeing/.test(route) ? 'Sightseeing' : 'Transfer', route, day.location || ''))
-    })
-    st.changes.push(`Vehicle: ${v.name} added (${plural(days.length, 'per-day booking')})`)
+    cabs.push(...dayWiseCabs({ days, vehicle: v, dateOf: (n) => dateOfDay(st, n), newId }))
+    st.changes.push(
+      v.rate_type === 'per_trip'
+        ? `Vehicle: ${v.name} added (${plural(days.length, 'day')}, priced once for the full trip)`
+        : `Vehicle: ${v.name} added (${plural(days.length, 'per-day booking')})`,
+    )
   },
 
   REMOVE_VEHICLE(st) {
@@ -680,6 +660,12 @@ const HANDLERS = {
     if (include && !pct) st.warnings.push('GST is on but the rate is 0%')
   },
 
+  INCLUSION(st, a) {
+    const r = applyInclusion(st.s, a, st.catalog.standard || {})
+    if (r.change) st.changes.push(r.change)
+    if (r.warning) st.warnings.push(r.warning)
+  },
+
   SET_CLIENT(st, a) {
     const ti = st.s.tripInfo
     const fields = [
@@ -689,7 +675,7 @@ const HANDLERS = {
     ]
     for (const [key, label] of fields) {
       if (a[key] == null) continue
-      const value = String(a[key]).trim()
+      const value = key === 'clientPhone' && String(a[key]).trim() ? formatPhone(a[key]) : String(a[key]).trim()
       const old = String(ti[key] || '')
       if (value === old) continue
       if (key === 'clientEmail' && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
@@ -875,6 +861,8 @@ export function applyEditActions(snapshot, actions, { catalog = {}, settings = {
       if (st.s.accommodations.includes(acc) && before && acc.checkIn !== before) repriceForDates(st, acc, before)
     }
   }
+
+  keepPerTripPriced(s.transportation, st.catalog.vehicles)
 
   if (st.nights !== startNights) {
     const ti = s.tripInfo
