@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchB2BHotels, applyB2BHotelsForAdmin, adminIdsWithB2BImports } from "@/lib/b2bViaKashmir";
+import { isPartnerAgency } from "@/lib/viaKashmirCatalog";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -36,6 +37,7 @@ export async function GET(request) {
   const adminIds = await adminIdsWithB2BImports();
   const perAdmin = [];
   for (const adminId of adminIds) {
+    if (await isPartnerAgency(adminId)) continue; // partners never get B2B supplier rates
     try {
       const summary = await applyB2BHotelsForAdmin(adminId, hotels);
       perAdmin.push({ admin_id: adminId, ...summary });

@@ -8,6 +8,10 @@
       "schedule": "0 3 * * *"
     },
     {
+      "path": "/api/cron/sync-viakashmir",
+      "schedule": "30 2 * * *"
+    },
+    {
       "path": "/api/cron/sales-followups",
       "schedule": "30 4 * * *"
     }

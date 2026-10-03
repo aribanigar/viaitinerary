@@ -1,449 +1,666 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Check, ChevronDown, ShieldCheck, Users, Headphones, Mic, Pencil, FileText, Hand } from "lucide-react";
+import Navbar from "./Navbar";
+import Footer from "./Footer";
+import Seo from "./Seo";
+import { softwareSchema, faqSchema } from "./schema";
+import {
+  MODULES,
+  FEATURE_GROUPS,
+  STEPS,
+  AUDIENCES,
+  TRUST_PILLARS,
+  FAQS,
+  VOICE,
+} from "./siteContent";
 
-// ViaItinerary landing — built from the provided brand design (Minimalist
-// Editorial). Structure/classes/animations are verbatim from code.html; copy is
-// ViaItinerary's, and readability fixes were applied (dark overlays on hero/CTA
-// images, a reliable interstitial image, and the light-section heading recolored).
-const BRAND_HTML = `<header class="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-outline-variant">
-<div class="max-w-[1200px] mx-auto px-[20px] h-16 flex items-center justify-between">
-<a href="/" class="text-lg font-bold tracking-tight text-primary">ViaItinerary</a>
-<nav class="hidden md:flex items-center gap-8">
-<a href="#features" class="text-sm font-light text-secondary hover:text-primary transition-colors">Features</a>
-<a href="#platform" class="text-sm font-light text-secondary hover:text-primary transition-colors">Platform</a>
-<a href="#insights" class="text-sm font-light text-secondary hover:text-primary transition-colors">Insights</a>
-<a href="/login" class="text-sm font-light text-secondary hover:text-primary transition-colors">Sign in</a>
-</nav>
-<a href="/signup" class="inline-block text-xs font-medium px-5 py-2.5 rounded-[100px] bg-primary text-on-primary hover:bg-primary/90 transition-all duration-300 tracking-wide">Get Started</a>
-</div>
-</header>
-<main class="w-full">
-<!-- Main Title Area -->
-<section class="relative w-full overflow-hidden flex flex-col items-center justify-center pt-[20px] pb-[60px] px-[20px]">
-<div class="relative w-full max-w-[1200px] mx-auto rounded-[20px] overflow-hidden flex items-center justify-center min-h-[600px] pt-32 pb-12"><div class="absolute top-10 left-0 right-0 flex justify-center z-20">
-<div class="text-xs font-semibold tracking-[0.2em] uppercase text-white/80">Travel CRM &amp; Itinerary Software</div>
-</div>
-<img alt="A serene mountain sunrise viewed from an airy, minimalist interior space." class="absolute inset-0 w-full h-full object-cover" src="https://plus.unsplash.com/premium_photo-1669541884772-49c30fdee42c?q=80&amp;w=1675&amp;auto=format&amp;fit=crop&amp;ixlib=rb-4.1.0&amp;ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
-<div class="absolute inset-0 bg-black/45"></div>
-<div class="relative z-10 w-full px-8 text-center py-12 mx-8 rounded-[20px] max-w-4xl">
-<h1 class="text-4xl md:text-6xl font-light leading-tight tracking-tight mb-6 text-white">Run your entire travel business<br><span class="font-serif italic font-normal">on one platform</span></h1>
-<p class="text-base md:text-lg font-light text-white/85 mb-8 max-w-2xl mx-auto leading-relaxed">Travel CRM, itinerary builder and lead management for tour operators and travel agencies — capture enquiries, build quotes in minutes, and close more bookings.</p>
-<a href="/signup" class="inline-block text-xs font-medium px-6 py-2.5 rounded-[100px] hover:bg-primary/90 transition-all duration-300 tracking-wide bg-white text-black">Start Free Today</a>
-</div>
-</div>
-</section>
-<!-- Parallax Hero Image -->
-<!-- Intro Text -->
-<section id="platform" class="pt-8 px-[20px] pb-[80px] scroll-mt-20">
-<div class="max-w-[1200px] mx-auto">
-<div class="flex flex-col lg:flex-row gap-8">
-<!-- Label Column (Matches width of icons/spacing below if needed, or just provides offset) -->
-<div class="lg:w-2/5 flex items-start pt-3">
-<span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase whitespace-nowrap">The Platform</span>
-</div>
-<!-- Heading Column (Aligned with the content/image start below) -->
-<div class="lg:w-3/5">
-<p class="text-primary leading-tight font-light tracking-tight text-[36px] font-sans">
-                    One platform for your leads, itineraries, quotes and invoices — so your team can spend less time on admin and more time closing trips.&nbsp;</p>
-</div>
-</div>
-</div>
-</section>
-<!-- Logo Roll -->
-<section class="w-full overflow-hidden mb-16 bg-surface pt-[80px]">
-<div class="logo-track opacity-60">
-<!-- Group 1 -->
-<div class="flex items-center gap-32 pr-32">
-<div class="text-xl text-primary font-bold tracking-tight">WANDERLUST</div>
-<div class="text-xl text-primary tracking-widest font-light">NOMAD</div>
-<div class="text-xl text-primary italic font-medium">Voyage&amp;Co</div>
-<div class="text-xl text-primary uppercase font-semibold">Summit</div>
-<div class="text-xl text-primary tracking-wide">TRAILS</div>
-</div>
-<!-- Group 2 -->
-<div class="flex items-center gap-32 pr-32">
-<div class="text-xl text-primary font-bold tracking-tight">WANDERLUST</div>
-<div class="text-xl text-primary tracking-widest font-light">NOMAD</div>
-<div class="text-xl text-primary italic font-medium">Voyage&amp;Co</div>
-<div class="text-xl text-primary uppercase font-semibold">Summit</div>
-<div class="text-xl text-primary tracking-wide">TRAILS</div>
-</div>
-</div>
-</section>
-<!-- Highlights strip -->
-<section class="pb-16 px-[20px]">
-<div class="max-w-[1200px] mx-auto">
-<div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-outline-variant rounded-[20px] overflow-hidden border border-outline-variant">
-<div class="bg-surface p-8 text-center">
-<div class="text-4xl md:text-5xl font-light text-primary">2 min</div>
-<div class="text-xs text-secondary uppercase tracking-[0.15em] mt-2">Avg. itinerary build time</div>
-</div>
-<div class="bg-surface p-8 text-center">
-<div class="text-4xl md:text-5xl font-light text-primary">40%</div>
-<div class="text-xs text-secondary uppercase tracking-[0.15em] mt-2">Faster quote turnaround</div>
-</div>
-<div class="bg-surface p-8 text-center">
-<div class="text-4xl md:text-5xl font-light text-primary">10k+</div>
-<div class="text-xs text-secondary uppercase tracking-[0.15em] mt-2">Itineraries generated</div>
-</div>
-<div class="bg-surface p-8 text-center">
-<div class="text-4xl md:text-5xl font-light text-primary">24/7</div>
-<div class="text-xs text-secondary uppercase tracking-[0.15em] mt-2">Support for your team</div>
-</div>
-</div>
-</div>
-</section>
-<!-- Smart Insights Section (Replicated & Adjusted) -->
-<section id="insights" class="pt-32 pb-12 px-[20px] scroll-mt-20">
-<div class="max-w-[1200px] mx-auto">
-<div class="max-w-full">
-<span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
-<h2 class="font-light mt-4 leading-tight text-[42px] text-primary">Everything you need to<br>run your <span class="font-serif italic">travel business</span></h2>
-</div>
-</div>
-</section><section class="pb-12 pt-8 px-[20px]">
-<div class="max-w-[1200px] mx-auto">
-<div class="border-outline-variant overflow-hidden flex flex-col lg:flex-row w-full min-h-[700px]">
-<!-- Left Side: Visual/Card Interaction -->
-<div class="w-full lg:w-2/5 flex flex-col lg:border-t-0 py-5 justify-between h-full">
-<div class="max-w-md w-full h-full">
-<div class="flex flex-col h-full">
-<div>
-<div class="flex items-center gap-3 mb-6">
-<span class="material-symbols-outlined text-primary text-2xl">lightbulb</span>
-<h2 class="font-light text-primary tracking-tight text-[42px]"><span class="font-serif italic">Smart</span> Insights</h2>
-</div>
-<p class="text-secondary text-sm mb-10 leading-relaxed font-light">
-            ViaItinerary surfaces the numbers that matter — costs, margins, conversions — and guides your next move from quote to confirmed booking.
+// Home page. Layout follows a compact B2B SaaS pattern: hero with product
+// preview, module tabs, workflow, full feature grid, audiences, trust, FAQ, CTA.
+// Product previews are lightweight HTML mocks of the real screens (sample data).
+
+const Section = ({ id, className = "", children }) => (
+  <section id={id} className={`px-4 sm:px-6 py-16 md:py-20 scroll-mt-16 ${className}`}>
+    <div className="max-w-6xl mx-auto">{children}</div>
+  </section>
+);
+
+const SectionHead = ({ eyebrow, title, text, center = false }) => (
+  <div className={`max-w-2xl ${center ? "mx-auto text-center" : ""}`}>
+    <p className="eyebrow">{eyebrow}</p>
+    <h2 className="mt-3 text-[28px] md:text-[34px] leading-[1.15] font-semibold tracking-tight text-[#181c22]">
+      {title}
+    </h2>
+    {text && <p className="mt-3 text-[16px] leading-relaxed text-[#5e5e5e]">{text}</p>}
+  </div>
+);
+
+/* ── Product preview mocks ─────────────────────────────────────────────── */
+
+const Frame = ({ label, children }) => (
+  <div className="rounded-2xl border border-black/[0.08] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_12px_32px_-16px_rgba(0,0,0,0.18)] overflow-hidden">
+    <div className="h-9 px-4 flex items-center gap-1.5 border-b border-black/[0.06] bg-[#fafafa]">
+      <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
+      <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
+      <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
+      <span className="ml-3 text-[11px] text-[#7e7576]">{label}</span>
+    </div>
+    <div className="p-4 sm:p-5 text-[13px] text-[#181c22]">{children}</div>
+  </div>
+);
+
+const Pill = ({ children, tone = "gray" }) => {
+  const tones = {
+    gray: "bg-black/[0.05] text-[#4c4546]",
+    lime: "bg-[#e7f63c] text-[#181c22]",
+    dark: "bg-[#181c22] text-white",
+  };
+  return <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold ${tones[tone]}`}>{children}</span>;
+};
+
+const LeadsPreview = () => (
+  <Frame label="Lead inquiries">
+    <div className="flex items-center justify-between mb-3">
+      <span className="font-semibold">Today</span>
+      <Pill>12 open</Pill>
+    </div>
+    <div className="divide-y divide-black/[0.06]">
+      {[
+        ["Rahul Mehta", "Kashmir, 6N / 4 pax", "Website", "New", "lime"],
+        ["Sana Qureshi", "Ladakh, 7N / 2 pax", "WhatsApp", "Quoted", "gray"],
+        ["Arjun Nair", "Gulmarg, 3N / 5 pax", "Referral", "Follow-up", "gray"],
+        ["Priya Shah", "Pahalgam, 4N / 2 pax", "Instagram", "Confirmed", "dark"],
+      ].map(([name, trip, src, status, tone]) => (
+        <div key={name} className="py-2.5 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-black/[0.05] flex items-center justify-center text-[11px] font-semibold shrink-0">
+            {name.split(" ").map((p) => p[0]).join("")}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-medium truncate">{name}</div>
+            <div className="text-[12px] text-[#7e7576] truncate">{trip} &middot; {src}</div>
+          </div>
+          <Pill tone={tone}>{status}</Pill>
+        </div>
+      ))}
+    </div>
+  </Frame>
+);
+
+const ItineraryPreview = () => (
+  <Frame label="Trip builder">
+    <div className="flex items-center justify-between mb-3">
+      <div>
+        <div className="font-semibold">Kashmir Valley Escape</div>
+        <div className="text-[12px] text-[#7e7576]">6 nights &middot; 2 adults</div>
+      </div>
+      <Pill tone="lime">Draft</Pill>
+    </div>
+    <div className="space-y-2">
+      {[
+        ["Day 1", "Arrive Srinagar, Dal Lake shikara ride", "Houseboat, Deluxe"],
+        ["Day 2", "Gulmarg day trip, Gondola Phase 1", "Sedan, full day"],
+        ["Day 3", "Transfer to Pahalgam via Awantipora", "Hotel, CP plan"],
+      ].map(([d, t, s]) => (
+        <div key={d} className="flex gap-3 p-2.5 rounded-lg bg-[#fafafa] border border-black/[0.05]">
+          <span className="text-[11px] font-semibold text-[#7e7576] w-10 shrink-0 pt-0.5">{d}</span>
+          <div className="min-w-0">
+            <div className="font-medium truncate">{t}</div>
+            <div className="text-[12px] text-[#7e7576]">{s}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div className="mt-3 pt-3 border-t border-black/[0.06] flex justify-between items-baseline">
+      <span className="text-[#7e7576]">Package total</span>
+      <span className="text-[17px] font-semibold">&#8377;58,400</span>
+    </div>
+  </Frame>
+);
+
+const PackagesPreview = () => (
+  <Frame label="Packages">
+    <div className="grid grid-cols-2 gap-2.5">
+      {[
+        ["Honeymoon in Kashmir", "5N", "₹42,000"],
+        ["Ladakh Bike Expedition", "8N", "₹61,500"],
+        ["Family Gulmarg Snow", "4N", "₹36,800"],
+        ["Pahalgam Weekend", "2N", "₹14,900"],
+      ].map(([n, d, p]) => (
+        <div key={n} className="p-3 rounded-lg border border-black/[0.07]">
+          <div className="font-medium leading-snug">{n}</div>
+          <div className="mt-2 flex justify-between text-[12px] text-[#7e7576]">
+            <span>{d}</span>
+            <span className="text-[#181c22] font-semibold">{p}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div className="mt-3 flex items-center justify-between p-2.5 rounded-lg bg-[#181c22] text-white">
+      <span className="text-[12px]">Quote PDF ready for Rahul Mehta</span>
+      <span className="text-[11px] font-semibold text-[#e7f63c]">Send</span>
+    </div>
+  </Frame>
+);
+
+const InventoryPreview = () => (
+  <Frame label="Accommodation">
+    <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 gap-y-2 items-center">
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7e7576]">Hotel</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7e7576]">Room</span>
+      <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7e7576] text-right">Rate</span>
+      {[
+        ["Lake View Houseboat", "Deluxe", "₹6,500"],
+        ["Pine Ridge Resort, Gulmarg", "Super Deluxe", "₹9,200"],
+        ["River Bend, Pahalgam", "Deluxe", "₹5,800"],
+        ["Sedan, Srinagar local", "Per day", "₹3,000"],
+      ].map(([h, r, p]) => (
+        <React.Fragment key={h}>
+          <span className="font-medium truncate">{h}</span>
+          <span className="text-[#5e5e5e]">{r}</span>
+          <span className="font-semibold text-right">{p}</span>
+        </React.Fragment>
+      ))}
+    </div>
+    <div className="mt-4 grid grid-cols-7 gap-1">
+      {Array.from({ length: 14 }).map((_, i) => (
+        <div
+          key={i}
+          className={`h-6 rounded ${[2, 3, 4, 9, 10].includes(i) ? "bg-[#181c22]" : i === 6 ? "bg-[#e7f63c]" : "bg-black/[0.05]"}`}
+        />
+      ))}
+    </div>
+  </Frame>
+);
+
+const PaymentsPreview = () => (
+  <Frame label="Booking ledger">
+    <div className="flex items-baseline justify-between">
+      <span className="font-semibold">Booking VI-2041</span>
+      <Pill tone="lime">Part paid</Pill>
+    </div>
+    <div className="mt-3 h-2 rounded-full bg-black/[0.06] overflow-hidden">
+      <div className="h-full w-[60%] bg-[#181c22]" />
+    </div>
+    <div className="mt-2 flex justify-between text-[12px] text-[#7e7576]">
+      <span>Received &#8377;35,000</span>
+      <span>Balance &#8377;23,400</span>
+    </div>
+    <div className="mt-4 divide-y divide-black/[0.06]">
+      {[
+        ["Advance, UPI", "12 Sep", "+₹20,000"],
+        ["Second instalment", "20 Sep", "+₹15,000"],
+        ["Hotel voucher issued", "21 Sep", "Sent"],
+      ].map(([a, d, v]) => (
+        <div key={a} className="py-2 flex justify-between">
+          <span>{a} <span className="text-[#7e7576]">&middot; {d}</span></span>
+          <span className="font-semibold">{v}</span>
+        </div>
+      ))}
+    </div>
+  </Frame>
+);
+
+const ReportsPreview = () => (
+  <Frame label="Team report">
+    <div className="grid grid-cols-3 gap-2 mb-4">
+      {[
+        ["Leads", "148"],
+        ["Quoted", "96"],
+        ["Confirmed", "41"],
+      ].map(([l, v]) => (
+        <div key={l} className="p-2.5 rounded-lg bg-[#fafafa] border border-black/[0.05]">
+          <div className="text-[11px] text-[#7e7576]">{l}</div>
+          <div className="text-[18px] font-semibold">{v}</div>
+        </div>
+      ))}
+    </div>
+    {[
+      ["Aamir", 82],
+      ["Nisha", 64],
+      ["Faizan", 47],
+    ].map(([n, w]) => (
+      <div key={n} className="flex items-center gap-3 py-1.5">
+        <span className="w-14 text-[12px] text-[#5e5e5e]">{n}</span>
+        <div className="flex-1 h-2 rounded-full bg-black/[0.06] overflow-hidden">
+          <div className="h-full bg-[#181c22]" style={{ width: `${w}%` }} />
+        </div>
+        <span className="w-8 text-right text-[12px] font-semibold">{w}%</span>
+      </div>
+    ))}
+  </Frame>
+);
+
+const PREVIEWS = {
+  leads: LeadsPreview,
+  itinerary: ItineraryPreview,
+  packages: PackagesPreview,
+  inventory: InventoryPreview,
+  payments: PaymentsPreview,
+  reports: ReportsPreview,
+};
+
+/* ── Sections ──────────────────────────────────────────────────────────── */
+
+const Hero = () => (
+  <section className="px-4 sm:px-6 pt-28 md:pt-32 pb-14 md:pb-20">
+    <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-14 items-center">
+      <div>
+        <p className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-3 py-1 text-[12px] font-medium text-[#4c4546]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#b5c400]" />
+          Travel CRM for agencies, tour operators and DMCs
         </p>
-</div>
-<!-- Interactive Reveal List pushed to bottom -->
-<div class="space-y-2 mt-auto">
-<!-- Item 1 -->
-<div class="group cursor-pointer">
-<div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
-<div class="absolute top-0 left-0 h-[2px] bg-primary w-1/3 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-primary mb-2 transition-colors">Capture every enquiry</h3>
-<div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
-<p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Pull website leads, WhatsApp and referrals into one inbox, then assign them to the right agent automatically.
-                    </p>
-</div>
-</div>
-</div>
-<!-- Item 2 -->
-<div class="group cursor-pointer">
-<div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
-<div class="absolute top-0 left-0 h-[2px] bg-primary w-0 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Build &amp; quote in minutes</h3>
-<div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
-<p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Turn a saved package into a day-by-day quote with live hotel, cab and inclusion pricing — ready to send.
-                    </p>
-</div>
-</div>
-</div>
-<!-- Item 3 -->
-<div class="group cursor-pointer">
-<div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
-<div class="absolute top-0 left-0 h-[2px] bg-primary w-0 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Confirm &amp; invoice</h3>
-<div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
-<p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Lock the booking, send branded vouchers and invoices, and track payments — all from one place.
-                    </p>
-</div>
-</div>
-</div>
-</div>
-</div></div>
-</div><div class="w-full lg:w-3/5 relative flex items-center justify-center overflow-hidden group p-5 self-stretch bg-transparent">
-<!-- Background Image -->
-<img alt="Atmospheric landscape" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 rounded-[20px]" src="https://images.unsplash.com/photo-1564107628966-daff03746bee?q=80&amp;w=987&amp;auto=format&amp;fit=crop&amp;ixlib=rb-4.1.0&amp;ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
-<!-- Floating Interactive Card -->
-<div class="relative z-10 w-full backdrop-blur-xl border border-outline-variant rounded-full overflow-hidden shadow-2xl transition-all duration-500 transform group-hover:-translate-y-1 bg-white/70 mx-4"><!-- Header -->
-<div class="p-4 border-b border-primary/10 flex items-center justify-between bg-white/40">
-<div class="flex items-center gap-4">
-<div class="liquid-orb"></div>
-<div class="flex gap-1.5">
-<div class="w-2 h-2 rounded-full bg-primary/20"></div>
-<div class="w-2 h-2 rounded-full bg-primary/20"></div>
-</div>
-</div>
-<div class="text-[10px] uppercase tracking-widest text-primary/50 font-semibold">analytics_dashboard.io</div>
-</div>
-<!-- Dashboard Content -->
-<div class="p-8 flex flex-col gap-8">
-<!-- Top Metrics -->
-<div class="grid grid-cols-3 gap-4">
-<div class="space-y-1">
-<div class="text-[10px] text-primary/50 uppercase tracking-wider">Retention</div>
-<div class="text-xl font-light text-primary">94.2%</div>
-<div class="h-1 w-full bg-primary/5 rounded-full overflow-hidden">
-<div class="h-full bg-primary/40 w-[94%]"></div>
-</div>
-</div>
-<div class="space-y-1">
-<div class="text-[10px] text-primary/50 uppercase tracking-wider">Engagement</div>
-<div class="text-xl font-light text-primary">+12.4%</div>
-<div class="h-1 w-full bg-primary/5 rounded-full overflow-hidden">
-<div class="h-full bg-primary/40 w-[65%]"></div>
-</div>
-</div>
-<div class="space-y-1">
-<div class="text-[10px] text-primary/50 uppercase tracking-wider">Focus Score</div>
-<div class="text-xl font-light text-primary">8.8</div>
-<div class="h-1 w-full bg-primary/5 rounded-full overflow-hidden">
-<div class="h-full bg-primary/40 w-[88%]"></div>
-</div>
-</div>
-</div>
-<!-- Main Chart Area -->
-<div class="relative h-48 w-full border-l border-b border-primary/10 flex items-end justify-between px-2 pb-2">
-<div class="absolute inset-0 flex flex-col justify-between py-2">
-<div class="w-full border-t border-primary/5"></div>
-<div class="w-full border-t border-primary/5"></div>
-<div class="w-full border-t border-primary/5"></div>
-</div>
-<div class="relative z-10 w-4 bg-primary/20 rounded-t-sm h-[40%]"></div>
-<div class="relative z-10 w-4 bg-primary/40 rounded-t-sm h-[65%]"></div>
-<div class="relative z-10 w-4 bg-primary/10 rounded-t-sm h-[30%]"></div>
-<div class="relative z-10 w-4 bg-primary/60 rounded-t-sm h-[85%]"></div>
-<div class="relative z-10 w-4 bg-primary/30 rounded-t-sm h-[50%]"></div>
-<div class="relative z-10 w-4 bg-primary/50 rounded-t-sm h-[75%]"></div>
-<div class="relative z-10 w-4 bg-primary/10 rounded-t-sm h-[20%]"></div>
-<div class="relative z-10 w-4 bg-primary/40 rounded-t-sm h-[60%]"></div>
-<div class="relative z-10 w-4 bg-primary/20 rounded-t-sm h-[45%]"></div>
-</div>
-<!-- Footer Info -->
-<div class="flex justify-between items-center">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-primary/40 text-sm">schedule</span>
-<span class="text-[10px] text-primary/50">Live updates enabled</span>
-</div>
-<div class="text-[10px] text-primary/60 font-mono tracking-tighter">0X-FF-4492-B</div>
-</div>
-</div></div>
-</div>
-<!-- Right Side: Dynamic List -->
-</div>
-</div>
-</section>
-<!-- Interstitial Section -->
-<section class="pt-12 pb-12 px-[20px]">
-<div class="max-w-[1200px] mx-auto">
-<div class="relative w-full h-[400px] md:h-[500px] rounded-[20px] overflow-hidden flex items-center justify-center">
-<img alt="A serene mountain landscape reflecting minimalist design principles." class="absolute inset-0 w-full h-full object-cover" src="https://images.unsplash.com/photo-1454496522488-7a8e488e8606?q=80&amp;w=1600&amp;auto=format&amp;fit=crop">
-<div class="absolute inset-0 bg-black/40"></div>
-<div class="relative z-10 w-full px-8 text-center flex flex-col items-center justify-center h-full max-w-3xl mx-auto rounded-[20px]">
-<h2 class="text-3xl md:text-5xl font-light text-white leading-tight tracking-tight max-w-2xl mx-auto">Beautiful itineraries. <span class="font-serif italic">Effortless workflow.</span></h2>
-</div>
-</div>
-</div>
-</section>
-<!-- Duplicated Smart Insights Section (Swapped Layout) -->
-<section class="pt-12 pb-12 px-[20px]">
-<div class="max-w-[1200px] mx-auto">
-<div class="max-w-full">
-<span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
-<h2 class="font-light text-primary mt-4 leading-tight text-[42px]">Everything you need to<br>run your <span class="font-serif italic">travel business</span></h2>
-</div>
-</div>
-</section><section class="pb-12 pt-8 px-[20px]">
-<div class="max-w-[1200px] mx-auto">
-<div class="border-outline-variant overflow-hidden flex flex-col lg:flex-row w-full min-h-[700px]">
-<!-- Left Side: Dynamic List (Swapped) -->
-<div class="w-full lg:w-2/5 flex flex-col lg:border-b-0 justify-between h-full py-5">
-<div class="max-w-md w-full h-full">
-<div class="flex flex-col h-full">
-<div>
-<div class="flex items-center gap-3 mb-6">
-<span class="material-symbols-outlined text-primary text-2xl">lightbulb</span>
-<h2 class="font-light text-primary tracking-tight text-[42px]"><span class="font-serif italic">Smart</span> Insights</h2>
-</div>
-<p class="text-secondary text-sm mb-10 leading-relaxed font-light">
-            ViaItinerary surfaces the numbers that matter — costs, margins, conversions — and guides your next move from quote to confirmed booking.
+        <h1 className="mt-5 text-[36px] sm:text-[44px] lg:text-[52px] leading-[1.06] font-semibold tracking-tight text-[#181c22]">
+          Manage leads, itineraries and payments{" "}
+          <span className="font-serif italic font-normal">in one place</span>
+        </h1>
+        <p className="mt-5 text-[17px] leading-relaxed text-[#5e5e5e] max-w-xl">
+          ViaItinerary is the travel CRM and itinerary builder that takes an enquiry from first message to
+          confirmed, paid booking. Quote faster from your own hotel and transport rates, and never lose a
+          follow-up again.
         </p>
-</div>
-<!-- Interactive Reveal List pushed to bottom -->
-<div class="space-y-2 mt-auto">
-<!-- Item 1 -->
-<div class="group cursor-pointer">
-<div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
-<div class="absolute top-0 left-0 h-[2px] bg-primary w-1/3 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-primary mb-2 transition-colors">Capture every enquiry</h3>
-<div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
-<p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Pull website leads, WhatsApp and referrals into one inbox, then assign them to the right agent automatically.
-                    </p>
-</div>
-</div>
-</div>
-<!-- Item 2 -->
-<div class="group cursor-pointer">
-<div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
-<div class="absolute top-0 left-0 h-[2px] bg-primary w-0 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Build &amp; quote in minutes</h3>
-<div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
-<p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Turn a saved package into a day-by-day quote with live hotel, cab and inclusion pricing — ready to send.
-                    </p>
-</div>
-</div>
-</div>
-<!-- Item 3 -->
-<div class="group cursor-pointer">
-<div class="border-t border-outline-variant pt-6 pb-4 relative overflow-hidden">
-<div class="absolute top-0 left-0 h-[2px] bg-primary w-0 transition-all duration-500 group-hover:w-full"></div>
-<h3 class="text-lg font-medium text-secondary group-hover:text-primary mb-2 transition-colors">Confirm &amp; invoice</h3>
-<div class="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-in-out">
-<p class="text-sm text-secondary overflow-hidden leading-relaxed pr-4 font-light">
-                        Lock the booking, send branded vouchers and invoices, and track payments — all from one place.
-                    </p>
-</div>
-</div>
-</div>
-</div>
-</div></div>
-</div>
-<!-- Right Side: Visual/Card Interaction (Swapped) -->
-<div class="w-full lg:w-3/5 relative flex items-center justify-center overflow-hidden group p-5 self-stretch bg-transparent pr-8">
-<!-- Background Image -->
-<img alt="Atmospheric landscape" class="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 rounded-[20px]" src="https://plus.unsplash.com/premium_photo-1675368244448-b8cff9ffdb03?q=80&amp;w=3203&amp;auto=format&amp;fit=crop&amp;ixlib=rb-4.1.0&amp;ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
-<!-- Floating Interactive Card -->
-<div class="relative z-10 w-full backdrop-blur-xl border border-outline-variant rounded-full overflow-hidden shadow-2xl transition-all duration-500 transform group-hover:-translate-y-1 bg-white/70 mx-4"><!-- Header -->
-<div class="p-4 border-b border-primary/10 flex items-center justify-between bg-white/40">
-<div class="flex items-center gap-4">
-<div class="liquid-orb"></div>
-<div class="flex gap-1.5">
-<div class="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
-<div class="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
-<div class="w-3 h-3 rounded-full bg-[#27c93f]"></div>
-</div>
-</div>
-<div class="text-[10px] uppercase tracking-widest text-primary/50 font-semibold">insight_generator.js</div>
-</div>
-<!-- Code Content -->
-<div class="p-8 font-mono text-sm leading-relaxed overflow-x-auto text-primary/80">
-<div class="flex gap-4">
-<div class="text-primary/30 select-none text-right w-4">1</div>
-<div class=""><span class="text-[#a626a4]">async function</span> <span class="text-[#4078f2]">generateInsight</span>(context) {</div>
-</div>
-<div class="flex gap-4">
-<div class="text-primary/30 select-none text-right w-4">2</div>
-<div class="pl-4"><span class="text-[#a626a4]">const</span> patterns = <span class="text-[#a626a4]">await</span> AI.<span class="text-[#4078f2]">analyze</span>(context.data);</div>
-</div>
-<div class="flex gap-4">
-<div class="text-primary/30 select-none text-right w-4">3</div>
-<div class="pl-4"></div>
-</div>
-<div class="flex gap-4">
-<div class="text-primary/30 select-none text-right w-4">4</div>
-<div class="pl-4"><span class="text-[#a626a4]">return</span> patterns.<span class="text-[#4078f2]">map</span>(p =&gt; ({</div>
-</div>
-<div class="flex gap-4">
-<div class="text-primary/30 select-none text-right w-4">5</div>
-<div class="pl-8">title: p.concept,</div>
-</div>
-<div class="flex gap-4">
-<div class="text-primary/30 select-none text-right w-4">6</div>
-<div class="pl-8">confidence: <span class="text-[#986801]">0.98</span>,</div>
-</div>
-<div class="flex gap-4">
-<div class="text-primary/30 select-none text-right w-4">7</div>
-<div class="pl-8">relevance: <span class="text-[#50a14f]">'high'</span></div>
-</div>
-<div class="flex gap-4">
-<div class="text-primary/30 select-none text-right w-4">8</div>
-<div class="pl-4">}));</div>
-</div>
-<div class="flex gap-4">
-<div class="text-primary/30 select-none text-right w-4">9</div>
-<div class="">}</div>
-</div>
-</div></div>
-</div>
-</div>
-</div>
-</section>
-<!-- Features Grid Section -->
-<section id="features" class="pb-12 pt-8 px-[20px] pb-[80px] scroll-mt-20">
-<div class="max-w-[1200px] mx-auto">
-<div class="mb-16">
-<span class="text-xs font-semibold text-secondary tracking-[0.2em] uppercase">Core Capabilities</span>
-<h2 class="md:text-4xl font-light text-primary mt-4 leading-tight font-sans text-[42px]">Advanced tools for<br><span class="font-serif italic">modern agencies</span></h2>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pt-[80px]">
-<div class="flex flex-col relative">
-<div class="w-full border-t border-outline-variant"></div>
-<span class="material-symbols-outlined text-primary text-2xl mt-6">map</span>
-<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Itinerary Builder</h3>
-<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Day-by-day plans with live pricing, hotels, cabs and inclusions.</p>
-</div>
-<div class="flex flex-col relative">
-<div class="w-full border-t border-outline-variant"></div>
-<span class="material-symbols-outlined text-primary text-2xl mt-6">groups</span>
-<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Lead CRM</h3>
-<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Capture website inquiries, assign them to your team, and convert to trips.</p>
-</div>
-<div class="flex flex-col relative">
-<div class="w-full border-t border-outline-variant"></div>
-<span class="material-symbols-outlined text-primary text-2xl mt-6">dashboard</span>
-<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">Package Templates</h3>
-<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Build once, reuse forever — quote clients in seconds.</p>
-</div>
-<div class="flex flex-col relative">
-<div class="w-full border-t border-outline-variant"></div>
-<span class="material-symbols-outlined text-primary text-2xl mt-6">receipt_long</span>
-<h3 class="text-[20px] font-medium text-primary mb-3 pt-[100px] tracking-tight font-sans">PDF & Invoicing</h3>
-<p class="text-[16px] text-secondary font-light leading-relaxed font-sans">Branded itineraries, vouchers and invoices, ready to send.</p>
-</div>
-</div>
-</div>
-</section>
-<!-- Sign Off Section -->
-<section class="bg-background pb-0 px-[20px]">
-<div class="max-w-[1200px] mx-auto">
-<div class="relative w-full h-[400px] md:h-[500px] rounded-[20px] overflow-hidden flex items-center justify-center">
-<!-- Background Image with Overlay for Readability -->
-<img alt="A serene mountain sunrise viewed from an airy, minimalist interior space." class="absolute inset-0 w-full h-full object-cover" src="https://plus.unsplash.com/premium_photo-1669541884772-49c30fdee42c?q=80&amp;w=1675&amp;auto=format&amp;fit=crop&amp;ixlib=rb-4.1.0&amp;ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D">
-<div class="absolute inset-0 bg-black/45"></div>
-<!-- Centered Content Over Image -->
-<div class="relative z-10 flex flex-col items-center text-center px-8 py-12 rounded-[20px] mx-6">
-<span class="text-xs font-semibold tracking-[0.2em] uppercase mb-6 text-white">Core Capabilities</span>
-<h2 class="text-4xl md:text-5xl font-light leading-tight max-w-2xl text-white">Ready to elevate your<br><span class="font-serif italic">travel business?</span></h2>
-<a href="/signup" class="inline-block bg-primary text-on-primary text-xs font-medium px-6 py-2.5 rounded-[100px] hover:bg-primary/90 transition-all duration-300 tracking-wide mt-8">Start Free</a>
-</div>
-</div>
-</div>
-</section>
-</main>
-<!-- New Footer Section -->
-<footer class="pt-2 pb-[20px] bg-background w-full mt-[10px] px-[20px]">
-<div class="max-w-[1200px] mx-auto">
-<div class="w-full h-[400px] md:h-[500px] rounded-[20px] flex flex-col justify-between relative border bg-surface-container-low border-outline-variant p-[20px]">
-<div class="max-w-md">
-<h3 class="text-3xl md:text-4xl font-light text-primary mb-4"><span class="font-serif italic">Travel,</span> simplified.</h3>
-<p class="text-secondary leading-relaxed font-light">
-            Focus on what matters. ViaItinerary strips away the busywork so crafting and closing trips feels effortless.
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link to="/signup" className="btn-primary !h-11 !px-5">
+            Start free trial <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link to="/schedule-demo" className="btn-secondary !h-11 !px-5">
+            Book a 30 min demo
+          </Link>
+        </div>
+        <a
+          href="#voice"
+          className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-[#e7f63c] pl-1.5 pr-4 py-1.5 text-[13px] font-medium text-[#181c22] hover:bg-[#d4e42e] transition-colors"
+        >
+          <span className="w-6 h-6 rounded-full bg-[#181c22] flex items-center justify-center">
+            <Mic className="w-3.5 h-3.5 text-[#e7f63c]" />
+          </span>
+          New: say the trip out loud and it fills itself in
+          <ArrowRight className="w-3.5 h-3.5" />
+        </a>
+        <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-[#5e5e5e]">
+          {["Free trial to start", "Works on phone and desktop", "Your branding on every PDF"].map((t) => (
+            <li key={t} className="inline-flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-[#181c22]" /> {t}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="relative isolate">
+        <div className="absolute -inset-4 rounded-[28px] bg-[#f7fbc8] -z-10 hidden sm:block" aria-hidden="true" />
+        <ItineraryPreview />
+      </div>
+    </div>
+  </section>
+);
+
+const ModuleTabs = () => {
+  const [active, setActive] = useState(MODULES[0].key);
+  const mod = MODULES.find((m) => m.key === active);
+  const Preview = PREVIEWS[active];
+
+  return (
+    <Section id="features" className="bg-white border-y border-black/[0.06]">
+      <SectionHead
+        eyebrow="The platform"
+        title="Everything a travel business runs on, in one software"
+        text="Six connected modules replace the spreadsheets, WhatsApp threads and Word files your team juggles today."
+      />
+
+      <div role="tablist" aria-label="Modules" className="mt-10 flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+        {MODULES.map((m) => {
+          const Icon = m.icon;
+          const on = m.key === active;
+          return (
+            <button
+              key={m.key}
+              role="tab"
+              aria-selected={on}
+              onClick={() => setActive(m.key)}
+              className={`shrink-0 inline-flex items-center gap-2 h-10 px-4 rounded-full text-[14px] font-medium border transition-colors ${
+                on
+                  ? "bg-[#181c22] text-white border-[#181c22]"
+                  : "bg-white text-[#4c4546] border-black/[0.1] hover:border-black/30"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {m.title}
+            </button>
+          );
+        })}
+      </div>
+
+      <div role="tabpanel" className="mt-8 grid lg:grid-cols-2 gap-10 items-center">
+        <div>
+          <h3 className="text-[22px] font-semibold tracking-tight text-[#181c22]">{mod.title}</h3>
+          <p className="mt-3 text-[16px] leading-relaxed text-[#5e5e5e]">{mod.summary}</p>
+          <ul className="mt-5 space-y-2.5">
+            {mod.points.map((p) => (
+              <li key={p} className="flex gap-2.5 text-[15px] text-[#181c22]">
+                <span className="mt-0.5 w-5 h-5 rounded-full bg-[#e7f63c] flex items-center justify-center shrink-0">
+                  <Check className="w-3 h-3" />
+                </span>
+                {p}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <Preview />
+      </div>
+
+      {/* All module copy stays in the DOM for crawlers; only the active one is shown above. */}
+      <div className="sr-only">
+        {MODULES.filter((m) => m.key !== active).map((m) => (
+          <div key={m.key}>
+            <h3>{m.title}</h3>
+            <p>{m.summary}</p>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+};
+
+/* Voice: Ching ------------------------------------------------------- */
+
+const DEMO_CHUNKS = [
+  { text: "Create a 5 day trip for ", field: null },
+  { text: "Rahul Sharma", field: "client" },
+  { text: ", 2 adults and 1 child", field: "guests" },
+  { text: ", from 10 November", field: "dates" },
+  { text: ", 2 nights in Srinagar, 2 nights in Pahalgam", field: "stays" },
+  { text: ", with Innova, breakfast and dinner.", field: "cab" },
+];
+
+const DEMO_FIELDS = [
+  ["client", "Client", "Rahul Sharma"],
+  ["guests", "Guests", "2 adults, 1 child"],
+  ["dates", "Dates", "10 Nov, 5 days"],
+  ["stays", "Stays", "Srinagar 2N, Pahalgam 2N"],
+  ["cab", "Cab and meals", "Innova, breakfast + dinner"],
+];
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+const VoiceDemo = () => {
+  const last = DEMO_CHUNKS.length;
+  const [step, setStep] = useState(prefersReducedMotion() ? last + 1 : 0);
+
+  useEffect(() => {
+    if (prefersReducedMotion()) return undefined;
+    // Reveal one phrase per tick, hold the finished state a little, then replay.
+    const id = window.setInterval(() => setStep((n) => (n >= last + 3 ? 0 : n + 1)), 1100);
+    return () => window.clearInterval(id);
+  }, [last]);
+
+  const spoken = DEMO_CHUNKS.slice(0, Math.min(step, last));
+  const filled = new Set(spoken.map((c) => c.field).filter(Boolean));
+  const done = step > last;
+  const listening = step <= last;
+
+  return (
+    <div aria-hidden="true" className="rounded-2xl bg-white text-[#181c22] overflow-hidden shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-black/[0.06] bg-[#fafafa]">
+        <div className="flex items-center gap-2.5">
+          <span className="relative w-8 h-8 rounded-full bg-[#181c22] flex items-center justify-center">
+            {listening && <span className="absolute inset-0 rounded-full bg-[#e7f63c]/50 animate-ping" />}
+            <Mic className="relative w-4 h-4 text-[#e7f63c]" />
+          </span>
+          <div>
+            <div className="text-[13px] font-semibold leading-tight">Ching</div>
+            <div className="text-[11px] text-[#7e7576] leading-tight">{listening ? "Listening..." : "Done"}</div>
+          </div>
+        </div>
+        <span className="text-[11px] text-[#7e7576]">Sample data</span>
+      </div>
+
+      <div className="px-4 pt-4 pb-3 min-h-[92px] text-[14px] leading-relaxed">
+        {spoken.length === 0 ? (
+          <span className="text-[#7e7576]">Say &ldquo;Hello Ching&rdquo;...</span>
+        ) : (
+          spoken.map((c) => (
+            <span key={c.text} className={c.field ? "rounded-sm bg-[#e7f63c]/70" : ""}>
+              {c.text}
+            </span>
+          ))
+        )}
+      </div>
+
+      <div className="mx-4 mb-4 rounded-xl border border-black/[0.08] divide-y divide-black/[0.06]">
+        {DEMO_FIELDS.map(([key, label, value]) => (
+          <div key={key} className="px-3 py-2 flex items-center justify-between gap-3 text-[13px]">
+            <span className="text-[#7e7576]">{label}</span>
+            <span
+              className={`font-medium text-right transition-all duration-500 ${
+                filled.has(key) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
+              }`}
+            >
+              {value}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className={`px-4 pb-4 transition-opacity duration-500 ${done ? "opacity-100" : "opacity-0"}`}>
+        <div className="flex items-center justify-between rounded-full bg-[#181c22] text-white pl-4 pr-1.5 py-1.5 text-[12px]">
+          <span>Filled the trip</span>
+          <span className="rounded-full bg-[#e7f63c] text-[#181c22] font-semibold px-3 py-1">Undo</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VOICE_ICONS = [Mic, Pencil, FileText, Hand];
+
+const VoiceSection = () => (
+  <section id="voice" className="px-4 sm:px-6 py-16 md:py-20 scroll-mt-16 bg-[#181c22] text-white">
+    <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-14 items-center">
+      <div>
+        <p className="eyebrow !text-[#e7f63c]">Voice trip builder</p>
+        <h2 className="mt-3 text-[30px] md:text-[40px] leading-[1.1] font-semibold tracking-tight">
+          Say the trip. <span className="font-serif italic font-normal">Ching builds it.</span>
+        </h2>
+        <p className="mt-4 text-[17px] leading-relaxed text-white/70 max-w-xl">
+          Stop clicking through forms while a client waits on the phone. Describe the trip out loud and the Trip
+          Builder fills itself in as you speak, priced from your own hotel and cab rates.
         </p>
-</div>
-<div class="flex flex-col md:flex-row justify-between items-end w-full gap-8">
-<div class="text-6xl md:text-[8rem] font-bold tracking-tighter text-primary/80 leading-none">ViaItinerary</div>
-<div class="flex flex-col items-end gap-6 mb-2">
-<div class="text-xs text-secondary font-light text-right">
-                © 2026 ViaItinerary. Built with intention.
-            </div>
-</div>
-</div>
-</div>
-</div>
-</footer>`;
+
+        <blockquote className="mt-6 border-l-2 border-[#e7f63c] pl-4 text-[15px] leading-relaxed text-white/85 max-w-xl">
+          &ldquo;{VOICE.example}&rdquo;
+        </blockquote>
+
+        <ul className="mt-8 grid sm:grid-cols-2 gap-x-6 gap-y-6">
+          {VOICE.capabilities.map((c, i) => {
+            const Icon = VOICE_ICONS[i];
+            return (
+              <li key={c.title} className="flex gap-3">
+                <span className="mt-0.5 w-8 h-8 rounded-lg bg-white/[0.07] flex items-center justify-center shrink-0">
+                  <Icon className="w-4 h-4 text-[#e7f63c]" />
+                </span>
+                <div>
+                  <h3 className="text-[15px] font-semibold">{c.title}</h3>
+                  <p className="mt-1 text-[14px] leading-relaxed text-white/65">{c.text}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <Link to="/signup" className="btn-primary !bg-[#e7f63c] !text-[#181c22] hover:!bg-[#d4e42e] !h-11 !px-5">
+            Start free trial <ArrowRight className="w-4 h-4" />
+          </Link>
+          <p className="text-[13px] text-white/50 max-w-xs">
+            Works in English (India) in browsers with speech recognition, like Chrome and Edge. You can always type the same request.
+          </p>
+        </div>
+      </div>
+
+      <VoiceDemo />
+    </div>
+  </section>
+);
+
+const Workflow = () => (
+  <Section>
+    <SectionHead
+      eyebrow="How it works"
+      title="From enquiry to paid booking in four steps"
+    />
+    <ol className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {STEPS.map((s, i) => (
+        <li key={s.title} className="p-5 rounded-2xl bg-white border border-black/[0.07]">
+          <span className="text-[12px] font-semibold text-[#7e7576]">0{i + 1}</span>
+          <h3 className="mt-2 text-[17px] font-semibold text-[#181c22]">{s.title}</h3>
+          <p className="mt-1.5 text-[14px] leading-relaxed text-[#5e5e5e]">{s.text}</p>
+        </li>
+      ))}
+    </ol>
+  </Section>
+);
+
+const FeatureGrid = () => (
+  <Section className="bg-white border-y border-black/[0.06]">
+    <SectionHead
+      eyebrow="All features"
+      title="Built for the way travel companies actually work"
+    />
+    <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-5 gap-x-8 gap-y-10">
+      {FEATURE_GROUPS.map((g) => (
+        <div key={g.title}>
+          <h3 className="text-[15px] font-semibold text-[#181c22] pb-3 border-b border-black/[0.08]">{g.title}</h3>
+          <ul className="mt-3 space-y-2">
+            {g.items.map((it) => (
+              <li key={it} className="flex gap-2 text-[14px] text-[#4c4546]">
+                <Check className="w-4 h-4 mt-0.5 text-[#181c22] shrink-0" />
+                {it}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </Section>
+);
+
+const Audiences = () => (
+  <Section>
+    <div className="grid lg:grid-cols-[1fr_1.4fr] gap-10">
+      <SectionHead
+        eyebrow="Who it is for"
+        title="One system, shaped around your business"
+        text="Whether you run inbound tours, sell packages or manage a sales floor, ViaItinerary fits how you already quote and book."
+      />
+      <div className="grid sm:grid-cols-2 gap-4">
+        {AUDIENCES.map((a) => (
+          <div key={a.title} className="p-5 rounded-2xl bg-white border border-black/[0.07]">
+            <h3 className="text-[16px] font-semibold text-[#181c22]">{a.title}</h3>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-[#5e5e5e]">{a.text}</p>
+          </div>
+        ))}
+        <Link to="/solutions" className="sm:col-span-2 inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#181c22] hover:underline underline-offset-4">
+          See solutions by business type <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  </Section>
+);
+
+const TRUST_ICONS = [Users, ShieldCheck, Headphones];
+
+const Trust = () => (
+  <Section className="bg-[#181c22] text-white">
+    <p className="eyebrow !text-white/60">Why agencies trust us</p>
+    <h2 className="mt-3 text-[28px] md:text-[34px] leading-[1.15] font-semibold tracking-tight max-w-2xl">
+      Made by travel people, for travel people
+    </h2>
+    <div className="mt-10 grid md:grid-cols-3 gap-4">
+      {TRUST_PILLARS.map((t, i) => {
+        const Icon = TRUST_ICONS[i];
+        return (
+          <div key={t.title} className="p-6 rounded-2xl bg-white/[0.04] border border-white/10">
+            <Icon className="w-5 h-5 text-[#e7f63c]" />
+            <h3 className="mt-4 text-[17px] font-semibold">{t.title}</h3>
+            <p className="mt-2 text-[14px] leading-relaxed text-white/70">{t.text}</p>
+          </div>
+        );
+      })}
+    </div>
+  </Section>
+);
+
+const Faq = () => (
+  <Section id="faq">
+    <div className="grid lg:grid-cols-[1fr_1.6fr] gap-10">
+      <SectionHead
+        eyebrow="FAQ"
+        title="Questions agencies ask us"
+        text="Still unsure? Message us on WhatsApp and talk to the team."
+      />
+      <div className="divide-y divide-black/[0.08] border-y border-black/[0.08]">
+        {FAQS.map((f) => (
+          <details key={f.q} className="group py-4">
+            <summary className="flex items-center justify-between gap-4 cursor-pointer list-none text-[16px] font-semibold text-[#181c22] [&::-webkit-details-marker]:hidden">
+              {f.q}
+              <ChevronDown className="w-4 h-4 shrink-0 text-[#7e7576] transition-transform group-open:rotate-180" />
+            </summary>
+            <p className="mt-3 text-[15px] leading-relaxed text-[#5e5e5e]">{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </Section>
+);
+
+export const CtaBand = () => (
+  <section className="px-4 sm:px-6 pb-16 md:pb-20">
+    <div className="max-w-6xl mx-auto rounded-3xl bg-[#e7f63c] px-6 py-12 md:px-12 md:py-14 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <div>
+        <h2 className="text-[26px] md:text-[32px] font-semibold tracking-tight text-[#181c22] leading-tight">
+          See ViaItinerary with your own trips
+        </h2>
+        <p className="mt-2 text-[16px] text-[#181c22]/75">
+          Start a free trial, or book a 30 minute walkthrough with our team.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <Link to="/signup" className="btn-primary !h-11 !px-5">
+          Start free trial <ArrowRight className="w-4 h-4" />
+        </Link>
+        <Link to="/schedule-demo" className="btn-secondary !h-11 !px-5 !border-black/20">
+          Book a demo
+        </Link>
+      </div>
+    </div>
+  </section>
+);
 
 const BrandLanding = () => (
-  <div
-    className="bg-background text-on-background font-sans antialiased selection:bg-primary-container selection:text-on-primary"
-    dangerouslySetInnerHTML={{ __html: BRAND_HTML }}
-  />
+  <div className="bg-[#f9f9f9] text-[#181c22] font-sans antialiased">
+    <Seo
+      title="ViaItinerary: Travel CRM, Itinerary Builder & Lead Management Software"
+      description="Travel CRM and itinerary builder for travel agencies, tour operators and DMCs. Manage leads, build priced itineraries by voice or form, send branded quotes and track payments in one place."
+      path="/"
+      schema={[
+        softwareSchema(FEATURE_GROUPS.flatMap((g) => g.items)),
+        faqSchema(FAQS),
+      ]}
+    />
+    <Navbar />
+    <main>
+      <Hero />
+      <VoiceSection />
+      <ModuleTabs />
+      <Workflow />
+      <FeatureGrid />
+      <Audiences />
+      <Trust />
+      <Faq />
+      <CtaBand />
+    </main>
+    <Footer />
+  </div>
 );
 
 export default BrandLanding;

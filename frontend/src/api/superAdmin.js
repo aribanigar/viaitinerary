@@ -119,3 +119,21 @@ export const assignInquiry = async (token, inquiryId, adminId) => {
     body: JSON.stringify({ admin_id: adminId }),
   });
 };
+
+// Via Kashmir internal account (B2B net prices) - one account only, never a DMC partner.
+export const setBusinessVkInternal = async (token, businessId, enabled) => {
+  return request(`/super-admin/businesses/${businessId}/vk-internal`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ enabled }),
+  });
+};
+
+// Refresh a connected account's Via Kashmir catalog now.
+export const syncBusinessVkCatalog = async (token, businessId) => {
+  return request("/vk-catalog/sync", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ account_id: businessId }),
+  });
+};

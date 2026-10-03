@@ -371,3 +371,40 @@ input[type="number"] {
   background: transparent !important;
   padding-left: 10px !important;
 }
+
+/* ── Public marketing pages: shared buttons + section rhythm ── */
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding: 0 1.125rem;
+  border-radius: 0.625rem;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 150ms, border-color 150ms, color 150ms;
+}
+.btn-primary {
+  background: #181c22;
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #000;
+}
+.btn-secondary {
+  background: #fff;
+  color: #181c22;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+.btn-secondary:hover {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5e5e5e;
+}
