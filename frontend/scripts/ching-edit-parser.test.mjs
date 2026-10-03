@@ -286,6 +286,49 @@ test('email it to the client does not become SET_CLIENT or EMAIL_ME', () => {
   assert.deepEqual(r.actions, [{ type: 'SEND_PROPOSAL', channel: 'email' }, { type: 'EXPORT_PDF' }])
 })
 
+test('payment link: whatsapp by default, email / link when said', () => {
+  only('send the payment link to the client', [{ type: 'SEND_PAYMENT_LINK', channel: 'whatsapp' }])
+  only('WhatsApp Rahul the payment link', [{ type: 'SEND_PAYMENT_LINK', channel: 'whatsapp' }])
+  only('ask the client to pay the advance', [{ type: 'SEND_PAYMENT_LINK', channel: 'whatsapp' }])
+  only('send the advance payment link', [{ type: 'SEND_PAYMENT_LINK', channel: 'whatsapp' }])
+  only('email the payment link to the customer', [{ type: 'SEND_PAYMENT_LINK', channel: 'email' }])
+  only('copy the payment link', [{ type: 'SEND_PAYMENT_LINK', channel: 'link' }])
+  only('send me the payment link', [{ type: 'SEND_PAYMENT_LINK', channel: 'link' }])
+})
+test('reminders: kind and channel', () => {
+  only('remind the client', [{ type: 'SEND_REMINDER', kind: 'proposal', channel: 'email' }])
+  only('send a reminder to Rahul', [{ type: 'SEND_REMINDER', kind: 'proposal', channel: 'email' }])
+  only('send a payment reminder', [{ type: 'SEND_REMINDER', kind: 'payment', channel: 'email' }])
+  only('remind them to pay the balance', [{ type: 'SEND_REMINDER', kind: 'payment', channel: 'email' }])
+  only('remind the client on WhatsApp', [{ type: 'SEND_REMINDER', kind: 'proposal', channel: 'whatsapp' }])
+  only('send a payment reminder by email', [{ type: 'SEND_REMINDER', kind: 'payment', channel: 'email' }])
+})
+test('excel export vs pdf export', () => {
+  only('export excel', [{ type: 'EXPORT_EXCEL' }])
+  only('download the excel quotation', [{ type: 'EXPORT_EXCEL' }])
+  only('download the spreadsheet quotation', [{ type: 'EXPORT_EXCEL' }])
+  only('excel sheet please', [{ type: 'EXPORT_EXCEL' }])
+  only('download the pdf and the excel', [{ type: 'EXPORT_PDF' }, { type: 'EXPORT_EXCEL' }])
+  only('export the pdf', [{ type: 'EXPORT_PDF' }])
+  only('export', [{ type: 'EXPORT_PDF' }])
+})
+test('no collisions with proposal / email-me phrasings', () => {
+  only('send the proposal to the client', [{ type: 'SEND_PROPOSAL', channel: 'email' }])
+  only('send it to me', [{ type: 'EMAIL_ME' }])
+  only('send it to the customer on WhatsApp', [{ type: 'SEND_PROPOSAL', channel: 'whatsapp' }])
+  only('share the link', [{ type: 'SEND_PROPOSAL', channel: 'link' }])
+  only('email it to me', [{ type: 'EMAIL_ME' }])
+  const r = edit('remind me later')
+  assert.deepEqual(r.actions, [])
+})
+test('new commands chain and go last in spoken order', () =>
+  only('remind the client on whatsapp and make gulmarg 2 nights, then export excel and ask rahul to pay the advance', [
+    { type: 'SET_STAY_NIGHTS', stay: 1, nights: 2 },
+    { type: 'SEND_REMINDER', kind: 'proposal', channel: 'whatsapp' },
+    { type: 'EXPORT_EXCEL' },
+    { type: 'SEND_PAYMENT_LINK', channel: 'whatsapp' },
+  ]))
+
 // ---- chaining ----
 test('chain: Change Gulmarg to two nights and reduce Srinagar to one night', () =>
   only('Change Gulmarg to two nights and reduce Srinagar to one night', [

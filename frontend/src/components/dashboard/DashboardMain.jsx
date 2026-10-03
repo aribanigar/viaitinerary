@@ -28,6 +28,7 @@ import { fetchTrips } from "../../api/trips";
 import { getTeams } from "../../api/teams";
 import Loader from "../common/Loader";
 import Modal from "../common/Modal";
+import SalesPipeline from "./SalesPipeline";
 // Lazy: it's the only thing here that pulls in the charts library, and only
 // super admins ever see it — agency admins shouldn't download it.
 const SuperAdminDashboard = lazy(() => import("./SuperAdminDashboard"));
@@ -255,6 +256,8 @@ const DashboardMain = () => {
               </Link>
             ))}
           </div>
+
+          <SalesPipeline token={token} />
 
           {/* Today's Trips Card */}
           <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">

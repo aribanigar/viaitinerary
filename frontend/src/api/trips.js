@@ -119,3 +119,41 @@ export async function sendProposal(token, id, body = {}) {
     body: JSON.stringify(body),
   });
 }
+
+// Client-facing Excel quotation (Summary / Itinerary / Hotels / Transport / Activities).
+export async function downloadQuotationExcel(token, id) {
+  return request(`/trips/${id}/quotation-xlsx`, { token, responseType: "blob" });
+}
+
+// Email the client a reminder now. kind: "proposal" | "payment" → { sent_to, kind }
+export async function sendReminder(token, id, kind = "proposal") {
+  return request(`/trips/${id}/remind`, { method: "POST", token, body: JSON.stringify({ kind }) });
+}
+
+// Dashboard sales pipeline: stage counts + trips that need attention.
+export async function fetchSalesPipeline(token) {
+  return request("/sales/pipeline", { token });
+}
+
+// Client payments for a trip: schedule, payments, "I've paid" claims.
+export async function fetchTripPayments(token, id) {
+  return request(`/trips/${id}/payments`, { token });
+}
+
+// Set (number) or clear (null) the trip's advance-amount override.
+export async function setTripAdvance(token, id, advanceAmount) {
+  return request(`/trips/${id}/payments`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({ advance_amount: advanceAmount }),
+  });
+}
+
+// Verify or reject a client's "I've paid" claim. action: "verify" | "reject"
+export async function decideClientPayment(token, id, paymentId, action) {
+  return request(`/trips/${id}/payments/${paymentId}`, {
+    method: "POST",
+    token,
+    body: JSON.stringify({ action }),
+  });
+}

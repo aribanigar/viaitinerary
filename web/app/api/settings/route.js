@@ -41,7 +41,20 @@ const FIELD_MAP = {
   smtpEncryption: "smtpEncryption",
   smtpAppPassword: "smtpAppPassword",
   googleMapsApiKey: "googleMapsApiKey",
+  razorpayKeyId: "razorpayKeyId",
+  razorpayKeySecret: "razorpayKeySecret",
+  upiId: "upiId",
+  advancePercentage: "advancePercentage",
+  balanceDueDays: "balanceDueDays",
+  autoConfirmOnPayment: "autoConfirmOnPayment",
+  followUpsEnabled: "followUpsEnabled",
+  followUpAfterHours: "followUpAfterHours",
+  maxFollowUps: "maxFollowUps",
+  paymentRemindersEnabled: "paymentRemindersEnabled",
+  paymentReminderAfterDays: "paymentReminderAfterDays",
 };
+
+const INT_FIELDS = ["smtpPort", "balanceDueDays", "followUpAfterHours", "maxFollowUps", "paymentReminderAfterDays"];
 
 // GET /api/settings
 export async function GET(request) {
@@ -64,10 +77,22 @@ export async function PUT(request) {
     for (const [key, col] of Object.entries(FIELD_MAP)) {
       if (body[key] !== undefined) data[col] = body[key];
     }
-    if (data.smtpPort !== undefined && data.smtpPort !== null && data.smtpPort !== "") {
-      data.smtpPort = parseInt(data.smtpPort, 10);
+    for (const col of INT_FIELDS) {
+      if (data[col] === "") data[col] = null;
+      else if (data[col] !== undefined && data[col] !== null) data[col] = parseInt(data[col], 10);
     }
+    // Non-nullable counters: an empty value means "back to the default".
+    for (const col of ["balanceDueDays", "followUpAfterHours", "maxFollowUps", "paymentReminderAfterDays"]) {
+      if (data[col] === null || Number.isNaN(data[col])) delete data[col];
+    }
+    if (data.advancePercentage === "") data.advancePercentage = null;
     if (body.clearSmtpPassword) data.smtpAppPassword = null;
+    // Write-only secret: an empty value keeps the saved one; clear explicitly.
+    if (data.razorpayKeySecret === "") delete data.razorpayKeySecret;
+    if (body.clearRazorpay) {
+      data.razorpayKeyId = null;
+      data.razorpayKeySecret = null;
+    }
 
     // Offload any newly-uploaded images (data URLs) to Supabase Storage.
     for (const col of ["logoPath", "confirmationHeroImage", "defaultTripImagePath"]) {

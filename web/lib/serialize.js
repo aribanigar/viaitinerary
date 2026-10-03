@@ -315,6 +315,17 @@ export function settingsToCamel(s) {
     smtpEncryption: s.smtpEncryption || "tls",
     hasSmtpPassword: !!s.smtpAppPassword,
     googleMapsApiKey: s.googleMapsApiKey || "",
+    razorpayKeyId: s.razorpayKeyId || "",
+    hasRazorpaySecret: !!s.razorpayKeySecret, // the secret itself never leaves the server
+    upiId: s.upiId || "",
+    advancePercentage: s.advancePercentage == null ? null : num(s.advancePercentage),
+    balanceDueDays: s.balanceDueDays ?? 15,
+    autoConfirmOnPayment: s.autoConfirmOnPayment ?? true,
+    followUpsEnabled: s.followUpsEnabled ?? true,
+    followUpAfterHours: s.followUpAfterHours ?? 24,
+    maxFollowUps: s.maxFollowUps ?? 2,
+    paymentRemindersEnabled: s.paymentRemindersEnabled ?? true,
+    paymentReminderAfterDays: s.paymentReminderAfterDays ?? 2,
   };
 }
 
@@ -355,4 +366,15 @@ export const SETTINGS_DEFAULTS = {
   smtpEncryption: "tls",
   hasSmtpPassword: false,
   googleMapsApiKey: "",
+  razorpayKeyId: "",
+  hasRazorpaySecret: false,
+  upiId: "",
+  advancePercentage: 30,
+  balanceDueDays: 15,
+  autoConfirmOnPayment: true,
+  followUpsEnabled: true,
+  followUpAfterHours: 24,
+  maxFollowUps: 2,
+  paymentRemindersEnabled: true,
+  paymentReminderAfterDays: 2,
 };

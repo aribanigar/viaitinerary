@@ -36,7 +36,14 @@ import { useNotifications } from "../../context/NotificationContext";
 import Pagination from "../common/Pagination";
 
 // Notifications about one trip (client name · trip id · phone chips + WhatsApp).
-const TRIP_NOTIFICATION_TYPES = ["follow_up", "proposal_viewed", "proposal_approved", "proposal_changes"];
+const TRIP_NOTIFICATION_TYPES = [
+  "follow_up",
+  "proposal_viewed",
+  "proposal_approved",
+  "proposal_changes",
+  "payment_received",
+  "payment_claimed",
+];
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);

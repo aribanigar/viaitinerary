@@ -15,14 +15,16 @@ import { extractDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
 import { prepareCatalog, cityLookup, sameCity, matchHotel, extractMealPlan, extractEmail, extractPhone } from './parseCommand.js'
 
-const COMMAND_TYPES = new Set(['EXPORT_PDF', 'EMAIL_ME', 'SAVE', 'SEND_PROPOSAL'])
+const COMMAND_TYPES = new Set([
+  'EXPORT_PDF', 'EXPORT_EXCEL', 'EMAIL_ME', 'SAVE', 'SEND_PROPOSAL', 'SEND_PAYMENT_LINK', 'SEND_REMINDER',
+])
 const STAY_STRUCTURE = new Set(['SET_STAY_NIGHTS', 'ADD_STAY', 'REMOVE_STAY'])
 const TRIP_NOUN = '(?:trip|itinerary|itineraries|tour|package|quotation|quote|holiday|vacation)'
 const SPLIT_VERBS = new Set([
   'change', 'make', 'reduce', 'increase', 'decrease', 'replace', 'swap', 'switch', 'remove', 'delete', 'skip',
   'drop', 'shift', 'move', 'export', 'download', 'undo', 'keep', 'set', 'give', 'add', 'use', 'extend',
   'shorten', 'email', 'send', 'save', 'include', 'put', 'cancel', 'update', 'apply', 'whatsapp', 'share',
-  'copy',
+  'copy', 'remind', 'ask',
 ])
 // A verb right after one of these belongs to the same clause ("i want to change", "can you add").
 const NO_SPLIT_PREV = new Set([
@@ -241,10 +243,47 @@ function checkDay(day, S, warnings) {
 // ---------- clause handlers: (c, toks, env) -> Action[] | null ----------
 
 /** Sending the client proposal / approval link: { type: 'SEND_PROPOSAL', channel } or null. */
+const mentionsClient = (c, toks, env) =>
+  /\b(?:client|customer|guest|guests|him|her|them)\b/.test(c) ||
+  (env.S.clientTokens.length > 0 && toks.some((t) => env.S.clientTokens.includes(t)))
+const PAYMENT_WORD = /\b(?:pay|paying|payment|payments|paid|advance|balance|deposit|dues?|outstanding|instal(?:l)?ments?|booking amount)\b/
+const TO_ME = /\b(?:me|my|myself|mine|inbox)\b/
+
+/** "remind the client" / "send a payment reminder on whatsapp" -> SEND_REMINDER. */
+function reminderCommand(c, toks, env) {
+  if (!/\b(?:remind|reminder|reminders|nudge|follow\s*up|chase)\b/.test(c)) return null
+  const clientRef = mentionsClient(c, toks, env)
+  if (TO_ME.test(c) && !clientRef) return null
+  return {
+    type: 'SEND_REMINDER',
+    kind: PAYMENT_WORD.test(c) ? 'payment' : 'proposal',
+    channel: /\bwhatsapp\b/.test(c) ? 'whatsapp' : 'email',
+  }
+}
+
+/** "send the payment link to the client" / "ask the client to pay the advance" -> SEND_PAYMENT_LINK. */
+function paymentLinkCommand(c, toks, env) {
+  if (!PAYMENT_WORD.test(c)) return null
+  if (!/\b(?:link|url|send|share|copy|ask|collect|request|whatsapp|e-?mail|mail)\b/.test(c)) return null
+  const clientRef = mentionsClient(c, toks, env)
+  // "send me the payment link" -> the agent wants the link itself.
+  if (TO_ME.test(c) && !clientRef) return { type: 'SEND_PAYMENT_LINK', channel: 'link' }
+  let channel = 'whatsapp'
+  if (/\bwhatsapp\b/.test(c)) channel = 'whatsapp'
+  else if (/\b(?:e-?mail|mail)\b/.test(c)) channel = 'email'
+  else if (/\b(?:copy|get|show|open|generate)\b/.test(c) || (/\bshare\b/.test(c) && !clientRef)) channel = 'link'
+  return { type: 'SEND_PAYMENT_LINK', channel }
+}
+
+/** "export excel" / "download the spreadsheet quotation" -> EXPORT_EXCEL. */
+function excelCommand(c) {
+  if (/\b(?:excel|xls|xlsx|spreadsheet|spread sheet)\b/.test(c)) return { type: 'EXPORT_EXCEL' }
+  if (/\bsheet\b/.test(c) && /\b(?:export|download|quotation|quote)\b/.test(c)) return { type: 'EXPORT_EXCEL' }
+  return null
+}
+
 function proposalCommand(c, toks, env) {
-  const clientRef =
-    /\b(?:client|customer|guest|guests|him|her|them)\b/.test(c) ||
-    (env.S.clientTokens.length > 0 && toks.some((t) => env.S.clientTokens.includes(t)))
+  const clientRef = mentionsClient(c, toks, env)
   const proposal = /\b(?:proposal|approval|quote|quotation)\b/.test(c)
   const link = /\b(?:link|url)\b/.test(c)
   const toMe = /\b(?:me|my|myself|mine|inbox)\b/.test(c) && !clientRef
@@ -266,6 +305,15 @@ function proposalCommand(c, toks, env) {
 function hCommands(c, toks, env) {
   if (/\b(?:undo|revert)\b/.test(c) || /^(?:go back|cancel that|cancel the last change|take that back)$/.test(c)) {
     return [{ type: 'UNDO' }]
+  }
+  const other = reminderCommand(c, toks, env) || paymentLinkCommand(c, toks, env) || excelCommand(c)
+  if (other) {
+    // "download the pdf and the excel" -> both, in spoken order.
+    const pdfAt = c.search(/\bpdf\b/)
+    if (other.type === 'EXPORT_EXCEL' && pdfAt >= 0) {
+      return pdfAt < c.search(/\b(?:excel|xlsx?|spread\s?sheet|sheet)\b/) ? [{ type: 'EXPORT_PDF' }, other] : [other, { type: 'EXPORT_PDF' }]
+    }
+    return [other]
   }
   const channel = proposalCommand(c, toks, env)
   if (channel) return [{ type: 'SEND_PROPOSAL', channel }]

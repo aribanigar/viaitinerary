@@ -37,7 +37,7 @@ export async function PUT(request, { params }) {
     if (!existing) return NextResponse.json({ message: "Not found" }, { status: 404 });
 
     const body = await request.json();
-    const updated = await prisma.trip.update({ where: { id: existing.id }, data: await buildTripScalars(body) });
+    const updated = await prisma.trip.update({ where: { id: existing.id }, data: await buildTripScalars(body, { partial: true }) });
     await syncTripRelations(existing.id, body);
     pushDmcItinerary(updated).catch(() => {});
 

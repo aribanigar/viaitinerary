@@ -66,7 +66,8 @@ const safe = (fn, fallback) => {
 const newDraftPath = () =>
   `/trip-builder?d=${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
 
-// Command actions (EXPORT_PDF / EMAIL_ME / SEND_PROPOSAL / SAVE / UNDO) against the open Trip
+// Command actions (EXPORT_PDF / EXPORT_EXCEL / EMAIL_ME / SEND_PROPOSAL / SEND_PAYMENT_LINK /
+// SEND_REMINDER / SAVE / UNDO) against the open Trip
 // Builder, in order. Resolves to the result lines; throws on the first failure.
 async function runEditorCommands(commands, editor, setProgress) {
   const lines = [];
@@ -90,6 +91,21 @@ async function runEditorCommands(commands, editor, setProgress) {
     } else if (c.type === "SEND_PROPOSAL") {
       setProgress(c.channel === "email" ? "Emailing the proposal to the client…" : "Preparing the approval link…");
       const res = await editor.sendProposal(c.channel);
+      toast.success(res.message);
+      lines.push(res.message);
+    } else if (c.type === "EXPORT_EXCEL") {
+      setProgress("Preparing the Excel quotation…");
+      await editor.exportExcel();
+      toast.success("Excel quotation downloaded");
+      lines.push("Excel quotation downloaded");
+    } else if (c.type === "SEND_PAYMENT_LINK") {
+      setProgress(c.channel === "email" ? "Emailing the payment link…" : "Preparing the payment link…");
+      const res = await editor.sendPaymentLink(c.channel);
+      toast.success(res.message);
+      lines.push(res.message);
+    } else if (c.type === "SEND_REMINDER") {
+      setProgress("Sending the reminder…");
+      const res = await editor.sendReminder(c.kind, c.channel);
       toast.success(res.message);
       lines.push(res.message);
     } else if (c.type === "SAVE") {

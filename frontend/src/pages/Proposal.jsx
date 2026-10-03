@@ -22,6 +22,10 @@ import {
 import ModernTemplate from "../components/dashboard/ModernTemplate";
 import ScaledPages from "../components/proposal/ScaledPages";
 import RespondSheet from "../components/proposal/RespondSheet";
+import PaymentSection from "../components/proposal/PaymentSection";
+import PaySheet from "../components/proposal/PaySheet";
+import { openRazorpay } from "../components/proposal/razorpayCheckout";
+import { formatMoney, paymentErrorMessage } from "../components/proposal/money";
 
 // Public client proposal: /p/:token (no login). Branded as the AGENCY — the
 // platform's own name never appears here. `?preview=1` is the agent's own
@@ -50,6 +54,12 @@ function respond(token, body) {
     body: JSON.stringify(body),
   });
 }
+
+const post = (token, path, body) =>
+  request(`/public/proposals/${encodeURIComponent(token)}${path}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 
 function normalizeHex(hex) {
   const s = String(hex || "").trim();
@@ -137,6 +147,9 @@ export default function Proposal() {
   const [sheet, setSheet] = useState(null); // "approve" | "changes" | null
   const [talkOpen, setTalkOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [payment, setPayment] = useState(null); // latest payment block (after paying/claiming)
+  const [payingKind, setPayingKind] = useState(null);
+  const [paySheet, setPaySheet] = useState(null); // { kind, amount } for UPI / bank
 
   useEffect(() => {
     let alive = true;
@@ -239,6 +252,57 @@ export default function Proposal() {
       href: `mailto:${settings.contact_email}?subject=${encodeURIComponent(`${title} (${trip.trip_id})`)}`,
     },
   ].filter(Boolean);
+
+  const pay = payment || state.data.payment || null;
+  const methods = pay?.methods || {};
+  const hasMethod = Boolean(methods.razorpay || methods.upi_id || methods.bank);
+  const paidSoFar = Number(pay?.paid) || 0;
+  // Paying starts once the client approves (or has already paid something).
+  const payPhase = Boolean(pay) && (responded === "approved" || paidSoFar > 0);
+  const canPay = !preview && hasMethod && payPhase;
+  const nextDue = pay?.next && Number(pay.next.amount) > 0 ? pay.next : null;
+  const paidInFull = Boolean(pay) && Number(pay.total) > 0 && Number(pay.balance) <= 0;
+  // An "I've paid" claim the agency hasn't confirmed yet: don't invite a second payment.
+  const confirming = (pay?.pending_claims || []).length > 0;
+  const amountFor = (kind) => (kind === "advance" ? Number(pay.advance_remaining) : Number(pay.balance));
+
+  const startPayment = async (kind) => {
+    if (!pay || payingKind) return;
+    if (!methods.razorpay) {
+      setPaySheet({ kind, amount: amountFor(kind) });
+      return;
+    }
+    setPayingKind(kind);
+    try {
+      const order = await post(token, "/pay", { kind });
+      const res = await openRazorpay({
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.order_id,
+        name: order.name,
+        description: order.description,
+        prefill: order.prefill,
+        theme: { color: brand },
+      });
+      const verified = await post(token, "/pay/verify", res);
+      setPayment(verified.payment);
+      toast.success("Payment received — thank you!");
+    } catch (err) {
+      if (err?.dismissed) {
+        if (err.failed) toast.error(err.failed);
+      } else {
+        toast.error(paymentErrorMessage(err));
+      }
+    } finally {
+      setPayingKind(null);
+    }
+  };
+
+  const claimPayment = async (body) => {
+    const res = await post(token, "/pay/claim", body);
+    setPayment(res.payment);
+  };
 
   const submit = async ({ name, message }) => {
     const res = await respond(token, {
@@ -382,6 +446,19 @@ export default function Proposal() {
             includeGST={mapped.includeGST}
           />
         </ScaledPages>
+        {pay && (Number(pay.total) > 0) && (
+          <PaymentSection
+            payment={pay}
+            agencyName={agencyName}
+            brand={brand}
+            brandText={brandText}
+            preview={preview}
+            canPay={canPay}
+            payingKind={payingKind}
+            onPay={startPayment}
+            onRequestChanges={() => setSheet("changes")}
+          />
+        )}
       </main>
 
       {/* Closes the "Talk to us" menu (outside the bar: its backdrop blur
@@ -453,6 +530,28 @@ export default function Proposal() {
               <PencilLine className="w-4 h-4" />
               {responded === "changes_requested" ? "More changes" : "Request changes"}
             </button>
+            {payPhase && paidInFull ? (
+              <span
+                className="flex-1 sm:flex-none h-11 px-6 rounded-full text-sm font-semibold flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Paid in full
+              </span>
+            ) : payPhase && confirming ? (
+              <span className="flex-1 sm:flex-none h-11 px-5 rounded-full text-sm font-semibold flex items-center justify-center gap-1.5 bg-amber-50 text-amber-700">
+                <Loader2 className="w-4 h-4" /> Confirming your payment
+              </span>
+            ) : canPay && nextDue ? (
+              <button
+                type="button"
+                onClick={() => startPayment(nextDue.kind)}
+                disabled={!!payingKind}
+                className="flex-1 sm:flex-none h-11 px-6 rounded-full text-sm font-semibold shadow-sm disabled:opacity-60 flex items-center justify-center gap-1.5"
+                style={{ background: brand, color: brandText }}
+              >
+                {payingKind ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Pay {nextDue.kind === "advance" ? "advance" : "balance"} {formatMoney(nextDue.amount, pay.currency_symbol)}
+              </button>
+            ) : null}
             {responded !== "approved" && (
               <button
                 type="button"
@@ -479,6 +578,21 @@ export default function Proposal() {
           brandText={brandText}
           onSubmit={submit}
           onClose={() => setSheet(null)}
+        />
+      )}
+
+      {paySheet && pay && (
+        <PaySheet
+          payment={pay}
+          kind={paySheet.kind}
+          amount={paySheet.amount}
+          agencyName={agencyName}
+          tripId={trip.trip_id}
+          defaultName={trip.client_name || ""}
+          brand={brand}
+          brandText={brandText}
+          onClaim={claimPayment}
+          onClose={() => setPaySheet(null)}
         />
       )}
     </div>

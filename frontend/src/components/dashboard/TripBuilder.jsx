@@ -49,6 +49,8 @@ import {
   emailItineraryToMe,
   fetchProposal,
   sendProposal as sendProposalApi,
+  sendReminder as sendReminderApi,
+  downloadQuotationExcel,
 } from "../../api/trips";
 import {
   createPackage,
@@ -63,6 +65,7 @@ import DatePicker from "../common/DatePicker";
 import ItineraryTab from "./trip-builder/ItineraryTab";
 import LogisticsTab from "./trip-builder/LogisticsTab";
 import PricingTab from "./trip-builder/PricingTab";
+import TripPayments from "./trip-builder/TripPayments";
 import { HotelModal, TransportModal, ActivityModal } from "./trip-builder/TripBuilderModals";
 import TripInfoTab from "./trip-builder/TripInfoTab";
 import { registerChingEditor } from "../../utils/ching/editorBridge";
@@ -1126,7 +1129,10 @@ const TripBuilder = ({ mode }) => {
       other_costs: otherCosts.filter((c) => c.name && c.price > 0),
       inclusions,
       exclusions,
-      ...(urlTripId ? {} : { status: "pending" }),
+      // Status is managed in My Trips / by payments, not here: a new trip
+      // starts pending, and updates leave the saved status alone (a stale
+      // loaded status must not undo a confirmation that happened meanwhile).
+      ...(urlTripId ? { status: undefined } : { status: "pending" }),
     };
 
     try {
@@ -1284,20 +1290,31 @@ const TripBuilder = ({ mode }) => {
     });
 
   /**
-   * Share the proposal link with the client. channel: "whatsapp" | "email" |
-   * "link" (copy) | "preview". `popup` is a window opened synchronously in the
-   * click handler (browsers block window.open after an await); without one
-   * (e.g. a voice command) we try to open and fall back to a clickable toast.
-   * Resolves to { message, url }.
+   * Share the client link. channel: "whatsapp" | "email" | "link" (copy) |
+   * "preview". purpose: "proposal" (approval link), "payment" (the link's
+   * payment section) or "remind" (with kind "proposal" | "payment").
+   * `popup` is a window opened synchronously in the click handler (browsers
+   * block window.open after an await); without one (e.g. a voice command) we
+   * try to open and fall back to a clickable toast. Resolves to { message, url }.
    */
-  const shareProposal = async (channel, { popup = null } = {}) => {
+  const shareProposal = async (channel, { popup = null, purpose = "proposal", kind = "proposal" } = {}) => {
     // The link shows the SAVED trip, so persist the latest edits first.
     if (!(await saveTrip({ silent: true }))) {
       throw new Error("Save the trip first — client name, phone and email are required.");
     }
     const tripId = urlTripId;
     if (!tripId) throw new Error("Trip saved — send it again to share the link.");
+    const forPayment = purpose === "payment" || (purpose === "remind" && kind === "payment");
 
+    // Reminder / payment emails go through the server (and count toward the
+    // automatic follow-up limits, so the client isn't nudged twice).
+    if (channel === "email" && purpose !== "proposal") {
+      const res = await sendReminderApi(token, tripId, forPayment ? "payment" : "proposal");
+      refreshProposal();
+      return {
+        message: purpose === "payment" ? `Payment link emailed to ${res.sent_to}.` : `Reminder emailed to ${res.sent_to}.`,
+      };
+    }
     if (channel === "email") {
       const blob = await exportPreviewBlob();
       const res = await sendProposalApi(token, tripId, {
@@ -1308,24 +1325,35 @@ const TripBuilder = ({ mode }) => {
       return { message: `Proposal emailed to ${res.sent_to}.`, url: `${window.location.origin}${res.path}` };
     }
 
-    const res = await sendProposalApi(token, tripId, channel === "whatsapp" ? { send: "whatsapp" } : {});
+    const res = await sendProposalApi(token, tripId, channel === "whatsapp" && purpose === "proposal" ? { send: "whatsapp" } : {});
     setProposal(res);
-    const url = `${window.location.origin}${res.path}`;
+    const url = `${window.location.origin}${res.path}${forPayment ? "#pay" : ""}`;
 
     if (channel === "link") {
+      const what = forPayment ? "Payment link" : "Approval link";
       try {
         await navigator.clipboard.writeText(url);
-        return { message: "Approval link copied.", url };
+        return { message: `${what} copied.`, url };
       } catch {
-        return { message: `Approval link: ${url}`, url };
+        return { message: `${what}: ${url}`, url };
       }
     }
 
     let target = url + (channel === "preview" ? "?preview=1" : "");
     if (channel === "whatsapp") {
-      const greeting = `Hi ${tripInfo.clientName || "there"}, your ${tripInfo.tripTitle || "trip"} itinerary from ${agencySettings.agencyName || "us"} is ready. You can view it and approve it here: ${url}`;
+      const name = tripInfo.clientName || "there";
+      const trip = tripInfo.tripTitle || "trip";
+      const agency = agencySettings.agencyName || "us";
+      const text =
+        purpose === "payment"
+          ? `Hi ${name}, you can pay for your ${trip} trip securely here: ${url}`
+          : purpose === "remind" && forPayment
+            ? `Hi ${name}, a gentle reminder about the pending payment for your ${trip} trip. You can pay securely here: ${url}`
+            : purpose === "remind"
+              ? `Hi ${name}, just checking in — did you get a chance to look at your ${trip} itinerary from ${agency}? You can view and approve it here: ${url}`
+              : `Hi ${name}, your ${trip} itinerary from ${agency} is ready. You can view it and approve it here: ${url}`;
       const phone = (tripInfo.clientPhone || "").replace(/[^\d]/g, "");
-      target = `https://wa.me/${phone}?text=${encodeURIComponent(greeting)}`;
+      target = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
       logSendForAmendmentHistory("whatsapp_share");
     }
     const win = popup || window.open(target, "_blank", "noopener,noreferrer");
@@ -1333,31 +1361,62 @@ const TripBuilder = ({ mode }) => {
     if (!win) {
       toast.info(
         <a href={target} target="_blank" rel="noopener noreferrer" className="underline font-semibold">
-          {channel === "whatsapp" ? "Tap to open WhatsApp and send the link" : "Tap to open the client view"}
+          {channel === "whatsapp" ? "Tap to open WhatsApp and send it" : "Tap to open the client view"}
         </a>,
         { autoClose: false },
       );
     }
     return {
-      message: channel === "whatsapp" ? "WhatsApp opened with the approval link." : "Opened the client view.",
+      message:
+        channel === "whatsapp"
+          ? `WhatsApp opened with the ${forPayment ? "payment" : purpose === "remind" ? "reminder" : "approval"} link.`
+          : "Opened the client view.",
       url,
     };
   };
 
-  const handleShareProposal = async (channel) => {
+  const handleShareProposal = async (channel, opts = {}) => {
     setOpenMenu(null);
     // Open the tab now, inside the click, so it isn't popup-blocked later.
     const popup = channel === "whatsapp" || channel === "preview" ? window.open("about:blank", "_blank") : null;
     if (popup) popup.opener = null;
     setSharing(true);
     try {
-      const { message } = await shareProposal(channel, { popup });
+      const { message } = await shareProposal(channel, { ...opts, popup });
       toast.success(message);
     } catch (err) {
       popup?.close();
-      toast.error(err.message || "Couldn't share the proposal.");
+      toast.error(err.message || "Couldn't send it.");
     } finally {
       setSharing(false);
+    }
+  };
+
+  // What a reminder is about right now: payment once the client approved.
+  const reminderKind = proposal?.response === "approved" ? "payment" : "proposal";
+
+  const handleExportExcel = async () => {
+    setOpenMenu(null);
+    try {
+      setExporting(true);
+      // The workbook is built from the saved trip — persist the latest edits.
+      if (!(await saveTrip({ silent: true })) || !urlTripId) {
+        throw new Error("Save the trip first — client name, phone and email are required.");
+      }
+      const blob = await downloadQuotationExcel(token, urlTripId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${urlTripId}_Quotation.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      toast.error(err.message || "Couldn't export the Excel quotation.");
+      throw err;
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -1425,6 +1484,7 @@ const TripBuilder = ({ mode }) => {
     urlTripId,
     saveTrip,
     handleExport,
+    handleExportExcel,
     shareProposal,
   };
   const chingUndo = useRef([]);
@@ -1549,6 +1609,18 @@ const TripBuilder = ({ mode }) => {
       sendProposal: async (channel) => {
         await settle();
         return chingState.current.shareProposal(channel);
+      },
+      sendPaymentLink: async (channel = "whatsapp") => {
+        await settle();
+        return chingState.current.shareProposal(channel, { purpose: "payment" });
+      },
+      sendReminder: async (kind = "proposal", channel = "email") => {
+        await settle();
+        return chingState.current.shareProposal(channel, { purpose: "remind", kind });
+      },
+      exportExcel: async () => {
+        await settle();
+        await chingState.current.handleExportExcel();
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1870,22 +1942,48 @@ const TripBuilder = ({ mode }) => {
           <HistoryIcon className="w-3.5 h-3.5" /> Amendments
         </button>
       )}
-      <button
-        onClick={handleExport}
-        disabled={loading || saving || exporting}
-        className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {exporting ? (
+      <div className="relative">
+        <button
+          onClick={() => toggleMenu("export")}
+          disabled={loading || saving || exporting}
+          className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {exporting ? (
+            <>
+              <Loader size="sm" text="" inline color="text-[#181c22]" />
+              <span>Exporting…</span>
+            </>
+          ) : (
+            <>
+              <Download className="w-3.5 h-3.5" /> Export <ChevronDown className="w-3 h-3 opacity-60" />
+            </>
+          )}
+        </button>
+        {openMenu === "export" && (
           <>
-            <Loader size="sm" text="" inline color="text-[#181c22]" />
-            <span>Exporting…</span>
-          </>
-        ) : (
-          <>
-            <Download className="w-3.5 h-3.5" /> Export
+            <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
+            <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden py-1">
+              <button
+                onClick={() => {
+                  setOpenMenu(null);
+                  handleExport();
+                }}
+                className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-[#181c22]"
+              >
+                <Download className="w-4 h-4 text-[#181c22]/60" /> Itinerary PDF
+              </button>
+              {!isPackageMode && (
+                <button
+                  onClick={() => handleExportExcel().catch(() => {})}
+                  className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-[#181c22]"
+                >
+                  <Download className="w-4 h-4 text-[#181c22]/60" /> Excel quotation
+                </button>
+              )}
+            </div>
           </>
         )}
-      </button>
+      </div>
       {isPackageMode ? (
         <button
           onClick={handleShareWhatsApp}
@@ -1944,6 +2042,35 @@ const TripBuilder = ({ mode }) => {
                       <span className="block text-sm font-medium text-[#181c22]">{label}</span>
                       {hint && <span className="block text-xs text-[#9aa3b2] truncate max-w-[13rem]">{hint}</span>}
                     </span>
+                  </button>
+                ))}
+                <div className="border-t border-black/5 my-1" />
+                <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45">
+                  Payment &amp; reminders
+                </div>
+                {[
+                  { key: "pay-wa", icon: MessageCircle, label: "Send payment link on WhatsApp", run: () => handleShareProposal("whatsapp", { purpose: "payment" }) },
+                  { key: "pay-copy", icon: Link2, label: "Copy payment link", run: () => handleShareProposal("link", { purpose: "payment" }) },
+                  {
+                    key: "remind-email",
+                    icon: Mail,
+                    label: `Email a ${reminderKind} reminder`,
+                    run: () => handleShareProposal("email", { purpose: "remind", kind: reminderKind }),
+                  },
+                  {
+                    key: "remind-wa",
+                    icon: MessageCircle,
+                    label: `WhatsApp a ${reminderKind} reminder`,
+                    run: () => handleShareProposal("whatsapp", { purpose: "remind", kind: reminderKind }),
+                  },
+                ].map(({ key, icon, label, run }) => (
+                  <button
+                    key={key}
+                    onClick={run}
+                    className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-[#181c22]"
+                  >
+                    {React.createElement(icon, { className: "w-4 h-4 text-[#181c22]/60" })}
+                    {label}
                   </button>
                 ))}
                 <div className="border-t border-black/5 my-1" />
@@ -2175,6 +2302,11 @@ const TripBuilder = ({ mode }) => {
                         setProfitMarginPercentage={handleProfitMarginPercentageChange}
                         calculatedTotalCost={calculatedTotalCost}
                       />
+                    )}
+                    {activeTab === "Pricing" && !isPackageMode && urlTripId && (
+                      <div className="mt-6">
+                        <TripPayments token={token} tripId={urlTripId} />
+                      </div>
                     )}
                   </>
                 )}

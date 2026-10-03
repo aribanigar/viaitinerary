@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { TRIP_INCLUDE } from "@/lib/trips";
 import { notify } from "@/lib/notify";
 import { publicTrip, publicSettings, publicPolicies } from "@/lib/proposal";
+import { paymentView, reconcilePendingOrders } from "@/lib/clientPayments";
 
 export const dynamic = "force-dynamic";
 
@@ -39,8 +40,15 @@ export async function GET(request, { params }) {
     }
   }
 
+  // Pick up a Razorpay payment whose checkout tab was closed before verify.
+  if (await reconcilePendingOrders(trip, settings)) {
+    Object.assign(trip, await prisma.trip.findUnique({ where: { id: trip.id } }));
+  }
+  const payments = await prisma.clientPayment.findMany({ where: { tripId: trip.id }, orderBy: { createdAt: "asc" } });
+
   return NextResponse.json({
     settings: publicSettings(settings),
+    payment: paymentView(trip, settings, payments),
     policies: publicPolicies(policy),
     trip: publicTrip(trip),
     proposal: {

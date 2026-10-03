@@ -657,6 +657,137 @@ const AgencySettings = () => {
                 </div>
               </div>
 
+              {/* Client Payments Section */}
+              <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col gap-4">
+                <div className="flex items-center gap-2 text-[#1b1b1b]">
+                  <Wallet className="w-5 h-5" />
+                  <h2 className="text-base font-bold text-slate-900">Client Payments</h2>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed -mt-2">
+                  Clients pay from their proposal link. With your own Razorpay keys they pay online and it's
+                  recorded automatically; without them they pay by UPI / bank transfer and tap “I've paid”, and
+                  you verify it on the trip (Pricing → Client Payments).
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Razorpay Key ID</label>
+                    <input type="text" name="razorpayKeyId" value={formData.razorpayKeyId || ""} onChange={handleInputChange} placeholder="rzp_live_…" autoComplete="off" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
+                      Razorpay Key Secret {formData.hasRazorpaySecret && <span className="text-emerald-600 normal-case tracking-normal">· saved ✓</span>}
+                    </label>
+                    <input
+                      type="password"
+                      name="razorpayKeySecret"
+                      value={formData.razorpayKeySecret || ""}
+                      onChange={handleInputChange}
+                      placeholder={formData.hasRazorpaySecret ? "Leave blank to keep the saved secret" : "Paste the key secret"}
+                      autoComplete="new-password"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-400 ml-1 leading-relaxed -mt-2">
+                  From your Razorpay Dashboard → Account &amp; Settings → API Keys. The secret is stored on the server and
+                  never shown again.
+                  {(formData.razorpayKeyId || formData.hasRazorpaySecret) && (
+                    <>
+                      {" "}
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!window.confirm("Remove your Razorpay keys? Clients will pay by UPI / bank transfer instead.")) return;
+                          try {
+                            await updateSettings(token, { clearRazorpay: true });
+                            setFormData((prev) => ({ ...prev, razorpayKeyId: "", razorpayKeySecret: "", hasRazorpaySecret: false }));
+                            toast.success("Razorpay keys removed");
+                          } catch (err) {
+                            toast.error(err.message || "Couldn't remove the keys.");
+                          }
+                        }}
+                        className="underline text-red-500 hover:text-red-600"
+                      >
+                        Remove keys
+                      </button>
+                    </>
+                  )}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">UPI ID</label>
+                    <input type="text" name="upiId" value={formData.upiId || ""} onChange={handleInputChange} placeholder="agency@okhdfcbank" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Default advance %</label>
+                    <input type="number" min="0" max="100" name="advancePercentage" value={formData.advancePercentage ?? ""} onChange={handleInputChange} placeholder="30" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Balance due (days before travel)</label>
+                    <input type="number" min="0" name="balanceDueDays" value={formData.balanceDueDays ?? ""} onChange={handleInputChange} placeholder="15" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, autoConfirmOnPayment: !(prev.autoConfirmOnPayment ?? true) }))}
+                  className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                    formData.autoConfirmOnPayment ?? true ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-500"
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {formData.autoConfirmOnPayment ?? true
+                    ? "Mark the trip Confirmed when the client pays"
+                    : "Keep the trip status as it is when the client pays"}
+                </button>
+              </div>
+
+              {/* Follow-ups Section */}
+              <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col gap-4">
+                <div className="flex items-center gap-2 text-[#1b1b1b]">
+                  <Mail className="w-5 h-5" />
+                  <h2 className="text-base font-bold text-slate-900">Automatic Follow-ups</h2>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed -mt-2">
+                  Every morning, clients who haven't answered a proposal get a friendly nudge, and clients with a
+                  payment due get a reminder with the pay link — sent from your own email (Gmail/SMTP above). You also
+                  get a short summary in Notifications.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, followUpsEnabled: !(prev.followUpsEnabled ?? true) }))}
+                  className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                    formData.followUpsEnabled ?? true ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-500"
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {formData.followUpsEnabled ?? true ? "Proposal follow-ups on" : "Proposal follow-ups off"}
+                </button>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nudge after (hours)</label>
+                    <input type="number" min="1" name="followUpAfterHours" value={formData.followUpAfterHours ?? ""} onChange={handleInputChange} placeholder="24" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Max nudges per proposal</label>
+                    <input type="number" min="0" name="maxFollowUps" value={formData.maxFollowUps ?? ""} onChange={handleInputChange} placeholder="2" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, paymentRemindersEnabled: !(prev.paymentRemindersEnabled ?? true) }))}
+                  className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                    formData.paymentRemindersEnabled ?? true ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-500"
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  {formData.paymentRemindersEnabled ?? true ? "Payment reminders on" : "Payment reminders off"}
+                </button>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Remind every (days)</label>
+                  <input type="number" min="1" name="paymentReminderAfterDays" value={formData.paymentReminderAfterDays ?? ""} onChange={handleInputChange} placeholder="2" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                </div>
+              </div>
+
               {/* Bulk Data Management Section - Moved here for more width */}
               <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col flex-1">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">

@@ -29,8 +29,42 @@ async function imageValue(image, prefix = "trips") {
 const int = (v, d = 0) => (v === undefined || v === null || v === "" ? d : parseInt(v, 10) || d);
 const dec = (v) => (v === undefined || v === null || v === "" ? null : Number(v));
 
-/** Map the builder payload to Trip scalar columns (excludes user/team/tripId). */
-export async function buildTripScalars(body) {
+// Trip column → the request keys that set it (for partial updates).
+const SCALAR_SOURCES = {
+  tripTitle: ["tripTitle"],
+  destination: ["destination"],
+  destinationId: ["destinationId"],
+  clientName: ["clientName"],
+  clientPhone: ["clientPhone"],
+  clientEmail: ["clientEmail"],
+  adults: ["adults"],
+  kidsCnb: ["kidsUpto5", "kids_cnb"],
+  kids5to12: ["kids5to12", "kids_5_to_12"],
+  startDate: ["startDate"],
+  duration: ["duration"],
+  cost: ["cost"],
+  gstAmount: ["gst_amount"],
+  gstPercentage: ["gst_percentage"],
+  profitMarginPercentage: ["profit_margin_percentage"],
+  currency: ["currency"],
+  template: ["template"],
+  status: ["status"],
+  includeGst: ["include_gst"],
+  useFlight: ["useFlight", "use_flight"],
+  tagline: ["tagline"],
+  inclusions: ["inclusions"],
+  exclusions: ["exclusions"],
+  otherCosts: ["other_costs"],
+  transportDetails: ["transport_details", "transportDetails"],
+};
+
+/**
+ * Map the builder payload to Trip scalar columns (excludes user/team/tripId).
+ * `partial: true` (updates) writes only the columns whose keys are in the
+ * body — e.g. My Trips' `{ status }` change must not blank the client name,
+ * dates and price, and the builder no longer re-sends a stale status.
+ */
+export async function buildTripScalars(body, { partial = false } = {}) {
   const data = {
     tripTitle: body.tripTitle,
     destination: body.destination ?? null,
@@ -58,6 +92,12 @@ export async function buildTripScalars(body) {
     otherCosts: body.other_costs ?? [],
     transportDetails: body.transport_details ?? body.transportDetails ?? [],
   };
+  if (body.refunded_amount !== undefined) data.refundedAmount = dec(body.refunded_amount) ?? 0;
+  if (partial) {
+    for (const [col, keys] of Object.entries(SCALAR_SOURCES)) {
+      if (!keys.some((k) => body[k] !== undefined)) delete data[col];
+    }
+  }
   const img = await imageValue(body.image, "trips");
   if (img !== undefined) data.imagePath = img;
   return data;

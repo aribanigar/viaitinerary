@@ -116,6 +116,12 @@ model Trip {
   proposalRespondedAt DateTime? @map("proposal_responded_at")
   proposalMessage     String?   @map("proposal_message")
   proposalResponder   String?   @map("proposal_responder")
+  proposalFollowUpCount   Int       @default(0) @map("proposal_follow_up_count")
+  proposalLastFollowUpAt  DateTime? @map("proposal_last_follow_up_at")
+  // Payment schedule: advance (null → agency advancePercentage of cost), balance before the trip.
+  advanceAmount           Decimal?  @map("advance_amount") @db.Decimal(12, 2)
+  paymentReminderCount    Int       @default(0) @map("payment_reminder_count")
+  lastPaymentReminderAt   DateTime? @map("last_payment_reminder_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
@@ -127,6 +133,7 @@ model Trip {
   obligations     AccountingObligation[]
   settlements     AccountingSettlement[]
   revisions       TripRevision[]
+  clientPayments  ClientPayment[]
 
   @@index([userId])
   @@index([teamId])
@@ -514,6 +521,21 @@ model AgencySetting {
   smtpEncryption            String?  @map("smtp_encryption")
   smtpAppPassword           String?  @map("smtp_app_password")
   googleMapsApiKey          String?  @map("google_maps_api_key")
+  // Client payments on the proposal page — the agency's OWN Razorpay account
+  // (never the platform's subscription keys). No keys → UPI / bank transfer
+  // with an "I've paid" claim the agency verifies.
+  razorpayKeyId             String?  @map("razorpay_key_id")
+  razorpayKeySecret         String?  @map("razorpay_key_secret")
+  upiId                     String?  @map("upi_id")
+  advancePercentage         Decimal? @default(30) @map("advance_percentage") @db.Decimal(5, 2)
+  balanceDueDays            Int      @default(15) @map("balance_due_days") // days before the trip starts
+  autoConfirmOnPayment      Boolean  @default(true) @map("auto_confirm_on_payment")
+  // Automatic follow-ups (cron /api/cron/sales-followups)
+  followUpsEnabled          Boolean  @default(true) @map("follow_ups_enabled")
+  followUpAfterHours        Int      @default(24) @map("follow_up_after_hours")
+  maxFollowUps              Int      @default(2) @map("max_follow_ups")
+  paymentRemindersEnabled   Boolean  @default(true) @map("payment_reminders_enabled")
+  paymentReminderAfterDays  Int      @default(2) @map("payment_reminder_after_days")
   createdAt                 DateTime @default(now()) @map("created_at")
   updatedAt                 DateTime @updatedAt @map("updated_at")
 
@@ -800,4 +822,32 @@ model Notification {
 
   @@index([userId])
   @@map("notifications")
+}
+
+// A client payment attempt from the proposal page. Razorpay payments are
+// recorded as accounting receipts (trip.paidAmount) once the signature is
+// verified; UPI / bank "I've paid" claims wait for the agency to verify.
+model ClientPayment {
+  id                Int       @id @default(autoincrement())
+  tripId            Int       @map("trip_id")
+  userId            Int       @map("user_id") // agency (tenant) id
+  kind              String // advance | balance | full
+  amount            Decimal   @db.Decimal(12, 2)
+  method            String // razorpay | upi | bank
+  status            String    @default("created") // created | paid | failed | claimed | verified | rejected
+  razorpayOrderId   String?   @unique @map("razorpay_order_id")
+  razorpayPaymentId String?   @unique @map("razorpay_payment_id")
+  reference         String? // UPI/bank transaction reference typed by the client
+  payerName         String?   @map("payer_name")
+  note              String?
+  settlementId      Int?      @map("settlement_id")
+  paidAt            DateTime? @map("paid_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([userId, status])
+  @@map("client_payments")
 }

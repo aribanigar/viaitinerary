@@ -13,7 +13,16 @@ import { buildEditContext, applyEditActions } from "./editTrip.js";
 import { buildChingTripParts } from "./buildTrip.js";
 
 // Commands run once, when the agent stops speaking — never live.
-export const COMMAND_TYPES = new Set(["EXPORT_PDF", "EMAIL_ME", "SAVE", "UNDO", "SEND_PROPOSAL"]);
+export const COMMAND_TYPES = new Set([
+  "EXPORT_PDF",
+  "EXPORT_EXCEL",
+  "EMAIL_ME",
+  "SAVE",
+  "UNDO",
+  "SEND_PROPOSAL",
+  "SEND_PAYMENT_LINK",
+  "SEND_REMINDER",
+]);
 
 // Edits that can ride along with a new-trip request ("… add Shikara ride on
 // day 2, 20% margin"). Everything else in such a sentence (client, dates,
