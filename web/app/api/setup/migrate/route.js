@@ -227,6 +227,19 @@ const STATEMENTS = [
   )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "ching_memories_user_id_kind_key_key" ON "ching_memories"("user_id", "kind", "key")`,
   `CREATE INDEX IF NOT EXISTS "ching_memories_user_id_idx" ON "ching_memories"("user_id")`,
+  // Operations automation (supplier reminders, client messages).
+  `ALTER TABLE "accommodations" ADD COLUMN IF NOT EXISTS "supplier_reminder_count" INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE "accommodations" ADD COLUMN IF NOT EXISTS "supplier_last_reminder_at" TIMESTAMP(3)`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "supplier_reminder_count" INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE "transportations" ADD COLUMN IF NOT EXISTS "supplier_last_reminder_at" TIMESTAMP(3)`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "pre_arrival_sent_at" TIMESTAMP(3)`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "driver_details_sent_on" TEXT`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "feedback_requested_at" TIMESTAMP(3)`,
+  `ALTER TABLE "agency_settings" ADD COLUMN IF NOT EXISTS "supplier_reminders_enabled" BOOLEAN NOT NULL DEFAULT true`,
+  `ALTER TABLE "agency_settings" ADD COLUMN IF NOT EXISTS "pre_arrival_enabled" BOOLEAN NOT NULL DEFAULT true`,
+  `ALTER TABLE "agency_settings" ADD COLUMN IF NOT EXISTS "driver_details_enabled" BOOLEAN NOT NULL DEFAULT true`,
+  `ALTER TABLE "agency_settings" ADD COLUMN IF NOT EXISTS "feedback_requests_enabled" BOOLEAN NOT NULL DEFAULT true`,
+  `ALTER TABLE "agency_settings" ADD COLUMN IF NOT EXISTS "review_url" TEXT`,
 
   // DMC partner bridge (viakashmir.in SSO handoff) — see docs/dmc-bridge.md
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "via_kashmir_dmc_user_id" TEXT`,

@@ -24,6 +24,7 @@ import {
   KeyRound,
   Sparkles,
   CheckCircle2,
+  CalendarClock,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -785,6 +786,73 @@ const AgencySettings = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Remind every (days)</label>
                   <input type="number" min="1" name="paymentReminderAfterDays" value={formData.paymentReminderAfterDays ?? ""} onChange={handleInputChange} placeholder="2" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-[#1b1b1b]">
+                  <CalendarClock className="w-5 h-5" />
+                  <h2 className="text-base font-bold text-slate-900">Trip Automation</h2>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed -mt-1">
+                  Every morning Ching's operations run chases suppliers and keeps confirmed clients informed — from your own
+                  email. You get a summary in Notifications. Track everything in Daily Ops.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, supplierRemindersEnabled: !(prev.supplierRemindersEnabled ?? true) }))}
+                  className={`w-full text-left flex items-start gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                    formData.supplierRemindersEnabled ?? true ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-500"
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>
+                    Supplier reminders {formData.supplierRemindersEnabled ?? true ? "on" : "off"}
+                    <span className="block text-[11px] font-medium opacity-80">Hotels and cabs that haven't confirmed a request get a reminder after 24 hours (twice at most).</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, preArrivalEnabled: !(prev.preArrivalEnabled ?? true) }))}
+                  className={`w-full text-left flex items-start gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                    formData.preArrivalEnabled ?? true ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-500"
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>
+                    Pre-arrival email + vouchers {formData.preArrivalEnabled ?? true ? "on" : "off"}
+                    <span className="block text-[11px] font-medium opacity-80">2 days before a confirmed trip, the client gets their hotel and transport vouchers.</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, driverDetailsEnabled: !(prev.driverDetailsEnabled ?? true) }))}
+                  className={`w-full text-left flex items-start gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                    formData.driverDetailsEnabled ?? true ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-500"
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>
+                    Tomorrow's driver details {formData.driverDetailsEnabled ?? true ? "on" : "off"}
+                    <span className="block text-[11px] font-medium opacity-80">The morning before each cab day, the client gets the driver's name, phone and vehicle number.</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, feedbackRequestsEnabled: !(prev.feedbackRequestsEnabled ?? true) }))}
+                  className={`w-full text-left flex items-start gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                    formData.feedbackRequestsEnabled ?? true ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-500"
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>
+                    Feedback request after the trip {formData.feedbackRequestsEnabled ?? true ? "on" : "off"}
+                    <span className="block text-[11px] font-medium opacity-80">1 day after the trip ends, a thank-you and a review request.</span>
+                  </span>
+                </button>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Review link (optional)</label>
+                  <input type="url" name="reviewUrl" value={formData.reviewUrl ?? ""} onChange={handleInputChange} placeholder="https://g.page/r/your-google-review-link" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
                 </div>
               </div>
 

@@ -209,6 +209,11 @@ export default function TripBookings({ token, tripId, refreshKey }) {
                 Send to client
               </a>
             )}
+            {b.driver_brief_url && (
+              <a className="underline font-semibold text-[#128C7E]" target="_blank" rel="noopener noreferrer" href={b.driver_brief_url} title="Guest, phone, dates, day-wise route and hotels — on WhatsApp">
+                Brief driver
+              </a>
+            )}
           </div>
         )}
         {driverFor === b.id && (

@@ -344,6 +344,17 @@ export default function Operations() {
                       <button type="button" onClick={() => setEditingCab(editingCab === c.id ? null : c.id)} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-black/10 hover:bg-black/[0.03]">
                         {c.driver_name ? "Change" : "Assign"}
                       </button>
+                      {c.driver_brief_url && (
+                        <a
+                          href={c.driver_brief_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Send the driver the trip brief (guest, dates, day-wise route, hotels)"
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-black/10 hover:bg-black/[0.03] whitespace-nowrap"
+                        >
+                          Brief driver
+                        </a>
+                      )}
                       {c.driver_name && waUrl(c.trip.client_phone, text) && (
                         <IconBtn title="Send driver details to the client" href={waUrl(c.trip.client_phone, text)}>
                           <MessageCircle className="w-4 h-4 text-[#25D366]" />

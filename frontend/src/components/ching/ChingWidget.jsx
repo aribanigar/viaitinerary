@@ -484,6 +484,22 @@ export default function ChingWidget() {
       });
       setCompact(true); // let the agent see the filled form / preview
       setUndoTick((t) => t + 1);
+      // Show where the change landed: hotels / cabs → Logistics, day routes →
+      // Itinerary, inclusions / client → Trip Info, margin / GST → Pricing.
+      if (changes.length) {
+        const all = changes.join("\n");
+        const tab =
+          res.mode === "fill" || /hotel|stay|night|cab|vehicle|picked for you|room/i.test(all)
+            ? "Logistics"
+            : /^Day \d+/m.test(all)
+              ? "Itinerary"
+              : /inclusion|exclusion|client|phone|email/i.test(all)
+                ? "Trip Info"
+                : /margin|gst/i.test(all)
+                  ? "Pricing"
+                  : null;
+        if (tab) safe(() => ed.setTab(tab));
+      }
       // Speak once the builder has re-priced the trip (the total follows the commit).
       setTimeout(() => {
         const sum = safe(() => ed.summary(), null) || {};

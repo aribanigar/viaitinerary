@@ -44,8 +44,10 @@ console.log('Ching live-fill tests')
 
 test('blank trip detection', () => {
   assert.equal(isBlankTrip(blank), true)
-  assert.equal(isBlankTrip({ ...blank, tripInfo: { ...blank.tripInfo, clientName: 'X' } }), false)
-  assert.equal(isBlankTrip({ ...blank, itinerary: [{ day: 1 }] }), false)
+  // Client details or hand-made days alone don't make a plan: a trip request still fills it.
+  assert.equal(isBlankTrip({ ...blank, tripInfo: { ...blank.tripInfo, clientName: 'X' } }), true)
+  assert.equal(isBlankTrip({ ...blank, itinerary: [{ day: 1 }] }), true)
+  assert.equal(isBlankTrip({ ...blank, accommodations: [{ id: 1 }] }), false)
 })
 
 test('empty text changes nothing', () => {

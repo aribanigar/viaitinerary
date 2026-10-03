@@ -19,6 +19,7 @@ const trip = {
 // ── fake prisma
 const updates = []
 prisma.trip.findMany = async () => [trip]
+prisma.agencySetting.findUnique = async () => ({ agencyName: 'Hudace', contactPhone: '+91 99999 00000' })
 prisma.accommodation.update = async ({ where, data }) => { updates.push(['acc', where.id, data]); Object.assign(trip.accommodations.find((a) => a.id === where.id), data) }
 prisma.transportation.update = async ({ where, data }) => { updates.push(['cab', where.id, data]); Object.assign(trip.transportations.find((a) => a.id === where.id), data) }
 prisma.accommodation.updateMany = async ({ where, data }) => { updates.push(['accMany', where.id.in, data]); trip.accommodations.filter((a) => where.id.in.includes(a.id)).forEach((a) => Object.assign(a, data)) }
@@ -85,3 +86,34 @@ assert.equal(rahul.trips, 2); assert.equal(rahul.phone, '+919811122233'); assert
 assert.equal(m.vehicles.find((v) => v.id === 21).minGuests, 6)
 assert.equal(m.aliases.heaven, 'Heevan Resort'); assert.equal(m.callMe, 'Arif')
 console.log('memory: all checks passed')
+
+// ── trip automation rules (lib/tripMessages.js)
+const tm = await import('../lib/tripMessages.js')
+const now2 = new Date('2026-10-03T03:00:00Z')
+const req = { supplierStatus: 'requested', supplierRequestedAt: new Date('2026-10-01T10:00:00Z'), supplierReminderCount: 0 }
+assert.ok(tm.supplierNeedsReminder(req, { now: now2, today: '2026-10-03', date: '2026-10-05' }))
+assert.ok(!tm.supplierNeedsReminder({ ...req, supplierLastReminderAt: new Date('2026-10-02T20:00:00Z') }, { now: now2 }), 'less than 24h since last reminder')
+assert.ok(!tm.supplierNeedsReminder({ ...req, supplierReminderCount: 2 }, { now: now2 }), 'max reminders')
+assert.ok(!tm.supplierNeedsReminder({ ...req, supplierStatus: 'confirmed' }, { now: now2 }))
+assert.ok(!tm.supplierNeedsReminder(req, { now: now2, today: '2026-10-03', date: '2026-10-02' }), 'past booking')
+const t2 = { status: 'confirmed', clientEmail: 'a@b.c', startDate: d('2026-10-05'), duration: '3', transportations: [{ date: d('2026-10-04'), driverName: 'Ramesh', route: 'Arrival' }] }
+assert.ok(tm.preArrivalDue(t2, '2026-10-03'))
+assert.ok(!tm.preArrivalDue({ ...t2, status: 'pending' }, '2026-10-03'), 'only confirmed trips')
+assert.ok(!tm.preArrivalDue({ ...t2, preArrivalSentAt: now2 }, '2026-10-03'))
+assert.ok(!tm.preArrivalDue(t2, '2026-10-01'), 'too early')
+assert.equal(tm.driverDetailsDue(t2, '2026-10-03').date, '2026-10-04')
+assert.equal(tm.driverDetailsDue({ ...t2, driverDetailsSentOn: '2026-10-04' }, '2026-10-03'), null)
+assert.ok(tm.feedbackDue(t2, '2026-10-09'), 'ended 10-08')
+assert.ok(!tm.feedbackDue(t2, '2026-10-08'), 'ends today — too soon')
+assert.ok(!tm.feedbackDue(t2, '2026-10-20'), 'too late')
+assert.match(tm.feedbackEmail({ ...t2, clientName: 'Rahul S', tripTitle: 'Kashmir' }, { reviewUrl: 'https://g.page/r/x' }).html, /Leave a review/)
+const brief = ops.driverBrief(trip, trip.transportations, { agencyName: 'Hudace', contactPhone: '+91 99999 00000' })
+assert.match(brief.text, /Guest: Rahul Sharma/)
+assert.match(brief.text, /stay: Heevan, Pahalgam/)
+console.log('automation: all checks passed')
+
+// Vouchers PDF renders (hotels + transport + activities).
+const { renderVouchersPdf } = await import('../lib/pdf.js')
+const pdf = await renderVouchersPdf({ ...trip, tripActivities: [{ name: 'Gondola Phase 1', location: 'Gulmarg', dayNumber: 3, ticketCount: 2 }] }, { agencyName: 'Hudace' })
+assert.ok(pdf.length > 5000 && pdf.slice(0, 4).toString() === '%PDF')
+console.log('vouchers pdf: ok', pdf.length, 'bytes')

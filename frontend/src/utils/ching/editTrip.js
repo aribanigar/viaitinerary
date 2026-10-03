@@ -42,6 +42,8 @@ import {
   LEISURE_LINE,
   findById,
   findByName,
+  findDestination,
+  cityLines,
   MEAL_PLANS,
 } from './editTripUtil.js'
 import {
@@ -57,7 +59,10 @@ import {
   finishStructural,
   cabLine,
 } from './editTripTimeline.js'
-import { formatPhone } from './parseCommand.js'
+import { formatPhone, prepareCatalog, cityLookup } from './parseCommand.js'
+import { buildDayPlan } from './dayPlan.js'
+import { samePlace } from './places.js'
+import { pickHotel } from './buildTrip.js'
 import { dayWiseCabs, repriceCabs, isIncludedCab, keepPerTripPriced } from './cabPlan.js'
 import { applyInclusion } from './inclusions.js'
 
@@ -658,6 +663,111 @@ const HANDLERS = {
     else if (!oldInclude) st.changes.push(`GST: added at ${pct}%`)
     else st.changes.push(`GST: ${oldPct}% → ${pct}%`)
     if (include && !pct) st.warnings.push('GST is on but the rate is 0%')
+  },
+
+  // "day 3 Gulmarg to Pahalgam", "day 1 arrival in Srinagar … day 6 departure":
+  // re-plan the days that were spoken (dayPlan.js), keep the rest, then fit
+  // hotels (one per night's city, reusing the trip's own where the city
+  // matches), each day's destination and the day-wise cab routes to it.
+  SET_DAY_ROUTES(st, a) {
+    if (!needDates(st)) return
+    const cat = prepareCatalog(st.catalog)
+    const findCity = (w) => cityLookup(w, cat)
+    const cityName = (raw) => (raw ? findCity(String(raw).toLowerCase().replace(/,.*$/, '').split(/\s+/)) || String(raw).split(',')[0].trim() : null)
+    const days = sortDays(st.s.itinerary)
+    const live = getStays(st.s.accommodations)
+    const base = days.map((d, i) => {
+      const date = dateOfDay(st, i + 1)
+      const acc = live.find((x) => x.checkIn <= date && date < x.checkOut)
+      return {
+        overnight: i === days.length - 1 ? null : cityName(acc?.city) || cityName(d.location),
+        title: stripDayPrefix(d.title),
+        location: d.location,
+      }
+    })
+    const plan = buildDayPlan({ entries: a.entries }, { base, firstCity: base[0]?.overnight || '' })
+    if (!plan.days.some((p) => p.changed)) return st.warnings.push('That day plan matches the trip already')
+
+    // ── itinerary
+    const newDays = plan.days.map((p, i) => {
+      const old = days[i]
+      if (old && !p.changed) {
+        old.day = i + 1
+        old.title = `Day ${i + 1}: ${stripDayPrefix(old.title)}`
+        return old
+      }
+      const dest = findDestination(st.catalog, p.location)
+      const lines = p.kind === 'leisure' ? [LEISURE_LINE] : p.kind === 'departure' ? [] : cityLines(st.catalog, p.location)
+      const day = old || { id: newId(), photo: null }
+      day.day = i + 1
+      day.title = `Day ${i + 1}: ${p.title}`
+      day.location = p.location
+      day.destination = dest?.name || p.location
+      day.destinationId = dest?.id ?? null
+      if (!old || !sameName(old.location, p.location) || p.kind === 'leisure') setLines(day, lines)
+      if (dest && (dest.image_url || dest.image_path) && (!old || !sameName(old.location, p.location))) day.photo = dest.image_url || dest.image_path
+      st.changes.push(`Day ${i + 1}: ${p.title}`)
+      return day
+    })
+    st.s.itinerary = newDays
+
+    // ── hotels: one stay per run of nights in a city
+    const pref = {}
+    const used = new Set()
+    const nextAcc = []
+    for (const stay of plan.stays) {
+      const checkIn = dateOfDay(st, stay.fromDay)
+      const checkOut = addDays(checkIn, stay.nights)
+      const reuse = live.find((x) => !used.has(x) && samePlace(x.city, stay.city) && x.checkIn < checkOut && checkIn < x.checkOut)
+      if (reuse) {
+        used.add(reuse)
+        if (reuse.checkIn !== checkIn || reuse.checkOut !== checkOut) {
+          const before = reuse.checkIn
+          reuse.checkIn = checkIn
+          reuse.checkOut = checkOut
+          repriceForDates(st, reuse, before)
+          st.changes.push(`${hotelStay(reuse)}: ${reuse.name} · ${plural(stay.nights, 'night')} (${fmtRange(checkIn, checkOut)})`)
+        }
+        nextAcc.push(reuse)
+        continue
+      }
+      // A hotel already used in this city elsewhere on the trip, else the usual / a sensible one.
+      const same = live.find((x) => samePlace(x.city, stay.city) && x.hotelId)
+      const hotel = (same && findById(st.catalog.hotels, same.hotelId)) || pickHotel(stay.city, st.catalog.hotels || [], pref, st.catalog.memory || null)
+      if (!hotel) {
+        st.warnings.push(`No hotel in ${stay.city} in your catalog — add one for ${fmtRange(checkIn, checkOut)} in Logistics`)
+        continue
+      }
+      const acc = pricedStay(st, hotel, checkIn, stay.nights, live[0])
+      acc.city = stay.city
+      nextAcc.push(acc)
+      st.changes.push(`${stay.city}: ${hotel.name} · ${plural(stay.nights, 'night')} (picked for you)`)
+    }
+    live.filter((x) => !used.has(x)).forEach((x) => st.changes.push(`Removed ${hotelStay(x)} stay (${x.name || 'hotel'})`))
+    st.s.accommodations = [...st.s.accommodations.filter(isCancelled), ...nextAcc]
+
+    // ── cabs: the changed days get their new route; days past the end go
+    const template = mostCommonVehicle(st.s.transportation)
+    const vehicle = template ? findById(st.catalog.vehicles, template.id) || findByName(st.catalog.vehicles, template.name) || { id: template.id, name: template.name } : null
+    const lastDate = dateOfDay(st, plan.days.length)
+    const cabs = st.s.transportation.filter((t) => !t.date || t.date <= lastDate)
+    if (vehicle) {
+      plan.days.forEach((p, i) => {
+        if (!p.changed) return
+        const date = dateOfDay(st, i + 1)
+        const row = cabs.find((t) => t.date === date && !isFullTripCab(t))
+        const route = p.route || p.title
+        if (row) {
+          row.route = route
+          row.tripType = p.tripType || row.tripType
+          row.destination = p.location || row.destination
+        } else {
+          cabs.push(...dayWiseCabs({ days: [{ day: i + 1, title: p.title, location: p.location, route, tripType: p.tripType }], vehicle, dateOf: () => date, newId }))
+        }
+      })
+    }
+    st.s.transportation = cabs.sort((x, y) => String(x.date || '').localeCompare(String(y.date || '')))
+    st.nights = plan.nights
   },
 
   INCLUSION(st, a) {

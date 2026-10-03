@@ -345,6 +345,11 @@ export function settingsToCamel(s) {
     maxFollowUps: s.maxFollowUps ?? 2,
     paymentRemindersEnabled: s.paymentRemindersEnabled ?? true,
     paymentReminderAfterDays: s.paymentReminderAfterDays ?? 2,
+    supplierRemindersEnabled: s.supplierRemindersEnabled ?? true,
+    preArrivalEnabled: s.preArrivalEnabled ?? true,
+    driverDetailsEnabled: s.driverDetailsEnabled ?? true,
+    feedbackRequestsEnabled: s.feedbackRequestsEnabled ?? true,
+    reviewUrl: s.reviewUrl || "",
   };
 }
 
@@ -396,4 +401,9 @@ export const SETTINGS_DEFAULTS = {
   maxFollowUps: 2,
   paymentRemindersEnabled: true,
   paymentReminderAfterDays: 2,
+  supplierRemindersEnabled: true,
+  preArrivalEnabled: true,
+  driverDetailsEnabled: true,
+  feedbackRequestsEnabled: true,
+  reviewUrl: "",
 };

@@ -320,17 +320,27 @@ export function buildChingTripParts(command, catalog) {
   // Each day's destination (the Itinerary tab's picker) is the city the
   // travellers end that day in; the sightseeing lines come from it.
   const itinerary = [];
+  // A spoken day-by-day route (dayPlan.js) gives each day its own title,
+  // destination and cab route; otherwise the plan follows the hotel cities.
+  const planDays = (command.dayPlan?.days || []).length === days ? command.dayPlan.days : null;
   for (let day = 1; day <= days; day += 1) {
     const here = cities[day - 1] ?? lastCity;
     const prev = day > 1 ? cities[day - 2] : null;
+    const p = planDays ? planDays[day - 1] : null;
     let title;
-    if (day === 1) title = `Arrival in ${here}`;
+    if (p) title = p.title;
+    else if (day === 1) title = `Arrival in ${here}`;
     else if (day === days) title = `Departure from ${lastCity}`;
     else if (prev && !samePlace(prev, here)) title = `${prev} to ${here}`;
     else title = `${here} Sightseeing`;
-    const location = day === days ? lastCity : here;
+    const location = p ? p.location || here : day === days ? lastCity : here;
     const dest = destinationFor(location);
-    const activities = day === days ? [] : destinationActivityLabels(dest?.activities);
+    const activities =
+      p?.kind === "leisure"
+        ? ["Day at leisure"]
+        : (p ? p.kind === "departure" : day === days)
+          ? []
+          : destinationActivityLabels(dest?.activities);
     itinerary.push({
       id: newId(),
       day,
@@ -341,6 +351,7 @@ export function buildChingTripParts(command, catalog) {
       description: activities.join("\n"),
       activities,
       photo: dest?.image_url || dest?.image_path || null,
+      ...(p ? { route: p.route, tripType: p.tripType } : {}),
     });
   }
 
@@ -377,7 +388,7 @@ export function buildChingTripParts(command, catalog) {
 
   return {
     tripInfo,
-    itinerary,
+    itinerary: itinerary.map(({ route, tripType, ...day }) => day), // eslint-disable-line no-unused-vars
     accommodations,
     transportation,
     vehicle,

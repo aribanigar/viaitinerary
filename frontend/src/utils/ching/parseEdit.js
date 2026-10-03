@@ -14,6 +14,7 @@ import { convertNumberWords, stripWakePhrase, titleCase } from './text.js'
 import { extractDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
 import { parseInclusionClause } from './inclusions.js'
+import { parseDayPlan, withoutClaimed } from './dayPlan.js'
 import { prepareCatalog, cityLookup, sameCity, matchHotel, extractMealPlan, extractEmail, extractPhone } from './parseCommand.js'
 
 const COMMAND_TYPES = new Set([
@@ -975,6 +976,14 @@ export function parseChingEdit(text, context, catalog, { today, force = false } 
     .replace(/\s+/g, ' ')
 
   let handled = false
+  // A day-by-day route ("day 3 Gulmarg to Pahalgam", "day 6 departure") → one
+  // SET_DAY_ROUTES action; its clauses are removed so other handlers skip them.
+  const dayRoutes = parseDayPlan(s, (w) => cityLookup(w, cat), { minMarkers: 1, edit: true })
+  if (dayRoutes) {
+    result.actions.push({ type: 'SET_DAY_ROUTES', entries: dayRoutes.entries })
+    s = withoutClaimed(s, dayRoutes.claimed)
+    handled = true
+  }
   for (const raw of splitClauses(s)) {
     const c = cleanClause(raw)
     if (NOISE.test(c)) continue

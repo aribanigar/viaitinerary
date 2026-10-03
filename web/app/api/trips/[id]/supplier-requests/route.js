@@ -12,6 +12,7 @@ import {
   publicBooking,
   supplierContact,
   supplierWhatsappText,
+  driverBrief,
   ymd,
 } from "@/lib/operations";
 
@@ -82,6 +83,9 @@ export async function GET(request, { params }) {
       phone: c.phone,
       link: url,
       whatsapp_url: url ? waLink(c.phone, supplierWhatsappText({ kind: "cab", booking: publicBooking({ kind: "cab", row: lead, siblings: group, trip, settings }), url, settings })) : null,
+      // Driver's brief on WhatsApp (needs the driver's phone).
+      driver_brief_url: driverBrief(trip, group, settings).whatsapp_url,
+      driver_brief: driverBrief(trip, group, settings).text,
       days: group.map((t) => ({
         id: t.id,
         date: ymd(t.date),

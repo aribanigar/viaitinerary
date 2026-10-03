@@ -11,6 +11,7 @@ import { convertNumberWords, stripWakePhrase, hasWakePhrase, titleCase } from '.
 import { extractDate, isValidIsoDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
 import { placeKey } from './places.js'
+import { parseDayPlan, buildDayPlan, withoutClaimed } from './dayPlan.js'
 
 export { stripWakePhrase, hasWakePhrase }
 
@@ -455,6 +456,11 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     s = s.slice(0, dt.index) + ' | ' + s.slice(dt.index + dt.length)
   }
 
+  // Day-by-day route ("day 1 arrival in Srinagar, day 2 Srinagar to Gulmarg, …"):
+  // read it whole, then blank it out so the stay/name parsers don't re-read it.
+  const dayRoutes = parseDayPlan(s, (w) => cityLookup(w, cat))
+  if (dayRoutes) s = withoutClaimed(s, dayRoutes.claimed)
+
   // "5 day 4 night", "4N/5D", "4 nights 5 days", "5 days and 4 nights"
   let days = 0
   let nightsTotal = 0
@@ -708,7 +714,19 @@ export function parseChingCommand(text, catalog, { today } = {}) {
   }
 
   // Nights / days reconciliation
-  const stayList = stays.map((x) => x.stay)
+  let stayList = stays.map((x) => x.stay)
+  let dayPlan = null
+  if (dayRoutes) {
+    // The day plan decides where they sleep; a hotel named for a city ("stay at
+    // Heevan in Pahalgam") is kept for that city's nights.
+    dayPlan = buildDayPlan(dayRoutes, { nights: nightsTotal || (days > 1 ? days - 1 : 0) })
+    stayList = dayPlan.stays.map((p) => {
+      const named = stayList.find((x) => x.hotelId && sameCity(x.city || cat.hotels.find((h) => h.id === x.hotelId)?.city, p.city))
+      return named ? { ...named, nights: p.nights, city: p.city } : { nights: p.nights, hotelId: null, hotelName: '', city: p.city, heard: p.city }
+    })
+    nightsTotal = dayPlan.nights
+    days = dayPlan.nights + 1
+  }
   const staySum = stayList.reduce((a, x) => a + (Number(x.nights) || 0), 0)
   let nights = nightsTotal || (days > 1 ? days - 1 : 0) || staySum
   if (!days && nights) days = nights + 1
@@ -736,6 +754,7 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     destinationId,
     destinationName,
     stays: stayList,
+    dayPlan,
     vehicleId,
     vehicleName,
     mealPlan,

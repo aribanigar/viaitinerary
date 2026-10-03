@@ -23,12 +23,13 @@ export function dayWiseCabs({ days, vehicle, dateOf, newId }) {
   const perTrip = vehicle?.rate_type === 'per_trip'
   const cities = [...new Set(days.map((d) => d.location).filter(Boolean))]
   return days.map((d, i) => {
-    const route = cabRouteOf(d.title)
+    // A day plan (dayPlan.js) carries its own route ("Srinagar → Sonamarg → Srinagar").
+    const route = d.route || cabRouteOf(d.title)
     const priced = !perTrip || i === 0
     return {
       id: newId(),
       vehicleId: priced ? vehicle.id : null,
-      tripType: /Sightseeing/i.test(route) ? 'Sightseeing' : 'Transfer',
+      tripType: d.tripType || (/Sightseeing|day trip|leisure/i.test(route) ? 'Sightseeing' : 'Transfer'),
       route,
       destination: d.location || '',
       date: dateOf(Number(d.day) || i + 1),

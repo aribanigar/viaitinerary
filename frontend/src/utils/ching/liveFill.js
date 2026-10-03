@@ -58,16 +58,14 @@ export function applyAliases(text, memory) {
 
 const AUTO_TITLE = /\d+\s*N\s*\/\s*\d+\s*D\s*$/i;
 
-/** A trip with nothing in it yet (a fresh "New Trip" tab). */
+/**
+ * A trip with no plan yet: no hotels, cabs or activities. Client details and a
+ * few hand-made days don't count — a full trip request fills such a trip in
+ * place (keeping what's there) instead of opening a new draft.
+ */
 export function isBlankTrip(snapshot) {
   const s = snapshot || {};
-  return (
-    !String(s.tripInfo?.clientName || "").trim() &&
-    !(s.accommodations || []).length &&
-    !(s.transportation || []).length &&
-    !(s.itinerary || []).length &&
-    !(s.tripActivities || []).length
-  );
+  return !(s.accommodations || []).length && !(s.transportation || []).length && !(s.tripActivities || []).length;
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -88,9 +86,18 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 function planFill(base, text, { catalog, settings, today }) {
   const createCatalog = { hotels: catalog.hotels, destinations: catalog.destinations, vehicles: catalog.vehicles };
   const command = parseChingCommand(applyAliases(text, catalog.memory), createCatalog, { today });
+  // Day 1 is the trip's start date: when none was said, use the one already on the trip.
+  const baseStart = String(base.tripInfo?.startDate || "").slice(0, 10);
+  if (!command.startDate && /^\d{4}-\d{2}-\d{2}$/.test(baseStart)) command.startDate = baseStart;
   const parts = buildChingTripParts(command, { ...createCatalog, memory: catalog.memory });
 
   const tripInfo = { ...base.tripInfo, ...parts.tripInfo };
+  // Guests nobody mentioned stay as the trip already had them.
+  if (command.missing?.includes("adults") && !command.children && !command.infants && base.tripInfo?.adults) {
+    tripInfo.adults = base.tripInfo.adults;
+    tripInfo.kids5to12 = base.tripInfo.kids5to12 ?? tripInfo.kids5to12;
+    tripInfo.kidsUpto5 = base.tripInfo.kidsUpto5 ?? tripInfo.kidsUpto5;
+  }
   // Keep a title the agent typed; replace only an empty or auto one ("Kashmir 4N/5D").
   if (parts.tripInfo.tripTitle && String(base.tripInfo?.tripTitle || "").trim() && !AUTO_TITLE.test(base.tripInfo.tripTitle)) {
     tripInfo.tripTitle = base.tripInfo.tripTitle;
@@ -132,7 +139,7 @@ function planFill(base, text, { catalog, settings, today }) {
     changes.push(`${a.city}: ${a.name} · ${plural(n, "night")}${how}`);
   });
   if (parts.itinerary.length) {
-    const route = [...new Set(parts.itinerary.map((d) => d.location).filter(Boolean))];
+    const route = parts.itinerary.map((d) => d.location).filter((c, i, a) => c && c !== a[i - 1]);
     changes.push(`Day-wise plan: ${plural(parts.itinerary.length, "day")}${route.length > 1 ? ` · ${route.join(" → ")}` : ""}`);
   }
   if (parts.transportation.length) {
@@ -169,6 +176,11 @@ function planFill(base, text, { catalog, settings, today }) {
     // Missing pieces are normal mid-sentence; only flag what's actually wrong.
     v.problems
       .filter((p) => !/client name|start date|nights|adult/i.test(p))
+      // A stay that got a hotel picked for its city isn't missing one.
+      .filter((p) => {
+        const m = /^Pick a hotel for stay \d+ \((.+)\)$/.exec(p);
+        return !(m && stayCities.includes(placeKey(m[1])));
+      })
       .forEach((p) => warnings.push(p));
   }
 
@@ -179,7 +191,8 @@ function planFill(base, text, { catalog, settings, today }) {
     const r = parseChingEdit(text, buildEditContext(snapshot), catalog, { today, force: true }) || {};
     const actions = Array.isArray(r.actions) ? r.actions : [];
     commands = actions.filter((a) => COMMAND_TYPES.has(a?.type));
-    const extras = actions.filter((a) => FILL_EXTRAS.has(a?.type));
+    // A single "day N …" route rides along; several were already planned by the fill.
+    const extras = actions.filter((a) => FILL_EXTRAS.has(a?.type) || (a?.type === "SET_DAY_ROUTES" && !command.dayPlan));
     if (extras.length) {
       const res = applyEditActions(snapshot, extras, { catalog, settings });
       snapshot = res.snapshot;
@@ -192,6 +205,7 @@ function planFill(base, text, { catalog, settings, today }) {
 
   return {
     mode: "fill",
+    command,
     snapshot,
     changes: [...changes, ...extraChanges],
     warnings: [...new Set(warnings)],
@@ -236,5 +250,13 @@ export function planLive(base, text, { catalog, settings, today } = {}) {
   if (!String(text || "").trim()) {
     return { mode: isBlankTrip(base) ? "fill" : "edit", snapshot: base, changes: [], warnings: [], unrecognized: [], commands: [] };
   }
-  return isBlankTrip(base) ? planFill(base, text, opts) : planEdit(base, text, opts);
+  if (!isBlankTrip(base)) return planEdit(base, text, opts);
+  const fill = planFill(base, text, opts);
+  // A trip with days but no hotels yet: only a real trip request refills it —
+  // "day 3 Gulmarg to Pahalgam" or "add Shikara on day 2" edit those days.
+  const c = fill.command || {};
+  const isRequest = c.intent === "create_trip" && (Number(c.nights) > 0 || (c.stays || []).length > 0 || !!c.dayPlan);
+  if ((base.itinerary || []).length && !isRequest) return planEdit(base, text, opts);
+  const { command, ...rest } = fill; // eslint-disable-line no-unused-vars
+  return rest;
 }

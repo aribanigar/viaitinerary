@@ -631,8 +631,9 @@ function InvoiceDoc({ trip, settings }) {
 
 
 // Service vouchers (Phase 3): one page per hotel stay (with the hotel's
-// confirmation number once it's confirmed), then a transport sheet with each
-// day's driver. Client-facing — no prices.
+// confirmation number once it's confirmed), a transport sheet with each day's
+// driver, and an activity sheet when the trip has activities. Client-facing —
+// no prices.
 const VOUCHER_MEAL = {
   "Only Room": "Room only (EP)",
   "Only Room + Breakfast": "Breakfast (CP)",
@@ -702,7 +703,28 @@ function VouchersDoc({ trip, settings }) {
           "Driver details are shared a day before each journey if not shown here. Timings as per the itinerary; please be ready at the pickup point."),
         simpleFooter(settings))
     : null;
-  const pages = [...stays.map(hotelPage), transportPage].filter(Boolean);
+  const acts = (trip.tripActivities || []).slice().sort((a, b) => (a.dayNumber || 99) - (b.dayNumber || 99));
+  const activityPage = acts.length
+    ? h(Page, { size: "A4", style: simpleStyles.page, key: "acts" },
+        brandHead(settings),
+        h(Text, { style: { ...simpleStyles.banner, backgroundColor: greenOf(settings) } }, "ACTIVITY VOUCHER"),
+        h(View, { style: simpleStyles.section },
+          infoRow("Voucher No.", `${trip.tripId}-A`),
+          infoRow("Guest Name", trip.clientName),
+          infoRow("Guests", guests)),
+        h(View, { style: simpleStyles.section },
+          table(
+            ["Day", "Date", "Activity", "Location", "Persons"],
+            acts.map((a) => {
+              const date = a.dayNumber && trip.startDate ? new Date(new Date(trip.startDate).getTime() + (a.dayNumber - 1) * 86400000) : null;
+              return [a.dayNumber ? `Day ${a.dayNumber}` : "—", date ? fmtDate(date) : "—", a.name, a.location, String(a.ticketCount || 1)];
+            }),
+          )),
+        h(Text, { style: { marginTop: 18, color: "#666", lineHeight: 1.5 } },
+          "Show this voucher at the activity counter. Timings and availability depend on weather and local operators."),
+        simpleFooter(settings))
+    : null;
+  const pages = [...stays.map(hotelPage), transportPage, activityPage].filter(Boolean);
   if (!pages.length) {
     pages.push(h(Page, { size: "A4", style: simpleStyles.page, key: "empty" }, brandHead(settings),
       h(Text, {}, "This trip has no hotel or transport bookings yet."), simpleFooter(settings)));

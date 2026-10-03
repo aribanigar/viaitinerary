@@ -233,7 +233,12 @@ export async function requestSupplierConfirmations(trip, opts) {
         row.error = `Email failed: ${err.message}`;
       }
     }
-    const data = { supplierStatus: "requested", supplierRequestedAt: now };
+    // A re-send of an open request is a reminder: count it (the daily cron
+    // stops after MAX_SUPPLIER_REMINDERS) and keep the original request time.
+    const resend = lead.supplierStatus === "requested" && !!lead.supplierRequestedAt;
+    const data = resend
+      ? { supplierReminderCount: (lead.supplierReminderCount || 0) + 1, supplierLastReminderAt: now }
+      : { supplierStatus: "requested", supplierRequestedAt: now, supplierReminderCount: 0, supplierLastReminderAt: null };
     const model = kind === "hotel" ? prisma.accommodation : prisma.transportation;
     await model.updateMany({ where: { id: { in: siblings.map((s) => s.id) }, tripId: trip.id }, data });
     row.status = "requested";
@@ -251,6 +256,38 @@ export async function requestSupplierConfirmations(trip, opts) {
     }
   }
   return out;
+}
+
+/**
+ * The driver's brief for one cab (all its days): guest + phone, pickup, day-wise
+ * route with the night's hotel, and the agency's emergency contact. Plain text
+ * for WhatsApp → { text, whatsapp_url } (url only when the driver's phone is known).
+ */
+export function driverBrief(trip, group, settings) {
+  const days = (group || []).filter(isLive).slice().sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  const lead = days[0] || {};
+  const stays = (trip.accommodations || []).filter(isLive);
+  const hotelOn = (date) => {
+    const d = ymd(date);
+    const a = stays.find((x) => ymd(x.checkIn) <= d && ymd(x.checkOut) > d);
+    return a ? `${a.name}${a.city ? `, ${a.city}` : ""}` : null;
+  };
+  const lines = [
+    `Namaste ${lead.driverName || ""}! Trip details from ${settings?.agencyName || "the agency"}:`.replace("  ", " "),
+    `Guest: ${trip.clientName || "Guest"} (${guestLine(trip)})${trip.clientPhone ? ` · ${trip.clientPhone}` : ""}`,
+    `Vehicle: ${lead.vehicleType || lead.vehicle?.name || "—"}${lead.vehicleNumber ? ` ${lead.vehicleNumber}` : ""}`,
+    `Ref: ${trip.tripId}`,
+    "",
+    ...days.map((t) => {
+      const hotel = hotelOn(t.date);
+      return `${fmtDay(t.date)}: ${t.route || t.destination || "—"}${hotel ? ` (stay: ${hotel})` : ""}`;
+    }),
+    "",
+    `Emergency / agency: ${settings?.contactPhone || settings?.whatsapp || "—"}`,
+    "Please confirm you have received this. Thank you!",
+  ];
+  const text = lines.join("\n");
+  return { text, whatsapp_url: waLink(lead.driverPhone, text) };
 }
 
 /** Find a booking by its supplier token → { kind, row, siblings, trip } or null. */
@@ -331,6 +368,7 @@ export async function operationsBoard(adminId, { from = todayIST(), days = 1 } =
     include: { accommodations: { include: { hotel: true } }, transportations: { include: { vehicle: true } } },
     orderBy: { startDate: "asc" },
   });
+  const settings = await prisma.agencySetting.findUnique({ where: { userId: adminId } });
 
   const dayList = [];
   for (let i = 0; i < span; i += 1) {
@@ -370,6 +408,7 @@ export async function operationsBoard(adminId, { from = todayIST(), days = 1 } =
       }
     }
     for (const group of cabGroups(t.transportations.filter(isLive))) {
+      const brief = driverBrief(t, group, settings);
       for (const c of group) {
         const date = ymd(c.date);
         byDate.get(date)?.cabs.push({
@@ -382,6 +421,7 @@ export async function operationsBoard(adminId, { from = todayIST(), days = 1 } =
           driver_phone: c.driverPhone || null,
           vehicle_number: c.vehicleNumber || null,
           status: c.supplierStatus || null,
+          driver_brief_url: c.driverPhone ? waLink(c.driverPhone, brief.text) : null,
         });
       }
       const lead = group[0];

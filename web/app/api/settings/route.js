@@ -52,6 +52,11 @@ const FIELD_MAP = {
   maxFollowUps: "maxFollowUps",
   paymentRemindersEnabled: "paymentRemindersEnabled",
   paymentReminderAfterDays: "paymentReminderAfterDays",
+  supplierRemindersEnabled: "supplierRemindersEnabled",
+  preArrivalEnabled: "preArrivalEnabled",
+  driverDetailsEnabled: "driverDetailsEnabled",
+  feedbackRequestsEnabled: "feedbackRequestsEnabled",
+  reviewUrl: "reviewUrl",
 };
 
 const INT_FIELDS = ["smtpPort", "balanceDueDays", "followUpAfterHours", "maxFollowUps", "paymentReminderAfterDays"];

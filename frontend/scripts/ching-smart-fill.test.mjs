@@ -207,5 +207,50 @@ test('no hotel in a city: the route is still planned and Ching says so', () => {
   assert.ok(r.warnings.some((w) => /No hotel in Sonamarg/i.test(w)), r.warnings.join('|'))
 })
 
+test('day-by-day route: per-day destination, cab route and a hotel for each night', () => {
+  const r = plan('trip for Arfat Khan 2 adults from 17 october day 1 arrival to srinagar, day 2 srinagar to gulmarg, day 3 gulmarg to pahalgam, day 4 pahalgam to srinagar, day 6 departure')
+  const s = r.snapshot
+  assert.equal(s.tripInfo.clientName, 'Arfat Khan')
+  assert.equal(s.tripInfo.duration, '5')
+  assert.deepEqual(s.itinerary.map((d) => d.title), [
+    'Day 1: Arrival in Srinagar', 'Day 2: Srinagar to Gulmarg', 'Day 3: Gulmarg to Pahalgam',
+    'Day 4: Pahalgam to Srinagar', 'Day 5: Srinagar Sightseeing', 'Day 6: Departure from Srinagar',
+  ])
+  assert.deepEqual(s.itinerary.map((d) => d.destinationId), [1, 2, 3, 1, 1, 1])
+  assert.deepEqual(s.accommodations.map((a) => [a.city, a.checkIn, a.checkOut]), [
+    ['Srinagar', '2026-10-17', '2026-10-18'], ['Gulmarg', '2026-10-18', '2026-10-19'],
+    ['Pahalgam', '2026-10-19', '2026-10-20'], ['Srinagar', '2026-10-20', '2026-10-22'],
+  ])
+  assert.deepEqual(s.transportation.map((t) => t.route), [
+    'Arrival in Srinagar', 'Srinagar → Gulmarg', 'Gulmarg → Pahalgam', 'Pahalgam → Srinagar', 'Srinagar Sightseeing', 'Departure from Srinagar',
+  ])
+  assert.deepEqual(r.warnings, [])
+})
+
+test('a trip with only client details and hand-made days is filled in place, start date kept', () => {
+  const base = { ...blank, tripInfo: { ...blank.tripInfo, clientName: 'Arfat', clientPhone: '+919811100000', startDate: '2026-10-17' }, itinerary: [{ id: 5, day: 1, title: 'Day 1: Pahalgam', location: 'Pahalgam' }] }
+  const r = plan('day 1 arrival in srinagar day 2 srinagar to pahalgam day 3 departure', base)
+  assert.equal(r.mode, 'fill')
+  assert.equal(r.snapshot.tripInfo.clientName, 'Arfat')
+  assert.equal(r.snapshot.tripInfo.startDate, '2026-10-17')
+  assert.equal(r.snapshot.accommodations.length, 2)
+  assert.equal(r.snapshot.itinerary[1].title, 'Day 2: Srinagar to Pahalgam')
+})
+
+test('editing one day re-plans hotels and cabs around it', () => {
+  const filled = plan('trip for Arfat Khan from 17 october day 1 arrival to srinagar, day 2 srinagar to gulmarg, day 3 gulmarg to pahalgam, day 4 pahalgam to srinagar, day 5 departure').snapshot
+  const r = plan('day 3 gulmarg to srinagar', filled)
+  assert.equal(r.mode, 'edit')
+  assert.equal(r.snapshot.itinerary[2].title, 'Day 3: Gulmarg to Srinagar')
+  assert.ok(!r.snapshot.accommodations.some((a) => samePlace(a.city, 'Pahalgam')), 'Pahalgam stay removed')
+  assert.equal(r.snapshot.transportation.find((t) => t.date === '2026-10-19').route, 'Gulmarg → Srinagar')
+  // Other day edits are untouched by the route parser.
+  const leisure = plan('make day 2 a leisure day', filled)
+  assert.ok(leisure.changes.some((c) => /leisure/i.test(c)), leisure.changes.join('|'))
+  const added = plan('day 6 departure', filled)
+  assert.equal(added.snapshot.itinerary.length, 6)
+  assert.equal(added.snapshot.tripInfo.duration, '5')
+})
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

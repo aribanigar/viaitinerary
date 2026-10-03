@@ -129,6 +129,10 @@ model Trip {
   advanceAmount           Decimal?  @map("advance_amount") @db.Decimal(12, 2)
   paymentReminderCount    Int       @default(0) @map("payment_reminder_count")
   lastPaymentReminderAt   DateTime? @map("last_payment_reminder_at")
+  // Client messages sent by the daily operations cron (lib/tripMessages.js).
+  preArrivalSentAt        DateTime? @map("pre_arrival_sent_at")
+  driverDetailsSentOn     String?   @map("driver_details_sent_on") // "YYYY-MM-DD" of the last travel day whose driver was sent
+  feedbackRequestedAt     DateTime? @map("feedback_requested_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
@@ -220,6 +224,8 @@ model Accommodation {
   supplierRespondedAt   DateTime? @map("supplier_responded_at")
   supplierRef           String?   @map("supplier_ref")
   supplierNote          String?   @map("supplier_note")
+  supplierReminderCount Int       @default(0) @map("supplier_reminder_count")
+  supplierLastReminderAt DateTime? @map("supplier_last_reminder_at")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
@@ -249,6 +255,8 @@ model Transportation {
   supplierRespondedAt DateTime? @map("supplier_responded_at")
   supplierRef         String?   @map("supplier_ref")
   supplierNote        String?   @map("supplier_note")
+  supplierReminderCount Int     @default(0) @map("supplier_reminder_count")
+  supplierLastReminderAt DateTime? @map("supplier_last_reminder_at")
   // Driver assigned to this day (from the cab supplier's confirmation or the agent).
   driverName       String?   @map("driver_name")
   driverPhone      String?   @map("driver_phone")
@@ -566,6 +574,12 @@ model AgencySetting {
   maxFollowUps              Int      @default(2) @map("max_follow_ups")
   paymentRemindersEnabled   Boolean  @default(true) @map("payment_reminders_enabled")
   paymentReminderAfterDays  Int      @default(2) @map("payment_reminder_after_days")
+  // Operations automation (cron /api/cron/operations)
+  supplierRemindersEnabled  Boolean  @default(true) @map("supplier_reminders_enabled")
+  preArrivalEnabled         Boolean  @default(true) @map("pre_arrival_enabled")
+  driverDetailsEnabled      Boolean  @default(true) @map("driver_details_enabled")
+  feedbackRequestsEnabled   Boolean  @default(true) @map("feedback_requests_enabled")
+  reviewUrl                 String?  @map("review_url") // e.g. Google review link, put in the feedback email
   createdAt                 DateTime @default(now()) @map("created_at")
   updatedAt                 DateTime @updatedAt @map("updated_at")
 
