@@ -511,8 +511,14 @@ export default function ChingWidget() {
           clientName: sum.clientName,
           commandLines: lines,
         });
-        setOutcome((o) => (o ? { ...o, reply, pending: list(sum.pending) } : o));
-        say(reply);
+        // After a fill, one add-on idea from the catalog (upselling, gently).
+        let tip = "";
+        if (res.mode === "fill") {
+          const first = list(safe(() => ed.addOns(), []))[0];
+          if (first?.activities?.[0]) tip = ` Tip: in ${first.city}, ${first.activities[0].name} is a popular add-on — say “add ${first.activities[0].name} on day ${first.day}”.`;
+        }
+        setOutcome((o) => (o ? { ...o, reply: reply + tip, pending: list(sum.pending) } : o));
+        say(reply + tip);
       }, 700);
     },
     [answerConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond],

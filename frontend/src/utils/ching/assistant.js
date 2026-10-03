@@ -68,6 +68,7 @@ const NAV_VERB = /^(?:please |can you |could you |kindly )?(?:open|go to|goto|ta
  *   { type: "doc", doc, action, query, toMe } "email the invoice to Rahul", "download Rahul's vouchers"
  *   { type: "supplier", kinds, query }       "send hotel requests for Rahul's trip"
  *   { type: "driver", name, phone, vehicleNumber, query } "driver for Rahul's trip is Ramesh 98765 43210"
+ *   { type: "optimize" } / { type: "addons" } "make it cheaper", "optimise this trip", "suggest add-ons"
  *   { type: "payment", amount, method, query } "Rahul paid 20000 by UPI" (Ching asks to confirm first)
  *   { type: "status", status, query }        "mark Rahul's trip as confirmed"
  *   { type: "remind", kind, query }          "send a payment reminder to Rahul"
@@ -95,6 +96,13 @@ export function understandAssistant(text, { inBuilder = false } = {}) {
   }
   if (/\b(?:what(?:'s| is)|tell me|how much is)\b.*\b(?:total|price|cost|quote)\b/.test(t) && words <= 9) return { type: "total" };
 
+  // Phase 4: "make it cheaper" / "optimise this trip", "suggest add-ons".
+  if (!/\bmargin|gst|%|percent\b/.test(t) && /\b(?:make (?:it|this|the trip|the package)?\s*(?:a (?:little|bit|lot) |little |bit )?cheaper|cheaper (?:option|version|hotels?|alternative)|optimi[sz]e (?:it|this|the)? ?(?:trip|itinerary|package|cost|costs|price)?|cut (?:down )?(?:the )?costs?|reduce (?:the )?(?:price|cost|budget|total)|bring (?:the )?(?:price|cost|total) down|budget version|lower (?:the )?(?:price|cost|total)|too expensive|save (?:some )?money)\b/.test(t)) {
+    return { type: "optimize" };
+  }
+  if (/\b(?:suggest|recommend|any|what)\b.*\b(?:add[- ]?ons?|activities|extras|upsells?|experiences)\b|\bwhat (?:else )?can (?:i|we) add\b|\bupsell\b/.test(t) && !/\b(?:add|remove)\s+(?![- ]?ons?\b)[a-z]+.*\bday\s*\d/.test(t)) {
+    return { type: "addons" };
+  }
   const pay = understandPayment(t);
   if (pay) return pay;
   const status = understandStatus(t);

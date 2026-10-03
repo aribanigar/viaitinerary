@@ -8,6 +8,8 @@ import { parseInclusionClause, applyInclusion, deriveInclusions } from '../src/u
 import { hotelPreference, pickHotel, recallClient } from '../src/utils/ching/buildTrip.js'
 import { samePlace, hotelInCity } from '../src/utils/ching/places.js'
 import { tripChecklist } from '../src/utils/tripChecklist.js'
+import { cheaperPlan, cheaperReply, addOnSuggestions } from '../src/utils/ching/optimize.js'
+import { applyEditActions } from '../src/utils/ching/editTrip.js'
 
 let pass = 0
 let fail = 0
@@ -250,6 +252,30 @@ test('editing one day re-plans hotels and cabs around it', () => {
   const added = plan('day 6 departure', filled)
   assert.equal(added.snapshot.itinerary.length, 6)
   assert.equal(added.snapshot.tripInfo.duration, '5')
+})
+
+test('make it cheaper: a cheaper hotel in the same city and a cheaper cab that still fits', () => {
+  const r = plan('4 nights trip for Rahul Sharma 2 adults from 3 october 2 nights pahalgam 2 nights srinagar')
+  const s = { ...r.snapshot, profitMarginPercentage: 10, includeGST: true, gstPercentage: 5 }
+  // Pahalgam was picked mid-range (Heevan 6500); Pine Spring (3★, 3500) is one star down — allowed.
+  const p = cheaperPlan(s, catalog)
+  const hotel = p.suggestions.find((x) => x.kind === 'hotel')
+  assert.equal(hotel.to, 'Pine Spring')
+  assert.equal(hotel.saving, 3000 * 2)
+  assert.ok(p.clientSaving > p.saving, 'client saving includes margin + GST')
+  assert.match(cheaperReply(p), /Say yes or no/)
+  const applied = applyEditActions(s, p.actions, { catalog, settings })
+  assert.ok(applied.snapshot.accommodations.some((a) => a.name === 'Pine Spring'))
+  // Nothing cheaper → an honest answer.
+  const none = cheaperPlan({ ...s, accommodations: [], transportation: [] }, catalog)
+  assert.match(cheaperReply(none), /leanest/)
+})
+
+test('add-on suggestions come from the catalog activities of the trip cities', () => {
+  const cat = { ...catalog, activities: [{ id: 51, name: 'Gondola Phase 1', destination_id: 2, selling_price: 1500 }, { id: 52, name: 'Pony Ride', destination_id: 3, selling_price: 800 }] }
+  const r = plan('4 nights trip for Rahul Sharma from 3 october 2 nights pahalgam 2 nights gulmarg', blank, cat)
+  const list = addOnSuggestions(r.snapshot, cat)
+  assert.deepEqual(list.map((g) => [g.city, g.day, g.activities[0].name]), [['Pahalgam', 1, 'Pony Ride'], ['Gulmarg', 3, 'Gondola Phase 1']])
 })
 
 console.log(`\n${pass} passed, ${fail} failed`)

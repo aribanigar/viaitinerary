@@ -72,6 +72,7 @@ import { HotelModal, TransportModal, ActivityModal } from "./trip-builder/TripBu
 import TripInfoTab from "./trip-builder/TripInfoTab";
 import { registerChingEditor } from "../../utils/ching/editorBridge";
 import { getChingMemory, invalidateChingMemory } from "../../utils/ching/memoryStore";
+import { cheaperPlan, addOnSuggestions } from "../../utils/ching/optimize";
 import { formatTripImageUrl, normalizeAccommodation } from "../../utils/tripView";
 import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
 import { planLive, isBlankTrip } from "../../utils/ching/liveFill";
@@ -1601,6 +1602,9 @@ const TripBuilder = ({ mode }) => {
         };
       },
       setTab: (tab) => chingState.current.setActiveTab(tab),
+      // Phase 4: a cheaper version from the agency's own catalog, and add-ons.
+      optimize: () => cheaperPlan(chingState.current.snapshot, chingState.current.catalog),
+      addOns: () => addOnSuggestions(chingState.current.snapshot, chingState.current.catalog),
       live: {
         active: () => !!chingLive.current,
         begin: () => {

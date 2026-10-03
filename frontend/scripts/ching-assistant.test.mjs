@@ -166,5 +166,15 @@ test('money, status and reminders by voice', () => {
   }
 })
 
+test('cheaper / optimise / add-ons', () => {
+  for (const t of ['make it cheaper', 'make it a little cheaper', 'optimise this trip', 'this is too expensive', 'reduce the price']) {
+    assert.deepEqual(u(t, { inBuilder: true }), { type: 'optimize' }, t)
+  }
+  assert.equal(u('reduce margin to 10%', { inBuilder: true }), null)
+  assert.deepEqual(u('suggest some add-ons', { inBuilder: true }), { type: 'addons' })
+  assert.deepEqual(u('what else can we add', { inBuilder: true }), { type: 'addons' })
+  assert.equal(u('add shikara ride on day 2', { inBuilder: true }), null)
+})
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

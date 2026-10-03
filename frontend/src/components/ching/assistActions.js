@@ -26,6 +26,7 @@ import { rememberChing, forgetChing } from "../../api/ching";
 import { fetchAccountingTripLedger, createAccountingSettlement } from "../../api/accounting";
 import { updateTrip, sendReminder } from "../../api/trips";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
+import { cheaperReply, addOnReply } from "../../utils/ching/optimize";
 
 const list = (v) => (Array.isArray(v) ? v : []);
 const first = (name) => String(name || "").trim().split(/\s+/)[0] || "";
@@ -272,6 +273,35 @@ async function doRemind(ask, ctx) {
   ctx.respond(`Sent ${first(trip.client_name) || "the client"} a ${ask.kind === "payment" ? "payment" : "proposal"} reminder${r?.sent_to ? ` at ${r.sent_to}` : ""}.`);
 }
 
+// ── Phase 4: cheaper plan / add-ons (on the open trip) ──
+async function doOptimize(ctx) {
+  const ed = ctx.editor;
+  if (!ed?.optimize) {
+    ctx.respond("Open a trip in the Trip Builder and I'll find you a cheaper version.");
+    return;
+  }
+  const plan = ed.optimize();
+  if (!plan.actions.length) {
+    ctx.respond(cheaperReply(plan));
+    return;
+  }
+  ctx.confirm(cheaperReply(plan), async () => {
+    const r = ed.apply(plan.actions) || {};
+    await new Promise((res) => setTimeout(res, 700)); // let the builder re-price
+    const total = ed.summary?.()?.total;
+    ctx.respond(`Done — ${plural(list(r.changes).length, "change")}.${total ? ` The total is now ${total}.` : ""} Say “undo” to go back.`);
+  });
+}
+
+function doAddOns(ctx) {
+  const ed = ctx.editor;
+  if (!ed?.addOns) {
+    ctx.respond("Open a trip and I'll suggest add-ons for its destinations.");
+    return;
+  }
+  ctx.respond(addOnReply(ed.addOns()));
+}
+
 // ── memory ────────────────────────────────────────────────────────────────
 async function doRemember(ask, ctx) {
   if (ask.kind === "name") {
@@ -357,6 +387,8 @@ export async function handleAssist(ask, ctx) {
     recall: () => doRecall(ctx),
     forget: () => doForget(ask, ctx),
     payment: () => doPayment(ask, ctx),
+    optimize: () => doOptimize(ctx),
+    addons: () => doAddOns(ctx),
     status: () => doStatus(ask, ctx),
     remind: () => doRemind(ask, ctx),
   };
