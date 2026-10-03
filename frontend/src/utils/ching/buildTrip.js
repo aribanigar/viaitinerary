@@ -39,6 +39,117 @@ function nightlyCities(command, hotels) {
   return cities.slice(0, command.nights);
 }
 
+
+const firstPrice = (h) => Number((h.price_sections || [])[0]?.price) || 0;
+
+/** What the agent said about hotel class: { stars, tier: "budget"|"luxury"|null }. */
+function hotelPreference(text) {
+  const t = String(text || "").toLowerCase();
+  const m = /\b([1-7])\s*-?\s*star\b/.exec(t);
+  const tier = /\b(budget|cheap|cheapest|economy|affordable)\b/.test(t)
+    ? "budget"
+    : /\b(luxury|luxurious|premium|best|top|5\s*star)\b/.test(t)
+      ? "luxury"
+      : null;
+  return { stars: m ? m[1] : null, tier };
+}
+
+/**
+ * A sensible hotel in `city` when the agent named only the place: available
+ * ones, the spoken star rating if any, then cheapest (budget) / dearest
+ * (luxury) / the middle of the range (default).
+ */
+export function pickHotel(city, hotels, pref = {}) {
+  let pool = hotels.filter((h) => sameName(h.city, city) && h.is_available !== false);
+  if (!pool.length) return null;
+  if (pref.stars) {
+    const starred = pool.filter((h) => String(h.category || "").startsWith(pref.stars));
+    if (starred.length) pool = starred;
+  }
+  const priced = pool.slice().sort((a, b) => firstPrice(a) - firstPrice(b) || String(a.name).localeCompare(String(b.name)));
+  if (pref.tier === "budget") return priced[0];
+  if (pref.tier === "luxury") return priced[priced.length - 1];
+  return priced[Math.floor((priced.length - 1) / 2)];
+}
+
+/** Smallest available cab that seats the group (cheapest among equals), or null. */
+export function pickVehicle(vehicles, guests) {
+  const fits = vehicles
+    .filter((v) => v.is_available !== false && Number(v.price) > 0 && Number(v.seating_capacity) >= guests)
+    .sort((a, b) => Number(a.seating_capacity) - Number(b.seating_capacity) || Number(a.price) - Number(b.price));
+  return fits[0] || null;
+}
+
+/**
+ * Stays with a hotel for every one: a stay that named only a city gets an
+ * auto-picked hotel there; a trip with nights and a destination but no stays
+ * gets one stay for all nights. → { stays, autoPicked: [{ city, hotel }] }
+ */
+function resolveStays(command, hotels, nights, destinations = []) {
+  const pref = hotelPreference(command.transcript);
+  const autoPicked = [];
+  let stays = (command.stays || []).map((st) => {
+    if (st.hotelId || !st.city) return st;
+    const h = pickHotel(st.city, hotels, pref);
+    if (!h) return st;
+    autoPicked.push({ city: h.city, hotel: h.name });
+    return { ...st, hotelId: h.id, hotelName: h.name, city: h.city };
+  });
+  if (!stays.length && nights > 0) {
+    const route = planRoute(command, hotels, destinations, nights);
+    stays = route
+      .map(({ city, nights: n }) => {
+        const h = pickHotel(city, hotels, pref);
+        if (!h) return null;
+        autoPicked.push({ city: h.city, hotel: h.name, routed: route.length > 1 });
+        return { nights: n, hotelId: h.id, hotelName: h.name, city: h.city };
+      })
+      .filter(Boolean);
+  }
+  return { stays, autoPicked };
+}
+
+/** How many cities a trip of `nights` nights comfortably covers. */
+const citiesFor = (nights) => (nights <= 2 ? 1 : nights <= 3 ? 2 : nights <= 6 ? 3 : 4);
+
+/** Split `nights` over `cities`: even shares, the extra nights to the first ones. */
+function splitNights(cities, nights) {
+  const k = Math.min(cities.length, citiesFor(nights), nights);
+  const base = Math.floor(nights / k);
+  return cities.slice(0, k).map((city, i) => ({ city, nights: base + (i < nights % k ? 1 : 0) }));
+}
+
+/**
+ * No stays were spoken — plan them: the hotel cities said in the sentence (in
+ * the order said), else the destination itself if it has hotels, else the
+ * hotel cities of that region (same state as the destination, busiest first).
+ * → [{ city, nights }]
+ */
+function planRoute(command, hotels, destinations, nights) {
+  const hotelCities = [...new Set(hotels.filter((h) => h.city && h.is_available !== false).map((h) => h.city))];
+  const text = String(command.transcript || "").toLowerCase();
+  const said = hotelCities
+    .map((c) => ({ c, at: text.search(new RegExp(`\\b${c.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`)) }))
+    .filter((x) => x.at >= 0)
+    .sort((a, b) => a.at - b.at)
+    .map((x) => x.c);
+  if (said.length) return splitNights(said, nights);
+
+  const dest = command.destinationName;
+  if (!dest) return [];
+  if (hotelCities.some((c) => sameName(c, dest))) return [{ city: hotelCities.find((c) => sameName(c, dest)), nights }];
+
+  const region = destinations.find((d) => sameName(d.name, dest));
+  const regionKey = String(region?.state || region?.name || dest).toLowerCase();
+  const inRegion = (city) => {
+    const d = destinations.find((x) => sameName(x.name, city) || sameName(x.city, city));
+    return d && [d.state, d.city, d.name].some((v) => v && String(v).toLowerCase().includes(regionKey.replace(/^jammu (?:and|&) /, "")));
+  };
+  const count = (city) => hotels.filter((h) => sameName(h.city, city)).length;
+  const cities = hotelCities.filter(inRegion).sort((a, b) => count(b) - count(a));
+  return cities.length ? splitNights(cities, nights) : [];
+}
+
 /**
  * Pure: ChingCommand + catalog → the builder's state for that trip:
  * { tripInfo (fields to merge), itinerary, accommodations, transportation }.
@@ -55,6 +166,9 @@ export function buildChingTripParts(command, catalog) {
 
   const nights = Math.max(0, Number(command.nights) || 0);
   const days = nights ? nights + 1 : 0;
+  const resolved = resolveStays(command, hotels, nights, destinations);
+  command = { ...command, stays: resolved.stays };
+  const autoPicked = [...resolved.autoPicked];
   const start = /^\d{4}-\d{2}-\d{2}$/.test(command.startDate || "") ? command.startDate : "";
   const cities = nightlyCities({ ...command, nights }, hotels);
   const lastCity = cities[cities.length - 1] || command.destinationName || "";
@@ -126,7 +240,13 @@ export function buildChingTripParts(command, catalog) {
   }
 
   // ── Cab: per-trip rate → one booking; otherwise (per day / unset) one per day.
-  const vehicle = vehicles.find((v) => v.id === command.vehicleId);
+  let vehicle = vehicles.find((v) => v.id === command.vehicleId);
+  // No cab named: pick the smallest one that seats the group (unless "no cab").
+  if (!vehicle && !/\b(no|without)\s+(cab|car|taxi|vehicle|transport)\b/i.test(command.transcript || "")) {
+    const guests = (Number(command.adults) || 0) + (Number(command.children) || 0);
+    vehicle = guests > 0 ? pickVehicle(vehicles, guests) : null;
+    if (vehicle) autoPicked.push({ cab: vehicle.name, guests });
+  }
   const transportation = [];
   if (vehicle && start && days) {
     const booking = (day, tripType, route) => ({
@@ -166,5 +286,5 @@ export function buildChingTripParts(command, catalog) {
     ...(place && nights ? { tripTitle: `${place} ${nights}N/${days}D` } : {}),
   };
 
-  return { tripInfo, itinerary, accommodations, transportation, vehicle };
+  return { tripInfo, itinerary, accommodations, transportation, vehicle, autoPicked };
 }

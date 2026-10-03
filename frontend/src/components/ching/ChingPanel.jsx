@@ -9,6 +9,8 @@ import {
   SendHorizontal,
   TriangleAlert,
   Undo2,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
 
@@ -103,9 +105,53 @@ function MicButton({ listening, disabled, onClick, supported }) {
   );
 }
 
+// What's still missing in the trip (from the builder's checklist). Tapping
+// an item opens that tab in the builder.
+function Pending({ items, onOpenTab }) {
+  if (!items?.length) return null;
+  const required = items.filter((i) => i.level === "required");
+  const optional = items.filter((i) => i.level !== "required");
+  return (
+    <div className="rounded-xl bg-amber-50/70 border border-amber-200/60 p-2.5">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-800/80 mb-1.5">
+        Still needed · {items.length}
+      </div>
+      <ul className="flex flex-wrap gap-1.5">
+        {[...required, ...optional].slice(0, 10).map((i) => (
+          <li key={i.key}>
+            <button
+              type="button"
+              onClick={() => onOpenTab?.(i.tab)}
+              title={`Open ${i.tab}`}
+              className={`px-2 py-1 rounded-full text-[11px] font-medium border ${
+                i.level === "required"
+                  ? "bg-white border-amber-300 text-amber-900"
+                  : "bg-white/60 border-black/10 text-[#181c22]/60"
+              }`}
+            >
+              {i.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// What Ching said back (also spoken aloud when voice replies are on).
+const Reply = ({ text }) =>
+  text ? (
+    <div className="flex items-start gap-2">
+      <span className="grid place-items-center w-6 h-6 rounded-full shrink-0" style={{ background: INK }}>
+        <AudioLines className="w-3 h-3" style={{ color: LIME }} />
+      </span>
+      <p className="flex-1 rounded-2xl rounded-tl-sm bg-[#f4f5f6] px-3 py-2 text-[13px] leading-snug">{text}</p>
+    </div>
+  ) : null;
+
 // The live session: what has been filled/changed so far, updating as the
 // agent speaks.
-function LiveBlock({ live }) {
+function LiveBlock({ live, onOpenTab }) {
   const label =
     live.phase === "opening"
       ? "Opening a new trip…"
@@ -130,6 +176,7 @@ function LiveBlock({ live }) {
       )}
       <Warnings items={live.warnings} />
       <Unrecognized items={live.unrecognized} />
+      <Pending items={live.pending} onOpenTab={onOpenTab} />
     </div>
   );
 }
@@ -203,6 +250,10 @@ export default function ChingPanel({
   progress,
   onUndo,
   onExpand,
+  voiceOn,
+  speaking,
+  onToggleVoice,
+  onOpenTab,
 }) {
   const [draft, setDraft] = useState("");
   const { supported, phase, interim, error, wakeBlocked } = speech;
@@ -269,6 +320,18 @@ export default function ChingPanel({
         </div>
         <button
           type="button"
+          onClick={onToggleVoice}
+          aria-pressed={voiceOn}
+          title={voiceOn ? "Ching talks back — tap to mute" : "Ching is muted — tap to hear replies"}
+          className={`grid place-items-center w-8 h-8 rounded-full border border-black/10 shrink-0 hover:bg-black/[0.03] ${
+            speaking ? "bg-[#e7f63c]" : "bg-white"
+          }`}
+          aria-label={voiceOn ? "Mute Ching's voice" : "Turn on Ching's voice"}
+        >
+          {voiceOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-[#181c22]/45" />}
+        </button>
+        <button
+          type="button"
           role="switch"
           aria-checked={handsFree}
           onClick={onToggleHandsFree}
@@ -328,7 +391,7 @@ export default function ChingPanel({
           </div>
         </div>
 
-        {live && <LiveBlock live={live} />}
+        {live && <LiveBlock live={live} onOpenTab={onOpenTab} />}
 
         {running && (
           <div className="flex items-center gap-2.5 rounded-2xl bg-[#f4f5f6] p-3 text-[13px] font-medium">
@@ -354,9 +417,11 @@ export default function ChingPanel({
                 </button>
               )}
             </div>
+            <Reply text={outcome.reply} />
             {outcome.lines?.length > 0 && <ChangeList items={outcome.lines} />}
             <Warnings items={outcome.warnings} />
             <Unrecognized items={outcome.unrecognized} />
+            <Pending items={outcome.pending} onOpenTab={onOpenTab} />
           </div>
         )}
 
@@ -370,7 +435,14 @@ export default function ChingPanel({
           </div>
         )}
 
-        {notice && !listening && !live && (
+        {notice?.kind === "reply" && !listening && !live && (
+          <div className="space-y-2">
+            <Reply text={notice.text} />
+            <Pending items={notice.pending} onOpenTab={onOpenTab} />
+          </div>
+        )}
+
+        {notice && notice.kind !== "reply" && !listening && !live && (
           <div
             className={`rounded-2xl border p-3 text-xs ${
               notice.kind === "error"

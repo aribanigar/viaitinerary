@@ -98,17 +98,27 @@ function planFill(base, text, { catalog, settings, today }) {
   } else if (command.startDate) {
     changes.push(`Starts: ${command.startDate}`);
   }
+  const autoHotel = new Set(parts.autoPicked.filter((p) => p.hotel).map((p) => p.hotel));
+  const autoCab = parts.autoPicked.find((p) => p.cab);
   parts.accommodations.forEach((a) => {
     const n = Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 86400000);
-    changes.push(`${a.city}: ${a.name} · ${plural(n, "night")}`);
+    changes.push(`${a.city}: ${a.name} · ${plural(n, "night")}${autoHotel.has(a.name) ? " (picked for you)" : ""}`);
   });
   if (parts.itinerary.length) changes.push(`Day-wise plan: ${plural(parts.itinerary.length, "day")}`);
-  if (parts.transportation.length) changes.push(`Cab: ${parts.vehicle.name} · ${plural(parts.transportation.length, "booking")}`);
+  if (parts.transportation.length) {
+    changes.push(
+      `Cab: ${parts.vehicle.name} · ${plural(parts.transportation.length, "booking")}${autoCab ? ` (picked for ${autoCab.guests} guests)` : ""}`,
+    );
+  }
   if (command.mealPlan) changes.push(`Meals: ${command.mealPlan}`);
   if (command.clientPhone) changes.push(`Phone: ${command.clientPhone}`);
   if (command.clientEmail) changes.push(`Email: ${command.clientEmail}`);
 
-  const warnings = [...(command.warnings || [])];
+  // A city-only stay that got a hotel picked isn't a problem any more.
+  const pickedCities = parts.autoPicked.filter((p) => p.city).map((p) => String(p.city).toLowerCase());
+  const warnings = (command.warnings || []).filter(
+    (w) => !(/^No hotel named/.test(w) && pickedCities.some((c) => w.toLowerCase().includes(c))),
+  );
   if (command.intent === "create_trip") {
     const v = validateChingCommand(command, createCatalog);
     // Missing pieces are normal mid-sentence; only flag what's actually wrong.

@@ -203,7 +203,11 @@ export function serializeHotel(h) {
   };
 }
 export function serializeVehicle(v) {
-  return { id: v.id, name: v.name, price: num(v.price), rate_type: v.rateType ?? null };
+  return {
+    id: v.id, name: v.name, price: num(v.price), rate_type: v.rateType ?? null,
+    // For Ching's auto-pick (smallest available cab that seats the group).
+    seating_capacity: v.seatingCapacity ?? null, vehicle_type: v.vehicleType ?? null, is_available: v.isAvailable ?? true,
+  };
 }
 
 const userLite = (u) => (u ? { id: u.id, name: u.name, email: u.email } : null);

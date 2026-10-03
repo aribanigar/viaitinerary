@@ -109,6 +109,19 @@ const NAME_REJECT = new Set([
   ...NAME_STOP, 'my', 'our', 'your', 'his', 'her', 'their', 'me', 'us', 'him', 'them', 'someone', 'somebody',
   'honeymoon', 'all', 'both', 'each', 'next', 'everyone', 'friends', 'two', 'customer', 'client', 'mr', 'mrs',
 ])
+// Words that are never a client name in the no-lead-in fallback.
+const FALLBACK_NAME_SKIP = new Set([
+  'create', 'make', 'plan', 'build', 'prepare', 'generate', 'draft', 'design', 'book', 'send', 'add', 'give',
+  'banao', 'bana', 'karo', 'kar', 'do', 'chahiye', 'ka', 'ki', 'ke', 'aur', 'se', 'tak', 'mein', 'me', 'ke',
+  'new', 'nice', 'good', 'best', 'cheap', 'budget', 'luxury', 'premium', 'deluxe', 'standard', 'star',
+  'hotel', 'hotels', 'resort', 'houseboat', 'stay', 'with', 'without', 'in', 'at', 'to', 'of', 'on', 'from',
+  'starting', 'start', 'till', 'until', 'and', 'or', 'then', 'also', 'please', 'kindly', 'quotation', 'quote',
+  'itinerary', 'trip', 'tour', 'package', 'holiday', 'vacation', 'honeymoon', 'family', 'friends', 'group',
+  'adults', 'adult', 'kids', 'kid', 'children', 'child', 'infant', 'infants', 'pax', 'people', 'persons', 'guests',
+  'nights', 'night', 'days', 'day', 'breakfast', 'dinner', 'lunch', 'meals', 'cab', 'car', 'taxi', 'vehicle',
+  'sightseeing', 'margin', 'gst', 'percent', 'rupees', 'rs', 'inr', 'nov', 'dec', 'jan', 'feb', 'mar', 'apr',
+  'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'next', 'this', 'week', 'month', 'year', 'today', 'tomorrow',
+])
 const VEHICLE_GENERIC = new Set(['car', 'cab', 'taxi', 'vehicle', 'ac', 'non', 'with', 'and', 'the', 'seater', 'driver'])
 const TRAIL_TRIM = new Set(['and', 'the', 'stay', 'of', 'in', 'at'])
 
@@ -572,7 +585,7 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     }
     if (!words.length || NAME_REJECT.has(words[0]) || words[0].length < 2) continue
     if (cityLookup([words[0]], cat) || cityLookup(words, cat)) continue
-    clientName = titleCase(words.join(' ').replace(/\.+$/, ''))
+    clientName = titleCase(words.join(' ').replace(/\.+$/, '').replace(/'s$/, ''))
     mark(start, k - 1)
   }
 
@@ -601,6 +614,32 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     const d = cat.destinations.find((x) => sameCity(x.name, city) || sameCity(x.raw.city, city))
     destinationId = d ? d.id : null
     destinationName = d ? d.name : city
+  }
+
+  // Client name without a lead-in word ("rahul sharma pahalgam 2 nights",
+  // "itinerary for 2 adults rahul sharma", Hinglish "rahul ka … banao"): the
+  // first run of leftover words that aren't places, hotels or trip words.
+  // Two or three words are taken as a name; one word only with "ka/ki/ke",
+  // "'s" or "family" after it, so a stray word isn't mistaken for a client.
+  if (!clientName) {
+    const isPlace = (w) => !!cityLookup([w], cat) || cat.destinations.some((d) => d.tokens.includes(w))
+    const usable = (i) => {
+      const w = at(i)
+      return w !== '|' && /^[a-z]+('s)?$/.test(w) && w.length >= 2 && !NAME_REJECT.has(w.replace(/'s$/, '')) &&
+        !FALLBACK_NAME_SKIP.has(w) && !isPlace(w.replace(/'s$/, ''))
+    }
+    for (let i = 0; i < tok.length && !clientName; i++) {
+      if (!usable(i) || (i > 0 && usable(i - 1))) continue
+      let k = i
+      while (k < tok.length && usable(k) && k - i < 3 && !/'s$/.test(at(k - 1) || '')) k++
+      const words = tok.slice(i, k).map((w) => w.replace(/'s$/, ''))
+      const after = at(k)
+      const possessive = /'s$/.test(tok[k - 1]) || ['ka', 'ki', 'ke', 'family'].includes(after)
+      if (words.length >= 2 || possessive) {
+        clientName = titleCase(words.join(' '))
+        mark(i, k - 1)
+      }
+    }
   }
 
   // Nights / days reconciliation

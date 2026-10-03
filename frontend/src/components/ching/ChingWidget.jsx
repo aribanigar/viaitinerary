@@ -12,6 +12,21 @@ import lazyWithReload, {
   reloadOnceForStaleChunks,
 } from "../../utils/lazyWithReload";
 import useSpeech, { primeAudio } from "./useSpeech";
+import { fetchTrips } from "../../api/trips";
+import {
+  understandAssistant,
+  replyAfter,
+  notUnderstood,
+  navigatingTo,
+  pendingReply,
+} from "../../utils/ching/assistant";
+import {
+  speak,
+  stopSpeaking,
+  voiceEnabled,
+  setVoiceEnabled,
+  onSpeakingChange,
+} from "../../utils/ching/voice";
 
 // Ching — voice trip builder, always mounted on portal routes (App.jsx), so it
 // survives route changes mid-sentence.
@@ -142,6 +157,22 @@ export default function ChingWidget() {
   const [compact, setCompact] = useState(false); // collapse to the result pill
   const [progress, setProgress] = useState("");
   const [, setUndoTick] = useState(0);
+  const [voiceOn, setVoiceOn] = useState(voiceEnabled);
+  const [speaking, setSpeaking] = useState(false);
+  useEffect(() => onSpeakingChange(setSpeaking), []);
+
+  // Ching talks back (when voice replies are on) and shows the same words.
+  const say = useCallback((text) => {
+    if (text) speak(text);
+  }, []);
+  const respond = useCallback(
+    (text, extra = {}) => {
+      setOutcome(null);
+      setNotice({ kind: "reply", text, ...extra });
+      say(text);
+    },
+    [say],
+  );
 
   // The current utterance. Plain object in a ref: speech events, the throttle
   // timer and the draft-opening watcher all mutate it outside React renders.
@@ -195,6 +226,7 @@ export default function ChingWidget() {
       changes: list(res?.changes),
       warnings: list(res?.warnings),
       unrecognized: list(res?.unrecognized),
+      pending: list(res?.pending),
     });
   }, []);
 
@@ -328,6 +360,15 @@ export default function ChingWidget() {
       if (!core) core = await ensureCore().catch(() => null);
       if (sessionRef.current !== S) return;
 
+      // Not a trip at all? ("open the ledger", "what's pending", "tell me a joke")
+      const ask = safe(() => understandAssistant(text, { inBuilder: Boolean(S.editor || getChingEditor()) }), null);
+      if (ask) {
+        if (S.editor && safe(() => S.editor.live.active(), false)) safe(() => S.editor.live.cancel());
+        endSession();
+        await assistRef.current?.(ask);
+        return;
+      }
+
       if (!S.editor) {
         const ed = getChingEditor();
         if (ed) {
@@ -347,6 +388,7 @@ export default function ChingWidget() {
         }
         endSession();
         setNotice({ kind: kind === "edit" ? "no-editor" : "unknown", text });
+        say(kind === "edit" ? "Open a trip in the Trip Builder and I'll change it for you." : notUnderstood());
         return;
       }
 
@@ -372,6 +414,7 @@ export default function ChingWidget() {
       const commands = list(res.commands);
       if (!changes.length && !commands.length) {
         setNotice({ kind: "unknown", text, editing: true, unrecognized: list(res.unrecognized) });
+        say(notUnderstood());
         return;
       }
       const lines = commands.length ? (await runCommands(commands, ed)) || [] : [];
@@ -389,14 +432,78 @@ export default function ChingWidget() {
       });
       setCompact(true); // let the agent see the filled form / preview
       setUndoTick((t) => t + 1);
+      // Speak once the builder has re-priced the trip (the total follows the commit).
+      setTimeout(() => {
+        const sum = safe(() => ed.summary(), null) || {};
+        const reply = replyAfter({
+          mode: res.mode,
+          changes,
+          pending: list(sum.pending),
+          total: sum.total,
+          clientName: sum.clientName,
+          commandLines: lines,
+        });
+        setOutcome((o) => (o ? { ...o, reply, pending: list(sum.pending) } : o));
+        say(reply);
+      }, 700);
     },
-    [attach, endSession, ensureCore, openDraft, runCommands, showLive],
+    [attach, endSession, ensureCore, openDraft, runCommands, showLive, say],
   );
+
+  // Requests that aren't about building a trip (see utils/ching/assistant.js).
+  const assist = useCallback(
+    async (ask) => {
+      const ed = getChingEditor();
+      if (ask.type === "navigate") {
+        navigate(ask.path === "/trip-builder" ? newDraftPath() : ask.path);
+        respond(navigatingTo(ask.label));
+      } else if (ask.type === "back") {
+        navigate(-1);
+        respond("Going back.");
+      } else if (ask.type === "tab") {
+        if (ed) safe(() => ed.setTab(ask.tab));
+        const n = list(safe(() => ed?.summary().pending, [])).filter((p) => p.tab === ask.tab).length;
+        respond(`Here's ${ask.tab}.${n ? ` ${n} thing${n > 1 ? "s" : ""} still to fill here.` : ""}`);
+      } else if (ask.type === "open-trip") {
+        try {
+          const res = await fetchTrips(token, { search: ask.query, per_page: 5 });
+          const trip = list(res?.data)[0];
+          if (!trip) {
+            respond(`I couldn't find a trip for ${ask.query}. Check the name or trip ID?`);
+            return;
+          }
+          navigate(`/trip-builder/${trip.trip_id}`);
+          respond(`Opening ${trip.client_name ? `${trip.client_name}'s ` : ""}${trip.trip_title || trip.trip_id}.`);
+        } catch {
+          respond("I couldn't search your trips just now. Try again in a moment?");
+        }
+      } else if (ask.type === "pending") {
+        if (!ed) {
+          respond("Open a trip and I'll tell you exactly what's missing.");
+          return;
+        }
+        const pending = list(safe(() => ed.summary().pending, []));
+        respond(pendingReply(pending), { pending });
+      } else if (ask.type === "total") {
+        const total = ed ? safe(() => ed.summary().total, null) : null;
+        respond(total ? `The total is ${total}.` : "No price yet — add hotels or a cab and I'll do the maths.");
+      } else if (ask.type === "voice") {
+        setVoiceEnabled(ask.on);
+        setVoiceOn(ask.on);
+        respond(ask.on ? "I'm back! I'll talk again." : "Okay, I'll keep quiet. Say “talk to me” when you miss me.");
+      } else if (ask.type === "smalltalk") {
+        respond(ask.reply);
+      }
+    },
+    [navigate, respond, token],
+  );
+  const assistRef = useRef(null);
 
   useEffect(() => {
     attachRef.current = attach;
     finishRef.current = finish;
-  }, [attach, finish]);
+    assistRef.current = assist;
+  }, [attach, finish, assist]);
 
   const startSession = useCallback(() => {
     const prev = sessionRef.current;
@@ -415,6 +522,7 @@ export default function ChingWidget() {
 
   // ── speech events ──────────────────────────────────────────────────────
   const handleStart = useCallback(() => {
+    stopSpeaking();
     setOpen(true);
     startSession();
   }, [startSession]);
@@ -437,7 +545,7 @@ export default function ChingWidget() {
 
   const speech = useSpeech({
     handsFree,
-    paused: status === "running",
+    paused: status === "running" || speaking, // don't hear our own voice
     onCommand: handleCommand,
     onWake: handleWake,
     onStart: handleStart,
@@ -485,6 +593,7 @@ export default function ChingWidget() {
   );
 
   const closePanel = useCallback(() => {
+    stopSpeaking();
     cancelCommand();
     cancelSession();
     setOpen(false);
@@ -600,6 +709,15 @@ export default function ChingWidget() {
             progress={progress}
             onUndo={handleUndo}
             onExpand={() => setCompact(false)}
+            voiceOn={voiceOn}
+            speaking={speaking}
+            onToggleVoice={() => {
+              const next = !voiceOn;
+              setVoiceEnabled(next);
+              setVoiceOn(next);
+              if (next) speak("Voice on. Hi, I'm Ching!");
+            }}
+            onOpenTab={(tab) => safe(() => getChingEditor()?.setTab(tab))}
           />
         </Suspense>
       )}

@@ -33,6 +33,7 @@ import {
   Package as PackageIcon,
   MessageCircle,
   History as HistoryIcon,
+  CircleAlert,
   Send,
   Link2,
   Mail,
@@ -72,6 +73,7 @@ import { registerChingEditor } from "../../utils/ching/editorBridge";
 import { formatTripImageUrl, normalizeAccommodation } from "../../utils/tripView";
 import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
 import { planLive, isBlankTrip } from "../../utils/ching/liveFill";
+import { tripChecklist, pendingByTab } from "../../utils/tripChecklist";
 import {
   DRAFT_KEY,
   useTripBuilderData,
@@ -1237,6 +1239,19 @@ const TripBuilder = ({ mode }) => {
     );
   };
 
+  // ── What's still missing (live): header badge, tab dots, and what Ching reads out.
+  const pendingItems = useMemo(
+    () =>
+      loading
+        ? []
+        : tripChecklist(
+            { tripInfo, itinerary, accommodations, transportation, tripActivities },
+            { packageMode: isPackageMode },
+          ),
+    [loading, tripInfo, itinerary, accommodations, transportation, tripActivities, isPackageMode],
+  );
+  const pendingCounts = useMemo(() => pendingByTab(pendingItems), [pendingItems]);
+
   // ── Ching: PDF helpers shared by the voice hand-off and voice commands.
   const exportPreviewBlob = async () => {
     const { exportPreviewToPdfBlob } = await import("../../utils/exportPdf");
@@ -1486,6 +1501,9 @@ const TripBuilder = ({ mode }) => {
     handleExport,
     handleExportExcel,
     shareProposal,
+    pendingItems,
+    setActiveTab,
+    currencySymbol: (tripInfo.currency || "").includes("₹") || /INR/.test(tripInfo.currency || "") ? "₹" : "",
   };
   const chingUndo = useRef([]);
   // Live (real-time) voice session: { base } = the trip as it was when the
@@ -1499,6 +1517,10 @@ const TripBuilder = ({ mode }) => {
       const { snapshot, catalog, settings } = chingState.current;
       return { before: snapshot, ...applyEditActions(snapshot, actions, { catalog, settings }) };
     };
+    // Pending items for a planned snapshot; the total is priced by the builder
+    // after the commit, so it isn't "missing" mid-sentence.
+    const livePending = (snap) =>
+      tripChecklist(snap, { packageMode: isPackageMode }).filter((i) => i.key !== "price");
     const commit = (next) => {
       setPricingTouched(true);
       // The total is derived: keep the builder's current one and let the
@@ -1552,6 +1574,18 @@ const TripBuilder = ({ mode }) => {
       },
       canUndo: () => chingUndo.current.length > 0,
       isBlank: () => isBlankTrip(chingState.current.snapshot),
+      // What's missing + the total, for Ching's spoken replies (current render).
+      summary: () => {
+        const { snapshot, pendingItems: pending, currencySymbol } = chingState.current;
+        const cost = Number(snapshot.tripInfo.cost) || 0;
+        return {
+          pending,
+          total: cost > 0 ? `${currencySymbol}${cost.toLocaleString("en-IN")}` : null,
+          clientName: snapshot.tripInfo.clientName || "",
+          title: snapshot.tripInfo.tripTitle || "",
+        };
+      },
+      setTab: (tab) => chingState.current.setActiveTab(tab),
       live: {
         active: () => !!chingLive.current,
         begin: () => {
@@ -1563,7 +1597,7 @@ const TripBuilder = ({ mode }) => {
           const plan = planLive(chingLive.current.base, text, { catalog, settings });
           commit(plan.snapshot);
           const { mode, changes, warnings, unrecognized } = plan;
-          return { mode, changes, warnings, unrecognized };
+          return { mode, changes, warnings, unrecognized, pending: livePending(plan.snapshot) };
         },
         finish: (text) => {
           const live = chingLive.current || { base: chingState.current.snapshot };
@@ -1578,7 +1612,7 @@ const TripBuilder = ({ mode }) => {
             ];
           }
           const { mode, changes, warnings, unrecognized, commands } = plan;
-          return { mode, changes, warnings, unrecognized, commands };
+          return { mode, changes, warnings, unrecognized, commands, pending: livePending(plan.snapshot) };
         },
         cancel: () => {
           const live = chingLive.current;
@@ -1933,6 +1967,45 @@ const TripBuilder = ({ mode }) => {
           Locked
         </label>
       )}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => toggleMenu("pending")}
+          title={pendingItems.length ? "What's still missing in this trip" : "Everything's filled"}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold border transition-colors ${
+            pendingItems.length
+              ? "bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100"
+              : "bg-emerald-50 border-emerald-200 text-emerald-700"
+          }`}
+        >
+          {pendingItems.length ? <CircleAlert className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
+          {pendingItems.length ? `${pendingItems.length} pending` : "Ready"}
+        </button>
+        {openMenu === "pending" && pendingItems.length > 0 && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
+            <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden py-1">
+              <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45">
+                Still to fill
+              </div>
+              {pendingItems.map((item) => (
+                <button
+                  key={item.key}
+                  onClick={() => {
+                    setOpenMenu(null);
+                    setActiveTab(item.tab);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-black/[0.03] transition-colors flex items-center gap-2.5"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.level === "required" ? "bg-amber-500" : "bg-black/20"}`} />
+                  <span className="flex-1 text-sm text-[#181c22]">{item.label}</span>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9aa3b2]">{item.tab}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
       {proposalChip}
       {urlTripId && (
         <button
@@ -2145,6 +2218,14 @@ const TripBuilder = ({ mode }) => {
                     >
                       <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.8} />
                       <span className="whitespace-nowrap">{tab}</span>
+                      {pendingCounts[tab] > 0 && (
+                        <span
+                          className="min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-[10px] font-bold text-[#181c22] grid place-items-center"
+                          title={`${pendingCounts[tab]} pending in ${tab}`}
+                        >
+                          {pendingCounts[tab]}
+                        </span>
+                      )}
                     </button>
                   ))}
                   <div className="relative">
