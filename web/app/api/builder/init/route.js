@@ -43,7 +43,8 @@ export async function GET(request) {
     : null;
 
   const resp = {
-    settings: serializeSettings(settings),
+    // DMC partner agencies get the "Powered by Via Kashmir" mark on every itinerary page.
+    settings: { ...serializeSettings(settings), powered_by_via_kashmir: !!(await prisma.user.findUnique({ where: { id: adminId }, select: { isDmcBridge: true } }))?.isDmcBridge },
     destinations: destinations.map(serializeDestination),
     vehicles: vehicles.map(serializeVehicle),
     hotels: hotels.map(serializeHotel),

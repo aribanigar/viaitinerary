@@ -209,7 +209,7 @@ const ClassicTemplate = ({
   return (
     <div
       id="print-content-classic"
-      className="classic-template-wrapper bg-white"
+      className={`classic-template-wrapper bg-white${agencySettings.poweredByViaKashmir ? " vk-powered" : ""}`}
     >
       <style
         dangerouslySetInnerHTML={{

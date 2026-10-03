@@ -13,6 +13,8 @@ import {
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { POPPINS_REGULAR, POPPINS_SEMIBOLD } from "./pdf-assets.js";
+import { VIA_KASHMIR_LOGO, VIA_KASHMIR_LOGO_RATIO } from "./vk-logo.js";
+import prisma from "@/lib/prisma";
 
 // Server-side PDF generation (react-pdf, no Chromium). This is a faithful
 // reproduction of the in-app ModernTemplate live preview, so the exported PDF
@@ -60,10 +62,22 @@ const ordinal = (i) =>
   ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"][i] || `${i + 1}th`;
 const arr = (v) => (Array.isArray(v) ? v : v ? [v] : []);
 const isImg = (u) => typeof u === "string" && /^(https?:|data:)/.test(u);
+// react-pdf can only draw JPG/PNG. Cloudinary images stored as AVIF/WebP (117
+// of Via Kashmir's hotels, 2026-10-03) are fetched as JPG instead - Cloudinary
+// converts on the fly when the URL asks for .jpg with f_jpg.
+const pdfImg = (u) => {
+  const v = String(u || "");
+  if (/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(v) && /\.(avif|webp|heic|gif)(\?.*)?$/i.test(v)) {
+    return v.replace("/image/upload/", "/image/upload/f_jpg,q_80,w_1400/").replace(/\.(avif|webp|heic|gif)(\?.*)?$/i, ".jpg");
+  }
+  return v;
+};
 const txt = (v) => (v == null || v === "" ? "" : String(v));
 const curCode = (c) => (c ? String(c).split(/[\s(]/)[0] : "INR");
 const num = (n) => Number(n || 0).toLocaleString("en-IN");
 const money = (n, cur) => `${curCode(cur)} ${num(n)}`;
+const MEAL = { room_only: "Room only (EP)", breakfast_only: "Breakfast (CP)", breakfast_dinner: "Breakfast & dinner (MAP)", all_meals: "All meals (AP)", ep: "Room only (EP)", cp: "Breakfast (CP)", map: "Breakfast & dinner (MAP)", ap: "All meals (AP)" };
+const mealLabel = (v) => MEAL[String(v || "").toLowerCase()] || txt(v);
 
 // ModernTemplate palette (matches ModernTemplate.jsx CSS variables).
 const ORANGE = "#FAA61A"; // --primary-orange
@@ -165,7 +179,7 @@ function pageHeader(trip, settings) {
       View,
       { style: { alignItems: "flex-end", paddingTop: 20, paddingRight: 40 } },
       isImg(settings?.logoPath)
-        ? h(Image, { src: String(settings.logoPath), style: { height: 34, objectFit: "contain" } })
+        ? h(Image, { src: pdfImg(settings.logoPath), style: { height: 34, objectFit: "contain" } })
         : h(
             View,
             { style: { alignItems: "flex-end" } },
@@ -194,6 +208,26 @@ function sectionBar(title, settings) {
     ),
     h(Doodle, { color: brandOf(settings), style: { position: "absolute", top: -9, right: 26 } }),
   );
+}
+
+// "Powered by Via Kashmir" mark - DMC partner itineraries only (owner's rule,
+// 2026-10-03). A small white pill fixed in the bottom-right corner of EVERY
+// page (cover and inner pages, including wrapped continuation pages), under
+// the contact footer. Shown only when the trip's owning agency isDmcBridge,
+// decided server-side in renderItineraryPdf - never by the request.
+function poweredMark() {
+  const hgt = 10;
+  return h(
+    View,
+    { fixed: true, style: { position: "absolute", bottom: 6, right: 18, flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: "#F1F5F2", borderRadius: 10, paddingVertical: 3.5, paddingHorizontal: 9 } },
+    h(Text, { style: { fontSize: 7, color: "#414942", letterSpacing: 0.3 } }, "Powered by"),
+    h(Image, { src: VIA_KASHMIR_LOGO, style: { height: hgt, width: hgt * VIA_KASHMIR_LOGO_RATIO, flexShrink: 0 } }),
+  );
+}
+
+/** react-pdf Page that adds the Via Kashmir mark when the itinerary belongs to a DMC partner. */
+function BPage({ powered, children, ...props }) {
+  return h(Page, props, children, powered ? poweredMark() : null);
 }
 
 // ── Itinerary document ─────────────────────────────────────────────────────
@@ -239,14 +273,14 @@ function ItineraryDoc({ trip, settings }) {
 
     // ── Cover (dark green) ─────────────────────────────────────────────
     h(
-      Page,
-      { size: "A4", style: { fontFamily: "Poppins", backgroundColor: green, color: WHITE } },
+      BPage,
+      { powered: !!settings?._viaKashmirPowered, size: "A4", style: { fontFamily: "Poppins", backgroundColor: green, color: WHITE } },
       // hero image with dark overlay + centered title
       h(
         View,
         { style: { height: 300, position: "relative" } },
         isImg(trip.imagePath)
-          ? h(Image, { src: String(trip.imagePath), style: { position: "absolute", width: "100%", height: "100%", objectFit: "cover" } })
+          ? h(Image, { src: pdfImg(trip.imagePath), style: { position: "absolute", width: "100%", height: "100%", objectFit: "cover" } })
           : null,
         h(View, { style: { position: "absolute", width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.4)" } }),
         // orange logo label (top-left, rounded bottom-right)
@@ -254,7 +288,7 @@ function ItineraryDoc({ trip, settings }) {
           View,
           { style: { position: "absolute", top: 0, left: 0, backgroundColor: brand, paddingVertical: 16, paddingLeft: 40, paddingRight: 52, borderBottomRightRadius: 34 } },
           isImg(settings?.logoPath)
-            ? h(Image, { src: String(settings.logoPath), style: { height: 32, objectFit: "contain" } })
+            ? h(Image, { src: pdfImg(settings.logoPath), style: { height: 32, objectFit: "contain" } })
             : h(
                 View,
                 {},
@@ -326,8 +360,8 @@ function ItineraryDoc({ trip, settings }) {
     // ── Accommodations ─────────────────────────────────────────────────
     hotels.length
       ? h(
-          Page,
-          { size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
+          BPage,
+          { powered: !!settings?._viaKashmirPowered, size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
           pageHeader(trip, settings),
           sectionBar("ACCOMMODATIONS", settings),
           h(
@@ -357,11 +391,11 @@ function ItineraryDoc({ trip, settings }) {
                     View,
                     { style: { flexDirection: "row", gap: 44, marginTop: 4 } },
                     h(View, {}, h(Text, { style: { color: "#888", fontSize: 8, letterSpacing: 1 } }, "ROOMS"), h(Text, { style: { ...s.bold, color: green, fontSize: 12 } }, txt(a.rooms) || "1")),
-                    h(View, {}, h(Text, { style: { color: "#888", fontSize: 8, letterSpacing: 1 } }, "MEAL PLAN"), h(Text, { style: { ...s.bold, color: green, fontSize: 12 } }, txt(a.mealPlan) || "—")),
+                    h(View, {}, h(Text, { style: { color: "#888", fontSize: 8, letterSpacing: 1 } }, "MEAL PLAN"), h(Text, { style: { ...s.bold, color: green, fontSize: 12 } }, mealLabel(a.mealPlan) || "—")),
                   ),
                 ),
                 isImg(a.imagePath || a.hotel?.imagePath)
-                  ? h(Image, { src: String(a.imagePath || a.hotel?.imagePath), style: { width: 175, height: 115, borderRadius: 15, objectFit: "cover" } })
+                  ? h(Image, { src: pdfImg(a.imagePath || a.hotel?.imagePath), style: { width: 175, height: 115, borderRadius: 15, objectFit: "cover" } })
                   : null,
               ),
             ),
@@ -373,8 +407,8 @@ function ItineraryDoc({ trip, settings }) {
     // ── Transportations ────────────────────────────────────────────────
     transports.length
       ? h(
-          Page,
-          { size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
+          BPage,
+          { powered: !!settings?._viaKashmirPowered, size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
           pageHeader(trip, settings),
           sectionBar("TRANSPORTATIONS", settings),
           h(
@@ -406,8 +440,8 @@ function ItineraryDoc({ trip, settings }) {
     // (the trip total already includes them, margin and all).
     activities.length
       ? h(
-          Page,
-          { size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
+          BPage,
+          { powered: !!settings?._viaKashmirPowered, size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
           pageHeader(trip, settings),
           sectionBar("ACTIVITIES", settings),
           h(
@@ -440,8 +474,8 @@ function ItineraryDoc({ trip, settings }) {
     // ── Day wise itinerary ─────────────────────────────────────────────
     days.length
       ? h(
-          Page,
-          { size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
+          BPage,
+          { powered: !!settings?._viaKashmirPowered, size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
           pageHeader(trip, settings),
           sectionBar("DAY WISE ITINERARY", settings),
           ...days.map((d, i) => {
@@ -470,7 +504,7 @@ function ItineraryDoc({ trip, settings }) {
                 ),
               ),
               isImg(d.imagePath)
-                ? h(Image, { src: String(d.imagePath), style: { width: "100%", height: 170, objectFit: "cover" } })
+                ? h(Image, { src: pdfImg(d.imagePath), style: { width: "100%", height: 170, objectFit: "cover" } })
                 : null,
               acts.length
                 ? h(
@@ -513,8 +547,8 @@ function ItineraryDoc({ trip, settings }) {
           ),
         );
       return h(
-        Page,
-        { size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
+        BPage,
+        { powered: !!settings?._viaKashmirPowered, size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
         pageHeader(trip, settings),
         sectionBar("INCLUSIONS & EXCLUSIONS", settings),
         h(View, { style: { flexDirection: "row", paddingHorizontal: 40, paddingTop: 20 } }, list("Inclusions", inc, "•", brand), list("Exclusions", exc, "•", green)),
@@ -542,7 +576,7 @@ const brandHead = (settings) =>
     View,
     { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16, borderBottomWidth: 3, borderBottomColor: brandOf(settings), paddingBottom: 10 } },
     h(View, {}, h(Text, { style: { fontSize: 16, fontWeight: 700, color: greenOf(settings), letterSpacing: 2 } }, agencyOf(settings).toUpperCase()), h(Text, { style: { fontSize: 8, color: "#888", letterSpacing: 2 } }, "TRAVEL SIMPLIFIED")),
-    isImg(settings?.logoPath) ? h(Image, { src: String(settings.logoPath), style: { height: 34, objectFit: "contain" } }) : null,
+    isImg(settings?.logoPath) ? h(Image, { src: pdfImg(settings.logoPath), style: { height: 34, objectFit: "contain" } }) : null,
   );
 const infoRow = (l, v) => h(View, { style: simpleStyles.row, key: l }, h(Text, { style: simpleStyles.label }, l), h(Text, { style: simpleStyles.value }, txt(v) || "—"));
 const table = (headings, rows) =>
@@ -561,7 +595,7 @@ function ConfirmationDoc({ trip, settings, message }) {
   return h(Document, {}, h(Page, { size: "A4", style: simpleStyles.page },
     brandHead(settings),
     h(Text, { style: { ...simpleStyles.banner, backgroundColor: greenOf(settings) } }, "BOOKING CONFIRMED"),
-    isImg(trip.imagePath) ? h(Image, { src: String(trip.imagePath), style: { width: "100%", height: 150, objectFit: "cover", borderRadius: 6, marginBottom: 14 } }) : null,
+    isImg(trip.imagePath) ? h(Image, { src: pdfImg(trip.imagePath), style: { width: "100%", height: 150, objectFit: "cover", borderRadius: 6, marginBottom: 14 } }) : null,
     h(Text, { style: { lineHeight: 1.5, marginBottom: 10 } }, txt(message)),
     h(View, { style: simpleStyles.section },
       infoRow("Trip ID", trip.tripId), infoRow("Start Date", fmtDate(trip.startDate)),
@@ -595,7 +629,12 @@ function InvoiceDoc({ trip, settings }) {
     simpleFooter(settings)));
 }
 
-export const renderItineraryPdf = (trip, settings) => renderToBuffer(h(ItineraryDoc, { trip, settings }));
+export const renderItineraryPdf = async (trip, settings) => {
+  // DMC partner itineraries carry the Via Kashmir mark; decided from the owning
+  // agency's own flag so no caller (download, email, client proposal) can skip it.
+  const owner = trip?.userId ? await prisma.user.findUnique({ where: { id: trip.userId }, select: { isDmcBridge: true } }) : null;
+  return renderToBuffer(h(ItineraryDoc, { trip, settings: { ...(settings || {}), _viaKashmirPowered: !!owner?.isDmcBridge } }));
+};
 export const renderConfirmationPdf = (trip, settings, message) => renderToBuffer(h(ConfirmationDoc, { trip, settings, message }));
 export const renderReceiptPdf = (trip, settings, payments) => renderToBuffer(h(ReceiptDoc, { trip, settings, payments }));
 export const renderInvoicePdf = (trip, settings) => renderToBuffer(h(InvoiceDoc, { trip, settings }));

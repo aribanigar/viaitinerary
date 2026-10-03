@@ -47,7 +47,8 @@ export async function GET(request, { params }) {
   const payments = await prisma.clientPayment.findMany({ where: { tripId: trip.id }, orderBy: { createdAt: "asc" } });
 
   return NextResponse.json({
-    settings: publicSettings(settings),
+    // DMC partner agencies get the "Powered by Via Kashmir" mark (decided from the trip owner).
+    settings: { ...publicSettings(settings), powered_by_via_kashmir: !!(await prisma.user.findUnique({ where: { id: trip.userId }, select: { isDmcBridge: true } }))?.isDmcBridge },
     payment: paymentView(trip, settings, payments),
     policies: publicPolicies(policy),
     trip: publicTrip(trip),
