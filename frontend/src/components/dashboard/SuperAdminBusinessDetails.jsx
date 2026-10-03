@@ -23,6 +23,8 @@ import { useAuth } from "../../context/AuthContext";
 import {
   fetchSuperAdminBusinessDetails,
   assignBusinessIncludedMember,
+  setBusinessVkInternal,
+  syncBusinessVkCatalog,
 } from "../../api/superAdmin";
 import Loader from "../common/Loader";
 import { toast } from "react-toastify";
@@ -56,6 +58,39 @@ const SuperAdminBusinessDetails = () => {
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(true);
   const [assigningSeatMemberId, setAssigningSeatMemberId] = useState(null);
+  const [vkBusy, setVkBusy] = useState(false);
+
+  // Via Kashmir catalog: the internal account gets B2B net prices; DMC
+  // partners get DMC prices. The server enforces one internal account and
+  // refuses partner accounts - this card just drives it.
+  const toggleVkInternal = async () => {
+    const enable = !business.is_vk_internal;
+    if (enable && !window.confirm(`Make ${business.email} Via Kashmir's internal account? It will receive B2B net prices, and any other internal account loses them.`)) return;
+    try {
+      setVkBusy(true);
+      const res = await setBusinessVkInternal(token, businessId, enable);
+      toast.success(enable ? `Internal account set${res?.sync?.hotels != null ? `, ${res.sync.hotels} hotels synced` : ""}` : "Internal access removed");
+      if (res?.sync?.error) toast.warn(`Catalog sync: ${res.sync.error}`);
+      await loadBusinessDetails();
+    } catch (err) {
+      toast.error(err.message || "Could not update");
+    } finally {
+      setVkBusy(false);
+    }
+  };
+
+  const syncVkCatalog = async () => {
+    try {
+      setVkBusy(true);
+      const res = await syncBusinessVkCatalog(token, businessId);
+      toast.success(`Synced ${res.hotels} hotels, ${res.vehicles} cabs, ${res.packages} packages`);
+      await loadBusinessDetails();
+    } catch (err) {
+      toast.error(err.message || "Sync failed");
+    } finally {
+      setVkBusy(false);
+    }
+  };
 
   const loadBusinessDetails = async () => {
     try {
@@ -176,6 +211,39 @@ const SuperAdminBusinessDetails = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
+              <p className="text-[10px] font-bold text-slate-400 uppercase">
+                Via Kashmir catalog
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-sm font-bold text-slate-700">
+                  {business.is_dmc_bridge ? "DMC partner (DMC prices)" : business.is_vk_internal ? "Internal (B2B net)" : "Not connected"}
+                </span>
+                {!business.is_dmc_bridge && (
+                  <button
+                    type="button"
+                    disabled={vkBusy}
+                    onClick={toggleVkInternal}
+                    className="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                  >
+                    {business.is_vk_internal ? "Remove internal" : "Make internal"}
+                  </button>
+                )}
+                {(business.is_dmc_bridge || business.is_vk_internal) && (
+                  <button
+                    type="button"
+                    disabled={vkBusy}
+                    onClick={syncVkCatalog}
+                    className="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+                  >
+                    {vkBusy ? "Working..." : "Sync now"}
+                  </button>
+                )}
+              </div>
+              {business.catalog_synced_at && (
+                <p className="text-[10px] text-slate-400 mt-0.5">Last synced {new Date(business.catalog_synced_at).toLocaleString()}</p>
+              )}
+            </div>
             <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-right">
               <p className="text-[10px] font-bold text-slate-400 uppercase">
                 Subscription Status

@@ -3,9 +3,11 @@ import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { hashPassword, signToken, cookieOptions, TOKEN_COOKIE } from "@/lib/auth";
 import { initializeTrial } from "@/lib/subscription";
+import { waitUntil } from "@vercel/functions";
 import { verifyDmcSsoToken, consumeDmcSsoNonce, syncDmcInventory } from "@/lib/dmcBridge";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // room for the background catalog sync (waitUntil)
 
 // GET /api/sso/consume?token=... - what viakashmir.in's "Launch Itinerary
 // Builder" button redirects a DMC partner to. Verifies the signed token
@@ -100,15 +102,13 @@ export async function GET(request) {
     );
   }
 
-  // Keep the agency's real-inventory catalog fresh on every handoff - cheap
-  // and means DMC prices a partner sees are never more than one login old.
-  try {
-    await syncDmcInventory(user.id);
-  } catch (e) {
-    // Never block login over a sync failure - stale inventory is
-    // recoverable, a locked-out partner is not.
-    console.error("DMC inventory sync failed on SSO consume", user.id, e);
-  }
+  // Refresh the partner's Via Kashmir catalog (DMC prices) on every handoff,
+  // in the background: a first full sync takes up to a minute, and a login
+  // must never wait on it or fail because of it. The nightly
+  // /api/cron/sync-viakashmir run is the backstop.
+  waitUntil(
+    syncDmcInventory(user.id).catch((e) => console.error("DMC catalog sync failed on SSO consume", user.id, e?.message)),
+  );
 
   const authToken = signToken({ sub: String(user.id), role: user.role });
   const res = NextResponse.redirect(`${origin}/sso-login?token=${encodeURIComponent(authToken)}`);

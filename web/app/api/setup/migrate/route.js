@@ -162,6 +162,14 @@ const STATEMENTS = [
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "via_kashmir_dmc_user_id" TEXT`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "users_via_kashmir_dmc_user_id_key" ON "users"("via_kashmir_dmc_user_id")`,
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_dmc_bridge" BOOLEAN NOT NULL DEFAULT false`,
+  // Via Kashmir catalog bridge (2026-10-02): internal B2B account flag and
+  // external ids for synced vehicles and package templates.
+  `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_vk_internal" BOOLEAN NOT NULL DEFAULT false`,
+  `ALTER TABLE "vehicles" ADD COLUMN IF NOT EXISTS "external_source" TEXT`,
+  `ALTER TABLE "vehicles" ADD COLUMN IF NOT EXISTS "external_id" TEXT`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "external_source" TEXT`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "external_id" TEXT`,
+  `ALTER TABLE "trips" ADD COLUMN IF NOT EXISTS "external_hash" TEXT`,
   `ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "dmc_bridge_synced_at" TIMESTAMP(3)`,
 
   `CREATE TABLE IF NOT EXISTS "dmc_sso_nonces" (

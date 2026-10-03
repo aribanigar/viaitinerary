@@ -34,6 +34,10 @@ model User {
   viaKashmirDmcUserId String?   @unique @map("via_kashmir_dmc_user_id")
   isDmcBridge        Boolean   @default(false) @map("is_dmc_bridge")
   dmcBridgeSyncedAt  DateTime? @map("dmc_bridge_synced_at")
+  // Via Kashmir's own team account: receives the INTERNAL catalog (B2B net
+  // prices) from viakashmir.in /api/vk-bridge/*. Only one account at a time,
+  // never an isDmcBridge partner - see lib/viaKashmirCatalog.js.
+  isVkInternal       Boolean   @default(false) @map("is_vk_internal")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
 
@@ -105,6 +109,9 @@ model Trip {
   followUpSent    Boolean   @default(false) @map("follow_up_sent")
   confirmationSent Boolean  @default(false) @map("confirmation_sent")
   isPackage       Boolean   @default(false) @map("is_package")
+  externalSource  String?   @map("external_source") // "viakashmir" for package templates synced from viakashmir.in
+  externalId      String?   @map("external_id")
+  externalHash    String?   @map("external_hash") // fingerprint of the synced package template
   locked          Boolean   @default(false)
   // Client proposal link (/p/:token): the client views the itinerary and
   // approves it or asks for changes. proposalResponse: approved | changes_requested.
@@ -382,6 +389,8 @@ model Vehicle {
   country             String?
   isAvailable         Boolean  @default(true) @map("is_available")
   imagePath           String?  @map("image_path")
+  externalSource      String?  @map("external_source") // "viakashmir" when synced from viakashmir.in
+  externalId          String?  @map("external_id")
   rateType            String?  @map("rate_type") // per_day | per_km | per_trip
   extraKmRate         Decimal? @map("extra_km_rate") @db.Decimal(12, 2)
   extraHourRate       Decimal? @map("extra_hour_rate") @db.Decimal(12, 2)

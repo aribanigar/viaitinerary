@@ -3,6 +3,11 @@ import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
 import { catalogHotel } from "@/lib/serialize";
 import { fetchB2BHotels, mapB2BHotel, applyB2BHotelsForAdmin } from "@/lib/b2bViaKashmir";
+import { isPartnerAgency } from "@/lib/viaKashmirCatalog";
+
+// Via Kashmir DMC partners must never receive B2B supplier rates (owner's
+// rule, 2026-10-02): their catalog comes only from the DMC-priced bridge.
+const partnerBlocked = () => NextResponse.json({ message: "B2B rate import is not available for Via Kashmir partner accounts." }, { status: 403 });
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +27,7 @@ export async function POST(request) {
   const user = await userFromRequest(request);
   if (!user) return unauth();
   const adminId = await adminIdOf(user);
+  if (await isPartnerAgency(adminId)) return partnerBlocked();
 
   let hotels;
   try {
@@ -42,6 +48,7 @@ export async function POST(request) {
 export async function GET(request) {
   const user = await userFromRequest(request);
   if (!user) return unauth();
+  if (await isPartnerAgency(await adminIdOf(user))) return partnerBlocked();
 
   try {
     const hotels = await fetchB2BHotels();
