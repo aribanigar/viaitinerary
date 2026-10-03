@@ -68,6 +68,9 @@ const NAV_VERB = /^(?:please |can you |could you |kindly )?(?:open|go to|goto|ta
  *   { type: "doc", doc, action, query, toMe } "email the invoice to Rahul", "download Rahul's vouchers"
  *   { type: "supplier", kinds, query }       "send hotel requests for Rahul's trip"
  *   { type: "driver", name, phone, vehicleNumber, query } "driver for Rahul's trip is Ramesh 98765 43210"
+ *   { type: "payment", amount, method, query } "Rahul paid 20000 by UPI" (Ching asks to confirm first)
+ *   { type: "status", status, query }        "mark Rahul's trip as confirmed"
+ *   { type: "remind", kind, query }          "send a payment reminder to Rahul"
  *   { type: "ops", when, focus }             "today's arrivals", "who hasn't paid", "pending confirmations"
  *   { type: "remember", kind, … }            "call me Arif", "when I say Heaven I mean Heevan", "remember …"
  *   { type: "recall" } / { type: "forget", all | match }
@@ -92,6 +95,12 @@ export function understandAssistant(text, { inBuilder = false } = {}) {
   }
   if (/\b(?:what(?:'s| is)|tell me|how much is)\b.*\b(?:total|price|cost|quote)\b/.test(t) && words <= 9) return { type: "total" };
 
+  const pay = understandPayment(t);
+  if (pay) return pay;
+  const status = understandStatus(t);
+  if (status) return status;
+  const remind = understandRemind(t);
+  if (remind) return remind;
   const ops = understandOps(t);
   if (ops) return ops;
   const supplier = understandSupplier(t);
@@ -312,6 +321,52 @@ function understandFindTrips(t) {
   if (params.q) bits.push(`matching “${title(params.q)}”`);
   if (range) bits.push(range[1] ? `travelling ${range[0]} to ${range[1]}` : "upcoming");
   return { type: "find-trips", params, label: bits.join(", ") };
+}
+
+
+// ── money and status: "Rahul paid 20000 by UPI", "received 15k from Rahul in cash",
+// "mark Rahul's trip as confirmed", "send a payment reminder to Rahul"
+const METHOD = [
+  ["UPI", /\b(?:upi|gpay|google pay|phonepe|phone pe|paytm|bhim)\b/],
+  ["Bank transfer", /\b(?:bank(?: transfer)?|neft|imps|rtgs|net ?banking|transfer)\b/],
+  ["Card", /\b(?:card|credit card|debit card|swipe)\b/],
+  ["Cheque", /\b(?:cheque|check)\b/],
+  ["Cash", /\bcash\b/],
+];
+const amountOf = (n, unit) => {
+  const v = Number(String(n).replace(/[, ]/g, ""));
+  if (!Number.isFinite(v)) return 0;
+  return /lakh|lac/.test(unit || "") ? v * 100000 : /k|thousand/.test(unit || "") ? v * 1000 : v;
+};
+function understandPayment(t) {
+  const AMT = "(?:rs\\.?|₹|inr|rupees)?\\s*(\\d{1,3}(?:[ ,]\\d{2,3})+|\\d+(?:\\.\\d+)?)\\s*(k|thousand|lakhs?|lacs?)?\\s*(?:rupees|rs)?";
+  let m = new RegExp(`^(?:mr |mrs |ms )?([a-z]+(?: [a-z]+)?) (?:has |have )?(?:paid|sent|transferred|gave|deposited) (?:us |me )?${AMT}`).exec(t);
+  let who;
+  let amt;
+  if (m) {
+    who = m[1];
+    amt = amountOf(m[2], m[3]);
+  } else if ((m = new RegExp(`\\b(?:record|add|log|enter|note)?\\s*(?:a |the )?(?:payment|receipt|advance|balance)?\\s*(?:of )?(?:received |got )?${AMT}\\s+(?:received |paid |payment )?from ([a-z]+(?: [a-z]+)?)`).exec(t)) && /\b(?:record|add|log|enter|note|received?|got|payment|receipt)\b/.test(t)) {
+    who = m[3];
+    amt = amountOf(m[1], m[2]);
+  } else return null;
+  if (!(amt >= 1) || /^(?:i|we|you|client|the client)$/.test(who)) return null;
+  const method = (METHOD.find(([, re]) => re.test(t)) || ["Cash"])[0];
+  return { type: "payment", amount: Math.round(amt * 100) / 100, method, methodSaid: METHOD.some(([, re]) => re.test(t)), query: who.replace(/\s+(?:by|via|in|on|through)$/, "") };
+}
+function understandStatus(t) {
+  const m = /^(?:please )?(?:mark|set|change|make|move)\s+(.+?)\s+(?:as\s+|to\s+)?(confirmed|cancelled|canceled|completed|complete|pending)$/.exec(t);
+  if (!m) return null;
+  const who = m[1].replace(/'s\s+(?:trip|booking)$|\s+(?:trip|booking)$/, "").replace(/^(?:the|this)\s*/, "").trim();
+  const status = { canceled: "cancelled", complete: "completed" }[m[2]] || m[2];
+  return { type: "status", status, query: !who || /^(?:it|trip|booking)$/.test(who) ? null : /^trp/.test(who) ? who.replace(/\s|-/g, "").toUpperCase() : who };
+}
+function understandRemind(t) {
+  let m = /\b(?:send\s+(?:a\s+|the\s+)?)?(payment|balance|advance|proposal|itinerary)?\s*reminder\s+(?:to|for)\s+(?!the client\b|client\b|him\b|her\b|them\b)([a-z]+(?: [a-z]+)?)(?:\s+on\s+(?:email|mail))?$/.exec(t);
+  if (m) return { type: "remind", kind: /proposal|itinerary/.test(m[1] || "") ? "proposal" : "payment", query: m[2] };
+  m = /^remind\s+(?!the client\b|client\b|him\b|her\b|them\b)([a-z]+(?: [a-z]+)?)\s+(?:about|to pay|of|for)\s+(?:the\s+|his\s+|her\s+)?(payment|balance|advance|dues?|proposal|itinerary|quote|trip)\b/.exec(t);
+  if (m) return { type: "remind", kind: /proposal|itinerary|quote|trip/.test(m[2]) ? "proposal" : "payment", query: m[1] };
+  return null;
 }
 
 // ── personality ────────────────────────────────────────────────────────────

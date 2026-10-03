@@ -4,7 +4,7 @@
 // payment receipt, confirmation, vouchers, itinerary PDF, Excel), supplier
 // confirmation requests, drivers, operations questions and trip searches.
 //
-// ctx = { token, navigate, respond(text, extra?), editor, init, core }
+// ctx = { token, navigate, respond(text, extra?), confirm(question, run), editor, init, core }
 import {
   fetchTrips,
   downloadInvoicePdf,
@@ -23,6 +23,8 @@ import {
   downloadVouchersPdf,
 } from "../../api/operations";
 import { rememberChing, forgetChing } from "../../api/ching";
+import { fetchAccountingTripLedger, createAccountingSettlement } from "../../api/accounting";
+import { updateTrip, sendReminder } from "../../api/trips";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
 
 const list = (v) => (Array.isArray(v) ? v : []);
@@ -209,6 +211,67 @@ async function doFind(ask, ctx) {
   }
 }
 
+// ── money / status / reminders (money and cancellations are confirmed first) ──
+const METHOD_VALUE = { UPI: "upi", "Bank transfer": "bank_transfer", Card: "card", Cheque: "cheque", Cash: "cash" };
+
+async function doPayment(ask, ctx) {
+  const trip = await resolveTrip(ctx, ask.query);
+  if (!trip) {
+    ctx.respond(`I couldn't find a trip for ${ask.query}. Check the name?`);
+    return;
+  }
+  const detail = await fetchAccountingTripLedger(ctx.token, trip.trip_id);
+  const receivable = list(detail?.obligations).find((o) => o.direction === "receivable");
+  if (!receivable) {
+    ctx.respond(`${whose(trip)} trip has no amount due in accounts yet — save its price first.`);
+    return;
+  }
+  const due = Number(receivable.expected_amount || 0) - Number(receivable.settled_amount || 0);
+  if (ask.amount > due + 0.01) {
+    ctx.respond(`${money(ask.amount)} is more than the ${money(due)} still due on ${whose(trip)} trip. Want to try a different amount?`);
+    return;
+  }
+  ctx.confirm(
+    `Record ${money(ask.amount)} from ${trip.client_name || trip.trip_id} by ${ask.method === "UPI" ? "UPI" : ask.method.toLowerCase()}${ask.methodSaid ? "" : " (say “by UPI” etc. if it wasn't cash)"} against ${trip.trip_title || trip.trip_id}? Say yes or no.`,
+    async () => {
+      await createAccountingSettlement(ctx.token, {
+        obligation_id: receivable.id,
+        amount: ask.amount,
+        settlement_type: "receipt",
+        settlement_date: localYmd(new Date()),
+        method: METHOD_VALUE[ask.method] || "cash",
+        notes: "Recorded by voice (Ching)",
+      });
+      const left = due - ask.amount;
+      ctx.respond(`Recorded ${money(ask.amount)} from ${first(trip.client_name) || "the client"}. ${left > 0.5 ? `${money(left)} still due.` : "Fully paid now — nice!"}`);
+    },
+  );
+}
+
+async function doStatus(ask, ctx) {
+  const trip = await resolveTrip(ctx, ask.query);
+  if (!trip) {
+    ctx.respond(ask.query ? `I couldn't find a trip for ${ask.query}.` : "Which trip? Say “mark Rahul's trip as confirmed”.");
+    return;
+  }
+  const run = async () => {
+    await updateTrip(ctx.token, trip.trip_id, { status: ask.status });
+    ctx.respond(`${whose(trip)} trip is now ${ask.status}.`);
+  };
+  if (ask.status === "cancelled") ctx.confirm(`Cancel ${whose(trip)} trip (${trip.trip_title || trip.trip_id})? Say yes or no.`, run);
+  else await run();
+}
+
+async function doRemind(ask, ctx) {
+  const trip = await resolveTrip(ctx, ask.query);
+  if (!trip) {
+    ctx.respond(`I couldn't find a trip for ${ask.query}.`);
+    return;
+  }
+  const r = await sendReminder(ctx.token, trip.trip_id, ask.kind);
+  ctx.respond(`Sent ${first(trip.client_name) || "the client"} a ${ask.kind === "payment" ? "payment" : "proposal"} reminder${r?.sent_to ? ` at ${r.sent_to}` : ""}.`);
+}
+
 // ── memory ────────────────────────────────────────────────────────────────
 async function doRemember(ask, ctx) {
   if (ask.kind === "name") {
@@ -293,6 +356,9 @@ export async function handleAssist(ask, ctx) {
     remember: () => doRemember(ask, ctx),
     recall: () => doRecall(ctx),
     forget: () => doForget(ask, ctx),
+    payment: () => doPayment(ask, ctx),
+    status: () => doStatus(ask, ctx),
+    remind: () => doRemind(ask, ctx),
   };
   const fn = handlers[ask?.type];
   if (!fn) return false;

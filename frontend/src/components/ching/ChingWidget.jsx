@@ -176,6 +176,34 @@ export default function ChingWidget() {
     [say],
   );
 
+  // A question Ching asked before doing something that moves money or cancels
+  // ("Record ₹20,000 from Rahul by UPI? Say yes or no."): { run }.
+  const confirmRef = useRef(null);
+  const askConfirm = useCallback(
+    (question, run) => {
+      confirmRef.current = { run };
+      respond(question, { confirm: true });
+    },
+    [respond],
+  );
+  const answerConfirm = useCallback(
+    async (yes) => {
+      const pending = confirmRef.current;
+      confirmRef.current = null;
+      if (!pending) return;
+      if (!yes) {
+        respond("Okay, I won't do that.");
+        return;
+      }
+      try {
+        await pending.run();
+      } catch (err) {
+        respond(`Hmm, that didn't work: ${err?.message || "something went wrong"}.`);
+      }
+    },
+    [respond],
+  );
+
   // The current utterance. Plain object in a ref: speech events, the throttle
   // timer and the draft-opening watcher all mutate it outside React renders.
   //   { text, ended, finalText, editor, baseBlank, navigating, skip, finishing, stopWatch }
@@ -363,6 +391,20 @@ export default function ChingWidget() {
       if (!core) core = await ensureCore().catch(() => null);
       if (sessionRef.current !== S) return;
 
+      // The answer to a "yes or no?" Ching just asked.
+      if (confirmRef.current) {
+        const t = String(text || "").toLowerCase().replace(/^\s*(?:hello |hey )?ching[\s,]*/, "").trim();
+        const yes = /^(?:yes|yeah|yep|yup|haan|han|ha|ji|ok|okay|sure|confirm|confirmed|do it|go ahead|correct|right|please do)\b/.test(t);
+        const no = /^(?:no|nope|nah|cancel|don't|do not|stop|nahi|na|leave it|never ?mind)\b/.test(t);
+        if (yes || no) {
+          if (S.editor && safe(() => S.editor.live.active(), false)) safe(() => S.editor.live.cancel());
+          endSession();
+          await answerConfirm(yes);
+          return;
+        }
+        confirmRef.current = null; // moved on to something else
+      }
+
       // Not a trip at all? ("open the ledger", "what's pending", "tell me a joke")
       const ask = safe(() => understandAssistant(text, { inBuilder: Boolean(S.editor || getChingEditor()) }), null);
       if (ask) {
@@ -457,7 +499,7 @@ export default function ChingWidget() {
         say(reply);
       }, 700);
     },
-    [attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond],
+    [answerConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond],
   );
 
   // Requests that aren't about building a trip (see utils/ching/assistant.js).
@@ -468,6 +510,7 @@ export default function ChingWidget() {
         token,
         navigate,
         respond,
+        confirm: askConfirm,
         editor: ed,
         init: initRef.current,
         core: () => ensureCore().catch(() => null),
@@ -516,7 +559,7 @@ export default function ChingWidget() {
         respond(name ? ask.reply.replace(/^(Hello|Hi|Namaste|Hey)!/, `$1, ${name}!`) : ask.reply);
       }
     },
-    [ensureCore, navigate, respond, token],
+    [askConfirm, ensureCore, navigate, respond, token],
   );
   const assistRef = useRef(null);
 
@@ -739,6 +782,7 @@ export default function ChingWidget() {
               if (next) speak("Voice on. Hi, I'm Ching!");
             }}
             onOpenTab={(tab) => safe(() => getChingEditor()?.setTab(tab))}
+            onConfirm={answerConfirm}
           />
         </Suspense>
       )}

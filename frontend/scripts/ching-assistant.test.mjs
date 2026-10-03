@@ -152,5 +152,19 @@ test('trip search with filters', () => {
   assert.equal(u('5 day kashmir trip for rahul'), null)
 })
 
+test('money, status and reminders by voice', () => {
+  assert.deepEqual(u('rahul paid 20000 by upi'), { type: 'payment', amount: 20000, method: 'UPI', methodSaid: true, query: 'rahul' })
+  assert.equal(u('received 25,000 from rahul through bank transfer').amount, 25000)
+  assert.equal(u('rahul sharma has paid 15k in cash').amount, 15000)
+  assert.equal(u('rahul paid 1,50,000').amount, 150000)
+  assert.deepEqual(u("mark rahul's trip as confirmed"), { type: 'status', status: 'confirmed', query: 'rahul' })
+  assert.equal(u('mark this trip as cancelled').query, null)
+  assert.deepEqual(u('remind rahul about the payment'), { type: 'remind', kind: 'payment', query: 'rahul' })
+  // The open trip's own reminder / edits stay with the builder.
+  for (const t of ['remind the client about the payment', 'send a reminder to the client', 'make day 3 a leisure day', 'give me 20% margin']) {
+    assert.equal(understandAssistant(t, { inBuilder: true }), null, t)
+  }
+})
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

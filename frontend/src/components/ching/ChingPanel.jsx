@@ -254,6 +254,7 @@ export default function ChingPanel({
   speaking,
   onToggleVoice,
   onOpenTab,
+  onConfirm,
 }) {
   const [draft, setDraft] = useState("");
   const { supported, phase, interim, error, wakeBlocked } = speech;
@@ -438,6 +439,31 @@ export default function ChingPanel({
         {notice?.kind === "reply" && !listening && !live && (
           <div className="space-y-2">
             <Reply text={notice.text} />
+            {notice.confirm && onConfirm && (
+              <div className="flex gap-2 pl-8">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDismissNotice?.();
+                    onConfirm(true);
+                  }}
+                  className="rounded-full px-4 py-1.5 text-xs font-bold"
+                  style={{ background: INK, color: LIME }}
+                >
+                  Yes, do it
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDismissNotice?.();
+                    onConfirm(false);
+                  }}
+                  className="rounded-full px-4 py-1.5 text-xs font-bold border border-black/10 text-[#181c22]"
+                >
+                  No
+                </button>
+              </div>
+            )}
             <Pending items={notice.pending} onOpenTab={onOpenTab} />
           </div>
         )}
