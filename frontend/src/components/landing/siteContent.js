@@ -12,7 +12,7 @@ import {
 
 export const SITE_URL = "https://viaitinerary.in";
 export const BRAND = "ViaItinerary";
-export const CONTACT_EMAIL = "contact@viaitinerary.com";
+export const CONTACT_EMAIL = "contact@viakashmir.in";
 export const CONTACT_PHONE = "+91 9186051499";
 export const WHATSAPP_URL = "https://wa.me/919186051499";
 export const SOCIAL_LINKS = [

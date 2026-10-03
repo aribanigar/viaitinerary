@@ -229,10 +229,10 @@ const RefundPolicy = () => {
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:contact@viaitinerary.com"
+                  href="mailto:contact@viakashmir.in"
                   className="text-blue-600 hover:underline"
                 >
-                  contact@viaitinerary.com
+                  contact@viakashmir.in
                 </a>
               </p>
             </div>

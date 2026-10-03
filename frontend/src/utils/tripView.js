@@ -55,6 +55,7 @@ export function normalizeAccommodation(item = {}) {
 export function mapAgencySettings(settings, configuredDefaultTripImage) {
   return {
     agencyName: settings.agency_name,
+    poweredByViaKashmir: !!settings.powered_by_via_kashmir,
     phone: settings.contact_phone,
     website: settings.website,
     companyAddress: settings.company_address || "",

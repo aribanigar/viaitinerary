@@ -157,7 +157,7 @@ const ModernTemplate = ({
   return (
     <div
       id="print-content"
-      className="trip-preview-wrapper bg-transparent print:bg-white"
+      className={`trip-preview-wrapper bg-transparent print:bg-white${agencySettings.poweredByViaKashmir ? " vk-powered" : ""}`}
     >
       <style
         dangerouslySetInnerHTML={{

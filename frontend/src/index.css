@@ -408,3 +408,26 @@ input[type="number"] {
   text-transform: uppercase;
   color: #5e5e5e;
 }
+
+/* "Powered by Via Kashmir" - DMC partner itineraries only (the vk-powered
+   class is set from the server-decided agency flag). Bottom-right corner of
+   every page in the live preview, print and the html2canvas PDF export;
+   the server PDF draws the same mark in web/lib/pdf.js. */
+.vk-powered .page::after,
+.vk-powered .classic-page::after {
+  content: "Powered by";
+  position: absolute;
+  right: 18px;
+  bottom: 8px;
+  z-index: 60;
+  display: block;
+  padding: 5px 92px 5px 11px;
+  border-radius: 12px;
+  background: #F1F5F2 url("/via-kashmir-logo.png") no-repeat right 11px center / 74px auto;
+  color: #414942;
+  font: 500 9.5px/1.2 "Poppins", sans-serif;
+  letter-spacing: 0.3px;
+  pointer-events: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
