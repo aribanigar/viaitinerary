@@ -21,7 +21,7 @@ npm run db:push              # prisma db push (apply schema.prisma changes — n
 npm run seed                  # node prisma/seed.mjs — super admin: viakashmir.in@gmail.com
 ```
 
-There is no test suite (no jest/vitest configured) — verification is `build:next` (compiles + type-checks every route) plus manual/local exercising.
+There is no jest/vitest. Server logic has one plain-Node test script run against a fake Prisma (`node scripts/operations.test.mjs`, covers `lib/operations.js` and Ching memory; `scripts/alias-loader.mjs` resolves the `@/` alias for plain node). Otherwise verification is `build:next` (compiles + type-checks every route) plus manual/local exercising.
 
 Schema changes: this project has **no `prisma/migrate` migrations folder**. Add fields directly to `web/prisma/schema.prisma` (nullable/defaulted so existing rows aren't broken) and they apply automatically via `prisma db push` in the Vercel build step. Don't introduce a migrations workflow without checking with the user first.
 
@@ -35,7 +35,7 @@ npm run build                 # outputs into ../web/public — this is what Next
 npm run lint                  # eslint . — repo currently has ~120 pre-existing lint errors (mostly unused-var / react-hooks rules); not enforced in CI, don't treat pre-existing ones as regressions from your change
 ```
 
-No test suite here either.
+Ching's parsers have plain-Node tests, one file each — run a single one with e.g. `node scripts/ching-parser.test.mjs` (others: `ching-assistant`, `ching-edit`, `ching-edit-parser`, `ching-live`, `ching-smart-fill`). No test runner beyond that.
 
 ## Architecture
 
@@ -129,3 +129,35 @@ A trip's proposal link is public (no login): the client sees the itinerary, appr
 **Via Kashmir catalog bridge.** `lib/viaKashmirCatalog.js` syncs viakashmir.in's catalog into connected accounts: DMC partners (`isDmcBridge`) get DMC prices from `/api/dmc-bridge/*` (`DMC_BRIDGE_SECRET`); the one internal account (`isVkInternal`, set by the super-admin toggle or viakashmir.in admin) gets B2B net prices from `/api/vk-bridge/*` (`VK_INTERNAL_BRIDGE_SECRET`, must differ from the DMC key). The feed is chosen from the account's own flags, never from a request. Partner agencies are blocked from the B2B portal import (`/api/hotels/import-b2b`) and its cron.
 
 Google Maps/Places is opt-in per agency (not a shared platform key): agencies paste their own key under Settings → Integrations (`AgencySetting.googleMapsApiKey`), fetched via `frontend/src/hooks/useAgencyMapsKey.js`. No key configured → Hotel Name autocomplete and the location map simply don't attempt to load; there is no hard dependency on Maps anywhere in the Accommodation form. If Places Autocomplete stops working, check whether it's the modern `AutocompleteSuggestion` API (current) vs. the legacy `google.maps.places.Autocomplete` widget (deprecated by Google for any Cloud project created after March 2025, and the cause of one prior outage in this app).
+
+### Subscriptions and plan gating
+
+`web/lib/subscription.js` is the plan/trial engine (`canCreateTrip`, `incrementTripsUsed`, `catalogGate`, `upgradeUserToPlan`, seat assignment). Trip creation and catalog creates (via `limitKind` in `catalogCollection`) are gated through it, always against the *admin's* subscription (`resolveAdminId`), not the team member's. Razorpay payment verification (`/api/razorpay/verify-payment`) ends in `upgradeUserToPlan`. `lib/plans.js` is only plan CRUD helpers for the super-admin UI.
+
+### Itinerary generator
+
+`web/lib/itineraryEngine.js` is a deterministic, pure (no Prisma/network) rules engine — not AI. It picks hotel/vehicle/activities/extras from the agency's own catalogs at Budget/Recommended/Premium tiers. `lib/itineraryGenerate.js` loads the tenant-scoped catalogs and validates input; `/api/itinerary/generate` previews and `/generate/commit` creates a real, editable Trip via the normal trips create contract. Keep the engine pure so it stays traceable with plain objects (the `scripts/trace-itinerary.mjs` its header mentions does not exist in the repo).
+
+### Cross-cutting pieces
+
+- **Rate limiting**: `web/lib/rateLimit.js` is Postgres-backed (serverless has no shared memory), 5 attempts/60s per key. It is applied on login, OTP send, password reset, signup and public inquiries; use it on any new unauthenticated endpoint.
+- **B2B hotel sync**: `web/lib/b2bViaKashmir.js` imports hotels from the separate Via Kashmir B2B portal. `/api/cron/sync-b2b-hotels` (scheduled in `web/vercel.json`, guarded by `CRON_SECRET` when set) only refreshes agencies that already imported once; first import is an explicit in-app action.
+- **PDFs**: `web/lib/pdf.js` renders itineraries server-side with `@react-pdf/renderer`, with fonts embedded in `pdf-assets.js`.
+- **Trip revisions**: `web/lib/revisions.js` snapshots a fully-loaded (`TRIP_INCLUDE`) trip for client-facing change history.
+
+### Ching (voice/text assistant)
+
+Ching is an in-dashboard assistant (`frontend/src/components/ching/`: `ChingWidget`, `ChingPanel`, `useSpeech`) that fills and edits trips by voice and runs agency operations. Its logic is **rule-based parsing, not an LLM**: `frontend/src/utils/ching/` holds the parsers (`parseCommand` for new trips, `parseEdit`/`editTrip*` for edits, `assistant.js` for requests beyond the open trip, `optimize.js` for "make it cheaper"/add-ons, `dayPlan`/`cabPlan`), all tested by `frontend/scripts/ching-*.test.mjs`. `chingCore.js` is dynamically imported so parsers don't weigh on first paint; `editorBridge.js` lets Ching drive the open Trip Builder live, and `assistActions.js` executes the assistant requests (documents, supplier confirmations, payments, status changes, reminders) by calling the same `frontend/src/api/*` clients the UI uses, behind `confirm()` for writes. A new Ching capability usually means a parser rule + an action, not a new endpoint.
+
+Memory (`web/lib/chingMemory.js`, `/api/ching/memory`) has two halves: **learned** (recomputed on every read from the agency's last ~300 trips — usual hotel per city, cab per group size, meal plan; nothing stored) and **told** (`ChingMemory` rows: aliases, preferred hotels, notes), where told wins. `placeKey` is duplicated in `frontend/src/utils/ching/places.js` — change both together.
+
+### Sales and operations workflows
+
+- **Operations** (`lib/operations.js`): supplier confirmations by email/WhatsApp link to the public no-login page `/s/:token` (`SupplierConfirm.jsx`). Cabs are one row per day, so a token on the earliest row covers all sibling rows. The public side is an allowlist (`publicBooking`) — never prices, margins or client contact.
+- **Proposals** (`lib/proposal.js`, public `/p/:token`): same rule — build from an allowlist, never pass `serializeTrip()` output through, since it carries rates, markup and payments.
+- **Follow-ups/payments** (`lib/followups.js`, `clientPayments.js`, `paymentSchedule.js`): nudge unanswered proposals and advance/balance reminders. Decision functions are pure (`now` is a parameter); the daily cron, the on-demand `/api/trips/:id/remind` route and the dashboard pipeline all share them so they agree on what is due.
+- **Crons** (`web/vercel.json`, region `hnd1`): `sync-b2b-hotels`, `sync-viakashmir`, `sales-followups`, `operations`.
+
+### Via Kashmir bridge
+
+Two audiences, decided by account flags and never by the caller: `isDmcBridge` partner agencies (SSO handoff via `lib/dmcBridge.js`, HMAC-signed token shared with viakashmir.in; `DMC_BRIDGE_SECRET`; DMC prices only; they can edit but not create catalog rows — `catalog.js` blocks POST) and `isVkInternal` (Via Kashmir's own team, `VK_INTERNAL_BRIDGE_SECRET`, B2B net prices). `lib/viaKashmirCatalog.js` syncs rows tagged `externalSource="viakashmir"` + `externalId`; listings that disappear are marked unavailable, not deleted, since trips may reference them. Platform super admins are also forced at login from `lib/superAdmins.mjs`, because the deploy seed is silently skipped when `prisma db push` fails.
