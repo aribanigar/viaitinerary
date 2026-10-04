@@ -85,6 +85,13 @@ const rahul = m.clients.find((c) => c.name === 'Rahul Sharma')
 assert.equal(rahul.trips, 2); assert.equal(rahul.phone, '+919811122233'); assert.equal(rahul.email, 'rahul@example.com')
 assert.equal(m.vehicles.find((v) => v.id === 21).minGuests, 6)
 assert.equal(m.aliases.heaven, 'Heevan Resort'); assert.equal(m.callMe, 'Arif')
+// What to call the agent is per person; the old agency-wide "me" row is only a fallback.
+prisma.chingMemory.findMany = async () => [
+  { kind: 'name', key: 'me:5', value: 'Bilal', updatedAt: d('2026-10-02') },
+  { kind: 'name', key: 'me', value: 'Arif', updatedAt: d('2026-10-01') },
+]
+assert.equal((await chingMemory(7, 5)).callMe, 'Bilal', "a user's own name wins")
+assert.equal((await chingMemory(7, 9)).callMe, 'Arif', 'others fall back to the old shared name')
 console.log('memory: all checks passed')
 
 // ── trip automation rules (lib/tripMessages.js)

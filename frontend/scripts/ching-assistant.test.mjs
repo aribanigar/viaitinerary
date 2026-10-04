@@ -176,5 +176,37 @@ test('cheaper / optimise / add-ons', () => {
   assert.equal(u('add shikara ride on day 2', { inBuilder: true }), null)
 })
 
+test('payments: decimals, lakhs and Indian grouping', () => {
+  assert.equal(u('priya paid 2.5 lakh').amount, 250000)
+  assert.equal(u('rahul paid 15.5k by upi').amount, 15500)
+  assert.equal(u('rahul sharma paid 1,20,000 by neft').amount, 120000)
+  assert.equal(u('ching, rahul paid rs. 5000.').amount, 5000)
+})
+
+test('payments: "check" is only a cheque when it is the method', () => {
+  assert.equal(u('rahul paid 20000, check it').method, 'Cash')
+  assert.equal(u('rahul paid 20000 by check').method, 'Cheque')
+  assert.equal(u('rahul paid 20000 by cheque').method, 'Cheque')
+})
+
+test('payments: a hotel or driver paying is not a client receipt', () => {
+  assert.equal(u('the hotel paid 5000 by upi'), null)
+})
+
+test('"forget it" never deletes memories', () => {
+  for (const t of ['forget it', 'forget about it', 'forget that', 'ching forget it']) {
+    assert.equal(u(t).type, 'smalltalk', t)
+  }
+  assert.deepEqual(u('forget about the gondola hotel'), { type: 'forget', match: 'gondola hotel' })
+  assert.deepEqual(u('forget everything'), { type: 'forget', all: true })
+})
+
+test('misparses that used to trigger actions', () => {
+  assert.equal(u('open the itinerary generator').path, '/trip-builder/generate')
+  assert.equal(u('make sure the trip is confirmed', { inBuilder: true }), null)
+  assert.equal(u('i usually book cabs for families'), null)
+  assert.deepEqual(u('mark this trip as confirmed', { inBuilder: true }), { type: 'status', status: 'confirmed', query: null })
+})
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

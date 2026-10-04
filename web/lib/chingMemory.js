@@ -131,25 +131,27 @@ export async function learnedMemory(adminId) {
   };
 }
 
-/** What the agency told Ching to remember. */
-export async function toldMemory(adminId) {
+/** What the agency told Ching to remember (callMe is the asking user's own). */
+export async function toldMemory(adminId, userId = null) {
   const rows = await prisma.chingMemory.findMany({ where: { userId: adminId }, orderBy: { updatedAt: "desc" } });
   const aliases = {};
   const hotels = {};
   const notes = [];
   let callMe = null;
+  let agencyName = null; // a pre-per-user "me" row, used until this user sets their own
   for (const r of rows) {
     if (r.kind === "alias") aliases[r.key] = r.value;
     else if (r.kind === "hotel") hotels[r.key] = [Number(r.value)].filter(Number.isFinite);
     else if (r.kind === "note") notes.push({ key: r.key, text: r.value, at: r.updatedAt.toISOString() });
-    else if (r.kind === "name" && !callMe) callMe = r.value;
+    else if (r.kind === "name" && userId != null && r.key === `me:${userId}`) callMe = r.value;
+    else if (r.kind === "name" && r.key === "me" && !agencyName) agencyName = r.value;
   }
-  return { aliases, hotels, notes, callMe };
+  return { aliases, hotels, notes, callMe: callMe || agencyName };
 }
 
 /** Learned + told, told winning (a told hotel goes ahead of the learned ones). */
-export async function chingMemory(adminId) {
-  const [learned, told] = await Promise.all([learnedMemory(adminId), toldMemory(adminId)]);
+export async function chingMemory(adminId, userId = null) {
+  const [learned, told] = await Promise.all([learnedMemory(adminId), toldMemory(adminId, userId)]);
   const hotels = { ...learned.hotels };
   for (const [city, ids] of Object.entries(told.hotels)) {
     hotels[city] = [...ids, ...(hotels[city] || []).filter((id) => !ids.includes(id))];

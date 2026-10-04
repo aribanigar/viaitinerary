@@ -13,7 +13,7 @@ export async function GET(request) {
   const user = await userFromRequest(request);
   if (!user) return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
   const adminId = await adminIdOf(user);
-  return NextResponse.json(await chingMemory(adminId));
+  return NextResponse.json(await chingMemory(adminId, user.id));
 }
 
 // POST /api/ching/memory { kind: alias|hotel|note|name, key, value } — remember (upsert).
@@ -35,7 +35,8 @@ export async function POST(request) {
     value = String(hotel.id);
   }
   if (kind === "note") key = key || `note-${Date.now()}`;
-  if (kind === "name") key = "me";
+  // What to call the agent is per person: on a team, "call me Arif" mustn't rename everyone.
+  if (kind === "name") key = `me:${user.id}`;
   if (!key || !value) return NextResponse.json({ message: "Nothing to remember." }, { status: 422 });
 
   const count = await prisma.chingMemory.count({ where: { userId: adminId } });
@@ -61,6 +62,8 @@ export async function DELETE(request) {
   if (b.key) where.key = clip(b.key, 120).toLowerCase();
   if (b.match) {
     const m = clip(b.match, 120);
+    // A substring match on "it" would wipe half the memory.
+    if (m.length < 3) return NextResponse.json({ message: "Say a bit more about what to forget." }, { status: 422 });
     where.OR = [{ key: { contains: m, mode: "insensitive" } }, { value: { contains: m, mode: "insensitive" } }];
   }
   const { count } = await prisma.chingMemory.deleteMany({ where });

@@ -142,6 +142,14 @@ const PanelFallback = () => (
   </div>
 );
 
+const CLIENT_EMAIL_COMMANDS = new Set(["SEND_PROPOSAL", "SEND_PAYMENT_LINK", "SEND_REMINDER"]);
+const CLIENT_EMAIL_LABEL = {
+  SEND_PROPOSAL: "proposal",
+  SEND_PAYMENT_LINK: "payment link",
+  "SEND_REMINDER:payment": "payment reminder",
+  "SEND_REMINDER:proposal": "proposal reminder",
+};
+
 const EMPTY_LIVE = { phase: "listening", mode: null, changes: [], warnings: [], unrecognized: [] };
 
 export default function ChingWidget() {
@@ -395,7 +403,7 @@ export default function ChingWidget() {
       if (confirmRef.current) {
         const t = String(text || "").toLowerCase().replace(/^\s*(?:hello |hey )?ching[\s,]*/, "").trim();
         const yes = /^(?:yes|yeah|yep|yup|haan|han|ha|ji|ok|okay|sure|confirm|confirmed|do it|go ahead|correct|right|please do)\b/.test(t);
-        const no = /^(?:no|nope|nah|cancel|don't|do not|stop|nahi|na|leave it|never ?mind)\b/.test(t);
+        const no = /^(?:no|nope|nah|cancel|don't|do not|stop|nahi|na|leave it|never ?mind|forget (?:it|that|about it))\b/.test(t);
         if (yes || no) {
           if (S.editor && safe(() => S.editor.live.active(), false)) safe(() => S.editor.live.cancel());
           endSession();
@@ -469,6 +477,23 @@ export default function ChingWidget() {
         say(notUnderstood());
         return;
       }
+      // An email to the client (proposal, payment link, reminder) goes out only
+      // after a "yes" — a misheard sentence must not reach the client's inbox.
+      // WhatsApp / copy-link commands only open a link, so they don't ask.
+      const emailsClient = commands.filter((c) => CLIENT_EMAIL_COMMANDS.has(c.type) && c.channel === "email");
+      if (emailsClient.length) {
+        const who = safe(() => ed.summary().clientName, "") || "the client";
+        const what = emailsClient.map((c) => CLIENT_EMAIL_LABEL[c.type === "SEND_REMINDER" ? `${c.type}:${c.kind}` : c.type]);
+        if (changes.length) {
+          setOutcome({ title: res.mode === "fill" ? "Filled the trip" : `Applied ${changes.length} change${changes.length === 1 ? "" : "s"}`, lines: changes, warnings: list(res.warnings), unrecognized: list(res.unrecognized) });
+          setUndoTick((t) => t + 1);
+        }
+        askConfirm(`Email ${who} the ${what.join(" and ")}? Say yes or no.`, async () => {
+          const lines = (await runCommands(commands, ed)) || [];
+          if (lines.length) respond(`${lines.join(". ")}.`);
+        });
+        return;
+      }
       const lines = commands.length ? (await runCommands(commands, ed)) || [] : [];
       const n = changes.length;
       setOutcome({
@@ -521,7 +546,7 @@ export default function ChingWidget() {
         say(reply + tip);
       }, 700);
     },
-    [answerConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond],
+    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond],
   );
 
   // Requests that aren't about building a trip (see utils/ching/assistant.js).

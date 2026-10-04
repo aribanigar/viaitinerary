@@ -7,7 +7,10 @@ const clean = (t) =>
     .toLowerCase()
     .replace(/[‘’]/g, "'")
     .replace(/^\s*(?:(?:hello|hey|hi|ok|okay|oye)\s+)?(?:ching|chin|jing)\b[\s,.!:-]*/i, "")
+    // A decimal point stays ("2.5 lakh"); every other ? ! . , becomes a space.
+    .replace(/(\d)\.(?=\d)/g, "$1\u2024")
     .replace(/[?!.,]+/g, " ")
+    .replace(/\u2024/g, ".")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -157,7 +160,10 @@ function understandMemory(t, inBuilder = false) {
   if ((m = /^(?:please )?forget (?:about )?(everything|all|it all|all of it|everything i (?:told|taught) you)$/.exec(t))) return { type: "forget", all: true };
   // In the builder a bare "forget the gondola" is a trip edit; memory needs "forget about / that …".
   if ((m = (inBuilder ? /^(?:please )?forget (?:about|that|what i said about)\s+(.{2,60})$/ : /^(?:please )?forget (?:about |that )?(.{2,60})$/).exec(t))) {
-    return { type: "forget", match: m[1].replace(/^(?:the |my )/, "") };
+    const match = m[1].replace(/^(?:the |my )/, "").trim();
+    // "forget it" / "forget about that" is "never mind", not "delete what you remember about 'it'".
+    if (match.length < 3 || /^(?:it|that|this|them|him|her|about it|about that|it all)$/.test(match)) return { type: "smalltalk", reply: "No problem, forgotten." };
+    return { type: "forget", match };
   }
   if ((m = /^(?:please )?(?:call me|you can call me|my name is|i am called)\s+([a-z][a-z .']{1,40})$/.exec(t))) return { type: "remember", kind: "name", value: title(m[1]) };
   if (
@@ -169,7 +175,7 @@ function understandMemory(t, inBuilder = false) {
   if ((m = /^(?:remember(?: that)?\s+)?(?:my|our)\s+(?:usual|favourite|favorite|default|preferred|go-to|go to)\s+hotel\s+(?:in|at|for)\s+([a-z ]+?)\s+is\s+(.+)$/.exec(t))) {
     return { type: "remember", kind: "hotel", city: m[1].trim(), hotel: m[2].trim() };
   }
-  if ((m = /^(?:remember(?: that)?\s+)?(?:i|we)\s+(?:always\s+|usually\s+)?(?:prefer|use|like|book)\s+(.+?)\s+(?:in|at|for)\s+([a-z ]+?)(?:\s+(?:always|usually))?$/.exec(t))) {
+  if ((m = /^(?:remember(?: that)?\s+)?(?:i|we)\s+(?:always\s+|usually\s+)?(?:prefer|use|like|book)\s+(.+?)\s+(?:in|at|for)\s+([a-z ]+?)(?:\s+(?:always|usually))?$/.exec(t)) && !/\b(?:cabs?|cars?|taxis?|vehicles?|drivers?|innova|tempo|traveller|meals?|breakfast|dinner)\b/.test(m[1])) {
     return { type: "remember", kind: "hotel", hotel: m[1].trim(), city: m[2].trim() };
   }
   if ((m = /^(?:please )?(?:remember|note|make a note)(?: that| this)?[:,]?\s+(.{3,300})$/.exec(t))) return { type: "remember", kind: "note", value: m[1] };
@@ -199,7 +205,7 @@ const DOCS = [
 ];
 function understandDoc(t, { inBuilder }) {
   const doc = DOCS.find(([, re]) => re.test(t))?.[0];
-  if (!doc) return null;
+  if (!doc || /\bgenerator\b|\bauto[- ]?generate\b|\bvoucher desk\b/.test(t)) return null;
   const action = /\bwhats ?app\b/.test(t)
     ? "whatsapp"
     : /\b(?:e-?mail|mail|send)\b/.test(t)
@@ -338,7 +344,7 @@ const METHOD = [
   ["UPI", /\b(?:upi|gpay|google pay|phonepe|phone pe|paytm|bhim)\b/],
   ["Bank transfer", /\b(?:bank(?: transfer)?|neft|imps|rtgs|net ?banking|transfer)\b/],
   ["Card", /\b(?:card|credit card|debit card|swipe)\b/],
-  ["Cheque", /\b(?:cheque|check)\b/],
+  ["Cheque", /\bcheque\b|\b(?:by|via|through|a|in) check\b/],
   ["Cash", /\bcash\b/],
 ];
 const amountOf = (n, unit) => {
@@ -358,13 +364,13 @@ function understandPayment(t) {
     who = m[3];
     amt = amountOf(m[1], m[2]);
   } else return null;
-  if (!(amt >= 1) || /^(?:i|we|you|client|the client)$/.test(who)) return null;
+  if (!(amt >= 1) || /^(?:i|we|you|client|the client|the .+|hotel|driver|supplier|vendor)$/.test(who)) return null;
   const method = (METHOD.find(([, re]) => re.test(t)) || ["Cash"])[0];
   return { type: "payment", amount: Math.round(amt * 100) / 100, method, methodSaid: METHOD.some(([, re]) => re.test(t)), query: who.replace(/\s+(?:by|via|in|on|through)$/, "") };
 }
 function understandStatus(t) {
   const m = /^(?:please )?(?:mark|set|change|make|move)\s+(.+?)\s+(?:as\s+|to\s+)?(confirmed|cancelled|canceled|completed|complete|pending)$/.exec(t);
-  if (!m) return null;
+  if (!m || /^(?:sure|certain)\b|\b(?:is|are|was|gets?)$/.test(m[1])) return null;
   const who = m[1].replace(/'s\s+(?:trip|booking)$|\s+(?:trip|booking)$/, "").replace(/^(?:the|this)\s*/, "").trim();
   const status = { canceled: "cancelled", complete: "completed" }[m[2]] || m[2];
   return { type: "status", status, query: !who || /^(?:it|trip|booking)$/.test(who) ? null : /^trp/.test(who) ? who.replace(/\s|-/g, "").toUpperCase() : who };

@@ -51,7 +51,8 @@ export function applyAliases(text, memory) {
   for (const [said, meant] of Object.entries(aliases)) {
     if (!said || !meant) continue;
     const esc = said.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    out = out.replace(new RegExp(`\\b${esc}\\b`, "gi"), meant);
+    // A function, so a "$" in what the agent said isn't read as a replacement pattern.
+    out = out.replace(new RegExp(`\\b${esc}\\b`, "gi"), () => meant);
   }
   return out;
 }
@@ -83,9 +84,11 @@ function dateRange(start, nights) {
 }
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
-function planFill(base, text, { catalog, settings, today }) {
+function planFill(base, rawText, { catalog, settings, today }) {
+  // Aliases apply to the whole sentence — the fill and the extras riding along.
+  const text = applyAliases(rawText, catalog.memory);
   const createCatalog = { hotels: catalog.hotels, destinations: catalog.destinations, vehicles: catalog.vehicles };
-  const command = parseChingCommand(applyAliases(text, catalog.memory), createCatalog, { today });
+  const command = parseChingCommand(text, createCatalog, { today });
   // Day 1 is the trip's start date: when none was said, use the one already on the trip.
   const baseStart = String(base.tripInfo?.startDate || "").slice(0, 10);
   if (!command.startDate && /^\d{4}-\d{2}-\d{2}$/.test(baseStart)) command.startDate = baseStart;

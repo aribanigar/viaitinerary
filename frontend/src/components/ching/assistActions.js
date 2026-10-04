@@ -47,15 +47,45 @@ const saveBlob = (blob, name) => {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 };
 
-/** The trip a request is about: a spoken name / id, else the trip open in the builder. */
+const norm = (s) => String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+const isTripId = (q) => /^trp\d{4,}$/i.test(String(q || "").replace(/[\s-]/g, ""));
+
+/**
+ * The trip a request is about: a spoken name / id, else the trip open in the builder.
+ * → the trip, null (nothing found — the caller says so) or false (several trips
+ * match and Ching already asked which one; the caller just stops). The search
+ * is a loose substring match, so acting on its first hit could email the wrong
+ * "Rahul": a name is only taken when exactly one trip's client fits it.
+ */
 async function resolveTrip(ctx, query) {
   if (!query) {
     const id = ctx.editor?.tripId;
-    if (id) return { trip_id: id, client_name: ctx.editor?.summary?.()?.clientName || "", trip_title: ctx.editor?.summary?.()?.title || "" };
-    return null;
+    if (!id) return null;
+    // The list row carries client_phone / email too (WhatsApp needs the phone).
+    const res = await fetchTrips(ctx.token, { search: id, per_page: 5 }).catch(() => null);
+    const row = list(res?.data).find((t) => t.trip_id === id);
+    return row || { trip_id: id, client_name: ctx.editor?.summary?.()?.clientName || "", trip_title: ctx.editor?.summary?.()?.title || "" };
   }
-  const res = await fetchTrips(ctx.token, { search: query, per_page: 5 });
-  return list(res?.data)[0] || null;
+  const res = await fetchTrips(ctx.token, { search: query, per_page: 10 });
+  const rows = list(res?.data);
+  if (isTripId(query)) {
+    const id = String(query).replace(/[\s-]/g, "").toUpperCase();
+    return rows.find((t) => String(t.trip_id).toUpperCase() === id) || null;
+  }
+  const q = norm(query);
+  const exact = rows.filter((t) => norm(t.client_name) === q);
+  const byWord = rows.filter((t) => ` ${norm(t.client_name)} `.includes(` ${q} `));
+  const candidates = exact.length ? exact : byWord.length ? byWord : rows;
+  if (candidates.length === 1) return candidates[0];
+  if (!candidates.length) return null;
+  // Same client, several trips: the one travelling soonest from today, else ask.
+  const sameClient = new Set(candidates.map((t) => norm(t.client_name))).size === 1;
+  const today = localYmd(new Date());
+  const upcoming = candidates.filter((t) => String(t.start_date || "").slice(0, 10) >= today);
+  if (sameClient && upcoming.length === 1) return upcoming[0];
+  const shown = candidates.slice(0, 3).map((t) => `${t.client_name || "no name"} — ${t.trip_title || "untitled"} (${t.trip_id})`);
+  ctx.respond(`I found ${plural(candidates.length, "trip")} for “${query}”: ${and(shown)}${candidates.length > 3 ? " and more" : ""}. Which one? Say the full name or the trip ID.`);
+  return false;
 }
 const whose = (trip) => (trip.client_name ? `${first(trip.client_name)}'s` : `trip ${trip.trip_id}`);
 
@@ -70,6 +100,7 @@ const DOC_LABEL = {
 
 async function doDoc(ask, ctx) {
   const trip = await resolveTrip(ctx, ask.query);
+  if (trip === false) return;
   if (!trip) {
     ctx.respond(ask.query ? `I couldn't find a trip for ${ask.query}.` : `Whose ${DOC_LABEL[ask.doc]}? Say it like “${ask.action === "email" ? "email" : "download"} the ${DOC_LABEL[ask.doc]} for Rahul”.`);
     return;
@@ -104,39 +135,56 @@ async function doDoc(ask, ctx) {
     return;
   }
   // email
+  if (ask.doc === "itinerary" && ask.toMe) {
+    const r = await emailItineraryToMe(ctx.token, id, {});
+    ctx.respond(`Emailed ${whose(trip)} itinerary to ${r?.to || "you"}.`);
+    return;
+  }
+  // Everything below emails the client, so it's confirmed first (with the trip
+  // named, so a wrong match is caught before anything is sent).
+  const client = trip.client_name || "the client";
+  const tripName = trip.trip_title || id;
   if (ask.doc === "itinerary") {
-    if (ask.toMe) {
-      const r = await emailItineraryToMe(ctx.token, id, {});
-      ctx.respond(`Emailed ${whose(trip)} itinerary to ${r?.to || "you"}.`);
-    } else {
+    ctx.confirm(`Email ${client} the itinerary with the approval link for ${tripName}? Say yes or no.`, async () => {
       const r = await sendProposal(ctx.token, id, { send: "email" });
       ctx.respond(`Sent ${first(trip.client_name) || "the client"} the itinerary with the approval link${r?.sent_to ? ` at ${r.sent_to}` : ""}.`);
-    }
+    });
     return;
   }
   const recipient = { invoice: "invoice", receipt: "payment_voucher", vouchers: "vouchers", confirmation: "client" }[ask.doc];
-  const r = await sendConfirmationEmail(ctx.token, id, recipient);
-  ctx.respond(
+  const question =
     ask.doc === "confirmation"
-      ? `Booking confirmation sent for ${whose(trip)} trip, and it's marked confirmed.`
-      : `${r?.message || `Emailed ${whose(trip)} ${label}.`}`,
-  );
+      ? `Email ${client} the booking confirmation for ${tripName}? That also marks the trip confirmed. Say yes or no.`
+      : `Email ${client} the ${label} for ${tripName}? Say yes or no.`;
+  ctx.confirm(question, async () => {
+    const r = await sendConfirmationEmail(ctx.token, id, recipient);
+    ctx.respond(
+      ask.doc === "confirmation"
+        ? `Booking confirmation sent for ${whose(trip)} trip, and it's marked confirmed.`
+        : `${r?.message || `Emailed ${whose(trip)} ${label}.`}`,
+    );
+  });
 }
 
 async function doSupplier(ask, ctx) {
   const trip = await resolveTrip(ctx, ask.query);
+  if (trip === false) return;
   if (!trip) {
     ctx.respond(ask.query ? `I couldn't find a trip for ${ask.query}.` : "Which trip? Say “send hotel requests for Rahul's trip”.");
     return;
   }
-  const r = await requestSupplierConfirmations(ctx.token, trip.trip_id, { kinds: ask.kinds });
-  const wa = list(r.requests).filter((x) => !x.emailed && x.whatsapp_url && !x.skipped);
-  ctx.respond(`${whose(trip)} trip — ${r.message}${wa.length ? " The WhatsApp ones are on the trip's Logistics tab and in Daily Ops." : ""}`);
-  window.dispatchEvent(new CustomEvent("ching:bookings-updated"));
+  const who = ask.kinds.length === 2 ? "hotels and cab suppliers" : ask.kinds[0] === "hotel" ? "hotels" : "cab suppliers";
+  ctx.confirm(`Send confirmation requests to the ${who} on ${whose(trip)} trip (${trip.trip_title || trip.trip_id})? Say yes or no.`, async () => {
+    const r = await requestSupplierConfirmations(ctx.token, trip.trip_id, { kinds: ask.kinds });
+    const wa = list(r.requests).filter((x) => !x.emailed && x.whatsapp_url && !x.skipped);
+    ctx.respond(`${whose(trip)} trip — ${r.message}${wa.length ? " The WhatsApp ones are on the trip's Logistics tab and in Daily Ops." : ""}`);
+    window.dispatchEvent(new CustomEvent("ching:bookings-updated"));
+  });
 }
 
 async function doDriver(ask, ctx) {
   const trip = await resolveTrip(ctx, ask.query);
+  if (trip === false) return;
   if (!trip) {
     ctx.respond(ask.query ? `I couldn't find a trip for ${ask.query}.` : "Which trip is the driver for? Say “the driver for Rahul's trip is Ramesh, 98765 43210”.");
     return;
@@ -217,8 +265,9 @@ const METHOD_VALUE = { UPI: "upi", "Bank transfer": "bank_transfer", Card: "card
 
 async function doPayment(ask, ctx) {
   const trip = await resolveTrip(ctx, ask.query);
+  if (trip === false) return;
   if (!trip) {
-    ctx.respond(`I couldn't find a trip for ${ask.query}. Check the name?`);
+    ctx.respond(ask.query ? `I couldn't find a trip for ${ask.query}. Check the name?` : "Whose payment? Say it like “Rahul paid 20000 by UPI”.");
     return;
   }
   const detail = await fetchAccountingTripLedger(ctx.token, trip.trip_id);
@@ -251,6 +300,7 @@ async function doPayment(ask, ctx) {
 
 async function doStatus(ask, ctx) {
   const trip = await resolveTrip(ctx, ask.query);
+  if (trip === false) return;
   if (!trip) {
     ctx.respond(ask.query ? `I couldn't find a trip for ${ask.query}.` : "Which trip? Say “mark Rahul's trip as confirmed”.");
     return;
@@ -265,12 +315,16 @@ async function doStatus(ask, ctx) {
 
 async function doRemind(ask, ctx) {
   const trip = await resolveTrip(ctx, ask.query);
+  if (trip === false) return;
   if (!trip) {
-    ctx.respond(`I couldn't find a trip for ${ask.query}.`);
+    ctx.respond(ask.query ? `I couldn't find a trip for ${ask.query}.` : "Who should I remind? Say “send a payment reminder to Rahul”.");
     return;
   }
-  const r = await sendReminder(ctx.token, trip.trip_id, ask.kind);
-  ctx.respond(`Sent ${first(trip.client_name) || "the client"} a ${ask.kind === "payment" ? "payment" : "proposal"} reminder${r?.sent_to ? ` at ${r.sent_to}` : ""}.`);
+  const kind = ask.kind === "payment" ? "payment" : "proposal";
+  ctx.confirm(`Email ${trip.client_name || "the client"} a ${kind} reminder for ${trip.trip_title || trip.trip_id}? Say yes or no.`, async () => {
+    const r = await sendReminder(ctx.token, trip.trip_id, ask.kind);
+    ctx.respond(`Sent ${first(trip.client_name) || "the client"} a ${kind} reminder${r?.sent_to ? ` at ${r.sent_to}` : ""}.`);
+  });
 }
 
 // ── Phase 4: cheaper plan / add-ons (on the open trip) ──
@@ -361,6 +415,10 @@ async function doRecall(ctx) {
 }
 
 async function doForget(ask, ctx) {
+  if (ask.all && !ask.confirmed) {
+    ctx.confirm("Forget everything you've told me — names, aliases, usual hotels and notes? Say yes or no.", () => doForget({ ...ask, confirmed: true }, ctx));
+    return;
+  }
   const r = await forgetChing(ctx.token, ask.all ? {} : { match: ask.match });
   await loadChingMemory(ctx.token, { force: true });
   const n = Number(r?.forgotten) || 0;
