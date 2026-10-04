@@ -169,6 +169,28 @@ function resolveStays(command, hotels, nights, destinations = [], memory = null)
     if (!h) return st;
     return { ...st, hotelId: h.id, hotelName: h.name, city: displayCity(st.city || h.city, destinations) };
   });
+  // Some stays named, but fewer nights than the trip ("4 night Kashmir trip,
+  // Gulmarg 1 night"): plan the rest over the other cities said, else the
+  // region's, and order everything the way the region's route runs.
+  const named = stays.reduce((n, st) => n + (Number(st.nights) || 0), 0);
+  if (stays.length && nights > named) {
+    const used = stays.map((st) => st.city).filter(Boolean);
+    const full = planRoute(command, hotels, destinations, nights, memory, { allCities: true });
+    const rest = planRoute(command, hotels, destinations, nights - named, memory, { exclude: used });
+    const extra = rest.map(({ city, nights: n }) => {
+      const h = pick(city, { routed: true });
+      return h
+        ? { nights: n, hotelId: h.id, hotelName: h.name, city: displayCity(city, destinations) }
+        : { nights: n, city: displayCity(city, destinations) };
+    });
+    if (extra.length) {
+      const rank = (st) => full.findIndex((c) => samePlace(c, st.city));
+      const all = [...stays, ...extra];
+      // Only reorder when every stay is on the region's route; a stay ordered
+      // on purpose ("… first") was already placed by the parser.
+      stays = all.every((st) => rank(st) >= 0) && !command.stayOrderSaid ? all.sort((a, b) => rank(a) - rank(b)) : all;
+    }
+  }
   if (!stays.length && nights > 0) {
     const route = planRoute(command, hotels, destinations, nights, memory);
     stays = route.map(({ city, nights: n }) => {
@@ -199,7 +221,8 @@ function splitNights(cities, nights) {
  * hotel cities of that region (same state as the destination, busiest first).
  * → [{ city, nights }]
  */
-function planRoute(command, hotels, destinations, nights, memory = null) {
+function planRoute(command, hotels, destinations, nights, memory = null, { exclude = [], allCities = false } = {}) {
+  const keep = (c) => !exclude.some((x) => samePlace(x, c));
   const hotelCities = [...new Set(hotels.filter((h) => h.city && h.is_available !== false).map((h) => String(h.city).trim()))];
   const destNames = destinations.map((d) => d.name).filter(Boolean);
   const places = [...new Set([...hotelCities, ...destNames])];
@@ -213,16 +236,16 @@ function planRoute(command, hotels, destinations, nights, memory = null) {
     .filter((c, i, arr) => arr.findIndex((y) => samePlace(y, c)) === i);
   const dest = command.destinationName;
   // A region ("Kashmir") isn't a stop; the cities named with it are.
-  const stops = said.filter((c) => !(dest && samePlace(c, dest) && !hotelCities.some((h) => samePlace(h, c))));
-  if (stops.length) return splitNights(stops, nights);
+  const stops = said.filter((c) => !(dest && samePlace(c, dest) && !hotelCities.some((h) => samePlace(h, c)))).filter(keep);
+  if (stops.length && !allCities) return splitNights(stops, nights);
 
   if (!dest) return [];
   // The agency's usual split for this destination and length (learned).
   const learned = memory?.routes?.[`${placeKey(dest)}|${nights}`];
-  if (Array.isArray(learned) && learned.length && learned.reduce((n, r) => n + (Number(r.nights) || 0), 0) === nights) {
+  if (!exclude.length && !allCities && Array.isArray(learned) && learned.length && learned.reduce((n, r) => n + (Number(r.nights) || 0), 0) === nights) {
     return learned.map((r) => ({ city: r.city, nights: Number(r.nights) }));
   }
-  if (hotelCities.some((c) => samePlace(c, dest))) return [{ city: hotelCities.find((c) => samePlace(c, dest)), nights }];
+  if (!allCities && hotelCities.some((c) => samePlace(c, dest) && keep(c))) return [{ city: hotelCities.find((c) => samePlace(c, dest)), nights }];
 
   const region = findDestinationFor(destinations, dest);
   const regionKey = String(region?.state || region?.name || dest).toLowerCase().replace(/^jammu (?:and|&) /, "");
@@ -236,7 +259,10 @@ function planRoute(command, hotels, destinations, nights, memory = null) {
   };
   const count = (city) => hotels.filter((h) => samePlace(h.city, city)).length;
   const cities = hotelCities.filter(inRegion).sort((a, b) => count(b) - count(a));
-  return cities.length ? splitNights(cities, nights) : [];
+  // allCities: just the region's cities in route order (for ranking stays).
+  if (allCities) return cities;
+  const open = cities.filter(keep);
+  return open.length ? splitNights(open, nights) : [];
 }
 
 /**

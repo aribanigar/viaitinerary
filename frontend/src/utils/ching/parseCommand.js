@@ -85,8 +85,11 @@ const BOUNDARY = new Set([
   'kid', 'infants', 'infant', ...TRIP_WORDS, 'phone', 'mobile', 'email', 'customer', 'client', 'date', 'total',
   'including', 'include', 'includes', 'plus', 'also', 'finally', 'lastly', 'last', 'via', 'please', 'ok',
   'okay', 'thanks', 'thank', 'nights', 'night', 'days', 'day', 'i', 'we', 'want', 'need', 'create', 'make',
-  'build', 'rest', 'remaining',
+  'build', 'rest', 'remaining', 'first', 'second', 'third', 'fourth', 'beginning', 'end', 'ending', 'before',
 ])
+// "Srinagar 1 night first" / "… at the end": where a stay goes in the trip.
+const ORDER_FIRST = new Set(['first', 'beginning', 'start'])
+const ORDER_LAST = new Set(['last', 'end', 'ending', 'finally', 'lastly'])
 // Words that end a hotel phrase when walking backwards ("<hotel> for 2 nights").
 const BACK_STOP = new Set([
   ...BOUNDARY, 'and', 'in', 'at', 'stay', 'staying', 'stays', 'book', 'put', 'keep', 'add', 'us', 'them',
@@ -345,7 +348,7 @@ export function extractPhone(input) {
 
 function extractGuests(input) {
   let s = input
-  const g = { adults: 0, children: 0, infants: 0, total: 0, heardAdults: false, heardAny: false }
+  const g = { adults: 0, children: 0, infants: 0, total: 0, heardAdults: false, heardAny: false, ages: [] }
   const take = (re, fn) => {
     s = s.replace(re, (...m) => {
       fn(m)
@@ -354,6 +357,26 @@ function extractGuests(input) {
     })
   }
   const KID = '(?:children|child|childs|kids|kid|kiddos?)'
+  // "2 kids aged 7 and 3", "two children ages 8, 4": each age decides the band
+  // (under 5 → infant / free, 5–12 → child, 13+ → adult).
+  take(
+    new RegExp(`\\b(\\d{1,2})\\s+${KID}\\s+(?:aged?|ages|of\\s+ages?)\\s+(\\d{1,2}(?:\\s*(?:,|and|&)\\s*\\d{1,2})+)(?:\\s*(?:years?|yrs?)(?:\\s+old)?)?`, 'g'),
+    (m) => {
+      const ages = m[2].split(/\s*(?:,|and|&)\s*/).map(Number).filter((n) => Number.isFinite(n))
+      const count = +m[1]
+      ages.slice(0, count).forEach((age) => {
+        if (age < 5) g.infants += 1
+        else if (age <= 12) g.children += 1
+        else {
+          g.adults += 1
+          g.heardAdults = true
+        }
+        g.ages.push(age)
+      })
+      // Fewer ages than children said: the rest count as 5–12.
+      g.children += Math.max(0, count - ages.length)
+    },
+  )
   take(
     new RegExp(
       `\\b(\\d{1,2})\\s+${KID}\\s+(?:who\\s+(?:is|are)\\s+)?(?:(below|under|less\\s+than|upto|up\\s+to)|(?:aged?|of\\s+age)(?:\\s+(below|under))?)\\s+(\\d{1,2})(?:\\s*(?:years?|yrs?)(?:\\s+old)?)?`,
@@ -563,23 +586,61 @@ export function parseChingCommand(text, catalog, { today } = {}) {
 
   // Stays
   const stays = []
-  const addStay = (n, words, from, to) => {
+  const addStay = (n, words, from, to, pos = from) => {
     const r = resolveStay(n, words, cat)
-    stays.push({ pos: from, stay: r.stay })
+    stays.push({ pos, stay: r.stay })
     warnings.push(...r.warnings)
     mark(from, to)
     return r
   }
+  // The words just before "N nights" that ARE a place: the longest tail made only
+  // of a city's or a matched hotel's own words ("rahul sharma pahalgam" → "pahalgam").
+  const placeTail = (words) => {
+    for (let len = words.length; len >= 1; len--) {
+      const tail = words.slice(words.length - len)
+      if (tail.some((w) => w.length < 3 && !isNum(w))) continue
+      if (cityLookup(tail, cat)) return len
+      const h = matchHotel(tail, '', cat).hotel
+      if (h) {
+        const own = new Set([...h.tokens, ...normTokens(h.city)])
+        if (tail.every((w) => own.has(w) || [...own].some((o) => o.length >= 5 && w.length >= 5 && levRatio(o, w) >= 0.8))) return len
+      }
+    }
+    return 0
+  }
+  // An ordering word right after a stay ("srinagar 1 night first", "… 2 nights at the end").
+  const orderAfter = (k) => {
+    let j = k
+    while (['at', 'the', 'in', 'to'].includes(at(j)) && j < k + 3) j++
+    if (ORDER_FIRST.has(at(j))) return { pos: -1000 + k, end: j }
+    if (ORDER_LAST.has(at(j))) return { pos: 1000 + k, end: j }
+    return null
+  }
   for (let i = 0; i < tok.length; i++) {
     if (!isNum(at(i)) || !NIGHT_UNITS.has(at(i + 1))) continue
     const n = +tok[i]
+    // "pahalgam 2 nights", "srinagar 1 night first": the place comes before the count.
+    // Only a catalog city or hotel counts, so "rahul sharma 2 nights" stays a name.
+    if (at(i - 1) !== '|' && at(i - 1) !== 'for' && !isNum(at(i - 1)) && !BACK_STOP.has(at(i - 1))) {
+      const b = collectBefore(i - 1)
+      const len = placeTail(b.words)
+      if (len) {
+        const words = b.words.slice(b.words.length - len)
+        const from = i - len
+        const order = orderAfter(i + 2)
+        addStay(n, words, from, order ? order.end : i + 1, order ? order.pos : from)
+        i = order ? order.end : i + 1
+        continue
+      }
+    }
     let j = i + 2
     while (['stay', 'stays', 'staying', 'of'].includes(at(j)) && j < i + 4) j++
     if (PREPS.has(at(j))) {
       const a = collectAfter(j + 1)
       if (a.words.length) {
-        addStay(n, a.words, i, a.end)
-        i = a.end
+        const order = orderAfter(a.end + 1)
+        addStay(n, a.words, i, order ? order.end : a.end, order ? order.pos : i)
+        i = order ? order.end : a.end
         continue
       }
     }
@@ -610,10 +671,13 @@ export function parseChingCommand(text, catalog, { today } = {}) {
       const a = collectAfter(j)
       if (a.words.length) {
         // "3 nights kashmir trip" is a trip length + destination, not a stay.
+        // … and so is "4 night kashmir trip", a region that names no hotel.
         const probe = splitCity(a.words, cat)
-        if (!(probe.hotelWords.length === 0 && TRIP_WORDS.has(a.stop))) {
-          addStay(n, a.words, i, a.end)
-          i = a.end
+        const tripLength = TRIP_WORDS.has(a.stop) && (probe.hotelWords.length === 0 || !matchHotel(a.words, '', cat).hotel)
+        if (!tripLength) {
+          const order = orderAfter(a.end + 1)
+          addStay(n, a.words, i, order ? order.end : a.end, order ? order.pos : i)
+          i = order ? order.end : a.end
           continue
         }
       }
@@ -677,7 +741,20 @@ export function parseChingCommand(text, catalog, { today } = {}) {
       if (ok && (!found || i < found.pos)) found = { pos: i, d }
     }
   }
-  if (found) {
+  // A region said ("kashmir trip"): a word of a destination's state. It names
+  // the trip (title, Destination field) ahead of a city mentioned later.
+  const REGION_SKIP = new Set(['and', 'the', 'of', 'pradesh', 'islands', 'island', 'union', 'territory', 'state', 'nadu', 'bengal'])
+  let region = null
+  for (const d of cat.destinations) {
+    const words = normTokens(String(d.raw.state || '')).filter((w) => w.length >= 3 && !REGION_SKIP.has(w))
+    for (const w of words) {
+      const i = tok.findIndex((t, k) => !used[k] && (t === w || (w.length >= 5 && t.length >= 5 && levRatio(t, w) >= 0.85)))
+      if (i >= 0 && (!region || i < region.pos) && !cat.cities.has(w)) region = { pos: i, name: titleCase(w) }
+    }
+  }
+  if (region && (!found || region.pos <= found.pos)) {
+    destinationName = region.name
+  } else if (found) {
     destinationId = found.d.id
     destinationName = found.d.name
   } else if (stays.length && stays[0].stay.city) {
@@ -748,12 +825,15 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     adults: guests.heardAdults ? guests.adults : 2,
     children: guests.children,
     infants: guests.infants,
+    childAges: guests.ages,
     startDate,
     nights,
     days,
     destinationId,
     destinationName,
     stays: stayList,
+    // "… first" / "… at the end" put a stay somewhere on purpose: keep that order.
+    stayOrderSaid: stays.some((x) => x.pos < -500 || x.pos > 500),
     dayPlan,
     vehicleId,
     vehicleName,

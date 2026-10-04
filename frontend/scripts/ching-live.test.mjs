@@ -138,5 +138,66 @@ test('partial edits mid-sentence are harmless', () => {
   assert.deepEqual(r.changes, [])
 })
 
+// ── Details said in any order (the agent thinks aloud, Ching sorts it out) ──
+const kashmir = {
+  ...catalog,
+  destinations: catalog.destinations.map((d) => ({ ...d, state: 'Jammu and Kashmir' })),
+  vehicles: [{ id: 21, name: 'Innova Crysta', price: 4000, rate_type: 'per_day' }, { id: 22, name: 'Dzire', price: 2500, rate_type: 'per_day' }],
+}
+const fill = (text) => {
+  const s = planLive(blank, text, { catalog: kashmir, settings, today }).snapshot
+  return {
+    client: s.tripInfo.clientName,
+    adults: s.tripInfo.adults,
+    start: s.tripInfo.startDate,
+    title: s.tripInfo.tripTitle,
+    stays: s.accommodations.map((a) => `${a.city} ${Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 864e5)}`),
+    days: s.itinerary.map((d) => d.location),
+  }
+}
+
+test('order: "<city> N nights then <city> N nights", details first', () => {
+  const r = fill('innova cab, breakfast and dinner, from 10th november, rahul sharma 9876543210, 3 adults, pahalgam 2 nights then srinagar 2 nights')
+  assert.deepEqual(r.stays, ['Pahalgam 2', 'Srinagar 2'])
+  assert.equal(r.client, 'Rahul Sharma')
+  assert.equal(r.adults, 3)
+  assert.equal(r.days.length, 5)
+})
+
+test('order: a region and its length ("kashmir 4 nights") plan the route', () => {
+  const r = fill('trip for asha verma email asha@gmail.com phone 98765 43210 family of 4 kashmir 4 nights 15 dec')
+  assert.equal(r.title, 'Kashmir 4N/5D')
+  assert.equal(r.stays.reduce((n, x) => n + Number(x.split(' ').pop()), 0), 4)
+  assert.equal(r.days.length, 5)
+})
+
+test('order: one city named in a longer trip — the other nights are planned around it', () => {
+  const r = fill('rahul sharma ka 4 night kashmir trip banao 2 adults 10 november se, gulmarg 1 night')
+  assert.equal(r.title, 'Kashmir 4N/5D')
+  assert.ok(r.stays.includes('Gulmarg 1'), r.stays.join(', '))
+  assert.equal(r.stays.reduce((n, x) => n + Number(x.split(' ').pop()), 0), 4)
+  assert.ok(!r.stays.some((x) => /kashmir/i.test(x)), 'a region is not a hotel')
+})
+
+test('order: "… srinagar 1 night first" goes to the front', () => {
+  const r = fill('from 20 november 3 nights pahalgam, client vikram, 2 adults, dzire, only breakfast, and srinagar 1 night first')
+  assert.deepEqual(r.stays, ['Srinagar 1', 'Pahalgam 3'])
+  assert.equal(r.client, 'Vikram')
+})
+
+test('order: a day-by-day route keeps the client said after it', () => {
+  const r = fill('day 1 srinagar day 2 gulmarg day 3 pahalgam day 4 srinagar for rahul 2 adults from 5 november')
+  assert.equal(r.client, 'Rahul')
+  assert.deepEqual(r.days.slice(0, 4), ['Srinagar', 'Gulmarg', 'Pahalgam', 'Srinagar'])
+})
+
+test('order: the full spoken request with hotels named per city', () => {
+  const r = fill('Create a 5-day, 4-night Kashmir itinerary for Rahul Sharma, 4 adults and 2 children, starting 10 November 2026. Two nights in Srinagar at Lalit Grand Palace, one night in Gulmarg at Khyber and one night in Pahalgam at Pine N Peak.')
+  assert.deepEqual(r.stays, ['Srinagar 2', 'Gulmarg 1', 'Pahalgam 1'])
+  assert.equal(r.start, '2026-11-10')
+  assert.equal(r.adults, 4)
+  assert.equal(r.title, 'Kashmir 4N/5D')
+})
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

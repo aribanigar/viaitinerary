@@ -2360,6 +2360,7 @@ const TripBuilder = ({ mode }) => {
                         setItinerary={setItinerary}
                         removeDay={removeDay}
                         addDayFromDestination={addDayFromDestination}
+                        addDay={addDay}
                         formatImageUrl={formatImageUrl}
                       />
                     )}

@@ -165,7 +165,10 @@ function planFill(base, rawText, { catalog, settings, today }) {
   // (and "Couldn't find "pahalgam" in your hotels" when it was a city after all).
   const pickedCities = parts.autoPicked.filter((p) => p.city).map((p) => placeKey(p.city));
   const stayCities = parts.accommodations.map((a) => placeKey(a.city));
+  const builtNights = parts.accommodations.reduce((n, a) => n + Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 86400000), 0);
   const warnings = (command.warnings || []).filter((w) => {
+    // The builder topped up the stays ("Gulmarg 1 night" in a 4-night trip).
+    if (/^Hotel nights add up to/.test(w) && command.nights && builtNights === command.nights) return false;
     const lw = ` ${placeKey(w)} `;
     if (/^No hotel named/.test(w)) return !pickedCities.some((c) => c && lw.includes(` ${c} `));
     const m = /^Couldn't find "(.+?)" in your hotels/.exec(w);

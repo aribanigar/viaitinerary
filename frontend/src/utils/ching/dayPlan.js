@@ -93,7 +93,9 @@ export function parseDayPlan(text, findCity, { minMarkers = 2, edit = false } = 
     // The day's words run to the next marker (or the end), cut at a hard break.
     let end = i + 1 < marks.length ? marks[i + 1].at : s.length
     const tail = s.slice(mk.end, end)
-    const stop = tail.search(/[.;!?]|\|\s*\|/)
+    // The last day also ends where the other trip details start ("… day 4
+    // Srinagar for Rahul, 2 adults"), so the client and guests aren't swallowed.
+    const stop = tail.search(/[.;!?]|\|\s*\||\b(?:for|client|customer|starting|phone|mobile|email)\b|\b\d+\s+(?:adults?|kids?|child(?:ren)?|infants?|pax|people|persons|guests?)\b/)
     if (stop > 0 && i + 1 >= marks.length) end = mk.end + stop
     const body = s.slice(mk.end, end).replace(/^[\s,:-]*(?:is|will be|should be|=)?\s*/, '')
     if (edit) {

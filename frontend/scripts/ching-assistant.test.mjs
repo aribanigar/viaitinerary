@@ -208,5 +208,24 @@ test('misparses that used to trigger actions', () => {
   assert.deepEqual(u('mark this trip as confirmed', { inBuilder: true }), { type: 'status', status: 'confirmed', query: null })
 })
 
+test('every sidebar page and builder tab is reachable', () => {
+  const nav = { 'open daily ops': '/operations', 'open reports': '/accounting-summary', 'go to team reports': '/team-report',
+    'open voucher desk': '/accounting', 'open bank details': '/payment-details', 'open ai assistant': '/assistant',
+    'open branding': '/typography', 'open email connect': '/settings/email-connect', 'open lead inquiries': '/lead-inquiries',
+    'open transportation': '/transportation', 'open policies': '/policies', 'open subscription': '/subscription' }
+  for (const [t, path] of Object.entries(nav)) assert.equal(u(t)?.path, path, t)
+  for (const [t, tab] of [['open template', 'Template'], ['go to itinerary', 'Itinerary'], ['open logistics', 'Logistics'], ['open pricing', 'Pricing'], ['open the trip info tab', 'Trip Info']]) {
+    assert.deepEqual(u(t, { inBuilder: true }), { type: 'tab', tab }, t)
+  }
+})
+
+test("children's ages decide child vs under-5", () => {
+  const cat = { hotels: [], destinations: [{ id: 1, name: 'Srinagar' }], vehicles: [] }
+  const g = (t) => { const c = parseChingCommand(t, cat, { today: '2026-10-03' }); return [c.adults, c.children, c.infants] }
+  assert.deepEqual(g('rahul 2 adults 2 kids aged 7 and 3 srinagar 2 nights'), [2, 1, 1])
+  assert.deepEqual(g('2 adults and 2 children aged 6 and 9 years old'), [2, 2, 0])
+  assert.deepEqual(g('2 kids below 5'), [2, 0, 2])
+})
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

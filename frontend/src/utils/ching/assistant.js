@@ -35,6 +35,10 @@ const PAGES = [
   ["/notifications", "notifications", /\bnotifications?\b|\balerts?\b/],
   ["/team-report", "team reports", /\bteam reports?\b|\bteam performance\b|\bsales report\b/],
   ["/team", "your team", /\bteam\b|\bstaff\b|\bemployees?\b/],
+  // The sidebar's Accounting → Reports (after "team reports" above).
+  ["/accounting-summary", "reports", /\breports?\b|\breporting\b/],
+  ["/settings/email-connect", "email connect", /\bemail connect\b|\bconnect (?:my )?email\b|\bgmail\b/],
+  ["/typography", "branding", /\bbranding\b|\bfonts?\b|\btypography\b/],
   ["/accommodation", "hotels", /\bhotels?\b|\baccommodations?\b|\bstays\b/],
   ["/transportation", "transport", /\btransport(?:ation)?\b|\bvehicles?\b|\bcabs?\b|\bcars?\b|\bfleet\b/],
   ["/destinations", "destinations", /\bdestinations?\b|\bplaces\b/],
@@ -47,7 +51,7 @@ const PAGES = [
   ["/subscription", "your subscription", /\bsubscription\b|\bplan\b|\bbilling\b|\bupgrade\b/],
   ["/integrations", "integrations", /\bintegrations?\b/],
   ["/profile", "your profile", /\bprofile\b|\bmy account\b|\bpassword\b/],
-  ["/settings", "settings", /\bsettings?\b|\bbranding\b|\bpreferences\b|\bsmtp\b|\brazorpay\b/],
+  ["/settings", "settings", /\bsettings?\b|\bpreferences\b|\bsmtp\b|\brazorpay\b/],
   ["/assistant", "the assistant", /\bassistant\b/],
   ["/dashboard", "the dashboard", /\bdashboard\b|\bhome\b|\bmain (?:page|screen)\b|\bpipeline\b/],
 ];
@@ -140,6 +144,8 @@ export function understandAssistant(text, { inBuilder = false } = {}) {
     if (inBuilder) {
       const tab = TABS.find(([, re]) => re.test(rest));
       if (tab) return { type: "tab", tab: tab[0] };
+      // A bare tab name inside the builder is the tab, not a page ("open template").
+      if (/^(?:itinerary|template|templates|design)$/.test(rest)) return { type: "tab", tab: rest.startsWith("itin") ? "Itinerary" : "Template" };
     }
     const page = PAGES.find(([, , re]) => re.test(rest));
     if (page) return { type: "navigate", path: page[0], label: page[1] };

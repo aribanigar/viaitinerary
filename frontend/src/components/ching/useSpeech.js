@@ -53,6 +53,15 @@ const ERROR_TEXT = {
     "This browser can't recognise English (India) speech. Type your request below.",
   "no-speech":
     "I didn't hear anything. Tap the mic and try again, or type below.",
+  // Audio arrived but no words were recognised.
+  "no-words":
+    "I heard sound but couldn't make out any words. Speak a little closer to the mic, or type below.",
+  // The recognizer ran but the mic never delivered audio: muted, the wrong
+  // device selected, or another app (Zoom, Meet, WhatsApp) holding it.
+  "mic-silent":
+    "Your microphone didn't send any sound. Check it isn't muted or in use by another app (Zoom, Meet, WhatsApp), and that the browser is using the right mic (the icon in the address bar → microphone). Or type below.",
+  "mic-start":
+    "The microphone couldn't start. Close other tabs or apps using the mic and try again, or type below.",
   unsupported:
     "Voice isn't supported in this browser (try Chrome or Safari). Type your request below.",
 };
@@ -122,6 +131,8 @@ const freshCommand = (extra = {}) => ({
   baseIndex: 0, // first result index belonging to the command
   fromWake: false, // strip the wake phrase from the session text
   heard: false,
+  audio: false, // the mic delivered audio (audiostart)
+  sound: false, // some sound was detected (soundstart)
   finishing: false,
   cancelled: false,
   beepOnStart: false,
@@ -198,7 +209,7 @@ class SpeechEngine {
     const rec = this.rec;
     this.rec = null;
     if (!rec) return;
-    rec.onstart = rec.onresult = rec.onerror = rec.onend = null;
+    rec.onstart = rec.onresult = rec.onerror = rec.onend = rec.onaudiostart = rec.onsoundstart = null;
     try {
       rec.abort();
     } catch {
@@ -237,6 +248,12 @@ class SpeechEngine {
         this.cmd.beepOnStart = false;
         beep();
       }
+    };
+    rec.onaudiostart = () => {
+      if (rec === this.rec && this.recMode === "command") this.cmd.audio = true;
+    };
+    rec.onsoundstart = () => {
+      if (rec === this.rec && this.recMode === "command") this.cmd.sound = true;
     };
     rec.onresult = (e) => {
       if (rec !== this.rec) return;
@@ -284,7 +301,10 @@ class SpeechEngine {
         this.timers.respawn = null;
         const c = this.cmd;
         if (this.state.phase !== "command" || this.rec || c.finishing || c.cancelled) return;
-        if (!this.spawn("command")) this.deliver();
+        if (!this.spawn("command")) {
+          this.set({ error: ERROR_TEXT["mic-start"], errorCode: "mic-start" });
+          this.deliver();
+        }
       }, 300);
     }
     this.armSilence(FIRST_WORDS_MS);
@@ -368,7 +388,9 @@ class SpeechEngine {
       this.handlers.onCommand?.(text);
     } else {
       if (text === "" && this.state.errorCode === "") {
-        this.set({ error: ERROR_TEXT["no-speech"], errorCode: "no-speech" });
+        // Say which of the three it was, so the agent knows what to fix.
+        const code = !this.cmd.audio ? "mic-silent" : this.cmd.sound ? "no-words" : "no-speech";
+        this.set({ error: ERROR_TEXT[code], errorCode: code });
       }
       this.handlers.onAbort?.();
     }
@@ -440,7 +462,7 @@ class SpeechEngine {
       if (!hasWakePhrase(t)) continue;
       // Same recognizer carries on as the command capture — no audio gap.
       this.recMode = "command";
-      this.cmd = freshCommand({ baseIndex: i, fromWake: true });
+      this.cmd = freshCommand({ baseIndex: i, fromWake: true, audio: true, sound: true }); // the mic is already live
       beep();
       this.set({ phase: "command", interim: "", error: "", errorCode: "" });
       this.handlers.onWake?.();
