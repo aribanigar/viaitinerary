@@ -363,5 +363,35 @@ test('validator: null command', () => {
   assert.equal(validateChingCommand(null).ok, false)
 })
 
+test('destination: generic words in state names are never a region ("west side trip")', () => {
+  const cat = {
+    hotels: [{ id: 1, name: 'Lalit', city: 'Srinagar' }],
+    destinations: [
+      { id: 1, name: 'Srinagar', state: 'Jammu and Kashmir' },
+      { id: 2, name: 'Kolkata', state: 'West Bengal' },
+      { id: 3, name: 'Leh', state: 'Ladakh' },
+      { id: 4, name: 'Lucknow', state: 'Uttar Pradesh' },
+    ],
+    vehicles: [],
+  }
+  const p = (t) => parseChingCommand(t, cat, { today })
+  assert.equal(p('west side trip for rahul srinagar 2 nights').destinationName, 'Srinagar')
+  assert.equal(p('north facing room trip for rahul srinagar 2 nights').destinationName, 'Srinagar')
+  assert.equal(p('kashmir trip for rahul 3 nights').destinationName, 'Kashmir')
+  assert.equal(p('ladakh trip for rahul 3 nights').destinationName, 'Ladakh')
+})
+test('destination: a day trip or a hotel city they do not sleep in is not the trip destination', () => {
+  const cat = {
+    hotels: [{ id: 1, name: 'Lalit', city: 'Srinagar' }, { id: 2, name: 'Khyber', city: 'Gulmarg' }],
+    destinations: [{ id: 1, name: 'Srinagar' }, { id: 2, name: 'Gulmarg' }, { id: 3, name: 'Sonamarg' }],
+    vehicles: [],
+  }
+  const p = (t) => parseChingCommand(t, cat, { today })
+  assert.equal(p('sonamarg day trip, 3 nights srinagar for rahul').destinationName, 'Srinagar')
+  assert.equal(p('day trip to sonamarg, 3 nights in srinagar for rahul').destinationName, 'Srinagar')
+  assert.equal(p('gulmarg, 3 nights in srinagar for rahul').destinationName, 'Srinagar')
+  assert.equal(p('gulmarg 2 nights for rahul').destinationName, 'Gulmarg')
+})
+
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed) process.exit(1)

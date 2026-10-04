@@ -743,22 +743,43 @@ export function parseChingCommand(text, catalog, { today } = {}) {
   }
   // A region said ("kashmir trip"): a word of a destination's state. It names
   // the trip (title, Destination field) ahead of a city mentioned later.
-  const REGION_SKIP = new Set(['and', 'the', 'of', 'pradesh', 'islands', 'island', 'union', 'territory', 'state', 'nadu', 'bengal'])
+  // Only a word that IS a region name counts ("kashmir", "ladakh", "himachal",
+  // "goa") — never the generic words inside state names ("West Bengal",
+  // "Uttar Pradesh", "Dadra and Nagar Haveli"), or "west side trip" would
+  // become a trip to "West".
+  const REGION_SKIP = new Set([
+    'and', 'the', 'of', 'pradesh', 'islands', 'island', 'union', 'territory', 'state', 'nadu', 'bengal',
+    'west', 'east', 'north', 'south', 'new', 'central', 'upper', 'lower', 'nagar', 'uttar', 'madhya',
+    'andhra', 'arunachal', 'haveli', 'daman', 'diu', 'dadra', 'nicobar', 'tamil',
+  ])
   let region = null
   for (const d of cat.destinations) {
     const words = normTokens(String(d.raw.state || '')).filter((w) => w.length >= 3 && !REGION_SKIP.has(w))
     for (const w of words) {
-      const i = tok.findIndex((t, k) => !used[k] && (t === w || (w.length >= 5 && t.length >= 5 && levRatio(t, w) >= 0.85)))
+      const i = tok.findIndex((t, k) => !used[k] && (t === w || (w.length >= 6 && t.length >= 6 && levRatio(t, w) >= 0.85)))
       if (i >= 0 && (!region || i < region.pos) && !cat.cities.has(w)) region = { pos: i, name: titleCase(w) }
     }
+  }
+  // A destination named only in passing ("Sonamarg day trip, 3 nights in
+  // Srinagar") isn't the trip's destination when nobody sleeps there: the
+  // first overnight city is.
+  const stayCities = stays.map((x) => x.stay.city).filter(Boolean)
+  const sleptIn = (name) => stayCities.some((c) => sameCity(c, name))
+  if (found && stayCities.length && !sleptIn(found.d.name) && !sleptIn(found.d.raw.city)) {
+    // …but a region-style destination ("Kashmir", no hotels of its own) still names the trip.
+    const hotelCity = cat.hotels.some((h) => sameCity(h.city, found.d.name))
+    const n = found.d.tokens.length
+    const around = [tok[found.pos - 3], tok[found.pos - 2], tok[found.pos - 1], '#', tok[found.pos + n], tok[found.pos + n + 1]].join(' ')
+    const dayTrip = /\bday trip(?: to)? #|# day trip\b|\bexcursion to #|# excursion\b/.test(around)
+    if (hotelCity || dayTrip) found = null
   }
   if (region && (!found || region.pos <= found.pos)) {
     destinationName = region.name
   } else if (found) {
     destinationId = found.d.id
     destinationName = found.d.name
-  } else if (stays.length && stays[0].stay.city) {
-    const city = stays[0].stay.city
+  } else if (stays.length && stays.slice().sort((x, y) => x.pos - y.pos)[0].stay.city) {
+    const city = stays.slice().sort((x, y) => x.pos - y.pos)[0].stay.city
     const d = cat.destinations.find((x) => sameCity(x.name, city) || sameCity(x.raw.city, city))
     destinationId = d ? d.id : null
     destinationName = d ? d.name : city
