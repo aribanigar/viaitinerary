@@ -101,7 +101,16 @@ const DestinationPicker = ({
             </div>
           </div>
           <div className="max-h-72 overflow-y-auto py-1">
-            {groups.length === 0 && (
+            {destinations.length === 0 && (
+              <div className="px-3 py-3 text-[11px] text-[#9aa3b2]">
+                No destinations loaded.{" "}
+                <a href="/destinations" className="font-bold text-[#181c22] underline">
+                  Add destinations
+                </a>{" "}
+                or refresh the page.
+              </div>
+            )}
+            {destinations.length > 0 && groups.length === 0 && (
               <div className="px-3 py-4 text-xs font-medium text-[#9aa3b2] text-center">
                 No destinations match "{query}"
               </div>

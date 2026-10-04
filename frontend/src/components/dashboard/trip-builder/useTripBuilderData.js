@@ -248,6 +248,9 @@ export const useTripBuilderData = ({
         }
       } catch (err) {
         console.error("Failed to load data:", err);
+        // Without this the builder opens with no destinations, hotels or
+        // cabs to pick from and nothing says why.
+        if (!urlTripId) toast.error("Couldn't load your destinations, hotels and cabs. Please refresh the page.");
 
         if (urlTripId) {
           toast.error("Unable to load this trip.");

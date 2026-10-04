@@ -2398,7 +2398,6 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                         setItinerary={setItinerary}
                         removeDay={removeDay}
                         addDayFromDestination={addDayFromDestination}
-                        addDay={addDay}
                         formatImageUrl={formatImageUrl}
                       />
                     )}

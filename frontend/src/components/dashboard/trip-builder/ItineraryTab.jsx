@@ -1,5 +1,5 @@
 import React from "react";
-import { Image as ImageIcon, MapPin, Plus, Trash2 } from "lucide-react";
+import { Image as ImageIcon, MapPin, Trash2 } from "lucide-react";
 import { destinationActivityLabels } from "../../../utils/destinationActivities";
 import DestinationPicker from "./DestinationPicker";
 
@@ -9,7 +9,6 @@ const ItineraryTab = ({
   setItinerary,
   removeDay,
   addDayFromDestination,
-  addDay,
   formatImageUrl,
 }) => {
   return (
@@ -18,29 +17,15 @@ const ItineraryTab = ({
         <h3 className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-[0.2em]">
           Plan your schedule
         </h3>
-        <div className="flex items-center gap-2">
-          {availableDestinations.length > 0 && (
-            <div className="w-64">
-              <DestinationPicker
-                destinations={availableDestinations}
-                value=""
-                onSelect={(dest) => addDayFromDestination(dest)}
-                placeholder="+ Add Day from Destination"
-              />
-            </div>
-          )}
-          {/* A day for a place that isn't in the Destinations catalog yet. */}
-          {addDay && (
-            <button
-              type="button"
-              onClick={addDay}
-              title="Add a blank day (type the place yourself)"
-              className="flex items-center gap-1 shrink-0 bg-[#f3f3f4] border border-black/10 rounded-lg py-2 px-3 text-[11px] font-bold text-[#3a4250] hover:bg-black/[0.06] transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Custom Day
-            </button>
-          )}
+        {/* Always shown: with no destinations loaded it says so (and links to
+            Destinations) instead of disappearing. */}
+        <div className="w-64">
+          <DestinationPicker
+            destinations={availableDestinations}
+            value=""
+            onSelect={(dest) => addDayFromDestination(dest)}
+            placeholder="+ Add Day from Destination"
+          />
         </div>
       </div>
 
@@ -182,8 +167,8 @@ const ItineraryTab = ({
         <div className="bg-[#f3f3f4] border-2 border-dashed border-black/10 rounded-xl p-12 text-center">
           <MapPin className="w-10 h-10 text-[#c9ced6] mx-auto mb-4" />
           <p className="text-sm font-bold text-[#9aa3b2]">
-            No days added. Use "+ Add Day from Destination" above, or
-            "Custom Day" for a place that isn't in your destinations.
+            No days added. Use the "Add Saved Destination" button above to
+            start.
           </p>
         </div>
       )}
