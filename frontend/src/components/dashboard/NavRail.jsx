@@ -10,6 +10,7 @@ import {
   Package,
   MapPin,
   Hotel,
+  Ticket,
   Car,
   Settings as SettingsIcon,
   Users,
@@ -104,6 +105,7 @@ const NAV_TREE = [
     children: [
       { label: "Accommodation", icon: Hotel, to: "/accommodation" },
       { label: "Transportation", icon: Car, to: "/transportation" },
+      { label: "Activities", icon: Ticket, to: "/activities" },
       { label: "Destinations", icon: MapPin, to: "/destinations" },
       {
         label: "Policies",

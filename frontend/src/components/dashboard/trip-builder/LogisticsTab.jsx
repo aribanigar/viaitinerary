@@ -1,4 +1,5 @@
 import React from "react";
+import { dateForDay } from "../../../utils/activityRates";
 import { Briefcase, Hotel, MapPin, Pencil, Plus, Trash2, Layers, Ticket } from "lucide-react";
 
 const parseAccommodationDate = (dateValue) => {
@@ -44,6 +45,7 @@ const LogisticsTab = ({
   setIsTransportModalOpen,
   formatImageUrl,
   tripActivities,
+  availableActivities = [],
   calculateActivityCost,
   openEditActivityModal,
   removeActivity,
@@ -442,56 +444,93 @@ const LogisticsTab = ({
         </div>
 
         <div className="space-y-4">
-          {tripActivities.map((item) => (
-            <div
-              key={item.id}
-              className="group relative bg-[#f9f9f9]/50 border border-black/5 rounded-xl p-5 transition-all hover:bg-white hover:shadow-lg hover:shadow-slate-200/40"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    {item.dayNumber && (
-                      <span className="text-[10px] font-semibold text-[#181c22] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                        Day {item.dayNumber}
-                      </span>
-                    )}
-                    <h4 className="text-sm font-semibold text-[#181c22]">
-                      {item.name}
-                    </h4>
-                    {item.location && (
-                      <>
-                        <span className="w-1 h-1 rounded-full bg-[#d4d8dd]"></span>
-                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#181c22] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
-                          <MapPin className="w-3 h-3" />
-                          {item.location}
+          {tripActivities.map((item) => {
+            const catalog = availableActivities.find((a) => a.id === item.activityId);
+            const photo = item.photo || catalog?.image_url || null;
+            const adults = parseInt(item.ticketCount, 10) || 1;
+            const children = parseInt(item.childCount, 10) || 0;
+            const date = dateForDay(tripInfo.startDate, item.dayNumber);
+            return (
+              <div
+                key={item.id}
+                className="bg-[#f9f9f9]/50 border border-black/5 rounded-xl p-6 transition-all hover:bg-white hover:shadow-xl hover:shadow-slate-200/50 group"
+              >
+                <div className="flex justify-between items-start mb-5">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      {item.dayNumber && (
+                        <span className="text-[10px] font-semibold text-[#181c22] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                          Day {item.dayNumber}
+                          {date &&
+                            ` · ${new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
                         </span>
-                      </>
-                    )}
-                    {item.markupPercentage !== "" && item.markupPercentage != null && (
-                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        {item.markupPercentage}% margin
-                      </span>
+                      )}
+                    </div>
+                    <h4 className="text-lg font-semibold text-[#181c22] flex items-center gap-2 flex-wrap">
+                      {item.name}
+                      {item.markupPercentage !== "" && item.markupPercentage != null && (
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                          {item.markupPercentage}% margin
+                        </span>
+                      )}
+                    </h4>
+                    <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                      {item.location && (
+                        <>
+                          <span className="text-xs font-bold text-[#9aa3b2] uppercase tracking-wider">
+                            {item.location}
+                          </span>
+                          <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
+                        </>
+                      )}
+                      {catalog?.category && (
+                        <>
+                          <div className="bg-white border border-black/5 px-3 py-1 rounded-md text-[#181c22] text-[10px] font-semibold uppercase tracking-wider shadow-sm">
+                            {catalog.category}
+                          </div>
+                          <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
+                        </>
+                      )}
+                      {item.rateOption && (
+                        <>
+                          <div className="bg-[#f3f3f4] border border-black/5 px-3 py-1 rounded-md text-[#181c22] text-[10px] font-semibold uppercase tracking-wider shadow-sm">
+                            {item.rateOption}
+                          </div>
+                          <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
+                        </>
+                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-wider">
+                          Adults:
+                        </span>
+                        <span className="text-xs font-bold text-[#5b6472]">
+                          {adults} × ₹{Number(item.pricePerTicket || 0).toLocaleString("en-IN")}
+                        </span>
+                      </div>
+                      {children > 0 && (
+                        <>
+                          <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-wider">
+                              Children:
+                            </span>
+                            <span className="text-xs font-bold text-[#5b6472]">
+                              {children} × ₹{Number(item.childPrice || 0).toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {item.notes && (
+                      <p className="text-[11px] font-medium text-[#9aa3b2] mt-2">
+                        {item.notes}
+                      </p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-[#8a93a2]">
-                      {item.ticketCount || 1} {(item.ticketCount || 1) > 1 ? "persons" : "person"} × ₹{Number(item.pricePerTicket || 0).toLocaleString("en-IN")} per person
-                    </span>
-                    {item.notes && (
-                      <>
-                        <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
-                        <span className="text-[11px] font-medium text-[#9aa3b2]">
-                          {item.notes}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="bg-white border border-black/5 px-3 py-1.5 rounded-lg text-[#5b6472] text-[10px] font-bold shadow-sm">
-                    ₹{calculateActivityCost(item).toLocaleString("en-IN")}
-                  </div>
-                  <div className="flex items-center gap-1">
+                    <div className="bg-white border border-black/5 px-3 py-1.5 rounded-lg text-[#5b6472] text-[10px] font-bold shadow-sm">
+                      ₹{calculateActivityCost(item).toLocaleString("en-IN")}
+                    </div>
                     <button
                       onClick={() => openEditActivityModal(item)}
                       className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#181c22] active:bg-[#f3f3f4] active:text-[#181c22] rounded-xl transition-all"
@@ -506,9 +545,26 @@ const LogisticsTab = ({
                     </button>
                   </div>
                 </div>
+
+                <div className="w-full h-32 bg-[#eef0f1] rounded-xl overflow-hidden flex items-center justify-center border-2 border-black/5">
+                  {photo ? (
+                    <img
+                      src={formatImageUrl(photo)}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Ticket className="w-6 h-6 text-[#c9ced6]" />
+                      <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest">
+                        No Photo Available
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           <button
             onClick={openNewActivityModal}

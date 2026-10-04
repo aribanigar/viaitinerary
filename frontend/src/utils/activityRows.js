@@ -6,7 +6,9 @@ export const ACTIVITIES_PER_PAGE = 9;
 
 /** One activity row as the templates print it (builder state or API shape). */
 export function activityRow(item) {
-  const persons = Number(item.ticketCount ?? item.ticket_count) || 1;
+  const persons =
+    (Number(item.ticketCount ?? item.ticket_count) || 1) +
+    (Number(item.childCount ?? item.child_count) || 0);
   const day = item.dayNumber ?? item.day_number;
   return {
     key: item.id,

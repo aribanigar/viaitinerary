@@ -7,6 +7,9 @@ const { GET, PUT, DELETE } = catalogItem({
   model: "activity",
   mapBody: mapActivity,
   serialize: catalogActivity,
-  include: { destination: { select: { id: true, name: true } } },
+  include: {
+    destination: { select: { id: true, name: true } },
+    blackouts: { orderBy: { startDate: "asc" } },
+  },
 });
 export { GET, PUT, DELETE };

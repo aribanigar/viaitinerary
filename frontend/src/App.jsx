@@ -48,6 +48,7 @@ const DestinationForm = lazy(() => import("./pages/dashboard/DestinationForm"));
 const Accommodation = lazy(
   () => import("./components/dashboard/Accommodation"),
 );
+const ActivityForm = lazy(() => import("./pages/dashboard/ActivityForm"));
 const AccommodationForm = lazy(
   () => import("./pages/dashboard/AccommodationForm"),
 );
@@ -367,6 +368,8 @@ function App() {
                       element={<ComplementaryServices />}
                     />
                     <Route path="/activities" element={<Activities />} />
+                    <Route path="/activities/add" element={<ActivityForm />} />
+                    <Route path="/activities/edit/:id" element={<ActivityForm />} />
                     <Route
                       path="/destinations/add"
                       element={<DestinationForm />}

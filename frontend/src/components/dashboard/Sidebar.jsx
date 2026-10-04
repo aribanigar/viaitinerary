@@ -492,7 +492,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/activities")
-                          ? "bg-[#e7f63c] text-[#181c22] shadow-lg shadow-[#e7f63c]/30 font-semibold"
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
                           : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
                       }`}
                     >

@@ -110,7 +110,7 @@ export function quotationWorkbook(trip, settings) {
       sheet(
         [
           ["Day", "Activity", "Location", "Persons"],
-          ...trip.tripActivities.map((a) => [a.dayNumber ?? "", a.name || "", a.location || "", a.ticketCount || 1]),
+          ...trip.tripActivities.map((a) => [a.dayNumber ?? "", a.name || "", a.location || "", (a.ticketCount || 1) + (a.childCount || 0)]),
         ],
         [6, 32, 18, 9],
       ),

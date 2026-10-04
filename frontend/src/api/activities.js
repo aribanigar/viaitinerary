@@ -31,3 +31,13 @@ export const deleteActivity = async (id, token) => {
     token,
   });
 };
+
+export const getActivityUsage = async (id, token) => request(`/activities/${id}/usage`, { token });
+
+export const getActivityBlackouts = async (id, token) => request(`/activities/${id}/blackouts`, { token });
+
+export const createActivityBlackout = async (id, data, token) =>
+  request(`/activities/${id}/blackouts`, { method: "POST", token, body: JSON.stringify(data) });
+
+export const deleteActivityBlackout = async (id, blackoutId, token) =>
+  request(`/activities/${id}/blackouts/${blackoutId}`, { method: "DELETE", token });

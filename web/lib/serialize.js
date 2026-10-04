@@ -103,7 +103,12 @@ export function serializeTripActivity(a) {
     day_number: a.dayNumber,
     ticket_count: a.ticketCount,
     price_per_ticket: num(a.pricePerTicket),
-    total_cost: num(a.pricePerTicket) * (a.ticketCount ?? 1),
+    child_count: a.childCount ?? 0,
+    child_price: num(a.childPrice),
+    cost_per_ticket: num(a.costPerTicket),
+    child_cost: num(a.childCost),
+    rate_option: a.rateOption ?? null,
+    total_cost: num(a.pricePerTicket) * (a.ticketCount ?? 1) + (num(a.childPrice) || 0) * (a.childCount ?? 0),
     markup_percentage: num(a.markupPercentage),
     notes: a.notes,
     activity: a.activity ? { id: a.activity.id, name: a.activity.name, selling_price: num(a.activity.sellingPrice) } : null,
@@ -208,6 +213,10 @@ export function serializeActivityLite(a) {
   return {
     id: a.id, name: a.name, destination_id: a.destinationId ?? null,
     selling_price: num(a.sellingPrice), duration_hours: num(a.durationHours),
+    // For the Trip Builder's activity picker (priced like a hotel's rate sheet).
+    cost: num(a.cost), child_price: num(a.childPrice), child_cost: num(a.childCost),
+    price_sections: a.priceSections ?? [], category: a.category ?? null,
+    city: a.city ?? null, image_url: a.imagePath ?? null, description: a.description ?? null,
   };
 }
 export function serializeHotel(h) {
@@ -250,8 +259,23 @@ export function catalogActivity(a) {
     destination_name: a.destination?.name ?? null,
     name: a.name, description: a.description, cost: num(a.cost),
     selling_price: num(a.sellingPrice), duration_hours: num(a.durationHours),
-    is_active: a.isActive ?? true, user: userLite(a.user),
+    is_active: a.isActive ?? true,
+    image_path: a.imagePath ?? null, image_url: a.imagePath ?? null,
+    category: a.category ?? null, supplier_name: a.supplierName ?? null,
+    email: a.email ?? null, phone: a.phone ?? null, address: a.address ?? null,
+    city: a.city ?? null, state: a.state ?? null, country: a.country ?? null,
+    child_cost: num(a.childCost), child_price: num(a.childPrice),
+    price_sections: a.priceSections ?? [], capacity_per_day: a.capacityPerDay ?? null,
+    inclusions: a.inclusions ?? null, cancellation_policy: a.cancellationPolicy ?? null,
+    blackouts: Array.isArray(a.blackouts) ? a.blackouts.map(catalogActivityBlackout) : undefined,
+    user: userLite(a.user),
     created_at: iso(a.createdAt), updated_at: iso(a.updatedAt),
+  };
+}
+export function catalogActivityBlackout(b) {
+  return {
+    id: b.id, activity_id: b.activityId, type: b.type,
+    start_date: dateOnly(b.startDate), end_date: dateOnly(b.endDate), note: b.note,
   };
 }
 export function catalogHotel(h) {

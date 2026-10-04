@@ -275,6 +275,21 @@ model Transportation {
 // count actually being purchased for it. Price/name are copied onto the row
 // at add-time (like Accommodation/Transportation do for hotel/vehicle) so a
 // later catalog edit or deletion never changes an already-built itinerary.
+model ActivityBlackout {
+  id         Int      @id @default(autoincrement())
+  activityId Int      @map("activity_id")
+  type       String   @default("blackout") // "stop_sale" (hard block) | "blackout" (warn, allow override)
+  startDate  DateTime @map("start_date")
+  endDate    DateTime @map("end_date")
+  note       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@map("activity_blackouts")
+}
+
 model TripActivity {
   id               Int      @id @default(autoincrement())
   tripId           Int      @map("trip_id")
@@ -285,6 +300,14 @@ model TripActivity {
   // ticketCount is the number of persons the per-person price is charged for.
   ticketCount      Int      @default(1) @map("ticket_count")
   pricePerTicket   Decimal  @map("price_per_ticket") @db.Decimal(12, 2)
+  // Children (5–12) on the same activity, priced per child; 0 = none.
+  childCount       Int      @default(0) @map("child_count")
+  childPrice       Decimal? @map("child_price") @db.Decimal(12, 2)
+  // The B2B cost behind the prices above (from the catalog rate), and which
+  // rate option was used — for the cost / profit breakdown.
+  costPerTicket    Decimal? @map("cost_per_ticket") @db.Decimal(12, 2)
+  childCost        Decimal? @map("child_cost") @db.Decimal(12, 2)
+  rateOption       String?  @map("rate_option")
   markupPercentage Decimal? @map("markup_percentage") @db.Decimal(6, 2)
   notes            String?
   createdAt        DateTime @default(now()) @map("created_at")
@@ -339,11 +362,33 @@ model Activity {
   sellingPrice  Decimal  @map("selling_price") @db.Decimal(12, 2) // price per ticket
   durationHours Decimal? @map("duration_hours") @db.Decimal(6, 2)
   isActive      Boolean  @default(true) @map("is_active")
+
+  // Catalog detail, the same depth as a hotel (Activities page + form).
+  imagePath          String?  @map("image_path")
+  category           String? // sightseeing | adventure | cultural | water | snow | experience | transfer | other
+  supplierName       String?  @map("supplier_name") // the operator who runs it
+  email              String? // supplier contact, for confirmations
+  phone              String?
+  address            String?
+  city               String?
+  state              String?
+  country            String?
+  // Child (5–12) price per person; cost/sellingPrice above are per adult.
+  childCost          Decimal? @map("child_cost") @db.Decimal(12, 2)
+  childPrice         Decimal? @map("child_price") @db.Decimal(12, 2)
+  // Seasonal / per-option rates: [{ option, cost, price, child_cost,
+  // child_price, valid_from, valid_to }] — cost = B2B, price = selling, per person.
+  priceSections      Json?    @map("price_sections")
+  capacityPerDay     Int?     @map("capacity_per_day")
+  inclusions         String?
+  cancellationPolicy String?  @map("cancellation_policy")
+
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   destination Destination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
   tripActivities TripActivity[]
+  blackouts      ActivityBlackout[]
 
   @@index([userId])
   @@index([destinationId])

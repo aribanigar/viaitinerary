@@ -3,6 +3,13 @@ import { Minus, Plus, AlertTriangle, Ban, X, Trash2, Layers } from "lucide-react
 import Modal from "../../common/Modal";
 import DatePicker from "../../common/DatePicker";
 import { getHotelBlackouts } from "../../../api/hotels";
+import { getActivityBlackouts } from "../../../api/activities";
+import {
+  activityRateOptions,
+  findActivityRate,
+  dateForDay,
+  dayForDate,
+} from "../../../utils/activityRates";
 import {
   normalizeRoomTypeValue,
   hotelCategoryLabel,
@@ -927,6 +934,41 @@ export const TransportModal = ({
 // Activities are filtered to ones tagged to the trip's own destination, plus
 // any not tied to a specific destination (agency-wide, e.g. a generic
 // photography add-on) — mirrors how Vehicles aren't destination-pinned.
+// The city an activity belongs to: its own city, else its destination's name.
+const activityCityOf = (activity, destinations) =>
+  (activity?.city ||
+    destinations.find((d) => d.id === activity?.destination_id)?.name ||
+    "").trim();
+
+const fieldLabel =
+  "block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none";
+const selectCls =
+  "w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer";
+const inputCls =
+  "w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]";
+
+const Counter = ({ value, min, onChange }) => (
+  <div className="flex items-center gap-3">
+    <button
+      type="button"
+      onClick={() => onChange(Math.max(min, (parseInt(value, 10) || 0) - 1))}
+      className="w-8 h-8 rounded-lg bg-[#eef0f1] flex items-center justify-center hover:bg-[#e6e8eb] transition-colors"
+    >
+      <Minus className="w-3 h-3 text-[#5b6472]" />
+    </button>
+    <span className="font-semibold text-[#181c22] w-4 text-center text-sm">
+      {parseInt(value, 10) || min}
+    </span>
+    <button
+      type="button"
+      onClick={() => onChange((parseInt(value, 10) || 0) + 1)}
+      className="w-8 h-8 rounded-lg bg-[#eef0f1] flex items-center justify-center hover:bg-[#e6e8eb] transition-colors"
+    >
+      <Plus className="w-3 h-3 text-[#5b6472]" />
+    </button>
+  </div>
+);
+
 export const ActivityModal = ({
   isOpen,
   onClose,
@@ -937,11 +979,74 @@ export const ActivityModal = ({
   availableActivities,
   availableDestinations = [],
   tripInfo,
+  token,
+  urlTripId,
   tripMarginPercentage,
 }) => {
-  const relevantActivities = availableActivities.filter(
-    (a) => !a.destination_id || a.destination_id === tripInfo.destinationId,
+  const cities = availableActivities
+    .map((a) => activityCityOf(a, availableDestinations))
+    .filter((c, i, all) => c && all.indexOf(c) === i)
+    .sort((a, b) => a.localeCompare(b));
+
+  const activitiesInCity = availableActivities.filter(
+    (a) => !activityForm.city || activityCityOf(a, availableDestinations) === activityForm.city,
   );
+  const selected = availableActivities.find((a) => a.id === activityForm.activityId);
+  const rateOptions = activityRateOptions(selected);
+  const date = activityForm.date || dateForDay(tripInfo.startDate, activityForm.dayNumber);
+
+  // Re-price from the catalog's rate sheet (option + the date's season).
+  const withRate = (form, activity, { option, date: when } = {}) => {
+    if (!activity) return form;
+    const rate = findActivityRate(activity, {
+      option: option ?? form.rateOption ?? "",
+      date: when ?? form.date ?? "",
+    });
+    return {
+      ...form,
+      rateOption: rate.option,
+      pricePerTicket: rate.price || "",
+      // No child rate on the sheet → children pay the adult rate.
+      childPrice: rate.childPrice || rate.price || "",
+      costPerTicket: rate.cost || "",
+      childCost: rate.childCost || rate.cost || "",
+    };
+  };
+
+  // Fetched blackouts, keyed by the activity they belong to.
+  const [fetchedBlackouts, setFetchedBlackouts] = useState({ id: null, rows: [] });
+  useEffect(() => {
+    const id = activityForm.activityId;
+    if (!id || !token) return undefined;
+    let cancelled = false;
+    getActivityBlackouts(id, token)
+      .then((resp) => {
+        if (!cancelled) setFetchedBlackouts({ id, rows: resp.data || [] });
+      })
+      .catch(() => {
+        if (!cancelled) setFetchedBlackouts({ id, rows: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activityForm.activityId, token]);
+  const blackouts =
+    fetchedBlackouts.id === activityForm.activityId ? fetchedBlackouts.rows : [];
+
+  const stopSaleDates = blackouts
+    .filter((b) => b.type === "stop_sale")
+    .flatMap((b) => expandDateRange(b.start_date, b.end_date));
+  const blackoutWarnDates = blackouts
+    .filter((b) => b.type === "blackout")
+    .flatMap((b) => expandDateRange(b.start_date, b.end_date));
+  const dateBlocked = date && stopSaleDates.includes(date);
+  const dateWarn = date && blackoutWarnDates.includes(date);
+
+  const adults = parseInt(activityForm.ticketCount, 10) || 1;
+  const children = parseInt(activityForm.childCount, 10) || 0;
+  const adultPrice = Number(activityForm.pricePerTicket || 0);
+  const childPrice = Number(activityForm.childPrice || 0);
+  const total = adults * adultPrice + children * childPrice;
 
   return (
     <Modal
@@ -952,182 +1057,224 @@ export const ActivityModal = ({
       onSubmit={onSubmit}
     >
       <div className="space-y-6 flex flex-col">
-        <div>
-          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-            Activity
-          </label>
-          <select
-            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-3 px-4 text-xs font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
-            value={activityForm.activityId || ""}
-            onChange={(e) => {
-              const selected = relevantActivities.find(
-                (a) => String(a.id) === e.target.value,
-              );
-              if (selected) {
-                const destination = availableDestinations.find(
-                  (d) => d.id === selected.destination_id,
-                );
-                setActivityForm({
-                  ...activityForm,
-                  activityId: selected.id,
-                  name: selected.name,
-                  pricePerTicket: selected.selling_price ?? "",
-                  location: destination?.name || activityForm.location,
-                });
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={fieldLabel}>City</label>
+            <select
+              className={selectCls}
+              value={activityForm.city || ""}
+              onChange={(e) =>
+                setActivityForm({ ...activityForm, city: e.target.value })
               }
-            }}
-          >
-            <option value="">Select an Activity</option>
-            {relevantActivities.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-            Activity Name
-          </label>
-          <input
-            type="text"
-            placeholder="e.g. Gondola Ride"
-            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
-            value={activityForm.name}
-            onChange={(e) =>
-              setActivityForm({ ...activityForm, name: e.target.value })
-            }
-          />
-        </div>
-
-        <div>
-          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-            Location
-          </label>
-          <input
-            type="text"
-            placeholder="e.g. Gulmarg"
-            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
-            value={activityForm.location}
-            onChange={(e) =>
-              setActivityForm({ ...activityForm, location: e.target.value })
-            }
-          />
+            >
+              <option value="">All Cities</option>
+              {cities.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={fieldLabel}>Activity</label>
+            <select
+              className={selectCls}
+              value={activityForm.activityId || ""}
+              onChange={(e) => {
+                const activity = availableActivities.find(
+                  (a) => String(a.id) === e.target.value,
+                );
+                if (!activity) return;
+                const city = activityCityOf(activity, availableDestinations);
+                setActivityForm(
+                  withRate(
+                    {
+                      ...activityForm,
+                      activityId: activity.id,
+                      name: activity.name,
+                      city: activityForm.city || city,
+                      location: city || activityForm.location,
+                      photo: activity.image_url || null,
+                    },
+                    activity,
+                    { option: activityRateOptions(activity)[0] || "", date },
+                  ),
+                );
+              }}
+            >
+              <option value="">Select Activity</option>
+              {activitiesInCity.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-              Number of Persons (1 ticket each)
-            </label>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  const current = parseInt(activityForm.ticketCount || 1, 10);
-                  setActivityForm({
-                    ...activityForm,
-                    ticketCount: Math.max(1, current - 1),
-                  });
-                }}
-                className="w-8 h-8 rounded-lg bg-[#eef0f1] flex items-center justify-center hover:bg-[#e6e8eb] transition-colors"
-              >
-                <Minus className="w-3 h-3 text-[#5b6472]" />
-              </button>
-              <span className="font-semibold text-[#181c22] w-4 text-center text-sm">
-                {activityForm.ticketCount || 1}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  const current = parseInt(activityForm.ticketCount || 1, 10);
-                  setActivityForm({
-                    ...activityForm,
-                    ticketCount: current + 1,
-                  });
-                }}
-                className="w-8 h-8 rounded-lg bg-[#eef0f1] flex items-center justify-center hover:bg-[#e6e8eb] transition-colors"
-              >
-                <Plus className="w-3 h-3 text-[#5b6472]" />
-              </button>
-            </div>
+            <label className={fieldLabel}>Date</label>
+            <DatePicker
+              value={date}
+              onChange={(dateString) => {
+                const next = {
+                  ...activityForm,
+                  date: dateString,
+                  dayNumber: dayForDate(tripInfo.startDate, dateString),
+                };
+                setActivityForm(
+                  selected ? withRate(next, selected, { date: dateString }) : next,
+                );
+              }}
+              className="w-full"
+              options={{
+                dateFormat: "d-m-Y",
+                minDate: urlTripId ? null : tripInfo.startDate || "today",
+                excludeDates: stopSaleDates,
+              }}
+            />
+            {activityForm.dayNumber && (
+              <p className="mt-1.5 text-[11px] font-bold text-[#5b6472]">
+                Day {activityForm.dayNumber} of the trip
+              </p>
+            )}
+            {dateBlocked && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-red-600">
+                <Ban className="w-3 h-3" /> Activity is stop-sale on this date — pick another.
+              </p>
+            )}
+            {!dateBlocked && dateWarn && (
+              <p className="mt-1.5 flex items-center gap-1.5 text-[11px] font-bold text-amber-600">
+                <AlertTriangle className="w-3 h-3" /> Blackout date — confirm with the supplier before booking.
+              </p>
+            )}
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-              Price per Person (₹)
-            </label>
+            <label className={fieldLabel}>Rate Option</label>
+            <select
+              className={selectCls}
+              value={activityForm.rateOption || ""}
+              disabled={!selected}
+              onChange={(e) =>
+                setActivityForm(
+                  withRate(activityForm, selected, { option: e.target.value, date }),
+                )
+              }
+            >
+              <option value="">
+                {selected ? "Standard rate" : "Select Activity First"}
+              </option>
+              {rateOptions.map((o) => (
+                <option key={o} value={o}>
+                  {o}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={fieldLabel}>Adults</label>
+            <Counter
+              value={activityForm.ticketCount}
+              min={1}
+              onChange={(v) => setActivityForm({ ...activityForm, ticketCount: String(v) })}
+            />
+          </div>
+          <div>
+            <label className={fieldLabel}>Children</label>
+            <Counter
+              value={activityForm.childCount}
+              min={0}
+              onChange={(v) => setActivityForm({ ...activityForm, childCount: String(v) })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={fieldLabel}>Price per Adult (₹)</label>
             <input
               type="number"
               step="0.01"
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
+              className={inputCls}
               value={activityForm.pricePerTicket}
               onChange={(e) =>
-                setActivityForm({
-                  ...activityForm,
-                  pricePerTicket: e.target.value,
-                })
+                setActivityForm({ ...activityForm, pricePerTicket: e.target.value })
+              }
+            />
+          </div>
+          <div>
+            <label className={fieldLabel}>Price per Child (₹)</label>
+            <input
+              type="number"
+              step="0.01"
+              className={inputCls}
+              value={activityForm.childPrice ?? ""}
+              onChange={(e) =>
+                setActivityForm({ ...activityForm, childPrice: e.target.value })
               }
             />
           </div>
         </div>
 
         <p className="text-xs font-semibold text-[#5b6472] bg-[#f3f3f4] rounded-xl px-4 py-2.5">
-          {parseInt(activityForm.ticketCount, 10) || 1} ×{" "}
-          ₹{Number(activityForm.pricePerTicket || 0).toLocaleString("en-IN")} ={" "}
+          {adults} × ₹{adultPrice.toLocaleString("en-IN")}
+          {children > 0 && ` + ${children} × ₹${childPrice.toLocaleString("en-IN")}`} ={" "}
           <span className="text-[#181c22] font-bold">
-            ₹
-            {(
-              (parseInt(activityForm.ticketCount, 10) || 1) *
-              Number(activityForm.pricePerTicket || 0)
-            ).toLocaleString("en-IN")}
+            ₹{total.toLocaleString("en-IN")}
           </span>{" "}
           added to the trip cost
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-              Day (optional)
-            </label>
+            <label className={fieldLabel}>Activity Name</label>
             <input
-              type="number"
-              min="1"
-              placeholder="e.g. 2"
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
-              value={activityForm.dayNumber}
+              type="text"
+              placeholder="e.g. Gondola Ride"
+              className={inputCls}
+              value={activityForm.name}
               onChange={(e) =>
-                setActivityForm({ ...activityForm, dayNumber: e.target.value })
+                setActivityForm({ ...activityForm, name: e.target.value })
               }
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-              Markup Override %
-            </label>
+            <label className={fieldLabel}>Location</label>
             <input
-              type="number"
-              step="0.01"
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6]"
-              placeholder={`Trip default: ${tripMarginPercentage || 0}%`}
-              value={activityForm.markupPercentage}
+              type="text"
+              placeholder="e.g. Gulmarg"
+              className={inputCls}
+              value={activityForm.location}
               onChange={(e) =>
-                setActivityForm({
-                  ...activityForm,
-                  markupPercentage: e.target.value,
-                })
+                setActivityForm({ ...activityForm, location: e.target.value })
               }
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
-            Notes
-          </label>
+          <label className={fieldLabel}>Markup Override %</label>
+          <input
+            type="number"
+            step="0.01"
+            className={inputCls}
+            placeholder={`Trip default: ${tripMarginPercentage || 0}%`}
+            value={activityForm.markupPercentage}
+            onChange={(e) =>
+              setActivityForm({ ...activityForm, markupPercentage: e.target.value })
+            }
+          />
+        </div>
+
+        <div>
+          <label className={fieldLabel}>Notes</label>
           <textarea
             placeholder="e.g. Weather-dependent, min age 8"
-            className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6] min-h-20 resize-none"
+            className={`${inputCls} min-h-20 resize-none`}
             value={activityForm.notes}
             onChange={(e) =>
               setActivityForm({ ...activityForm, notes: e.target.value })

@@ -237,23 +237,43 @@ export function mapComplementaryService(body) {
   };
 }
 
-export function mapActivity(body) {
+export async function mapActivity(body) {
   if (!body.name) return { error: "name is required." };
   if (body.selling_price === undefined || body.selling_price === null || body.selling_price === "")
     return { error: "selling_price is required." };
-  return {
-    data: {
-      name: body.name,
-      description: body.description ?? null,
-      cost: body.cost !== undefined && body.cost !== "" ? Number(body.cost) : null,
-      sellingPrice: Number(body.selling_price),
-      durationHours:
-        body.duration_hours !== undefined && body.duration_hours !== "" ? Number(body.duration_hours) : null,
-      destinationId:
-        body.destination_id !== undefined && body.destination_id !== "" && body.destination_id !== null
-          ? parseInt(body.destination_id, 10)
-          : null,
-      isActive: body.is_active !== undefined ? !!body.is_active : true,
-    },
+  // Fields beyond the original six are written only when the request carries
+  // them, so an older client (or a partial save) never blanks them.
+  const has = (k) => Object.prototype.hasOwnProperty.call(body, k);
+  const text = (k) => (has(k) ? (String(body[k] ?? "").trim() || null) : undefined);
+  const money = (k) => (has(k) ? (body[k] === "" || body[k] === null ? null : Number(body[k])) : undefined);
+  const data = {
+    name: body.name,
+    description: body.description ?? null,
+    cost: body.cost !== undefined && body.cost !== "" ? Number(body.cost) : null,
+    sellingPrice: Number(body.selling_price),
+    durationHours:
+      body.duration_hours !== undefined && body.duration_hours !== "" ? Number(body.duration_hours) : null,
+    destinationId:
+      body.destination_id !== undefined && body.destination_id !== "" && body.destination_id !== null
+        ? parseInt(body.destination_id, 10)
+        : null,
+    isActive: body.is_active !== undefined ? !!body.is_active : true,
+    category: text("category"),
+    supplierName: text("supplier_name"),
+    email: text("email"),
+    phone: text("phone"),
+    address: text("address"),
+    city: text("city"),
+    state: text("state"),
+    country: text("country"),
+    childCost: money("child_cost"),
+    childPrice: money("child_price"),
+    priceSections: has("price_sections") ? (Array.isArray(body.price_sections) ? body.price_sections : []) : undefined,
+    capacityPerDay: has("capacity_per_day") ? parseInt(body.capacity_per_day, 10) || null : undefined,
+    inclusions: text("inclusions"),
+    cancellationPolicy: text("cancellation_policy"),
   };
+  if (body.photo) data.imagePath = await persistImage(String(body.photo), "activities");
+  else if (has("remove_photo") && body.remove_photo) data.imagePath = null;
+  return { data };
 }

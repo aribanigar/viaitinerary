@@ -14,6 +14,7 @@
 import { hotelInCity, samePlace } from './places.js'
 import { getStays, nightsOf, sortDays } from './editTripUtil.js'
 import { isIncludedCab } from './cabPlan.js'
+import { tripActivityTotal } from '../activityRates.js'
 
 const firstPrice = (h) => Number((h?.price_sections || [])[0]?.price) || 0
 const stars = (v) => Number(String(v || '').match(/\d/)?.[0]) || 0
@@ -89,7 +90,7 @@ export function cheaperPlan(snapshot, catalog = {}) {
 
   const acts = (s.tripActivities || []).map((a) => ({
     name: a.name,
-    cost: (Number(a.pricePerTicket) || 0) * (Number(a.ticketCount) || 1),
+    cost: tripActivityTotal(a),
   }))
   const optional = acts.filter((a) => a.cost > 0).sort((a, b) => b.cost - a.cost)
 

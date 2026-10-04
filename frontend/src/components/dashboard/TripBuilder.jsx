@@ -69,6 +69,7 @@ import PricingTab from "./trip-builder/PricingTab";
 import TripPayments from "./trip-builder/TripPayments";
 import TripBookings from "./trip-builder/TripBookings";
 import { HotelModal, TransportModal, ActivityModal } from "./trip-builder/TripBuilderModals";
+import { tripActivityTotal, dateForDay } from "../../utils/activityRates";
 import TripInfoTab from "./trip-builder/TripInfoTab";
 import { registerChingEditor } from "../../utils/ching/editorBridge";
 import { getChingMemory, invalidateChingMemory } from "../../utils/ching/memoryStore";
@@ -511,13 +512,18 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     name: "",
     location: tripInfo.destination || "",
     dayNumber: "",
-    ticketCount: String(
-      Math.max(
-        1,
-        (Number(tripInfo.adults) || 0) + (Number(tripInfo.kids5to12) || 0),
-      ),
-    ),
+    // Adults buy adult tickets; kids 5-12 child tickets (under-5s are
+    // normally free).
+    ticketCount: String(Math.max(1, Number(tripInfo.adults) || 0)),
+    childCount: String(Math.max(0, Number(tripInfo.kids5to12) || 0)),
     pricePerTicket: "",
+    childPrice: "",
+    costPerTicket: "",
+    childCost: "",
+    rateOption: "",
+    city: "",
+    date: "",
+    photo: null,
     markupPercentage: "",
     notes: "",
   });
@@ -698,7 +704,15 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       location: activity.location || "",
       dayNumber: activity.dayNumber ?? "",
       ticketCount: activity.ticketCount || "1",
+      childCount: activity.childCount ?? "0",
       pricePerTicket: activity.pricePerTicket ?? "",
+      childPrice: activity.childPrice ?? "",
+      costPerTicket: activity.costPerTicket ?? "",
+      childCost: activity.childCost ?? "",
+      rateOption: activity.rateOption || "",
+      city: activity.city || "",
+      date: dateForDay(tripInfo.startDate, activity.dayNumber),
+      photo: activity.photo || null,
       markupPercentage: activity.markupPercentage ?? "",
       notes: activity.notes || "",
     });
@@ -823,8 +837,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     return price * (item.quantity || 1);
   };
 
-  const calculateActivityCost = (item) =>
-    parseFloat(item.pricePerTicket || 0) * (parseInt(item.ticketCount, 10) || 1);
+  const calculateActivityCost = (item) => tripActivityTotal(item);
 
   const totalHotelCost = accommodations.reduce(
     (sum, item) => sum + calculateHotelCost(item),
@@ -1116,6 +1129,11 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       day_number: item.dayNumber === "" ? null : item.dayNumber,
       ticket_count: item.ticketCount || 1,
       price_per_ticket: item.pricePerTicket,
+      child_count: parseInt(item.childCount, 10) || 0,
+      child_price: item.childPrice === "" || item.childPrice == null ? null : item.childPrice,
+      cost_per_ticket: item.costPerTicket === "" || item.costPerTicket == null ? null : item.costPerTicket,
+      child_cost: item.childCost === "" || item.childCost == null ? null : item.childCost,
+      rate_option: item.rateOption || null,
       markup_percentage: item.markupPercentage === "" ? null : item.markupPercentage,
       notes: item.notes ?? null,
     }));
@@ -2420,6 +2438,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                         setIsTransportModalOpen={setIsTransportModalOpen}
                         formatImageUrl={formatImageUrl}
                         tripActivities={tripActivities}
+                        availableActivities={availableActivities}
                         calculateActivityCost={calculateActivityCost}
                         openEditActivityModal={openEditActivityModal}
                         removeActivity={removeActivity}
@@ -2556,6 +2575,8 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         availableActivities={availableActivities}
         availableDestinations={availableDestinations}
         tripInfo={tripInfo}
+        token={token}
+        urlTripId={urlTripId}
         tripMarginPercentage={profitMarginPercentage}
       />
 

@@ -261,6 +261,38 @@ const STATEMENTS = [
     "consumed_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "dmc_sso_nonces_nonce_key" ON "dmc_sso_nonces"("nonce")`,
+  // Activities catalog at hotel depth + child pricing / B2B cost on trip activities.
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "image_path" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "category" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "supplier_name" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "email" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "phone" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "address" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "city" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "state" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "country" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "child_cost" DECIMAL(12,2)`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "child_price" DECIMAL(12,2)`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "price_sections" JSONB`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "capacity_per_day" INTEGER`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "inclusions" TEXT`,
+  `ALTER TABLE "activities" ADD COLUMN IF NOT EXISTS "cancellation_policy" TEXT`,
+  `ALTER TABLE "trip_activities" ADD COLUMN IF NOT EXISTS "child_count" INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE "trip_activities" ADD COLUMN IF NOT EXISTS "child_price" DECIMAL(12,2)`,
+  `ALTER TABLE "trip_activities" ADD COLUMN IF NOT EXISTS "cost_per_ticket" DECIMAL(12,2)`,
+  `ALTER TABLE "trip_activities" ADD COLUMN IF NOT EXISTS "child_cost" DECIMAL(12,2)`,
+  `ALTER TABLE "trip_activities" ADD COLUMN IF NOT EXISTS "rate_option" TEXT`,
+  `CREATE TABLE IF NOT EXISTS "activity_blackouts" (
+    "id" SERIAL PRIMARY KEY,
+    "activity_id" INTEGER NOT NULL,
+    "type" TEXT NOT NULL DEFAULT 'blackout',
+    "start_date" TIMESTAMP(3) NOT NULL,
+    "end_date" TIMESTAMP(3) NOT NULL,
+    "note" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS "activity_blackouts_activity_id_idx" ON "activity_blackouts"("activity_id")`,
+  `ALTER TABLE "activity_blackouts" ADD CONSTRAINT "activity_blackouts_activity_id_fkey" FOREIGN KEY ("activity_id") REFERENCES "activities"("id") ON DELETE CASCADE`,
 ];
 
 async function handle(request) {

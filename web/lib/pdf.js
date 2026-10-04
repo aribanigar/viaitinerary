@@ -455,7 +455,7 @@ function ItineraryDoc({ trip, settings }) {
               ),
             ),
             ...activities.map((a, i) => {
-              const persons = a.ticketCount || 1;
+              const persons = (a.ticketCount || 1) + (a.childCount || 0);
               const cell = { flexGrow: 1, flexBasis: 0, padding: 14, fontSize: 10, color: TEXTGRAY };
               return h(
                 View,
@@ -717,7 +717,7 @@ function VouchersDoc({ trip, settings }) {
             ["Day", "Date", "Activity", "Location", "Persons"],
             acts.map((a) => {
               const date = a.dayNumber && trip.startDate ? new Date(new Date(trip.startDate).getTime() + (a.dayNumber - 1) * 86400000) : null;
-              return [a.dayNumber ? `Day ${a.dayNumber}` : "—", date ? fmtDate(date) : "—", a.name, a.location, String(a.ticketCount || 1)];
+              return [a.dayNumber ? `Day ${a.dayNumber}` : "—", date ? fmtDate(date) : "—", a.name, a.location, String((a.ticketCount || 1) + (a.childCount || 0))];
             }),
           )),
         h(Text, { style: { marginTop: 18, color: "#666", lineHeight: 1.5 } },

@@ -105,6 +105,7 @@ export function publicTrip(trip) {
       location: a.location ?? null,
       day_number: a.dayNumber,
       ticket_count: a.ticketCount,
+      child_count: a.childCount ?? 0,
       notes: a.notes,
     })),
   };
