@@ -2,6 +2,8 @@
 // small talk, and the replies Ching speaks back. Pure — no React, no network;
 // the widget acts on what `understandAssistant` returns.
 
+import { understandHotelSearch } from "./hotelQuery.js";
+
 const clean = (t) =>
   String(t || "")
     .toLowerCase()
@@ -79,6 +81,8 @@ const NAV_VERB = /^(?:please |can you |could you |kindly )?(?:open|go to|goto|ta
  *   { type: "payment", amount, method, query } "Rahul paid 20000 by UPI" (Ching asks to confirm first)
  *   { type: "status", status, query }        "mark Rahul's trip as confirmed"
  *   { type: "remind", kind, query }          "send a payment reminder to Rahul"
+ *   { type: "hotel-search", mode, criteria, cityWords, nights } "find a 4 star in Srinagar under 6000 with breakfast"
+ *   { type: "hotel-pick", n }                "use the first one" (after a hotel search)
  *   { type: "ops", when, focus }             "today's arrivals", "who hasn't paid", "pending confirmations"
  *   { type: "remember", kind, … }            "call me Arif", "when I say Heaven I mean Heevan", "remember …"
  *   { type: "recall" } / { type: "forget", all | match }
@@ -96,6 +100,11 @@ export function understandAssistant(text, { inBuilder = false } = {}) {
 
   const memory = understandMemory(t, inBuilder);
   if (memory) return memory;
+
+  // Hotel search: "find a 4 star in Srinagar under 6000 with breakfast",
+  // "use the cheapest available 4-star with breakfast", "use the first one".
+  const hotel = understandHotelSearch(t, { inBuilder });
+  if (hotel) return hotel;
 
   if (/^(?:go |take me )?back$|^previous page$/.test(t)) return { type: "back" };
   if (/\b(?:what(?:'s| is)?|anything|which (?:fields?|sections?)|kya)\b.*\b(?:pending|missing|left|remaining|baki|baaki)\b|\bwhat else (?:do i need|is needed)\b|\bis (?:it|the trip) (?:ready|complete)\b/.test(t)) {

@@ -141,6 +141,50 @@ function Pending({ items, onOpenTab }) {
   );
 }
 
+// Hotel search results (from the agency's own catalog): rate for the trip's
+// nights, meal plan, availability — with "Use" when the open trip can take it.
+const MEAL_SHORT = { room_only: "Room only", breakfast_only: "Breakfast", breakfast_dinner: "Breakfast + Dinner", all_meals: "All meals" };
+const AVAIL_STYLE = {
+  available: ["text-emerald-700", "Available"],
+  blackout: ["text-amber-700", "Blackout — confirm"],
+  unchecked: ["text-[#181c22]/45", "Dates not checked"],
+};
+function HotelResults({ hotels, onUse, running }) {
+  if (!hotels?.results?.length) return null;
+  return (
+    <ul className="pl-8 space-y-1.5">
+      {hotels.results.slice(0, 5).map((r, i) => {
+        const [cls, label] = AVAIL_STYLE[r.availability?.status] || AVAIL_STYLE.unchecked;
+        return (
+          <li key={r.id} className="flex items-center gap-2 rounded-xl border border-black/[0.07] bg-white px-2.5 py-1.5">
+            <span className="text-[11px] font-bold text-[#181c22]/40 w-3 shrink-0">{i + 1}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] font-semibold truncate" title={r.name}>
+                {r.name} {r.stars ? <span className="text-[#181c22]/45 font-medium">{r.stars}★</span> : null}
+              </span>
+              <span className="block text-[11px] text-[#181c22]/60 truncate">
+                ₹{Number(r.rate_per_night || 0).toLocaleString("en-IN")}/night · {r.room_type}
+                {r.meal_plan ? ` · ${MEAL_SHORT[r.meal_plan] || r.meal_plan}` : ""} · <span className={cls}>{label}</span>
+              </span>
+            </span>
+            {hotels.canUse && (
+              <button
+                type="button"
+                disabled={running}
+                onClick={() => onUse?.(i + 1)}
+                className="shrink-0 rounded-full px-3 py-1 text-[11px] font-bold disabled:opacity-40"
+                style={{ background: INK, color: LIME }}
+              >
+                Use
+              </button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 // What Ching said back (also spoken aloud when voice replies are on).
 const Reply = ({ text }) =>
   text ? (
@@ -364,6 +408,7 @@ export default function ChingPanel({
   onConfirmDraft,
   onEditDraft,
   onCancelDraft,
+  onUseHotel,
 }) {
   const [draft, setDraft] = useState("");
   const { supported, phase, interim, error, wakeBlocked } = speech;
@@ -555,6 +600,7 @@ export default function ChingPanel({
         {notice?.kind === "reply" && !listening && !live && (
           <div className="space-y-2">
             <Reply text={notice.text} />
+            <HotelResults hotels={notice.hotels} onUse={onUseHotel} running={running} />
             {notice.confirm && onConfirm && (
               <div className="flex gap-2 pl-8">
                 <button

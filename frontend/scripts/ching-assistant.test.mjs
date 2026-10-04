@@ -227,5 +227,44 @@ test("children's ages decide child vs under-5", () => {
   assert.deepEqual(g('2 kids below 5'), [2, 0, 2])
 })
 
+test('hotel search: what is searched for', () => {
+  const f = u('find a 4 star hotel in srinagar under 6000 with breakfast')
+  assert.equal(f.type, 'hotel-search')
+  assert.equal(f.mode, 'find')
+  assert.deepEqual(f.criteria, { sort: 'best', minStars: 4, maxStars: 4, maxRate: 6000, mealPlan: 'breakfast_only' })
+  assert.equal(f.cityWords, 'srinagar')
+  assert.deepEqual(u('show me hotels in gulmarg between 5000 and 8000').criteria, { sort: 'best', minRate: 5000, maxRate: 8000 })
+  assert.equal(u('any 5 star or above hotels in srinagar').criteria.minStars, 5)
+  assert.equal(u('any 5 star or above hotels in srinagar').criteria.maxStars, undefined)
+  assert.equal(u('give me a four star hotel in srinagar under 6k').criteria.maxRate, 6000)
+  assert.equal(u('find a deluxe room in pahalgam for 2 nights with breakfast and dinner').criteria.roomType, 'Deluxe')
+})
+
+test('hotel search: apply on the open trip, with a preferred hotel and a fallback', () => {
+  const a = u('use the cheapest available 4-star hotel in srinagar with breakfast', { inBuilder: true })
+  assert.equal(a.mode, 'apply')
+  assert.equal(a.criteria.sort, 'cheapest')
+  const p = u('use grand mumtaz if available, otherwise the best hotel under 7000', { inBuilder: true })
+  assert.equal(p.criteria.prefer, 'grand mumtaz')
+  assert.equal(p.criteria.maxRate, 7000)
+  // Off the builder an "apply" can only list options.
+  assert.equal(u('use the cheapest 4 star hotel in srinagar').mode, 'find')
+})
+
+test('hotel search: picking from the list', () => {
+  assert.deepEqual(u('use the first one'), { type: 'hotel-pick', n: 1 })
+  assert.deepEqual(u('go with option 2'), { type: 'hotel-pick', n: 2 })
+  assert.deepEqual(u('take the third hotel', { inBuilder: true }), { type: 'hotel-pick', n: 3 })
+})
+
+test("hotel search never takes other people's sentences", () => {
+  assert.equal(u('open hotels').type, 'navigate')
+  assert.equal(u('use heevan in pahalgam', { inBuilder: true }), null) // named swap → edit parser
+  assert.equal(u('2 nights in srinagar in a 4 star hotel under 6000 for rahul'), null) // trip request
+  assert.equal(u('make it cheaper', { inBuilder: true }).type, 'optimize')
+  assert.equal(u('give me 20% margin', { inBuilder: true }), null)
+  assert.equal(u('my usual hotel in gulmarg is khyber').type, 'remember')
+})
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

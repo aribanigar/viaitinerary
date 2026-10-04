@@ -691,6 +691,11 @@ export default function ChingWidget() {
         init: initRef.current,
         core: () => ensureCore().catch(() => null),
       });
+      // An action that changed the trip (a hotel picked by search, a cheaper
+      // plan…) — keep a waiting Confirm & Build card in step with it.
+      const fresh = safe(() => getChingEditor()?.draft?.(), null);
+      if (fresh) setTripDraft((d) => (d ? { ...d, draft: fresh } : d));
+      setUndoTick((t) => t + 1);
       if (handled) return;
       if (ask.type === "navigate") {
         navigate(ask.path === "/trip-builder" ? newDraftPath() : ask.path);
@@ -984,6 +989,7 @@ export default function ChingWidget() {
             onConfirmDraft={confirmDraft}
             onEditDraft={editDraft}
             onCancelDraft={cancelDraft}
+            onUseHotel={(n) => assistRef.current?.({ type: "hotel-pick", n })}
           />
         </Suspense>
       )}

@@ -19,6 +19,8 @@ import {
   bedPricesFromSection,
   hotelCategoryLabel,
   toRoomTypeSlug,
+  findRateSection,
+  MEAL_PLAN_LABEL,
 } from '../hotelRates.js'
 import {
   normDate,
@@ -109,6 +111,7 @@ export function buildEditContext(snapshot) {
       city: a.city || '',
       nights: Number.isFinite(n) ? n : 0,
       mealPlan: a.mealPlan || '',
+      rooms: parseInt(a.rooms, 10) || 1,
       checkIn: a.checkIn,
       checkOut: a.checkOut,
     }
@@ -413,12 +416,16 @@ const HANDLERS = {
     if (!acc) return
     const hotel = findById(st.catalog.hotels, a.hotelId) || (a.hotelId == null ? findByName(st.catalog.hotels, a.hotelName) : null)
     if (!hotel) return st.warnings.push(`${a.hotelName || `Hotel #${a.hotelId}`} is not in your hotel list — hotel not changed`)
-    if (String(hotel.id) === String(acc.hotelId)) return
+    // A hotel search can also pick the room type and meal plan it quoted.
+    const mealLabel = a.mealPlan ? MEAL_PLAN_LABEL[a.mealPlan] || '' : ''
+    const sameHotel = String(hotel.id) === String(acc.hotelId)
+    if (sameHotel && !a.roomType && !mealLabel) return
     const oldName = acc.name || 'hotel'
     const oldCity = acc.city || ''
     const types = hotelRoomTypes(hotel)
-    const roomType = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(acc.roomType)) || types[0] || acc.roomType || 'Deluxe'
-    const section = findRoomTypeSection(hotel, roomType, acc.checkIn)
+    const wanted = a.roomType || acc.roomType
+    const roomType = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(wanted)) || types[0] || acc.roomType || 'Deluxe'
+    const section = findRateSection(hotel, roomType, acc.checkIn, a.mealPlan)
     const seq = staySequence(st)
     Object.assign(acc, {
       hotelId: hotel.id,
@@ -429,9 +436,15 @@ const HANDLERS = {
       pricePerRoom: section.price || 0,
       bedPrices: bedPricesFromSection(section),
       photo: hotel.image_url || hotel.image_path || null,
+      ...(mealLabel ? { mealPlan: mealLabel } : {}),
     })
     const price = section.price ? ` (${money(section.price)}/room/night)` : ''
-    st.changes.push(`${oldCity || acc.city} hotel: ${oldName} → ${hotel.name}${price}`)
+    const extra = [a.roomType ? roomType : '', mealLabel].filter(Boolean).join(', ')
+    st.changes.push(
+      sameHotel
+        ? `${acc.city} hotel: ${hotel.name} — ${extra}${price}`
+        : `${oldCity || acc.city} hotel: ${oldName} → ${hotel.name}${extra ? `, ${extra}` : ''}${price}`,
+    )
     if (!section.price) st.warnings.push(`${hotel.name} has no rate for these dates — price not set`)
     if (hotel.is_available === false) st.warnings.push(`${hotel.name} is marked unavailable`)
     if (oldCity && acc.city && !sameName(oldCity, acc.city)) {

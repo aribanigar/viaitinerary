@@ -27,6 +27,9 @@ import { fetchAccountingTripLedger, createAccountingSettlement } from "../../api
 import { updateTrip, sendReminder } from "../../api/trips";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
 import { cheaperReply, addOnReply } from "../../utils/ching/optimize";
+import { searchHotelInventory } from "../../api/hotels";
+import { describeCriteria, mealSay } from "../../utils/ching/hotelQuery";
+import { placeKey, samePlace } from "../../utils/ching/places";
 
 const list = (v) => (Array.isArray(v) ? v : []);
 const first = (name) => String(name || "").trim().split(/\s+/)[0] || "";
@@ -356,6 +359,162 @@ function doAddOns(ctx) {
   ctx.respond(addOnReply(ed.addOns()));
 }
 
+// ── hotel search ──────────────────────────────────────────────────────────
+// "find a 4-star in Srinagar under 6000 with breakfast" lists matches from the
+// agency's own hotels (rates for the trip's real nights, real availability);
+// "use the cheapest available 4-star with breakfast" / "use X if available,
+// otherwise the best under 7000" put one on the open trip (undoable);
+// "use the first one" picks from the last list. Nothing is made up: no match
+// is said as no match, with the closest miss named — never swapped in.
+let lastHotels = null; // { results, city, at }
+const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dm = (s) => {
+  const [, m, d] = String(s || "").slice(0, 10).split("-").map(Number);
+  return m ? `${d} ${MONTH[m - 1]}` : "";
+};
+/** "10–12 Nov", "30 Nov – 2 Dec". */
+const span = (a, b) => {
+  const [x, y] = [dm(a), dm(b)];
+  const [dx, mx] = x.split(" ");
+  const [dy, my] = y.split(" ");
+  return mx === my ? `${dx}–${dy} ${my}` : `${x} – ${y}`;
+};
+const titleCase = (s) => String(s || "").replace(/\b[a-z]/g, (c) => c.toUpperCase());
+const stars = (r) => (r.stars ? ` (${r.stars}★)` : "");
+const hotelLine = (r, i) =>
+  `${i + 1}. ${r.name}${stars(r)} — ${money(r.rate_per_night)}/night${r.meal_plan ? `, ${mealSay(r.meal_plan)}` : ""}${r.availability?.status === "blackout" ? " (blackout date)" : ""}`;
+
+function catalogCity(words, init) {
+  if (!words) return "";
+  const cities = [...new Set(list(init?.hotels).map((h) => String(h.city || "").trim()).filter(Boolean))];
+  const k = placeKey(words);
+  return cities.find((c) => samePlace(c, words)) || cities.find((c) => k && placeKey(c) === k) || "";
+}
+
+/** The open trip's stay in that city (or its only stay when no city was said). */
+function tripStay(ctx, city) {
+  let c = null;
+  try {
+    c = ctx.editor?.getContext?.();
+  } catch {
+    c = null;
+  }
+  const stays = list(c?.stays).filter((x) => x.nights > 0);
+  if (city) return { stay: stays.find((x) => samePlace(x.city, city)) || null, stays };
+  return { stay: stays.length === 1 ? stays[0] : null, stays };
+}
+
+function putHotel(pick, stay, ctx, lead = "") {
+  const res =
+    ctx.editor.apply([
+      { type: "REPLACE_HOTEL", stay: stay.index, hotelId: pick.id, hotelName: pick.name, city: pick.city, roomType: pick.room_type, mealPlan: pick.meal_plan },
+    ]) || {};
+  if (!list(res.changes).length) {
+    ctx.respond(`${lead}${list(res.warnings)[0] || `${pick.name} is already on the trip.`}`);
+    return;
+  }
+  try {
+    ctx.editor.setTab("Logistics");
+  } catch {
+    // builder gone
+  }
+  const avail = pick.availability?.status === "blackout" ? " It's a blackout date — confirm with the hotel." : pick.availability?.free_rooms != null ? ` ${pick.availability.free_rooms} rooms free.` : "";
+  ctx.respond(
+    `${lead}${stay.city}: ${pick.name}${stars(pick)}, ${pick.room_type}${pick.meal_plan ? ` with ${mealSay(pick.meal_plan)}` : ""}, ${money(pick.rate_per_night)}/night.${avail} Say “undo” to switch back.`,
+  );
+}
+
+async function doHotelSearch(ask, ctx) {
+  const words = ask.cityWords;
+  let city = catalogCity(words, ctx.init);
+  // "Use Grand Mumtaz if available, …": the preferred hotel says where.
+  if (!city && ask.criteria?.prefer) {
+    const want = String(ask.criteria.prefer).toLowerCase().split(/\s+/).filter((w) => w.length >= 3 && !["hotel", "resort", "the"].includes(w));
+    const h = list(ctx.init?.hotels).find((x) => want.length && want.every((w) => String(x.name || "").toLowerCase().includes(w)));
+    if (h?.city) city = String(h.city).trim();
+  }
+  const { stay, stays } = tripStay(ctx, city);
+  if (!city && stay) city = stay.city;
+  if (words && !city) {
+    ctx.respond(`I don't have any hotels in ${titleCase(words)} in your catalog.`);
+    return;
+  }
+  if (!city) {
+    ctx.respond(stays.length > 1 ? `Which city? This trip stays in ${and(stays.map((x) => x.city))}.` : "Which city? Say it like “find a 4-star hotel in Srinagar under 6000 with breakfast”.");
+    return;
+  }
+  const c = ask.criteria || {};
+  const r = await searchHotelInventory(ctx.token, {
+    city,
+    min_stars: c.minStars,
+    max_stars: c.maxStars,
+    max_rate: c.maxRate,
+    min_rate: c.minRate,
+    meal_plan: c.mealPlan,
+    room_type: c.roomType,
+    sort: c.sort,
+    prefer: c.prefer,
+    limit: 5,
+    ...(stay
+      ? { check_in: stay.checkIn, check_out: stay.checkOut, rooms: stay.rooms, exclude_trip: ctx.editor?.tripId || undefined }
+      : ask.nights
+        ? { nights: ask.nights }
+        : {}),
+  });
+  const results = list(r?.results);
+  lastHotels = { results, city, at: Date.now() };
+  const what = describeCriteria(c);
+  const when = stay ? ` for ${span(stay.checkIn, stay.checkOut)}` : "";
+  const where = `in ${city}${when}${what ? ` (${what})` : ""}`;
+  const near = r?.near ? ` The closest is ${r.near.name}${stars(r.near)} at ${money(r.near.rate_per_night)}/night.` : "";
+  const nothing = `No hotel ${where} in your catalog.${near}`;
+
+  if (ask.mode === "apply" && stay && ctx.editor) {
+    const pref = r?.preferred;
+    const lead = pref && !pref.usable ? `${titleCase(pref.name)} isn't possible — ${String(pref.why || "").replace(/^./, (x) => x.toLowerCase())}. ` : "";
+    const pick = pref?.usable ? pref : results[0];
+    if (!pick) {
+      ctx.respond(`${lead}${nothing}`);
+      return;
+    }
+    putHotel(pick, stay, ctx, lead ? `${lead}Using ${pick.name} instead. ` : "");
+    return;
+  }
+
+  if (!results.length) {
+    ctx.respond(nothing);
+    return;
+  }
+  const count = r.total > results.length ? `${r.total} matches` : results.length === 1 ? "One match" : `${results.length} matches`;
+  const tail = stay
+    ? " Say “use the first one” to put it on the trip."
+    : r?.check_in
+      ? ""
+      : " Rates are tonight's; open a trip with dates and I'll check availability too.";
+  ctx.respond(`${count} ${where}: ${results.slice(0, 3).map(hotelLine).join("; ")}.${tail}`, {
+    hotels: { results, canUse: !!stay, city },
+  });
+}
+
+async function doHotelPick(ask, ctx) {
+  const last = lastHotels;
+  if (!last || Date.now() - last.at > 30 * 60 * 1000 || !last.results.length) {
+    ctx.respond("Ask me to find hotels first — like “find a 4-star in Srinagar with breakfast”.");
+    return;
+  }
+  const pick = ask.n === -1 ? last.results[last.results.length - 1] : last.results[ask.n - 1];
+  if (!pick) {
+    ctx.respond(`I only found ${plural(last.results.length, "hotel")}.`);
+    return;
+  }
+  const { stay } = tripStay(ctx, last.city);
+  if (!stay || !ctx.editor) {
+    ctx.respond(`${pick.name} — open a trip that stays in ${last.city} and say it again, and I'll put it in.`);
+    return;
+  }
+  putHotel(pick, stay, ctx);
+}
+
 // ── memory ────────────────────────────────────────────────────────────────
 async function doRemember(ask, ctx) {
   if (ask.kind === "name") {
@@ -449,6 +608,8 @@ export async function handleAssist(ask, ctx) {
     addons: () => doAddOns(ctx),
     status: () => doStatus(ask, ctx),
     remind: () => doRemind(ask, ctx),
+    "hotel-search": () => doHotelSearch(ask, ctx),
+    "hotel-pick": () => doHotelPick(ask, ctx),
   };
   const fn = handlers[ask?.type];
   if (!fn) return false;

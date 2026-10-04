@@ -53,6 +53,27 @@ export const findRoomTypeSection = (hotel, roomTypeValue, dateStr) => {
   );
 };
 
+// Builder meal-plan labels ↔ rate-sheet meal_plan keys (hotel search, Ching).
+export const MEAL_PLAN_LABEL = {
+  room_only: "Only Room",
+  breakfast_only: "Only Room + Breakfast",
+  breakfast_dinner: "Breakfast + Dinner",
+  all_meals: "Breakfast + Lunch + Dinner",
+};
+
+/**
+ * findRoomTypeSection, narrowed to one meal plan when the rate sheet has it
+ * ("Deluxe with breakfast" is a different price from "Deluxe room only").
+ * Untagged rows still count, so older hand-made rate sheets keep working.
+ */
+export const findRateSection = (hotel, roomTypeValue, dateStr, mealPlan) => {
+  if (!mealPlan) return findRoomTypeSection(hotel, roomTypeValue, dateStr);
+  const sections = hotel?.price_sections || [];
+  const exact = sections.filter((s) => s.meal_plan === mealPlan);
+  const pool = exact.length ? exact : sections.filter((s) => !s.meal_plan);
+  return findRoomTypeSection({ ...hotel, price_sections: pool }, roomTypeValue, dateStr);
+};
+
 /** Extra-bed / child prices from a rate-sheet section, in the builder's bedPrices shape. */
 export const bedPricesFromSection = (section = {}) =>
   [

@@ -74,3 +74,10 @@ export const importB2BHotels = async (token) => {
     body: JSON.stringify({}),
   });
 };
+
+// Ching's hotel search (web/app/api/hotels/search): the agency's own hotels,
+// filtered and ranked with real rates for the dates and real availability.
+export const searchHotelInventory = async (token, params = {}) => {
+  const q = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== "")).toString();
+  return request(`/hotels/search${q ? `?${q}` : ""}`, { token });
+};
