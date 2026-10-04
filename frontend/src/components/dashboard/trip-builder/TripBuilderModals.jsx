@@ -1130,7 +1130,10 @@ export const ActivityModal = ({
               className="w-full"
               options={{
                 dateFormat: "d-m-Y",
-                minDate: urlTripId ? null : tripInfo.startDate || "today",
+                // Only the trip's own days: day 1 … day nights + 1.
+                minDate: tripInfo.startDate || (urlTripId ? null : "today"),
+                maxDate:
+                  dateForDay(tripInfo.startDate, (parseInt(tripInfo.duration, 10) || 0) + 1) || null,
                 excludeDates: stopSaleDates,
               }}
             />
