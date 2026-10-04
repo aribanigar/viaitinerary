@@ -98,12 +98,16 @@ const readTabs = () => {
   }
 };
 
-const TripBuilder = ({ mode }) => {
+// embedded: rendered inside another page (the AI Assistant's live builder)
+// instead of as its own route — no page frame, the trip id comes from the host
+// (embeddedTripId) and a new trip's first save stays on that page.
+const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   const isPackageMode = mode === "package";
   const { token } = useAuth();
-  const { tripId: urlTripId } = useParams();
+  const { tripId: routeTripId } = useParams();
+  const urlTripId = embedded ? embeddedTripId || undefined : routeTripId;
   const [searchParams] = useSearchParams();
-  const draftKey = searchParams.get("d") || "default";
+  const draftKey = searchParams.get("d") || (embedded ? "assistant" : "default");
   const navigate = useNavigate();
 
   // Stable module-level helper (shared with the client proposal page).
@@ -1172,7 +1176,7 @@ const TripBuilder = ({ mode }) => {
         // Promote the "new" tab and navigate so subsequent saves/exports work
         if (createdTrip && createdTrip.trip_id) {
           replaceNewTab(createdTrip.trip_id);
-          navigate(`/trip-builder/${createdTrip.trip_id}`, { replace: true });
+          navigate(embedded ? `/assistant?trip=${createdTrip.trip_id}` : `/trip-builder/${createdTrip.trip_id}`, { replace: true });
         }
       }
       setAutoState("saved");
@@ -1617,6 +1621,9 @@ const TripBuilder = ({ mode }) => {
         };
       },
       setTab: (tab) => chingState.current.setActiveTab(tab),
+      // The trip as the builder holds it right now (read-only; the AI
+      // Assistant page draws its route, summary and progress from it).
+      snapshot: () => chingState.current.snapshot,
       // Confirm & Build (utils/ching/tripDraft.js): the pending voice draft,
       // re-read from the builder's current state, so edits since are in it.
       draft: () => (chingDraft.current ? buildTripDraft(chingState.current.snapshot, chingDraft.current.meta) : null),
@@ -2241,18 +2248,7 @@ const TripBuilder = ({ mode }) => {
     </>
   );
 
-  return (
-    <>
-      <AssistantFrame
-        title={tabStrip}
-        nav={builderNav}
-        actions={
-          <>
-            {autoSaveChip}
-            {builderActions}
-          </>
-        }
-      >
+  const builderBody = (
         <div className="flex flex-col h-full overflow-hidden">
           {/* Builder Area — two rounded panels (builder + live preview) */}
           <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden p-3 lg:p-4 gap-3 lg:gap-4">
@@ -2493,7 +2489,33 @@ const TripBuilder = ({ mode }) => {
             </div>
           </div>
         </div>
-      </AssistantFrame>
+  );
+
+  return (
+    <>
+      {embedded ? (
+        // Inside the AI Assistant: just the builder, with its own actions bar.
+        <div className="flex flex-col h-full min-h-0 bg-[#f3f3f4] rounded-[24px] border border-black/5 overflow-hidden">
+          <div className="flex flex-wrap items-center justify-end gap-2 px-4 pt-3 shrink-0">
+            {autoSaveChip}
+            {builderActions}
+          </div>
+          <div className="flex-1 min-h-0">{builderBody}</div>
+        </div>
+      ) : (
+        <AssistantFrame
+          title={tabStrip}
+          nav={builderNav}
+          actions={
+            <>
+              {autoSaveChip}
+              {builderActions}
+            </>
+          }
+        >
+          {builderBody}
+        </AssistantFrame>
+      )}
 
       <HotelModal
         isOpen={isHotelModalOpen}

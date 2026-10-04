@@ -23,6 +23,7 @@ import {
 import { handleAssist } from "./assistActions";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
 import { draftSpeech } from "../../utils/ching/tripDraft";
+import { chingSaid, setChingListening, setChingStage } from "../../utils/ching/chingBus";
 import {
   speak,
   stopSpeaking,
@@ -81,8 +82,16 @@ const safe = (fn, fallback) => {
     return fallback;
   }
 };
-const newDraftPath = () =>
-  `/trip-builder?d=${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+// A fresh draft opens where the agent is working: the AI Assistant's own live
+// builder when they're there, else the Trip Builder.
+const newDraftPath = () => {
+  const d = `${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+  const onAssistant = typeof window !== "undefined" && window.location.pathname.startsWith("/assistant");
+  return onAssistant ? `/assistant?d=${d}` : `/trip-builder?d=${d}`;
+};
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+// The order a trip is built in, shown tab by tab after Confirm & Build.
+const BUILD_STEPS = ["Trip Info", "Itinerary", "Logistics", "Pricing"];
 
 // Command actions (EXPORT_PDF / EXPORT_EXCEL / EMAIL_ME / SEND_PROPOSAL / SEND_PAYMENT_LINK /
 // SEND_REMINDER / SAVE / UNDO) against the open Trip
@@ -176,7 +185,9 @@ export default function ChingWidget() {
 
   // Ching talks back (when voice replies are on) and shows the same words.
   const say = useCallback((text) => {
-    if (text) speak(text);
+    if (!text) return;
+    speak(text);
+    chingSaid("ching", text);
   }, []);
   const respond = useCallback(
     (text, extra = {}) => {
@@ -475,6 +486,7 @@ export default function ChingWidget() {
       // Commands said with it ("… then export the PDF") run after the confirm.
       if (res.mode === "fill" && res.draft) {
         setUndoTick((t) => t + 1);
+        safe(() => ed.setTab("Trip Info")); // step 1, while the agent checks the draft
         setTripDraft({ draft: res.draft, commands });
         setOutcome(null);
         setNotice(null);
@@ -587,11 +599,32 @@ export default function ChingWidget() {
     }
     setTripDraft(null);
     confirmRef.current = null;
-    const commands = list(pending.commands);
+    // Build it in the agent's order: Trip Info → Itinerary (a destination a
+    // day) → Logistics (hotels, then cabs, by date) → Pricing → the PDF.
+    setOutcome({ title: "Building the trip…", lines: [] });
+    setCompact(true);
+    for (const tab of BUILD_STEPS) {
+      setChingStage(tab);
+      safe(() => getChingEditor()?.setTab(tab));
+      await wait(1300);
+    }
+    setChingStage("PDF");
+    let pdfLine = "";
+    try {
+      await getChingEditor()?.exportPdf();
+      setChingStage("PDF:done");
+      pdfLine = " The PDF is in your downloads.";
+    } catch {
+      setChingStage(null);
+      pdfLine = " I couldn't make the PDF — try Export.";
+    }
+    // The walkthrough already made the PDF; don't make it twice.
+    const commands = list(pending.commands).filter((c) => c.type !== "EXPORT_PDF");
     const emailsClient = commands.some((c) => CLIENT_EMAIL_COMMANDS.has(c.type) && c.channel === "email");
-    const built = r?.saved
-      ? "Built and saved."
-      : `Built. Add the client's phone and email so I can save it${commands.length ? ", then ask me again for the rest" : ""}.`;
+    const built =
+      (r?.saved
+        ? "Built and saved."
+        : `Built. Add the client's phone and email so I can save it${commands.length ? ", then ask me again for the rest" : ""}.`) + pdfLine;
     if (commands.length && !emailsClient && r?.saved) {
       const lines = (await runCommands(commands, ed)) || [];
       respond([built, ...lines].join(" "));
@@ -736,6 +769,7 @@ export default function ChingWidget() {
 
   const handleCommand = useCallback(
     (text) => {
+      chingSaid("you", text);
       const S = sessionRef.current || startSession();
       S.ended = true;
       S.text = text;
@@ -768,6 +802,10 @@ export default function ChingWidget() {
     setWakeEnabled,
   } = speech;
   const listening = phase === "command";
+  // Pages that show Ching (the AI Assistant) follow the mic and transcript.
+  useEffect(() => {
+    setChingListening(listening, listening ? interim || "" : "");
+  }, [listening, interim]);
 
   // Stream the running transcript to the editor, at most every 250 ms.
   useEffect(() => {
@@ -854,6 +892,18 @@ export default function ChingWidget() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, listening, supported, status, openPanel, toggleCommand, cancelCommand, cancelSession]);
+
+  // The AI Assistant page's own message box sends typed requests here.
+  useEffect(() => {
+    const onSubmit = (e) => {
+      const text = String(e?.detail?.text || "").trim();
+      if (!text) return;
+      openPanel();
+      handleTyped(text);
+    };
+    window.addEventListener("ching:submit", onSubmit);
+    return () => window.removeEventListener("ching:submit", onSubmit);
+  }, [handleTyped, openPanel]);
 
   // Anything in the app can open Ching (e.g. the Assistant page's mic).
   useEffect(() => {

@@ -35,7 +35,7 @@ npm run build                 # outputs into ../web/public — this is what Next
 npm run lint                  # eslint . — repo currently has ~120 pre-existing lint errors (mostly unused-var / react-hooks rules); not enforced in CI, don't treat pre-existing ones as regressions from your change
 ```
 
-Ching's parsers have plain-Node tests, one file each — run a single one with e.g. `node scripts/ching-parser.test.mjs` (others: `ching-assistant`, `ching-edit`, `ching-edit-parser`, `ching-live`, `ching-smart-fill`). No test runner beyond that.
+Ching's parsers have plain-Node tests, one file each — run a single one with e.g. `node scripts/ching-parser.test.mjs` (others: `ching-assistant`, `ching-draft`, `ching-edit`, `ching-edit-parser`, `ching-live`, `ching-smart-fill`). No test runner beyond that.
 
 ## Architecture
 
@@ -148,6 +148,10 @@ Google Maps/Places is opt-in per agency (not a shared platform key): agencies pa
 ### Ching (voice/text assistant)
 
 Ching is an in-dashboard assistant (`frontend/src/components/ching/`: `ChingWidget`, `ChingPanel`, `useSpeech`) that fills and edits trips by voice and runs agency operations. Its logic is **rule-based parsing, not an LLM**: `frontend/src/utils/ching/` holds the parsers (`parseCommand` for new trips, `parseEdit`/`editTrip*` for edits, `assistant.js` for requests beyond the open trip, `optimize.js` for "make it cheaper"/add-ons, `dayPlan`/`cabPlan`), all tested by `frontend/scripts/ching-*.test.mjs`. `chingCore.js` is dynamically imported so parsers don't weigh on first paint; `editorBridge.js` lets Ching drive the open Trip Builder live, and `assistActions.js` executes the assistant requests (documents, supplier confirmations, payments, status changes, reminders) by calling the same `frontend/src/api/*` clients the UI uses, behind `confirm()` for writes. A new Ching capability usually means a parser rule + an action, not a new endpoint.
+
+Confirm & Build (`utils/ching/tripDraft.js`, pure): a new trip filled by voice is a draft — nothing autosaves (`chingDraft` ref in `TripBuilder.jsx`) until the agent confirms in Ching's card; blocking checks (hotel nights ≠ trip nights, itinerary days ≠ nights + 1, a night without a hotel, date gaps, no client/start date) disable Confirm, and Ching never fills a missing night itself. Confirm walks the tabs Trip Info → Itinerary → Logistics → Pricing, then exports the PDF. Tests: `node frontend/scripts/ching-draft.test.mjs`.
+
+AI Trip Assistant (`/assistant`, `pages/assistant/AIAssistant.jsx`): Ching's own workspace — the same page design, wired live, with the real Trip Builder embedded below (`<TripBuilder embedded embeddedTripId>`: no page frame, draft key `?d=` / trip `?trip=`, a new trip's first save stays on `/assistant?trip=…`). Ching's conversation, mic state and build stage reach the page through `utils/ching/chingBus.js`; the page's message box sends `ching:submit`; a new draft opened from the assistant stays on the assistant (`newDraftPath`).
 
 Memory (`web/lib/chingMemory.js`, `/api/ching/memory`) has two halves: **learned** (recomputed on every read from the agency's last ~300 trips — usual hotel per city, cab per group size, meal plan; nothing stored) and **told** (`ChingMemory` rows: aliases, preferred hotels, notes), where told wins. `placeKey` is duplicated in `frontend/src/utils/ching/places.js` — change both together.
 

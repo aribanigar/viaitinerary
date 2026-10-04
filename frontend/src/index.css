@@ -233,11 +233,9 @@ html {
   stroke: #fbfbfb !important;
   stroke-width: 0.3px !important;
 }
-.worldmap #usa path,
-.worldmap #alaska path,
-.worldmap #hawaii path,
-.worldmap #france path,
-.worldmap #corsica path {
+/* India — the AI Trip Assistant's map (Via Kashmir works there). */
+.worldmap #india path,
+.worldmap path#india {
   fill: #e7f63c !important;
 }
 .usmap svg path {
