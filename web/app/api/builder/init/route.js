@@ -20,7 +20,12 @@ export async function GET(request) {
   if (!user) return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
   const adminId = await adminIdOf(user);
 
-  const [settings, destinations, vehicles, hotels, activities, policy] = await Promise.all([
+  // Each part loads on its own: one failing query (e.g. a column the live
+  // database doesn't have yet because `prisma db push` was skipped at build)
+  // must not take the destinations, hotels and cabs down with it. What failed
+  // is returned in `load_errors` and shown in the builder.
+  const PARTS = ["settings", "destinations", "vehicles", "hotels", "activities", "policies"];
+  const settled = await Promise.allSettled([
     prisma.agencySetting.findUnique({ where: { userId: adminId } }),
     prisma.destination.findMany({ where: { userId: adminId }, orderBy: { name: "asc" } }),
     prisma.vehicle.findMany({ where: { userId: adminId }, orderBy: { name: "asc" } }),
@@ -28,6 +33,28 @@ export async function GET(request) {
     prisma.activity.findMany({ where: { userId: adminId, isActive: true }, orderBy: { name: "asc" } }),
     prisma.policy.findUnique({ where: { userId: adminId } }),
   ]);
+  const loadErrors = [];
+  const part = (i, fallback) => {
+    const r = settled[i];
+    if (r.status === "fulfilled") return r.value;
+    const message = String(r.reason?.message || r.reason || "failed").split("\n").filter(Boolean).slice(-1)[0].slice(0, 300);
+    console.error(`builder/init: ${PARTS[i]} failed:`, r.reason);
+    loadErrors.push({ part: PARTS[i], message });
+    return fallback;
+  };
+  const settings = part(0, null);
+  const destinations = part(1, []);
+  const vehicles = part(2, []);
+  const hotels = part(3, []);
+  const activities = part(4, []);
+  const policy = part(5, null);
+  const isDmcBridge = await prisma.user
+    .findUnique({ where: { id: adminId }, select: { isDmcBridge: true } })
+    .then((u) => !!u?.isDmcBridge)
+    .catch((err) => {
+      loadErrors.push({ part: "account", message: String(err?.message || err).split("\n").filter(Boolean).slice(-1)[0].slice(0, 300) });
+      return false;
+    });
 
   const flat = (v) => (Array.isArray(v) ? v.join("\n") : v ?? "");
   const mappedPolicies = policy
@@ -44,12 +71,13 @@ export async function GET(request) {
 
   const resp = {
     // DMC partner agencies get the "Powered by Via Kashmir" mark on every itinerary page.
-    settings: { ...serializeSettings(settings), powered_by_via_kashmir: !!(await prisma.user.findUnique({ where: { id: adminId }, select: { isDmcBridge: true } }))?.isDmcBridge },
+    settings: { ...serializeSettings(settings), powered_by_via_kashmir: isDmcBridge },
     destinations: destinations.map(serializeDestination),
     vehicles: vehicles.map(serializeVehicle),
     hotels: hotels.map(serializeHotel),
     activities: activities.map(serializeActivityLite),
     policies: mappedPolicies,
+    load_errors: loadErrors,
   };
 
   const tripId = new URL(request.url).searchParams.get("trip_id");

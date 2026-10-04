@@ -138,6 +138,13 @@ export const useTripBuilderData = ({
         if (initData.destinations) {
           setAvailableDestinations(initData.destinations);
         }
+        // Parts of the catalog the server couldn't load (it loads each on its
+        // own) — say which, with the server's reason, instead of failing quietly.
+        if (Array.isArray(initData.load_errors) && initData.load_errors.length) {
+          const what = initData.load_errors.map((e) => e.part).join(", ");
+          console.error("Trip Builder: couldn't load", initData.load_errors);
+          toast.error(`Couldn't load ${what}: ${initData.load_errors[0].message}`, { autoClose: false });
+        }
         if (initData.vehicles) setAvailableVehicles(initData.vehicles);
         if (initData.hotels) setMasterHotels(initData.hotels);
         if (initData.activities) setAvailableActivities(initData.activities);
