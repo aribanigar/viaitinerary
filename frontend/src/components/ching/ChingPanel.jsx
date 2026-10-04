@@ -3,6 +3,9 @@ import {
   AudioLines,
   Check,
   CircleAlert,
+  CircleX,
+  Hammer,
+  Pencil,
   Loader2,
   Mic,
   MicOff,
@@ -181,6 +184,108 @@ function LiveBlock({ live, onOpenTab }) {
   );
 }
 
+// Confirm & Build: the trip Ching understood, laid out to check before anything
+// is saved — so a misheard word doesn't become a booking mistake.
+const CHECK_STYLE = {
+  ok: { icon: Check, cls: "text-emerald-700", dot: "bg-emerald-100" },
+  warn: { icon: TriangleAlert, cls: "text-amber-800", dot: "bg-amber-100" },
+  save: { icon: TriangleAlert, cls: "text-amber-800", dot: "bg-amber-100" },
+  blocking: { icon: CircleX, cls: "text-[#b42318]", dot: "bg-[#fff0ee]" },
+};
+
+function DraftCard({ tripDraft, running, onConfirm, onEdit, onCancel }) {
+  const { draft } = tripDraft;
+  const [showOk, setShowOk] = useState(false);
+  const problems = draft.checks.filter((c) => c.level !== "ok");
+  const passed = draft.checks.filter((c) => c.level === "ok");
+  const value = (k) => draft.rows.find((r) => r[0] === k)?.[1];
+  const header = [value("Client") || "No client name", value("Guests")].filter(Boolean).join(" | ");
+  const when = [value("Dates"), value("Duration")?.replace(/\s/g, "")].filter(Boolean).join(" | ");
+  return (
+    <div className="rounded-2xl border border-black/[0.08] bg-white p-3 space-y-2.5" aria-live="polite">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#181c22]/50">Trip draft · not saved yet</div>
+      <div>
+        <div className="text-[14px] font-semibold leading-snug break-words">{header}</div>
+        {when && <div className="text-[13px] text-[#181c22]/70">{when}</div>}
+        {value("Destination") && <div className="text-[12px] text-[#181c22]/55">{value("Destination")}</div>}
+      </div>
+      {draft.stays.length > 0 && (
+        <ul className="rounded-xl bg-[#f7f7f8] divide-y divide-black/5">
+          {draft.stays.map((g, i) => (
+            <li key={i} className="flex items-baseline gap-2 px-2.5 py-1.5 text-[13px]">
+              <span className="font-semibold shrink-0">{g.city} – {g.nights}N</span>
+              <span className="flex-1 min-w-0 truncate text-[#181c22]/65" title={g.hotel}>
+                {g.hotel || "no hotel"}
+              </span>
+              {(g.suggested || g.picked) && (
+                <span className="shrink-0 rounded-full bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-800" title={g.suggested ? "Ching planned this city — nobody said it" : "Ching picked this hotel"}>
+                  {g.suggested ? "suggested" : "picked"}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {(value("Vehicle") || value("Meals")) && (
+        <div className="text-[12px] text-[#181c22]/65 break-words">{[value("Vehicle"), value("Meals")].filter(Boolean).join(" · ")}</div>
+      )}
+      <ul className="space-y-1">
+        {problems.map((c, i) => {
+          const st = CHECK_STYLE[c.level];
+          const Icon = st.icon;
+          return (
+            <li key={i} className={`flex gap-1.5 text-[12px] font-medium ${st.cls}`}>
+              <Icon className="w-3.5 h-3.5 mt-px shrink-0" /> <span className="break-words">{c.text}</span>
+            </li>
+          );
+        })}
+        <li>
+          <button type="button" onClick={() => setShowOk((v) => !v)} className="flex gap-1.5 text-[12px] font-medium text-emerald-700">
+            <Check className="w-3.5 h-3.5 mt-px shrink-0" /> {passed.length} checks passed{showOk ? "" : " — show"}
+          </button>
+        </li>
+        {showOk &&
+          passed.map((c, i) => (
+            <li key={`ok${i}`} className="pl-5 text-[11px] text-[#181c22]/55">
+              {c.text}
+            </li>
+          ))}
+      </ul>
+      <div className="flex flex-wrap gap-2 pt-0.5">
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={!draft.ok || running}
+          title={draft.ok ? "Build the trip and save it" : draft.blocking[0]?.text}
+          className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold disabled:opacity-35 disabled:cursor-not-allowed"
+          style={{ background: INK, color: LIME }}
+        >
+          <Hammer className="w-3.5 h-3.5" /> Confirm &amp; Build
+        </button>
+        <button
+          type="button"
+          onClick={onEdit}
+          disabled={running}
+          className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold border border-black/10 text-[#181c22] hover:bg-black/[0.03]"
+        >
+          <Pencil className="w-3.5 h-3.5" /> Edit
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={running}
+          className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold text-[#b42318] hover:bg-[#fff4f3]"
+        >
+          <X className="w-3.5 h-3.5" /> Cancel
+        </button>
+      </div>
+      <p className="text-[11px] text-[#181c22]/45">
+        {draft.ok ? "Say “confirm” to build it — or say a change, like “make Gulmarg 2 nights”." : "Say or type the fix — the draft updates, then confirm."}
+      </p>
+    </div>
+  );
+}
+
 // After a live session: a small pill in place of the sheet, so the builder's
 // form and preview stay visible. Tap the text to reopen the full panel.
 function ResultPill({ outcome, canUndo, onUndo, onExpand, onClose, speech }) {
@@ -255,6 +360,10 @@ export default function ChingPanel({
   onToggleVoice,
   onOpenTab,
   onConfirm,
+  tripDraft,
+  onConfirmDraft,
+  onEditDraft,
+  onCancelDraft,
 }) {
   const [draft, setDraft] = useState("");
   const { supported, phase, interim, error, wakeBlocked } = speech;
@@ -301,12 +410,15 @@ export default function ChingPanel({
       : `Editing ${tripLabel} — try: ${EDIT_EXAMPLES}.`;
 
   const subtitle = !editor ? "Voice trip builder" : blank ? "New trip" : tripLabel;
+  // A draft to confirm gets the room it needs, so Confirm & Build is in view.
+  const tall = !!tripDraft && !listening;
+  const hint = tall ? "Check the draft below, then say “confirm” — or say a change." : idleHint;
 
   return (
     <div
       role="dialog"
       aria-label="Ching voice trip builder"
-      className="fixed z-[90] inset-x-0 bottom-0 max-h-[42dvh] sm:inset-x-auto sm:right-4 lg:right-6 sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:w-[400px] sm:max-h-[calc(100dvh-180px)] lg:max-h-[min(560px,calc(100dvh-116px))] flex flex-col bg-white text-[#181c22] rounded-t-[24px] sm:rounded-[24px] border border-black/5 shadow-[0_-10px_50px_-20px_rgba(16,24,42,0.45)] sm:shadow-[0_24px_70px_-24px_rgba(16,24,42,0.55)] overflow-hidden"
+      className={`fixed z-[90] inset-x-0 bottom-0 ${tall ? "max-h-[82dvh]" : "max-h-[42dvh]"} sm:inset-x-auto sm:right-4 lg:right-6 sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:w-[400px] sm:max-h-[calc(100dvh-180px)] ${tall ? "lg:max-h-[min(760px,calc(100dvh-116px))]" : "lg:max-h-[min(560px,calc(100dvh-116px))]"} flex flex-col bg-white text-[#181c22] rounded-t-[24px] sm:rounded-[24px] border border-black/5 shadow-[0_-10px_50px_-20px_rgba(16,24,42,0.45)] sm:shadow-[0_24px_70px_-24px_rgba(16,24,42,0.55)] overflow-hidden`}
     >
       {/* Header */}
       <div className="flex items-center gap-2 px-3.5 pt-2.5 pb-2 border-b border-black/5 shrink-0">
@@ -385,7 +497,7 @@ export default function ChingPanel({
                 <span className="text-[#181c22]">{interim}</span>
               ) : (
                 <span className="text-[#181c22]/40">
-                  {listening ? "Go ahead — I'm listening…" : live ? "" : idleHint}
+                  {listening ? "Go ahead — I'm listening…" : live ? "" : hint}
                 </span>
               )}
             </p>
@@ -401,7 +513,11 @@ export default function ChingPanel({
           </div>
         )}
 
-        {outcome && !live && !listening && !running && (
+        {tripDraft && !live && !listening && (
+          <DraftCard tripDraft={tripDraft} running={running} onConfirm={onConfirmDraft} onEdit={onEditDraft} onCancel={onCancelDraft} />
+        )}
+
+        {outcome && !tripDraft && !live && !listening && !running && (
           <div className="rounded-2xl border border-black/[0.07] bg-[#fafafa] p-3 space-y-2">
             <div className="flex items-center gap-2">
               <span className="grid place-items-center w-[18px] h-[18px] shrink-0 rounded-full bg-[#e7f63c]">

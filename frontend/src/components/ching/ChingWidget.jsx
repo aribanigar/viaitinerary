@@ -22,6 +22,7 @@ import {
 } from "../../utils/ching/assistant";
 import { handleAssist } from "./assistActions";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
+import { draftSpeech } from "../../utils/ching/tripDraft";
 import {
   speak,
   stopSpeaking,
@@ -164,6 +165,8 @@ export default function ChingWidget() {
   // The live session shown in the panel: phase "listening" | "opening" | "finishing".
   const [live, setLive] = useState(null);
   const [outcome, setOutcome] = useState(null); // { title, lines, warnings, unrecognized }
+  // A voice-filled new trip waiting on Confirm & Build: { draft, commands }.
+  const [tripDraft, setTripDraft] = useState(null);
   const [compact, setCompact] = useState(false); // collapse to the result pill
   const [progress, setProgress] = useState("");
   const [, setUndoTick] = useState(0);
@@ -200,7 +203,8 @@ export default function ChingWidget() {
       confirmRef.current = null;
       if (!pending) return;
       if (!yes) {
-        respond("Okay, I won't do that.");
+        if (pending.cancel) pending.cancel();
+        else respond("Okay, I won't do that.");
         return;
       }
       try {
@@ -402,7 +406,7 @@ export default function ChingWidget() {
       // The answer to a "yes or no?" Ching just asked.
       if (confirmRef.current) {
         const t = String(text || "").toLowerCase().replace(/^\s*(?:hello |hey )?ching[\s,]*/, "").trim();
-        const yes = /^(?:yes|yeah|yep|yup|haan|han|ha|ji|ok|okay|sure|confirm|confirmed|do it|go ahead|correct|right|please do)\b/.test(t);
+        const yes = /^(?:yes|yeah|yep|yup|haan|han|ha|ji|ok|okay|sure|confirm|confirmed|do it|go ahead|correct|right|please do|build(?: it)?|looks good)\b/.test(t);
         const no = /^(?:no|nope|nah|cancel|don't|do not|stop|nahi|na|leave it|never ?mind|forget (?:it|that|about it))\b/.test(t);
         if (yes || no) {
           if (S.editor && safe(() => S.editor.live.active(), false)) safe(() => S.editor.live.cancel());
@@ -410,7 +414,9 @@ export default function ChingWidget() {
           await answerConfirm(yes);
           return;
         }
-        confirmRef.current = null; // moved on to something else
+        // Moved on to something else. A pending trip draft stays open: what
+        // they said is most likely a correction to it.
+        if (!confirmRef.current.draft) confirmRef.current = null;
       }
 
       // Not a trip at all? ("open the ledger", "what's pending", "tell me a joke")
@@ -465,6 +471,21 @@ export default function ChingWidget() {
 
       const changes = list(res.changes);
       const commands = list(res.commands);
+      // A new trip filled by voice: show the draft and wait for Confirm & Build.
+      // Commands said with it ("… then export the PDF") run after the confirm.
+      if (res.mode === "fill" && res.draft) {
+        setUndoTick((t) => t + 1);
+        setTripDraft({ draft: res.draft, commands });
+        setOutcome(null);
+        setNotice(null);
+        setCompact(false);
+        confirmRef.current = { run: () => confirmDraftRef.current?.(), cancel: () => cancelDraftRef.current?.(), draft: true };
+        say(draftSpeech(res.draft));
+        return;
+      }
+      // An edit while a draft waits: refresh the card with the corrected trip.
+      const pendingDraft = safe(() => ed.draft?.(), null);
+      if (pendingDraft) setTripDraft((d) => (d ? { ...d, draft: pendingDraft } : { draft: pendingDraft, commands: [] }));
       if (!changes.length && !commands.length) {
         // Understood but nothing to change ("already in the inclusions", "no such hotel"):
         // say why instead of pretending not to understand.
@@ -548,6 +569,81 @@ export default function ChingWidget() {
     },
     [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond],
   );
+
+  // ── Confirm & Build ─────────────────────────────────────────────────────
+  const confirmDraftRef = useRef(null);
+  const cancelDraftRef = useRef(null);
+  const confirmDraft = useCallback(async () => {
+    const ed = getChingEditor();
+    const pending = tripDraft;
+    if (!ed?.confirmDraft || !pending) return;
+    const r = await ed.confirmDraft();
+    if (r?.blocked?.length) {
+      // Still doesn't add up: say what's wrong, keep the card and the question open.
+      setTripDraft((d) => (d ? { ...d, draft: safe(() => ed.draft(), d.draft) || d.draft } : d));
+      confirmRef.current = { run: () => confirmDraftRef.current?.(), cancel: () => cancelDraftRef.current?.(), draft: true };
+      respond(`I can't build it yet: ${r.blocked[0].text}.`);
+      return;
+    }
+    setTripDraft(null);
+    confirmRef.current = null;
+    const commands = list(pending.commands);
+    const emailsClient = commands.some((c) => CLIENT_EMAIL_COMMANDS.has(c.type) && c.channel === "email");
+    const built = r?.saved
+      ? "Built and saved."
+      : `Built. Add the client's phone and email so I can save it${commands.length ? ", then ask me again for the rest" : ""}.`;
+    if (commands.length && !emailsClient && r?.saved) {
+      const lines = (await runCommands(commands, ed)) || [];
+      respond([built, ...lines].join(" "));
+    } else {
+      respond(built);
+      if (emailsClient && r?.saved) {
+        const who = safe(() => ed.summary().clientName, "") || "the client";
+        askConfirm(`Email ${who} now? Say yes or no.`, async () => {
+          const lines = (await runCommands(commands, ed)) || [];
+          if (lines.length) respond(`${lines.join(". ")}.`);
+        });
+      }
+    }
+    setOutcome({ title: r?.saved ? "Trip built and saved" : "Trip built — add phone & email to save", lines: [] });
+    setCompact(true);
+    setUndoTick((t) => t + 1);
+  }, [askConfirm, respond, runCommands, tripDraft]);
+  const cancelDraft = useCallback(() => {
+    const ed = getChingEditor();
+    safe(() => ed?.cancelDraft?.());
+    setTripDraft(null);
+    confirmRef.current = null;
+    setOutcome(null);
+    respond("Cancelled — the trip is back to how it was.");
+    setUndoTick((t) => t + 1);
+  }, [respond]);
+  // "Edit": keep the filled form, tuck Ching away; the draft stays unsaved.
+  const editDraft = useCallback(() => {
+    setOutcome({ title: "Draft — not saved yet. Tap to review", lines: [] });
+    setCompact(true);
+  }, []);
+  useEffect(() => {
+    confirmDraftRef.current = confirmDraft;
+    cancelDraftRef.current = cancelDraft;
+  }, [confirmDraft, cancelDraft]);
+  // Saved by hand (the builder's Save button) or undone: the draft is settled.
+  useEffect(() => {
+    const settle = () => {
+      setTripDraft(null);
+      if (confirmRef.current?.draft) confirmRef.current = null;
+    };
+    window.addEventListener("ching:draft-settled", settle);
+    return () => window.removeEventListener("ching:draft-settled", settle);
+  }, []);
+  // The builder closed or switched trips under a pending draft: drop the card.
+  useEffect(() => {
+    if (tripDraft && !safe(() => editor?.draft?.(), null)) {
+      setTripDraft(null);
+      if (confirmRef.current?.draft) confirmRef.current = null;
+    }
+  }, [editor, tripDraft]);
+
 
   // Requests that aren't about building a trip (see utils/ching/assistant.js).
   const assist = useCallback(
@@ -723,6 +819,10 @@ export default function ChingWidget() {
     if (!ed) return;
     const label = safe(() => ed.undo(), null);
     toast.info(label ? `Undone: ${label}` : "Nothing to undo");
+    if (!safe(() => ed.draft?.(), null)) {
+      setTripDraft(null);
+      if (confirmRef.current?.draft) confirmRef.current = null;
+    }
     if (label) setOutcome((o) => (o ? { ...o, title: `Undone: ${label}` } : o));
     setUndoTick((t) => t + 1);
   }, []);
@@ -830,6 +930,10 @@ export default function ChingWidget() {
             }}
             onOpenTab={(tab) => safe(() => getChingEditor()?.setTab(tab))}
             onConfirm={answerConfirm}
+            tripDraft={tripDraft}
+            onConfirmDraft={confirmDraft}
+            onEditDraft={editDraft}
+            onCancelDraft={cancelDraft}
           />
         </Suspense>
       )}

@@ -209,9 +209,21 @@ function planFill(base, rawText, { catalog, settings, today }) {
     // Extras are best effort; the fill itself stands.
   }
 
+  // For the Trip Draft card: what Ching chose itself, nobody said — the
+  // cities it planned and the hotels it picked — shown as "suggested".
+  const said = ` ${placeKey(text)} `;
+  const draftMeta = {
+    suggestedCities: [...new Set(parts.accommodations.map((a) => a.city))].filter((c) => {
+      const k = placeKey(c);
+      return k && !said.includes(` ${k} `);
+    }),
+    pickedHotels: parts.autoPicked.filter((p) => p.hotel).map((p) => p.hotel),
+  };
+
   return {
     mode: "fill",
     command,
+    draftMeta,
     snapshot,
     changes: [...changes, ...extraChanges],
     warnings: [...new Set(warnings)],

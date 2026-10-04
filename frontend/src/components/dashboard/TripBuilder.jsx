@@ -75,6 +75,7 @@ import { getChingMemory, invalidateChingMemory } from "../../utils/ching/memoryS
 import { cheaperPlan, addOnSuggestions } from "../../utils/ching/optimize";
 import { formatTripImageUrl, normalizeAccommodation } from "../../utils/tripView";
 import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
+import { buildTripDraft } from "../../utils/ching/tripDraft";
 import { planLive, isBlankTrip } from "../../utils/ching/liveFill";
 import { tripChecklist, pendingByTab } from "../../utils/tripChecklist";
 import {
@@ -1189,9 +1190,19 @@ const TripBuilder = ({ mode }) => {
     }
   };
 
-  const handleSaveTrip = () => saveTrip();
+  const handleSaveTrip = () => {
+    // Saving by hand is the agent's own go-ahead for a voice-filled draft.
+    if (chingDraft.current) {
+      chingDraft.current = null;
+      window.dispatchEvent(new CustomEvent("ching:draft-settled"));
+    }
+    return saveTrip();
+  };
 
   // ── Auto-save: debounced silent save on any change ─────────────────────
+  // A trip Ching filled by voice that the agent hasn't confirmed yet:
+  // { meta, base } (see utils/ching/tripDraft.js). Nothing autosaves while it's set.
+  const chingDraft = useRef(null);
   const saveRef = useRef(saveTrip);
   saveRef.current = saveTrip;
   const savingRef = useRef(false);
@@ -1199,8 +1210,9 @@ const TripBuilder = ({ mode }) => {
   useEffect(() => {
     if (loading) return;
     const t = setTimeout(() => {
-      // Not mid-sentence: a live voice session is still reshaping the trip.
-      if (!savingRef.current && !chingLive.current) saveRef.current?.({ silent: true });
+      // Not mid-sentence (a live voice session is still reshaping the trip), and
+      // not while a voice-filled trip waits on Confirm & Build in Ching.
+      if (!savingRef.current && !chingLive.current && !chingDraft.current) saveRef.current?.({ silent: true });
     }, 2500);
     return () => clearTimeout(t);
   }, [
@@ -1523,6 +1535,7 @@ const TripBuilder = ({ mode }) => {
     if (loading || !dataIsCurrent) return undefined;
     chingUndo.current = []; // undo history belongs to the trip it was made on
     chingLive.current = null;
+    chingDraft.current = null;
     const run = (actions) => {
       const { snapshot, catalog, settings } = chingState.current;
       return { before: snapshot, ...applyEditActions(snapshot, actions, { catalog, settings }) };
@@ -1585,6 +1598,8 @@ const TripBuilder = ({ mode }) => {
       undo: () => {
         const last = chingUndo.current.pop();
         if (!last) return null;
+        // Undoing the voice fill itself drops the pending draft with it.
+        if (chingDraft.current && last.before === chingDraft.current.base) chingDraft.current = null;
         commit(last.before);
         return last.label;
       },
@@ -1602,6 +1617,27 @@ const TripBuilder = ({ mode }) => {
         };
       },
       setTab: (tab) => chingState.current.setActiveTab(tab),
+      // Confirm & Build (utils/ching/tripDraft.js): the pending voice draft,
+      // re-read from the builder's current state, so edits since are in it.
+      draft: () => (chingDraft.current ? buildTripDraft(chingState.current.snapshot, chingDraft.current.meta) : null),
+      confirmDraft: async () => {
+        if (!chingDraft.current) return { saved: true };
+        const d = buildTripDraft(chingState.current.snapshot, chingDraft.current.meta);
+        if (!d.ok) return { saved: false, blocked: d.blocking };
+        chingDraft.current = null;
+        await settle();
+        // Missing phone / email: built, but the builder can't save it yet.
+        const saved = await chingState.current.saveTrip({ silent: true });
+        return { saved: !!saved };
+      },
+      cancelDraft: () => {
+        const d = chingDraft.current;
+        if (!d) return false;
+        chingDraft.current = null;
+        chingUndo.current = chingUndo.current.slice(0, -1);
+        commit(d.base);
+        return true;
+      },
       // Phase 4: a cheaper version from the agency's own catalog, and add-ons.
       optimize: () => cheaperPlan(chingState.current.snapshot, chingState.current.catalog),
       addOns: () => addOnSuggestions(chingState.current.snapshot, chingState.current.catalog),
@@ -1630,8 +1666,14 @@ const TripBuilder = ({ mode }) => {
               { before: live.base, label: plan.mode === "fill" ? "voice fill" : plan.changes.join("; ") },
             ];
           }
+          // A new trip filled by voice is a draft until the agent confirms it.
+          let draft = null;
+          if (plan.mode === "fill" && plan.changes.length) {
+            chingDraft.current = { meta: plan.draftMeta || {}, base: live.base };
+            draft = buildTripDraft(plan.snapshot, chingDraft.current.meta);
+          }
           const { mode, changes, warnings, unrecognized, commands } = plan;
-          return { mode, changes, warnings, unrecognized, commands, pending: livePending(plan.snapshot) };
+          return { mode, changes, warnings, unrecognized, commands, draft, pending: livePending(plan.snapshot) };
         },
         cancel: () => {
           const live = chingLive.current;
