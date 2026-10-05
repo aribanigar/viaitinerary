@@ -11,6 +11,7 @@ import {
 import lazyWithReload, {
   reloadOnceForStaleChunks,
 } from "../../utils/lazyWithReload";
+import { stripFillers } from "../../utils/ching/speechClean.js";
 import useSpeech, { primeAudio } from "./useSpeech";
 import { fetchTrips } from "../../api/trips";
 import {
@@ -773,7 +774,9 @@ export default function ChingWidget() {
   }, [startSession]);
 
   const handleCommand = useCallback(
-    (text) => {
+    (said) => {
+      // Typed or spoken, "umm"/"ahh"/stutters never reach the parsers.
+      const text = stripFillers(said) || said;
       chingSaid("you", text);
       const S = sessionRef.current || startSession();
       S.ended = true;

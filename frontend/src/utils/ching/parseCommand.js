@@ -533,6 +533,8 @@ export function parseChingCommand(text, catalog, { today } = {}) {
         if (nx === '|' || isNum(nx) || BOUNDARY.has(nx)) break
       }
       if (BOUNDARY.has(t)) break
+      // "… grand mumtaz all 3 nights": "all" starts a restatement, not the name.
+      if (['all', 'whole', 'entire'].includes(t) && (isNum(at(k + 1)) || at(k + 1) === 'the')) break
       words.push(t)
       k++
     }
@@ -608,6 +610,24 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     }
     return 0
   }
+  // Is "X 2 nights Y 2 nights" said place-first? Follow the chain of counts
+  // from the one at k: place-first when the LAST count has no place after it
+  // ("… khyber 2 nights."), place-after when it does ("… 1 night srinagar").
+  const placesBeforeCounts = (k) => {
+    let guard = 0
+    while (guard++ < 12) {
+      let j = k + 2
+      while (['stay', 'stays', 'staying', 'of'].includes(at(j))) j++
+      if (PREPS.has(at(j))) return false
+      const a = collectAfter(j)
+      if (!a.words.length) return true
+      let nk = a.end + 1
+      if (at(nk) === 'for') nk++
+      if (!(isNum(at(nk)) && NIGHT_UNITS.has(at(nk + 1)))) return false
+      k = nk
+    }
+    return false
+  }
   // An ordering word right after a stay ("srinagar 1 night first", "… 2 nights at the end").
   const orderAfter = (k) => {
     let j = k
@@ -633,8 +653,36 @@ export function parseChingCommand(text, catalog, { today } = {}) {
         continue
       }
     }
+    // "… grand mumtaz all 3 nights" / "for the whole 3 nights": restates the
+    // stay just said, not a new one.
+    if (stays.length && ['all', 'whole', 'entire', 'full'].includes(at(i - 1) === 'the' ? at(i - 2) : at(i - 1))) {
+      mark(i, i + 1)
+      i += 1
+      continue
+    }
     let j = i + 2
     while (['stay', 'stays', 'staying', 'of'].includes(at(j)) && j < i + 4) j++
+    // "4 nights grand mumtaz for 2 nights and khyber for 2 nights",
+    // "4 nights grand mumtaz 2 nights khyber 2 nights": the words after this
+    // count belong to the NEXT count, so this one is the trip length.
+    {
+      const a0 = collectAfter(PREPS.has(at(j)) ? j + 1 : j)
+      let k = a0.end + 1
+      const viaFor = at(k) === 'for'
+      if (viaFor) k++
+      if (
+        a0.words.length &&
+        isNum(at(k)) &&
+        NIGHT_UNITS.has(at(k + 1)) &&
+        n > +at(k) &&
+        (viaFor || (placeTail(a0.words) === a0.words.length && placesBeforeCounts(k)))
+      ) {
+        if (!nightsTotal) nightsTotal = n
+        mark(i, i + 1)
+        i += 1
+        continue
+      }
+    }
     if (PREPS.has(at(j))) {
       const a = collectAfter(j + 1)
       if (a.words.length) {

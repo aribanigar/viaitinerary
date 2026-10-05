@@ -67,6 +67,7 @@ import { samePlace } from './places.js'
 import { pickHotel } from './buildTrip.js'
 import { dayWiseCabs, repriceCabs, isIncludedCab, keepPerTripPriced } from './cabPlan.js'
 import { applyInclusion } from './inclusions.js'
+import { activityRateOptions, findActivityRate, dateForDay } from '../activityRates.js'
 
 const COMMANDS = new Set(['EXPORT_PDF', 'EMAIL_ME', 'SAVE', 'UNDO'])
 
@@ -168,7 +169,6 @@ function prepare(snapshot) {
   return s
 }
 
-const guestCount = (s) => (Number(s.tripInfo.adults) || 0) + (Number(s.tripInfo.kids5to12) || 0)
 const hotelStay = (acc) => `${acc.city || acc.name || 'Hotel'}`
 
 function stayAt(st, idx) {
@@ -838,9 +838,20 @@ const HANDLERS = {
     if (st.s.tripActivities.some((x) => sameName(x.name, name) && String(x.dayNumber) === String(dayNumber))) {
       return st.warnings.push(`${name} is already on ${dayNumber ? `day ${dayNumber}` : 'the trip'}`)
     }
-    const persons = toInt(a.persons) >= 1 ? toInt(a.persons) : Math.max(1, guestCount(st.s))
-    const rawPrice = a.pricePerTicket ?? cat?.selling_price ?? null
+    // Adults buy adult tickets, kids 5-12 child tickets. Nothing said → the
+    // trip's own guests; "for 4 people" → 4 adult tickets.
+    const ti = st.s.tripInfo
+    const spokenPersons = toInt(a.persons) >= 1 ? toInt(a.persons) : null
+    const spokenKids = toInt(a.children) >= 0 && a.children != null ? toInt(a.children) : null
+    const persons = spokenPersons ?? Math.max(1, Number(ti.adults) || 0)
+    const kids = spokenKids ?? (spokenPersons != null ? 0 : Number(ti.kids5to12) || 0)
+    // Priced from the catalog's rate sheet: the option said ("phase 2") and
+    // the season covering that day's date.
+    const option = activityRateOptions(cat).find((o) => sameName(o, a.option || '')) || ''
+    const rate = cat ? findActivityRate(cat, { option, date: dateForDay(ti.startDate, dayNumber) }) : null
+    const rawPrice = a.pricePerTicket ?? (cat && (rate.price || cat.selling_price != null) ? rate.price : null)
     const price = rawPrice == null || rawPrice === '' ? null : Number(rawPrice)
+    const childPrice = kids > 0 && price != null ? (a.pricePerTicket == null && rate?.childPrice) || price : ''
     st.s.tripActivities.push({
       id: newId(),
       activityId: cat?.id ?? null,
@@ -848,11 +859,22 @@ const HANDLERS = {
       location,
       dayNumber,
       ticketCount: String(persons),
+      childCount: String(kids),
       pricePerTicket: price == null ? '' : price,
+      childPrice,
+      costPerTicket: rate?.cost || '',
+      childCost: kids > 0 ? rate?.childCost || rate?.cost || '' : '',
+      rateOption: rate?.option || '',
       markupPercentage: '',
       notes: '',
     })
-    const cost = price == null ? `${plural(persons, 'person')}, price not set` : `${persons} × ${money(price)}`
+    const who = kids > 0 ? `${plural(persons, 'adult')} + ${kids} ${kids === 1 ? 'child' : 'children'}` : plural(persons, 'person')
+    const cost =
+      price == null
+        ? `${who}, price not set`
+        : kids > 0
+          ? `${persons} × ${money(price)} + ${kids} × ${money(childPrice)}`
+          : `${persons} × ${money(price)}`
     st.changes.push(`Added ${name}${dayNumber ? ` on day ${dayNumber}` : ''} (${cost})`)
     if (price == null) st.warnings.push(`${name}: ticket price not set`)
     if (!dayNumber) st.warnings.push(`${name} isn't on a day yet — pick one in the Activities tab`)

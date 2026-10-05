@@ -153,15 +153,19 @@ test('unknown replacement hotel -> warning, no action', () => {
 // ---- activities ----
 test('add Shikara ride on day 2', () =>
   only('add Shikara ride on day 2', [
-    { type: 'ADD_ACTIVITY', day: 2, activityId: 31, name: 'Shikara Ride', location: 'Srinagar', pricePerTicket: 800, persons: null },
+    { type: 'ADD_ACTIVITY', day: 2, activityId: 31, name: 'Shikara Ride', location: 'Srinagar', persons: null },
   ]))
 test('add gondola phase 2 in Gulmarg (day null)', () =>
   only('add gondola phase two in Gulmarg', [
-    { type: 'ADD_ACTIVITY', day: null, activityId: 32, name: 'Gondola Phase 2', location: 'Gulmarg', pricePerTicket: 1900, persons: null },
+    { type: 'ADD_ACTIVITY', day: null, activityId: 32, name: 'Gondola Phase 2', location: 'Gulmarg', persons: null },
   ]))
 test('add pony ride for 4 people on day 4', () =>
   only('add pony ride for 4 people on day 4', [
-    { type: 'ADD_ACTIVITY', day: 4, activityId: 33, name: 'Pony Ride', location: 'Pahalgam', pricePerTicket: 1200, persons: 4 },
+    { type: 'ADD_ACTIVITY', day: 4, activityId: 33, name: 'Pony Ride', location: 'Pahalgam', persons: 4 },
+  ]))
+test('add gondola phase 2 for 2 adults and 1 child on day 3', () =>
+  only('add gondola phase 2 for 2 adults and 1 child on day 3', [
+    { type: 'ADD_ACTIVITY', day: 3, activityId: 32, name: 'Gondola Phase 2', location: 'Gulmarg', persons: 2, children: 1 },
   ]))
 test('remove the gondola ride', () => only('remove the gondola ride', [{ type: 'REMOVE_ACTIVITY', index: 0 }]))
 test('add Pari Mahal to day 2 (not in catalog)', () => only('add Pari Mahal to day 2', [{ type: 'ADD_DAY_ITEM', day: 2, text: 'Pari Mahal' }]))

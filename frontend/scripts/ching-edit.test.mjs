@@ -590,6 +590,28 @@ test('ADD_ACTIVITY on a given day; custom one without a price warns', () => {
   assert.deepEqual([dinner.dayNumber, dinner.location, dinner.pricePerTicket], [2, 'Srinagar', ''])
   assert.ok(r.warnings.some((w) => w.includes('Houseboat dinner') && w.includes('price not set')))
 })
+test('ADD_ACTIVITY: adults + children, rate option and the season of that day', () => {
+  const gondola = {
+    id: 31, name: 'Gondola Ride Phase 1', destination_id: 13, selling_price: 1800, child_price: 1000, cost: 1500,
+    price_sections: [
+      { option: 'Phase 2', price: 1900, child_price: 1300, cost: 1500, child_cost: 1000 },
+      { option: 'Phase 2', price: 2300, child_price: 1500, cost: 1800, child_cost: 1200, valid_from: '2026-11-12', valid_to: '2026-11-12' },
+    ],
+  }
+  const cat2 = { ...catalog, activities: [gondola, ...catalog.activities.slice(1)] }
+  const go = (a) => applyEditActions(kashmir(), [{ type: 'ADD_ACTIVITY', activityId: 31, name: 'Gondola Ride Phase 1', location: null, ...a }], { catalog: cat2, settings })
+  // Day 3 = 12 Nov: the seasonal Phase 2 row.
+  let r = go({ day: 3, persons: 2, children: 1, option: 'phase 2' })
+  let a = r.snapshot.tripActivities.at(-1)
+  assert.deepEqual([a.ticketCount, a.childCount, a.pricePerTicket, a.childPrice, a.rateOption, a.costPerTicket], ['2', '1', 2300, 1500, 'Phase 2', 1800])
+  assert.match(r.changes.join(' '), /2 × ₹2,300 \+ 1 × ₹1,500/)
+  // Day 4 = 13 Nov: the undated Phase 2 row.
+  a = go({ day: 4, persons: 2, children: 1, option: 'Phase 2' }).snapshot.tripActivities.at(-1)
+  assert.deepEqual([a.pricePerTicket, a.childPrice], [1900, 1300])
+  // No option said: the base rate; no children said, trip has none → none.
+  a = go({ day: 2, persons: null }).snapshot.tripActivities.at(-1)
+  assert.deepEqual([a.pricePerTicket, a.childCount, a.rateOption], [1800, '0', ''])
+})
 test('REMOVE_ACTIVITY by context index', () => {
   const r = run([{ type: 'REMOVE_ACTIVITY', index: 0 }])
   assert.equal(r.snapshot.tripActivities.length, 0)

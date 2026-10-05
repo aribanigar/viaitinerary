@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 // Same wake-phrase rules as the parser (parseCommand.js re-exports these).
 // Imported from text.js directly so the eager bundle doesn't carry the parser.
 import { hasWakePhrase, stripWakePhrase } from "../../utils/ching/text.js";
+import { stripFillers, endOfTurnDelay, TURN_MS } from "../../utils/ching/speechClean.js";
 
 // Voice layer for Ching, on the browser's Web Speech API (no keys, no server).
 //
@@ -9,8 +10,10 @@ import { hasWakePhrase, stripWakePhrase } from "../../utils/ching/text.js";
 // detaches the old instance's handlers, so a late `end`/`error` from a
 // recognizer we've replaced can never restart anything:
 //   • command — capture one request: live interim text, auto-finish after
-//     ~2.5 s of silence, a second tap, or a trailing "done" / "that's it" /
-//     "over". Browsers that end the session on their own (Android, iOS, pauses)
+//     a silence whose length depends on how the sentence ends (endOfTurnDelay:
+//     ~2 s after "open the ledger", ~7 s after "…stay in" / "…and" / "umm"),
+//     a second tap, or a trailing "done" / "that's it" / "over". Filler
+//     sounds ("umm", "ahh", "emm") are stripped from what Ching sees. Browsers that end the session on their own (Android, iOS, pauses)
 //     are transparently restarted and the text stitched together.
 //   • wake — hands-free: continuous recognition, restarted on `end` and on
 //     recoverable errors while enabled and the tab is visible, listening for
@@ -26,8 +29,7 @@ const IS_ANDROID =
   typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 
 const LANG = "en-IN";
-const SILENCE_MS = 2500; // after something was heard
-const FIRST_WORDS_MS = 8000; // before anything was heard
+const FIRST_WORDS_MS = TURN_MS.silentStart; // before anything was heard
 const STOP_GRACE_MS = 1500; // wait this long for `end` after stop()
 
 // Spoken end-of-command markers ("... breakfast and dinner, done").
@@ -361,8 +363,9 @@ class SpeechEngine {
       if (stripped.woke) text = norm(stripped.text);
     }
     this.cmd.session = text;
-    const full = this.currentText();
-    if (full) this.cmd.heard = true;
+    const raw = this.currentText();
+    const full = stripFillers(raw);
+    if (raw) this.cmd.heard = true;
     this.set({ interim: full });
     if (this.cmd.finishing) return;
 
@@ -372,11 +375,13 @@ class SpeechEngine {
       this.finishCommand();
       return;
     }
-    this.armSilence(this.cmd.heard ? SILENCE_MS : FIRST_WORDS_MS);
+    // Wait longer while the sentence sounds unfinished (judged on the raw
+    // text, so a trailing "umm" counts as still thinking).
+    this.armSilence(this.cmd.heard ? endOfTurnDelay(raw) : FIRST_WORDS_MS);
   }
 
   deliver() {
-    const text = norm(this.currentText().replace(END_RE, ""));
+    const text = stripFillers(norm(this.currentText().replace(END_RE, "")));
     const { cancelled } = this.cmd;
     this.reset();
     this.finishWith(cancelled ? null : text);

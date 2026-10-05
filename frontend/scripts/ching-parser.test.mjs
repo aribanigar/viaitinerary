@@ -393,5 +393,23 @@ test('destination: a day trip or a hotel city they do not sleep in is not the tr
   assert.equal(p('gulmarg 2 nights for rahul').destinationName, 'Gulmarg')
 })
 
+test('trip length first, then "<hotel> for N nights" (hotel before its nights)', () => {
+  const stays = (c) => c.stays.map((x) => [x.nights, x.hotelName])
+  let c = parse('trip for sameer 6 people 20th november 4 nights hotels lalit grand palace for 2 nights and khyber for 2 nights')
+  assert.equal(c.nights, 4)
+  assert.deepEqual(stays(c), [[2, 'The Lalit Grand Palace'], [2, 'Khyber Himalayan Resort & Spa']])
+  c = parse('4 nights lalit grand palace 2 nights khyber 2 nights')
+  assert.equal(c.nights, 4)
+  assert.deepEqual(stays(c), [[2, 'The Lalit Grand Palace'], [2, 'Khyber Himalayan Resort & Spa']])
+  // … but "2 nights pahalgam 1 night gulmarg 1 night srinagar" is place-after.
+  c = parse('4 nights trip 2 nights pahalgam 1 night gulmarg 1 night srinagar')
+  assert.deepEqual(c.stays.map((x) => [x.nights, x.city]), [[2, 'Pahalgam'], [1, 'Gulmarg'], [1, 'Srinagar']])
+})
+test('"all 3 nights" restates the stay, it does not add 3 more', () => {
+  const c = parse('client priya 2 pax 25 november 3 nights srinagar lalit grand palace all 3 nights')
+  assert.equal(c.nights, 3)
+  assert.deepEqual(c.stays.map((x) => [x.nights, x.hotelName]), [[3, 'The Lalit Grand Palace']])
+})
+
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed) process.exit(1)

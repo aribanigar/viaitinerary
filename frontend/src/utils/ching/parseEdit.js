@@ -761,9 +761,16 @@ function hAddActivity(c, toks, env) {
     day = +dm[1]
     rest = rest.slice(0, dm.index) + ' ' + rest.slice(dm.index + dm[0].length)
   }
+  // "for 2 adults and 1 child": children get the child rate.
+  let children = null
+  const cm = rest.match(/\s*\b(?:and\s+|plus\s+|with\s+)?(\d{1,2})\s+(?:children|child|childs|kids?)\b/)
+  if (cm) {
+    children = +cm[1]
+    rest = rest.slice(0, cm.index) + ' ' + rest.slice(cm.index + cm[0].length)
+  }
   const pm =
     rest.match(/\bfor\s+(\d{1,3})\s+(?:people|persons?|pax|guests?|adults?|tickets?|members|of us)\b/) ||
-    rest.match(/\b(\d{1,3})\s+tickets?\b/)
+    rest.match(/\b(\d{1,3})\s+(?:tickets?|adults?)\b/)
   if (pm) {
     persons = +pm[1]
     rest = rest.slice(0, pm.index) + ' ' + rest.slice(pm.index + pm[0].length)
@@ -797,9 +804,16 @@ function hAddActivity(c, toks, env) {
   if (!r.confident && cat.activities.length) r = bestMatch(heard, cat.activities)
   if (r.confident) {
     const a = r.best
+    // A rate option said with it ("gondola phase 2") picks that rate row.
+    const said = ` ${normTokens(rest).join(' ')} `
+    const option = (a.raw?.price_sections || [])
+      .map((s) => String(s.option || '').trim())
+      .find((o) => o && said.includes(` ${normTokens(o).join(' ')} `)) || null
     return [{
       type: 'ADD_ACTIVITY', day, activityId: a.id, name: a.name,
-      location: a.location || location || null, pricePerTicket: a.price, persons,
+      location: a.location || location || null, persons,
+      ...(children != null ? { children } : {}),
+      ...(option ? { option } : {}),
     }]
   }
   if (day == null && location) {
