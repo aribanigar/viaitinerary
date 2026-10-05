@@ -404,5 +404,35 @@ for (const [said, want] of [
   report(`[email edit] change the client ${said}`, diff([[e.tripInfo.clientEmail, want]]))
 }
 
+// ── 9. Hotel changes for any day, not just the first ──────────────────────
+// (agent report: naming a hotel worked for day 1 but not for later days)
+{
+  const trip = fill('create a trip for Rahul 2 adults 10 november 2 nights srinagar grand mumtaz 2 nights gulmarg highlands park 1 night srinagar grand mumtaz innova')
+  const hotels = (s) => s.accommodations.map((a) => [a.hotelId, a.checkIn])
+  for (const [said, want] of [
+    ['change the hotel on day 3 to khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['change hotel for day 3 and 4 to khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['day 3 hotel khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['third day hotel khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['change hotel for night 3 to khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['change the hotel on 12th november to khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['for day 3 change the hotel to khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['change hotel on day 1 to lalit', [[12, '2026-11-10'], [13, '2026-11-12'], [11, '2026-11-14']]],
+    ['change hotel on 2nd day to lalit', [[12, '2026-11-10'], [13, '2026-11-12'], [11, '2026-11-14']]],
+    ['change hotel on day 5 to lalit', [[11, '2026-11-10'], [13, '2026-11-12'], [12, '2026-11-14']]],
+    ['for the 5th night use lalit', [[11, '2026-11-10'], [13, '2026-11-12'], [12, '2026-11-14']]],
+    ['change the hotel to lalit grand palace', [[12, '2026-11-10'], [13, '2026-11-12'], [11, '2026-11-14']]],
+    ['change grand mumtaz to lalit and highlands park to khyber', [[12, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['instead of highlands park use khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['make the gulmarg hotel khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['gulmarg hotel khyber', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['add khyber for day 3', [[11, '2026-11-10'], [14, '2026-11-12'], [11, '2026-11-14']]],
+    ['change the hotel on day 3 to lalit', [[11, '2026-11-10'], [13, '2026-11-12'], [11, '2026-11-14']]], // Lalit is in Srinagar: refused
+  ]) {
+    const r = planLive(trip, stripFillers(said), opts)
+    report(`[hotel by day] ${said}`, diff([[hotels(r.snapshot), want], [r.snapshot.tripInfo.startDate, '2026-11-10'], [r.unrecognized.length, 0]]))
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

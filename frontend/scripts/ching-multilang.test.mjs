@@ -114,6 +114,11 @@ check('roman pricing', 'margin 18 percent kar do aur gst hatao', planned, (s) =>
 check('english', 'create a trip for Rahul Sharma 2 adults from 10th november 2 nights in srinagar at grand mumtaz and 2 nights in gulmarg at highlands park with innova', blank, (s) => [
   [s.tripInfo.clientName, 'Rahul Sharma'], [H(s), [[11, '2026-11-10', '2026-11-12'], [13, '2026-11-12', '2026-11-14']]]])
 
+// Hotel changes in Hindi / Urdu word order (the city first, "kar do" at the end).
+const hotelled = run(blank, 'create a trip for Rahul Sharma 2 adults from 10th november 2 nights in srinagar at grand mumtaz and 2 nights in gulmarg at highlands park with innova')
+check('roman hotel change', 'gulmarg mein khyber kar do', hotelled, (s) => [[H(s), [[11, '2026-11-10', '2026-11-12'], [14, '2026-11-12', '2026-11-14']]]])
+check('hi hotel change', 'तीसरे दिन का होटल खैबर कर दो', hotelled, (s) => [[H(s), [[11, '2026-11-10', '2026-11-12'], [14, '2026-11-12', '2026-11-14']]]])
+check('ur hotel change', 'گلمرگ میں ہوٹل خیبر کر دو', hotelled, (s) => [[H(s), [[11, '2026-11-10', '2026-11-12'], [14, '2026-11-12', '2026-11-14']]]])
 // Spoken email addresses — one address, no spaces (agent report).
 check('hi email', 'ईमेल राहुल शर्मा एट जीमेल डॉट कॉम', planned, (s) => [[s.tripInfo.clientEmail, 'rahulsharma@gmail.com']])
 check('ur email', 'ای میل عمران خان ایٹ جی میل ڈاٹ کام', planned, (s) => [[s.tripInfo.clientEmail, 'imrankhan@gmail.com']])

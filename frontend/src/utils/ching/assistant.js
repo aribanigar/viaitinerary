@@ -2,6 +2,7 @@
 // small talk, and the replies Ching speaks back. Pure — no React, no network;
 // the widget acts on what `understandAssistant` returns.
 
+import { chatReply } from "./chat.js";
 import { understandHotelSearch } from "./hotelQuery.js";
 
 const clean = (t) =>
@@ -95,13 +96,18 @@ const NAV_VERB = /^(?:please |can you |could you |kindly )?(?:open|go to|goto|ta
  *   { type: "smalltalk", reply }             "how are you", "tell me a joke"…
  *   null                                     anything else (trip building / editing)
  */
-export function understandAssistant(text, { inBuilder = false } = {}) {
+export function understandAssistant(text, { inBuilder = false, chat = null } = {}) {
   const t = clean(text);
   if (!t) return null;
   const words = t.split(" ").length;
 
   const memory = understandMemory(t, inBuilder);
   if (memory) return memory;
+
+  // Manners first: greetings, "how are you" (asked back), the agent's answer,
+  // thanks, goodbyes — `chat` is what Ching last asked in small talk.
+  const talk = chatReply(t, chat);
+  if (talk) return { type: "smalltalk", reply: talk.reply, topic: talk.topic };
 
   // Hotel search: "find a 4 star in Srinagar under 6000 with breakfast",
   // "use the cheapest available 4-star with breakfast", "use the first one".

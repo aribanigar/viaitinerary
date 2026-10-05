@@ -107,6 +107,8 @@ function prepareContext(context, cat) {
     city: String(s.city || ''),
     nights: Number(s.nights) || 0,
     mealPlan: s.mealPlan || '',
+    checkIn: String(s.checkIn || '').slice(0, 10),
+    checkOut: String(s.checkOut || '').slice(0, 10),
   }))
   stays.forEach((s) => s.city && cityKeys.add(normKey(s.city)))
   stays.forEach((s) => {
@@ -138,6 +140,7 @@ function prepareContext(context, cat) {
     vehicle: c.vehicle || null,
     // Client's name words (3+ letters) so "whatsapp it to rahul" is recognised as the client.
     clientTokens: normTokens(c.clientName).filter((t) => t.length >= 3 && !/^(?:mr|mrs|ms|miss|shri|smt)$/.test(t)),
+    startDate: String(c.startDate || '').slice(0, 10),
     stays,
     days,
     activities,
@@ -461,6 +464,29 @@ function hRooms(c, toks, env) {
   return scopeStays(toks, env).map((stay) => ({ type: 'SET_ROOMS', stay, rooms }))
 }
 
+// "add 1 extra bed at highlands park", "2 extra beds in every hotel", "no extra
+// bed": the count on a stay already on the trip (a new hotel is hAddHotel's).
+function hExtraBeds(c, toks, env) {
+  const neg = /\b(?:no|remove|without|drop|cancel)\s+(?:the\s+|any\s+)?extra\s+(?:beds?|mattress(?:es)?)\b/.test(c)
+  const m =
+    c.match(/\b(?:(\d{1,2})|an?|one)\s+extra\s+(?:beds?|mattress(?:es)?)\b/) ||
+    c.match(/\bextra\s+(?:beds?|mattress(?:es)?)\s*(?:to|=|:|as|is)?\s*(\d{1,2})\b/) ||
+    c.match(/\b(?:add|put|give|with)\s+(?:the\s+)?extra\s+(?:beds?|mattress(?:es)?)\b()/) ||
+    c.match(/^\s*extra\s+(?:beds?|mattress(?:es)?)\b()/)
+  if (!neg && !m) return null
+  if (!env.S.stays?.length) return null
+  const beds = neg ? 0 : m[1] ? +m[1] : 1
+  const { list } = stayMentions(toks, env.S)
+  if (list.length) return list.map((h) => ({ type: 'SET_EXTRA_BEDS', stay: h.stay, beds }))
+  // Nothing but the extra-bed words: every hotel. Anything else (a hotel or
+  // city not on the trip) is a new booking — leave it to hAddHotel.
+  const left = c
+    .replace(/\b(?:no|remove|without|drop|cancel|add|put|give|set|make|change|with|please|also|and|an?|one|\d{1,2}|extra|beds?|mattress(?:es)?|in|to|at|for|on|of|every|each|all|both|the|hotels?|stays?|rooms?|it|them|is|as|=|:)\b/g, ' ')
+    .replace(/[|,.]/g, ' ')
+    .trim()
+  return left ? null : [{ type: 'SET_EXTRA_BEDS', stay: 'all', beds }]
+}
+
 const VEHICLE_WORD = /\b(?:vehicle|vehicles|cab|cabs|car|cars|taxi|transport|transportation|driver)\b/
 function vehicleHits(toks, cat) {
   const found = []
@@ -703,6 +729,16 @@ function hAddHotel(c, toks, env) {
     hotelWords = words.slice(0, inAt)
     cityWords = words.slice(inAt + 1)
   }
+  // "gulmarg khyber" (Hindi / Urdu word order: the city first).
+  if (!cityWords.length && hotelWords.length > 1) {
+    for (let k = 1; k <= 2 && k < hotelWords.length; k++) {
+      if (cityLookup(hotelWords.slice(0, k), env.cat) && matchHotel(hotelWords.slice(k), '', env.cat).hotel) {
+        cityWords = hotelWords.slice(0, k)
+        hotelWords = hotelWords.slice(k)
+        break
+      }
+    }
+  }
   if (cityWords.length) {
     const city = cityLookup(cityWords, env.cat)
     if (city) a.city = city
@@ -882,10 +918,33 @@ function hNights(c, toks, env) {
 
 function hHotel(c, toks, env) {
   const { S, cat } = env
+  // "change grand mumtaz to lalit and highlands park to khyber": one change each.
+  const many = c.match(/^(?:please\s+)?(replace|swap|switch|change)\s+(.+\s+(?:with|to|by)\s+.+?)\s+and\s+(?:(?:also|then)\s+)?(?:(?:replace|swap|switch|change)\s+)?(.+\s+(?:with|to|by)\s+.+)$/)
+  if (many) {
+    const a = hHotel(`${many[1]} ${many[2]}`, toksOf(`${many[1]} ${many[2]}`), env)
+    const b = hHotel(`${many[1]} ${many[3]}`, toksOf(`${many[1]} ${many[3]}`), env)
+    if (a?.length && b?.length) return [...a, ...b]
+  }
   let X = null
   let Y = null
-  let m = c.match(/\b(?:replace|swap|switch|change)\s+(?:the\s+)?(.+?)\s+(?:with|by|for|to|into)\s+(?:the\s+)?(.+)$/)
+  // "instead of highlands park use khyber"
+  let m = c.match(/^(?:and\s+)?instead\s+of\s+(?:the\s+)?(.+?)\s+(?:use|put|take|book|choose|go with)\s+(?:the\s+)?(.+)$/)
   if (m) [X, Y] = [m[1], m[2]]
+  // "make the pahalgam hotel pine spring resort", "set the gulmarg stay to khyber"
+  if (!m) {
+    m = c.match(/\b(?:make|set)\s+(?:the\s+)?(.+?\s+(?:hotel|stay))\s+(?:to\s+|as\s+|into\s+)?(?:the\s+)?(.+)$/)
+    if (m) [X, Y] = [m[1], m[2]]
+  }
+  // "gulmarg hotel khyber", "the pahalgam hotel should be pine spring"
+  if (!m) {
+    const bare = c.match(/^(?:the\s+)?([a-z ]+?)\s+(?:hotel|stay)\s+(?:is\s+|should\s+be\s+|will\s+be\s+|to\s+|as\s+)?(?:the\s+)?(.+)$/)
+    if (bare && S.stays.some((st) => sameCity(st.city, bare[1]) || samePlace(st.city, bare[1])) && matchHotel(toksOf(bare[2]), '', cat).hotel) {
+      m = bare
+      ;[X, Y] = [`${bare[1]} hotel`, bare[2]]
+    }
+  }
+  if (!m) m = c.match(/\b(?:replace|swap|switch|change)\s+(?:the\s+)?(.+?)\s+(?:with|by|for|to|into)\s+(?:the\s+)?(.+)$/)
+  if (m && !X) [X, Y] = [m[1], m[2]]
   if (!m) {
     m = c.match(/\b(?:use|put|choose|pick|go with|stay at|stay in|book)\s+(?:the\s+)?(.+?)(?:\s+instead\s+of\s+(?:the\s+)?(.+?))?(?:\s+instead)?$/)
     if (m) [Y, X] = [m[1], m[2] || null]
@@ -938,7 +997,7 @@ function hHotel(c, toks, env) {
   }
   let stay = targetStay
   if (!stay) {
-    const hs = S.stays.filter((s) => sameCity(s.city, h.hotel.city))
+    const hs = S.stays.filter((s) => sameCity(s.city, h.hotel.city) || samePlace(s.city, h.hotel.city))
     if (!hs.length) {
       if (X) return null
       env.warnings.push(`${h.hotel.name} is in ${h.hotel.city || 'another city'} — there's no stay there to replace`)
@@ -964,6 +1023,95 @@ function hHotel(c, toks, env) {
     if (String(stay.hotelId) === String(h.hotel.id)) return []
   }
   return [{ type: 'REPLACE_HOTEL', stay: stay.index, hotelId: h.hotel.id, hotelName: h.hotel.name, city: h.hotel.city || stay.city }]
+}
+
+// ---------- hotel changes by day / night / date ----------
+// "change the hotel on day 3 to khyber", "day 3 and 4 hotel khyber", "for night 2
+// use lalit", "change the hotel on 12th november to khyber": the stays that
+// cover those nights get the hotel (a hotel is still never put in another city).
+const isoPlus = (iso, n) => {
+  const d = new Date(`${iso}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
+}
+function numberList(first, more) {
+  const out = [+first]
+  const re = /\s*(,|and|&|to|till|through|-)\s*(?:(?:day|night)\s+)?(\d{1,2})(?:st|nd|rd|th)?/g
+  let m
+  while ((m = re.exec(more || ''))) {
+    const n = +m[2]
+    if (/^(?:to|till|through|-)$/.test(m[1])) for (let k = out[out.length - 1] + 1; k <= n && k - out[0] < 31; k++) out.push(k)
+    else out.push(n)
+  }
+  return out
+}
+function nightsSaid(c, env) {
+  const { S } = env
+  const start = S.startDate
+  const total = S.nights || S.stays.reduce((a, st) => a + st.nights, 0)
+  if (!start || !(total >= 1)) return null
+  const nights = new Set()
+  let rest = ` ${c} `
+  const night = (n) => n >= 1 && n <= total && nights.add(isoPlus(start, n - 1))
+  const take = (re, fn) => {
+    rest = rest.replace(re, (...m) => (fn(m) === false ? m[0] : ' '))
+  }
+  // "night 3", "nights 3 and 4", "3rd and 4th night"
+  take(/\b(?:on|for|from)?\s*(?:the\s+)?nights?\s+(\d{1,2})((?:\s*(?:,|and|&|to|till|through|-)\s*(?:night\s+)?\d{1,2})*)/g, (m) => numberList(m[1], m[2]).forEach(night))
+  take(/\b(?:on|for|from)?\s*(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)((?:\s*(?:,|and|&|to|-)\s*\d{1,2}(?:st|nd|rd|th))*)\s+nights?\b/g, (m) => numberList(m[1], m[2]).forEach(night))
+  // "day 3", "days 3 and 4", "day 3 to 5" — the night of that day (the
+  // departure day is the last night's).
+  take(/\b(?:on|for|from)?\s*(?:the\s+)?days?\s+(\d{1,2})((?:\s*(?:,|and|&|to|till|through|-)\s*(?:day\s+)?\d{1,2})*)/g, (m) =>
+    numberList(m[1], m[2]).forEach((n) => night(Math.min(n, total))),
+  )
+  // "from 12th to 14th november" (check-out on the 14th), "on 12th november"
+  take(/\b(?:on|for|from)?\s*(?:the\s+)?(\d{1,2})(?:st|nd|rd|th)?\s+(?:to|till|until|-)\s+(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?([a-z]{3,9})\b/g, (m) => {
+    const a = extractDate(`${m[1]} ${m[3]}`, env.today)
+    const b = extractDate(`${m[2]} ${m[3]}`, env.today)
+    if (!a || !b) return false
+    for (let d = a.iso, k = 0; d < b.iso && k < 31; d = isoPlus(d, 1), k++) if (d >= start && d < isoPlus(start, total)) nights.add(d)
+  })
+  take(/\b(?:on|for|from)\s+(?:the\s+)?(\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?[a-z]{3,9})\b/g, (m) => {
+    const d = extractDate(m[1], env.today)
+    if (!d) return false
+    if (d.iso >= start && d.iso < isoPlus(start, total)) nights.add(d.iso)
+    else if (d.iso === isoPlus(start, total)) nights.add(isoPlus(start, total - 1))
+    else return false
+  })
+  return nights.size ? { nights: [...nights].sort(), rest: rest.replace(/\s+/g, ' ').trim() } : null
+}
+
+function hHotelWhen(c, toks, env) {
+  const { S, cat } = env
+  if (!S.stays.length) return null
+  if (!/\b(?:hotels?|stay|accommodation|change|replace|swap|switch|use|make|put|instead|book)\b/.test(c)) return null
+  if (/^(?:also\s+)?(?:add|include|plus)\b/.test(c)) return null // adding is hAddHotel / hAddActivity
+  if (/\b(?:cabs?|cars?|vehicles?|taxi|transport|activity|activities|ride|leisure|sightseeing|transfer|pickup|drop|route)\b/.test(c)) return null
+  const said = nightsSaid(c, env)
+  if (!said) return null
+  const targets = S.stays.filter((st) => st.checkIn && st.checkOut && said.nights.some((d) => d >= st.checkIn && d < st.checkOut))
+  if (!targets.length) return null
+  const meal = extractMealPlan(said.rest)
+  const words = toksOf(
+    (meal.plan ? meal.s : said.rest)
+      .replace(/\b(?:please|change|replace|swap|switch|use|make|put|book|set|choose|pick|go|with|the|a|an|hotels?|stays?|accommodation|to|by|for|on|in|at|into|instead|of|it|and|also|from|as|is|be|should|will|we|want|i|need|stay|there|that|this|only)\b/g, ' ')
+      .replace(/[|,.]/g, ' '),
+  ).filter((w) => !targets.some((st) => st.hotelSig.some((h) => tokEq(w, h, 0.8)))) // the hotel being replaced
+  if (!words.length) return null
+  const h = matchHotel(words, targets[0].city, cat)
+  if (!h.hotel) return null
+  const out = []
+  for (const st of targets) {
+    const inCity = !h.hotel.city || !st.city || sameCity(h.hotel.city, st.city) || samePlace(h.hotel.city, st.city)
+    if (!inCity) {
+      env.warnings.push(`${h.hotel.name} is in ${h.hotel.city}, but those nights are in ${st.city} — hotel not changed`)
+      continue
+    }
+    if (String(st.hotelId) === String(h.hotel.id)) env.warnings.push(`${st.city || 'That stay'} is already at ${h.hotel.name}`)
+    else out.push({ type: 'REPLACE_HOTEL', stay: st.index, hotelId: h.hotel.id, hotelName: h.hotel.name, city: h.hotel.city || st.city })
+    if (meal.plan) out.push({ type: 'SET_MEAL_PLAN', stay: st.index, mealPlan: meal.plan })
+  }
+  return out
 }
 
 function hAddActivity(c, toks, env) {
@@ -1133,7 +1281,7 @@ function hInclusions(c) {
 }
 
 const HANDLERS = [
-  hInclusions, hCommands, hAddHotel, hAddCab, hHotelRate, hTargetTotal, hMargin, hGst, hClientName, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
+  hInclusions, hCommands, hExtraBeds, hAddHotel, hAddCab, hHotelRate, hTargetTotal, hMargin, hGst, hClientName, hHotelWhen, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
   hAddActivity, hGuests,
 ]
 
@@ -1273,7 +1421,20 @@ export function parseChingEdit(text, context, catalog, { today, force = false } 
     s = withoutClaimed(s, dayRoutes.claimed)
     handled = true
   }
-  for (const raw of splitClauses(s)) {
+  // "for day 3 | change the hotel to khyber", "instead of highlands park | use
+  // khyber": a lead-in that the verb split cut off belongs to the next clause.
+  const clauses = splitClauses(s).reduce((out, raw, i, all) => {
+    const lead =
+      /^(?:on|for|from)?\s*(?:the\s+)?(?:days?|nights?)\s+\d{1,2}(?:\s*(?:,|and|&|to|-)\s*\d{1,2})*$|^(?:on|for|from)?\s*(?:the\s+)?\d{1,2}(?:st|nd|rd|th)(?:\s*(?:,|and|&|to|-)\s*\d{1,2}(?:st|nd|rd|th))*\s+(?:days?|nights?)$|^(?:and\s+)?instead\s+of\s+.+$/
+    if (out.carry) {
+      raw = `${out.carry} ${raw}`
+      out.carry = ''
+    }
+    if (i < all.length - 1 && lead.test(cleanClause(raw))) out.carry = raw
+    else out.push(raw)
+    return out
+  }, Object.assign([], { carry: '' }))
+  for (const raw of clauses) {
     const c = cleanClause(raw)
     if (NOISE.test(c)) continue
     // Questions ("is breakfast included in gulmarg?") are never turned into edits.

@@ -99,6 +99,19 @@ const PHRASES = [
   ['टोटल कितना', 'what is the total'], ['कुल कितना', 'what is the total'], ['कीमत कितनी', 'what is the total'], ['total kitna', 'what is the total'],
   ['منافع کتنا', 'what is my profit'], ['پرافٹ کتنا', 'what is my profit'], ['मुनाफा कितना', 'what is my profit'], ['मुनाफ़ा कितना', 'what is my profit'],
   ['प्रॉफिट कितना', 'what is my profit'], ['munafa kitna', 'what is my profit'], ['profit kitna', 'what is my profit'],
+  // manners ("آپ کیسے ہیں" = how are you, "میں ٹھیک ہوں" = I am fine)
+  ['आप कैसे हैं', 'how are you'], ['आप कैसे हो', 'how are you'], ['आप कैसी हैं', 'how are you'], ['कैसे हो', 'how are you'],
+  ['कैसे हैं', 'how are you'], ['क्या हाल है', 'how are you'], ['क्या हाल हैं', 'how are you'], ['हाल चाल', 'how are you'],
+  ['آپ کیسے ہیں', 'how are you'], ['آپ کیسے ہو', 'how are you'], ['آپ کیسی ہیں', 'how are you'], ['کیسے ہو', 'how are you'],
+  ['کیسے ہیں', 'how are you'], ['کیا حال ہے', 'how are you'], ['حال چال', 'how are you'],
+  ['kya haal hai', 'how are you'], ['kya hal hai', 'how are you'], ['kya haal chaal hai', 'how are you'], ['kaise hain', 'how are you'],
+  ['मैं ठीक हूँ', 'i am fine'], ['मैं ठीक हूं', 'i am fine'], ['में ठीक हूँ', 'i am fine'], ['ठीक हूँ', 'i am fine'], ['ठीक हूं', 'i am fine'],
+  ['मैं अच्छा हूँ', 'i am good'], ['मैं अच्छा हूं', 'i am good'], ['میں ٹھیک ہوں', 'i am fine'], ['ٹھیک ہوں', 'i am fine'],
+  ['میں اچھا ہوں', 'i am good'], ['main theek hoon', 'i am fine'], ['main thik hu', 'i am fine'], ['main theek hu', 'i am fine'],
+  ['जी हाँ', 'yes'], ['जी हां', 'yes'], ['جی ہاں', 'yes'], ['जी नहीं', 'no'], ['جی نہیں', 'no'],
+  ['السلام علیکم', 'assalamu alaikum'], ['اسلام علیکم', 'assalamu alaikum'], ['अस्सलाम अलैकुम', 'assalamu alaikum'],
+  ['अस्सलामु अलैकुम', 'assalamu alaikum'], ['خدا حافظ', 'khuda hafiz'], ['اللہ حافظ', 'allah hafiz'], ['खुदा हाफिज', 'khuda hafiz'],
+  ['ख़ुदा हाफ़िज़', 'khuda hafiz'], ['الحمد للہ', 'alhamdulillah'],
   // email addresses ("राहुल एट जीमेल डॉट कॉम")
   ['ई मेल', 'email'], ['ای میل', 'email'], ['ای-میل', 'email'], ['एट द रेट', 'at the rate'], ['ایٹ دی ریٹ', 'at the rate'],
   ['जी मेल', 'gmail'], ['جی میل', 'gmail'], ['ہاٹ میل', 'hotmail'], ['हॉट मेल', 'hotmail'], ['آؤٹ لک', 'outlook'],
@@ -113,6 +126,8 @@ const PHRASES = [
   ['shamil karo', 'VERB:add'],
   ['बदल दो', 'VERB:change'], ['चेंज करो', 'VERB:change'], ['بدل دو', 'VERB:change'], ['badal do', 'VERB:change'],
   ['change karo', 'VERB:change'], ['हटा दो', 'VERB:remove'], ['ہٹا دو', 'VERB:remove'], ['hata do', 'VERB:remove'],
+  ['कर दो', 'VERB:do'], ['कर दीजिए', 'VERB:do'], ['कर दें', 'VERB:do'], ['کر دو', 'VERB:do'], ['کر دیں', 'VERB:do'],
+  ['کر دیجیے', 'VERB:do'], ['kar do', 'VERB:do'], ['kar dijiye', 'VERB:do'], ['kar den', 'VERB:do'], ['kardo', 'VERB:do'],
   ['भेज दो', 'VERB:send'], ['بھیج دو', 'VERB:send'], ['bhej do', 'VERB:send'],
 ]
 const WORDS = {
@@ -186,6 +201,9 @@ const WORDS = {
   karo: 'VERB:do', kijiye: 'VERB:do', karen: 'VERB:do', 'kar do': 'VERB:do',
   // languages ("हिंदी में सुनो" → listen in hindi)
   हिंदी: 'hindi', हिन्दी: 'hindi', उर्दू: 'urdu', अंग्रेजी: 'english', अंग्रेज़ी: 'english', इंग्लिश: 'english',
+  हाँ: 'yes', हां: 'yes', ہاں: 'yes', शुक्रिया: 'thank you', धन्यवाद: 'thank you', شکریہ: 'thank you', بہت: '@',
+  नमस्ते: 'namaste', नमस्कार: 'namaste', آداب: 'aadab', الحمدللہ: 'alhamdulillah', बढ़िया: 'great', बढिया: 'great', بڑھیا: 'great',
+  मस्त: 'great', زبردست: 'great', ज़बरदस्त: 'great', जबरदस्त: 'great',
   ہندی: 'hindi', اردو: 'urdu', انگریزی: 'english', انگلش: 'english',
   सुनो: 'listen', समझो: 'listen', बोलो: 'listen', سنو: 'listen', سمجھو: 'listen', بولو: 'listen', suno: 'listen', bolo: 'listen',
   // pronouns ("मुझे … चाहिए" = I need …): not part of any name
@@ -327,6 +345,8 @@ const ENGLISH = [
 const KEEP_ENGLISH = new Set([
   ...ENGLISH, 'what', 'is', 'the', 'my', 'at', 'dot', 'com', 'in', 'co', 'org', 'gmail', 'yahoo', 'hotmail', 'outlook',
   'underscore', 'rate', 'and', 'for', 'to', 'on', 'of', 'room only', 'all',
+  'how', 'are', 'you', 'i', 'am', 'fine', 'good', 'great', 'yes', 'no', 'thank', 'assalamu', 'alaikum', 'khuda', 'allah', 'hafiz',
+  'namaste', 'aadab', 'alhamdulillah',
 ])
 
 // Common names (Kashmir and wider South Asia). Urdu script leaves out short

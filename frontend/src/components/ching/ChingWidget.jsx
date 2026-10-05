@@ -187,6 +187,7 @@ export default function ChingWidget() {
   // Spoken (or typed) in Urdu → Ching answers in Urdu, on screen and aloud.
   const urduTurn = useRef(false);
   const lastPendingSaid = useRef("");
+  const chatTopic = useRef(null);
   const noteLanguage = useCallback((raw) => {
     urduTurn.current = scriptOf(raw) === "urdu" || listenLangRef.current === "ur-PK";
   }, []);
@@ -463,7 +464,9 @@ export default function ChingWidget() {
       }
 
       // Not a trip at all? ("open the ledger", "what's pending", "tell me a joke")
-      const ask = safe(() => understandAssistant(text, { inBuilder: Boolean(S.editor || getChingEditor()) }), null);
+      const ask = safe(() => understandAssistant(text, { inBuilder: Boolean(S.editor || getChingEditor()), chat: chatTopic.current }), null);
+      // Small talk remembers what Ching just asked ("How about you?") for one turn.
+      chatTopic.current = ask?.type === "smalltalk" ? ask.topic || null : null;
       if (ask) {
         if (S.editor && safe(() => S.editor.live.active(), false)) safe(() => S.editor.live.cancel());
         endSession();
@@ -804,7 +807,7 @@ export default function ChingWidget() {
       } else if (ask.type === "smalltalk") {
         // Greet by the name the agent asked to be called ("call me Arif").
         const name = getChingMemory()?.callMe;
-        respond(name ? ask.reply.replace(/^(Hello|Hi|Namaste|Hey)!/, `$1, ${name}!`) : ask.reply);
+        respond(name ? ask.reply.replace(/^(Hello|Hi there|Hi|Namaste|Hey|Aadab|Wa alaikum assalam|Good (?:morning|afternoon|evening))!/, `$1, ${name}!`) : ask.reply);
       }
     },
     [askConfirm, changeLang, ensureCore, navigate, respond, token],

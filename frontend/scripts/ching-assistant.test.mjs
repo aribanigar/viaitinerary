@@ -274,5 +274,33 @@ test("hotel search never takes other people's sentences", () => {
   assert.equal(u('my usual hotel in gulmarg is khyber').type, 'remember')
 })
 
+test('manners: asks back and keeps the conversation going', () => {
+  const talk = (lines) => {
+    let chat = null
+    return lines.map((line) => {
+      const r = understandAssistant(line, { inBuilder: true, chat })
+      chat = r?.type === 'smalltalk' ? r.topic || null : null
+      return r
+    })
+  }
+  let [a, b, c] = talk(['how are you', 'fine', 'yes'])
+  assert.match(a.reply, /\?$/) // asks back
+  assert.equal(a.topic, 'asked-how')
+  assert.match(b.reply, /^(?:Glad|That's great|Wonderful)/)
+  assert.match(c.reply, /client's name/)
+  ;[a, b, c] = talk(['assalamu alaikum', "i'm a bit tired", 'no'])
+  assert.match(a.reply, /^Wa alaikum assalam!/)
+  assert.match(b.reply, /Sorry to hear|Oh no/)
+  assert.match(c.reply, /whenever|call me/)
+  ;[a, b] = talk(['thank you', 'nothing'])
+  assert.match(a.reply, /anything else|What's next/i)
+  assert.match(b.reply, /whenever|call me/)
+  // A bare "good" / "yes" is only small talk right after Ching asked.
+  assert.equal(understandAssistant('good', { inBuilder: true }), null)
+  assert.equal(understandAssistant('yes', { inBuilder: true }), null)
+  // Trips are never small talk, whatever was asked before.
+  assert.equal(understandAssistant('create a trip for rahul 2 adults 3 nights srinagar', { inBuilder: true, chat: 'offer' }), null)
+})
+
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

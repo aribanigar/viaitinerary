@@ -13,6 +13,8 @@
 const u = (ur, hi) => ({ ur, hi });
 const rupees = (s) =>
   String(s || "").replace(/₹\s?([\d,]+(?:\.\d+)?)/g, (_, n) => `${n} RUPEES`);
+// An amount Ching said (the agency's own currency symbol, or none) → "45,000 روپے".
+const amt = (s, lang) => `${String(s).replace(/^(?:₹|Rs\.?|INR)\s?/, "")} ${lang === "ur" ? "روپے" : "रुपये"}`;
 const R = (s, lang) => rupees(s).replace(/RUPEES/g, lang === "ur" ? "روپے" : "रुपये");
 
 // Words inside captured English bits ("2 adults, 3 nights").
@@ -91,20 +93,57 @@ const WHOLE = [
   [/^Open a trip in the Trip Builder and I'll change it for you\.$/, () => u("ٹرپ بلڈر میں کوئی ٹرپ کھولیے، میں بدل دوں گا۔", "ट्रिप बिल्डर में कोई ट्रिप खोलिए, मैं बदल दूँगा।")],
   [/^Open a trip and I'll tell you exactly what's missing\.$/, () => u("کوئی ٹرپ کھولیے، میں بتاؤں گا کیا باقی ہے۔", "कोई ट्रिप खोलिए, मैं बताऊँगा क्या बाक़ी है।")],
   [/^Cancelled — the trip is back to how it was\.$/, () => u("منسوخ — ٹرپ پہلے جیسا ہو گیا۔", "मंसूख़ — ट्रिप पहले जैसा हो गया।")],
-  [/^This trip costs you (₹[\d,]+)\. At ([\d.]+)% margin you make (₹[\d,]+)(?:, plus (₹[\d,]+) GST)? — the client pays (₹[\d,]+)\.$/, (m) =>
+  [/^This trip costs you ((?:₹|Rs\.? ?|INR ?)?[\d,]+(?:\.\d+)?)\. At ([\d.]+)% margin you make ((?:₹|Rs\.? ?|INR ?)?[\d,]+(?:\.\d+)?)(?:, plus ((?:₹|Rs\.? ?|INR ?)?[\d,]+(?:\.\d+)?) GST)? — the client pays ((?:₹|Rs\.? ?|INR ?)?[\d,]+(?:\.\d+)?)\.$/, (m) =>
     u(
-      `یہ ٹرپ آپ کو ${R(m[1], "ur")} کا پڑتا ہے۔ ${m[2]} فیصد مارجن پر آپ کا منافع ${R(m[3], "ur")} ہے${m[4] ? `، اور ${R(m[4], "ur")} جی ایس ٹی` : ""} — کلائنٹ ${R(m[5], "ur")} دے گا۔`,
-      `यह ट्रिप आपको ${R(m[1], "hi")} का पड़ता है। ${m[2]} फ़ीसद मार्जिन पर आपका मुनाफ़ा ${R(m[3], "hi")} है${m[4] ? `, और ${R(m[4], "hi")} जी एस टी` : ""} — क्लाइंट ${R(m[5], "hi")} देगा।`,
+      `یہ ٹرپ آپ کو ${amt(m[1], "ur")} کا پڑتا ہے۔ ${m[2]} فیصد مارجن پر آپ کا منافع ${amt(m[3], "ur")} ہے${m[4] ? `، اور ${amt(m[4], "ur")} جی ایس ٹی` : ""} — کلائنٹ ${amt(m[5], "ur")} دے گا۔`,
+      `यह ट्रिप आपको ${amt(m[1], "hi")} का पड़ता है। ${m[2]} फ़ीसद मार्जिन पर आपका मुनाफ़ा ${amt(m[3], "hi")} है${m[4] ? `, और ${amt(m[4], "hi")} जी एस टी` : ""} — क्लाइंट ${amt(m[5], "hi")} देगा।`,
     )],
+  // small talk (chat.js)
+  [/^(?:Sorry to hear that|Oh no — hope it gets better)\b/, () =>
+    u("یہ سن کر افسوس ہوا۔ کام مجھ پر چھوڑیے — ٹرپ بتائیے، میں بھر دوں گا۔", "यह सुनकर अफ़सोस हुआ। काम मुझ पर छोड़िए — ट्रिप बताइए, मैं भर दूँगा।")],
+  [/^Great — tell me the client's name\b/, () =>
+    u("بہت خوب — کلائنٹ کا نام، کتنے مہمان، شروع کی تاریخ اور کہاں جا رہے ہیں، بتائیے۔ باقی میں بھر دوں گا۔", "बहुत ख़ूब — क्लाइंट का नाम, कितने मेहमान, शुरू की तारीख़ और कहाँ जा रहे हैं, बताइए। बाक़ी मैं भर दूँगा।")],
+  [/^Sure — say “open” and the client's name\b/, () =>
+    u("ضرور — “open” اور کلائنٹ کا نام کہیے، جیسے “Rahul کا ٹرپ کھولو”، اور بتائیے کیا بدلنا ہے۔", "ज़रूर — “open” और क्लाइंट का नाम कहिए, जैसे “Rahul का ट्रिप खोलो”, और बताइए क्या बदलना है।")],
+  [/^(?:No problem — I'm right here|Sure thing\. Just call me)\b/, () => u("کوئی بات نہیں — جب ضرورت ہو، میں یہیں ہوں۔", "कोई बात नहीं — जब ज़रूरत हो, मैं यहीं हूँ।")],
+  [/^No worries at all!/, () => u("کوئی بات نہیں! بتائیے، کیا کرنا ہے؟", "कोई बात नहीं! बताइए, क्या करना है?")],
+  [/^Nice to meet you too!/, () =>
+    u("آپ سے مل کر بھی خوشی ہوئی! میں چنگ ہوں۔ “call me” اور اپنا نام کہیے، میں یاد رکھوں گا۔", "आपसे मिलकर भी ख़ुशी हुई! मैं चिंग हूँ। “call me” और अपना नाम कहिए, मैं याद रखूँगा।")],
+  [/^Right here and listening!/, () => u("میں یہیں ہوں اور سن رہا ہوں! بتائیے؟", "मैं यहीं हूँ और सुन रहा हूँ! बताइए?")],
+  [/^The Via Itinerary team built me\b/, () => u("مجھے Via Itinerary کی ٹیم نے بنایا ہے — ٹریول ایجنٹس کا کام آسان کرنے کے لیے۔", "मुझे Via Itinerary की टीम ने बनाया है — ट्रैवल एजेंट्स का काम आसान करने के लिए।")],
+  [/^(?:Take care! I'll be right here|Khuda hafiz! Talk soon|Bye! Go sell|Good night! I'll keep)\b/, () => u("خدا حافظ! اپنا خیال رکھیے۔", "ख़ुदा हाफ़िज़! अपना ख़याल रखिए।")],
 ];
 
 // One sentence at a time.
 const SENTENCE = [
+  // small talk (chat.js); a name may follow the greeting ("Hello, Arif!")
+  [/^(Hello|Hi there|Hi|Hey|Namaste|Aadab|Wa alaikum assalam|Good morning|Good afternoon|Good evening)(?:, ([^!]+))?!$/, (m) => {
+    const g = {
+      hello: u("ہیلو", "हेलो"), "hi there": u("ہیلو", "हेलो"), hi: u("ہیلو", "हेलो"), hey: u("ہیلو", "हेलो"), namaste: u("نمستے", "नमस्ते"),
+      aadab: u("آداب", "आदाब"), "wa alaikum assalam": u("وعلیکم السلام", "वालेकुम अस्सलाम"), "good morning": u("صبح بخیر", "सुबह बख़ैर"),
+      "good afternoon": u("آداب", "आदाब"), "good evening": u("شام بخیر", "शाम बख़ैर"),
+    }[m[1].toLowerCase()]
+    return u(`${g.ur}${m[2] ? `، ${m[2]}` : ""}!`, `${g.hi}${m[2] ? `, ${m[2]}` : ""}!`)
+  }],
+  [/^(?:How are you doing today|How are you today|How are you doing|How about you|And how are you)\?$/, () => u("آپ کیسے ہیں؟", "आप कैसे हैं?")],
+  [/^How's your day going\?$/, () => u("آپ کا دن کیسا گزر رہا ہے؟", "आपका दिन कैसा गुज़र रहा है?")],
+  [/^(?:I'm doing great, thanks for asking|All good here, thanks for asking|I'm good, thank you — fully charged and ready)[.!]$/, () =>
+    u("میں بالکل ٹھیک ہوں، پوچھنے کا شکریہ!", "मैं बिल्कुल ठीक हूँ, पूछने का शुक्रिया!")],
+  [/^(?:Glad to hear that|That's great to hear|Wonderful)!$/, () => u("یہ سن کر خوشی ہوئی!", "यह सुनकर ख़ुशी हुई!")],
+  [/^I'm doing great too, thanks\.$/, () => u("میں بھی ٹھیک ہوں، شکریہ۔", "मैं भी ठीक हूँ, शुक्रिया।")],
+  [/^What are we planning today — a new trip, or changes to one\?$/, () => u("آج کیا پلان کریں — نیا ٹرپ، یا کسی ٹرپ میں تبدیلی؟", "आज क्या प्लान करें — नया ट्रिप, या किसी ट्रिप में तब्दीली?")],
+  [/^Shall we plan something\?$/, () => u("کچھ پلان کریں؟", "कुछ प्लान करें?")],
+  [/^A new trip, or a change to one you have\?$/, () => u("نیا ٹرپ، یا کسی پرانے ٹرپ میں تبدیلی؟", "नया ट्रिप, या किसी पुराने ट्रिप में तब्दीली?")],
+  [/^Got a trip for me today\?$/, () => u("آج میرے لیے کوئی ٹرپ ہے؟", "आज मेरे लिए कोई ट्रिप है?")],
+  [/^(?:You're welcome|My pleasure|Anytime)!$/, () => u("کوئی بات نہیں!", "कोई बात नहीं!")],
+  [/^(?:Anything else I can help with|Is there anything else|What's next)\?$/, () => u("اور کوئی خدمت؟", "और कोई ख़िदमत?")],
+
+
   [/^(?:Done|All set|There you go|Ta-da|Got it|Updated)[.!]$/, () => u("ہو گیا!", "हो गया!")],
   [/^(.+?)'s trip is filled in\.$/, (m) => u(`${m[1]} کا ٹرپ تیار ہے۔`, `${m[1]} का ट्रिप तैयार है।`)],
   [/^The trip is filled in\.$/, () => u("ٹرپ تیار ہے۔", "ट्रिप तैयार है।")],
-  [/^Total comes to (₹[\d,]+)\.$/, (m) => u(`کل رقم ${R(m[1], "ur")} ہے۔`, `कुल रक़म ${R(m[1], "hi")} है।`)],
-  [/^The total is (₹[\d,]+)\.$/, (m) => u(`کل رقم ${R(m[1], "ur")} ہے۔`, `कुल रक़म ${R(m[1], "hi")} है।`)],
+  [/^Total comes to ((?:₹|Rs\.? ?|INR ?)?[\d,]+(?:\.\d+)?)\.$/, (m) => u(`کل رقم ${amt(m[1], "ur")} ہے۔`, `कुल रक़म ${amt(m[1], "hi")} है।`)],
+  [/^The total is ((?:₹|Rs\.? ?|INR ?)?[\d,]+(?:\.\d+)?)\.$/, (m) => u(`کل رقم ${amt(m[1], "ur")} ہے۔`, `कुल रक़म ${amt(m[1], "hi")} है।`)],
   [/^Still need (.+?)(?: and (\d+) more)?\.$/, (m) => {
     const l = labelList(m[1]);
     return u(`ابھی یہ باقی ہے: ${l.ur}${more(m[2], "ur")}۔`, `अभी यह बाक़ी है: ${l.hi}${more(m[2], "hi")}।`);
@@ -169,7 +208,7 @@ const SENTENCE = [
 function sentences(text) {
   return String(text || "")
     .trim()
-    .split(/(?<=[.!?])\s+(?=[A-Z“"₹0-9])/)
+    .split(/(?<=(?<!\bRs)[.!?])\s+(?=[A-Z“"₹0-9])/)
     .map((s) => s.trim())
     .filter(Boolean);
 }

@@ -172,6 +172,13 @@ function prepare(snapshot) {
 
 const hotelStay = (acc) => `${acc.city || acc.name || 'Hotel'}`
 
+// A stay's hotel replaced as REPLACE_HOTEL does it (room type / meal plan said kept).
+function swapInto(st, acc, hotel, a = {}) {
+  if (String(acc.hotelId) === String(hotel.id)) return st.warnings.push(`${acc.city || 'That stay'} is already at ${hotel.name}`)
+  const mealPlan = MEAL_PLAN_LABEL[a.mealPlan] ? a.mealPlan : Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === a.mealPlan)
+  return HANDLERS.REPLACE_HOTEL(st, { stay: st.origStays.indexOf(acc), hotelId: hotel.id, hotelName: hotel.name, city: hotel.city || acc.city, roomType: a.roomType, mealPlan })
+}
+
 function stayAt(st, idx) {
   const i = toInt(idx)
   const acc = Number.isInteger(i) && i >= 0 ? st.origStays[i] : null
@@ -443,6 +450,12 @@ const HANDLERS = {
     } else if (city) {
       const run = runs.find((r) => r.city && samePlace(r.city, city)) || (runs.length === 1 ? runs[0] : null)
       if (!run) {
+        // Every night there already has a hotel: "add khyber in gulmarg" /
+        // "गुलमर्ग में खैबर कर दो" means that stay's hotel becomes this one.
+        if (!a.nights && hotel) {
+          const own = getStays(st.s.accommodations).find((x) => x.city && (samePlace(x.city, city) || sameName(x.city, city)))
+          if (own) return swapInto(st, own, hotel, a)
+        }
         // Every night already has a hotel (or none is in that city): the old
         // "add N nights at X" — a new stay that lengthens the trip.
         if (a.nights >= 1) return HANDLERS.ADD_STAY(st, { ...a, city, hotelName: hotel?.name || a.hotelName || '' })
@@ -457,6 +470,11 @@ const HANDLERS = {
     for (const p of places) {
       // The nights must be free.
       const taken = st.s.accommodations.find((x) => !isCancelled(x) && x.checkIn < addDays(p.start, p.nights) && x.checkOut > p.start)
+      // "add khyber for day 3" when day 3 is already at another Gulmarg hotel: swap it.
+      if (taken && hotel && taken.city && (samePlace(taken.city, hotel.city || '') || sameName(taken.city, hotel.city || ''))) {
+        swapInto(st, taken, hotel, a)
+        continue
+      }
       if (taken) {
         st.warnings.push(`${fmtRange(p.start, addDays(p.start, p.nights))} already has ${taken.name || 'a hotel'} — change that stay instead`)
         continue
@@ -532,10 +550,11 @@ const HANDLERS = {
     const cab = (neighbour && blockCab(st, neighbour)) || anyDayCab(st)
     addKnown(st, city)
     const added = insertDays(st, pivot, nights, city, { cab })
+    // Rooms / room type / meal plan / extra beds said with "add N nights at X".
     const acc = hotel
-      ? pricedStay(st, hotel, pivot, nights, neighbour)
+      ? pricedStay(st, hotel, pivot, nights, neighbour, a)
       : {
-          ...pricedStay(st, { id: null, name, city }, pivot, nights, neighbour),
+          ...pricedStay(st, { id: null, name, city }, pivot, nights, neighbour, a),
           category: '',
           pricePerRoom: 0,
           bedPrices: [],
@@ -590,7 +609,7 @@ const HANDLERS = {
     )
     if (!section.price) st.warnings.push(`${hotel.name} has no rate for these dates — price not set`)
     if (hotel.is_available === false) st.warnings.push(`${hotel.name} is marked unavailable`)
-    if (oldCity && acc.city && !sameName(oldCity, acc.city)) {
+    if (oldCity && acc.city && !sameName(oldCity, acc.city) && !samePlace(oldCity, acc.city)) {
       addKnown(st, acc.city)
       finishStructural(st, seq)
       st.warnings.push(`${hotel.name} is in ${acc.city}, not ${oldCity} — day titles updated to match`)
@@ -735,6 +754,20 @@ const HANDLERS = {
     if (!acc || String(acc.rooms) === String(rooms)) return
     st.changes.push(`${hotelStay(acc)} rooms: ${acc.rooms || 1} → ${rooms}`)
     acc.rooms = String(rooms)
+  },
+
+  // "add 1 extra bed at highlands park" / "no extra bed": adult extra beds on a stay.
+  SET_EXTRA_BEDS(st, a) {
+    const beds = toInt(a.beds)
+    if (!(beds >= 0)) return st.warnings.push('Say how many extra beds')
+    const stays = a.stay === 'all' ? getStays(st.s.accommodations) : [stayAt(st, a.stay)].filter(Boolean)
+    if (!stays.length) return st.warnings.push('There are no hotels on this trip')
+    stays.forEach((acc) => {
+      const was = toInt(acc.extraBedsAbove12Count) || 0
+      if (was === beds) return
+      acc.extraBedsAbove12Count = String(beds)
+      st.changes.push(`${hotelStay(acc)} extra beds: ${was} → ${beds}`)
+    })
   },
 
   // "grand mumtaz room rate 5500": the agent's own negotiated rate.
@@ -1135,7 +1168,7 @@ const HANDLERS = {
         : kids > 0
           ? `${persons} × ${money(price)} + ${kids} × ${money(childPrice)}`
           : `${persons} × ${money(price)}`
-    st.changes.push(`Added ${name}${dayNumber ? ` on day ${dayNumber}` : ''} (${cost})`)
+    st.changes.push(`Added ${name}${rate?.option ? ` — ${rate.option}` : ''}${dayNumber ? ` on day ${dayNumber}` : ''} (${cost})`)
     if (price == null) st.warnings.push(`${name}: ticket price not set`)
     if (!dayNumber) st.warnings.push(`${name} isn't on a day yet — pick one in the Activities tab`)
   },
