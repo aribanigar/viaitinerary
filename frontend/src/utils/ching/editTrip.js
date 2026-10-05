@@ -595,7 +595,32 @@ const HANDLERS = {
     acc.rooms = String(rooms)
   },
 
+  // "grand mumtaz room rate 5500": the agent's own negotiated rate.
+  SET_HOTEL_RATE(st, a) {
+    const price = Number(a.price)
+    if (!(price > 0)) return st.warnings.push(`"${a.price}" is not a room rate`)
+    const stays = a.stay === 'all' ? getStays(st.s.accommodations) : [stayAt(st, a.stay)].filter(Boolean)
+    if (!stays.length) return st.warnings.push('There are no hotels on this trip')
+    stays.forEach((acc) => {
+      const old = Number(acc.pricePerRoom) || 0
+      if (old === price) return
+      acc.pricePerRoom = price
+      st.changes.push(`${hotelStay(acc)} room rate: ${money(old)} → ${money(price)} per night`)
+    })
+  },
+
   SET_MEAL_PLAN(st, a) {
+    // "Breakfast + dinner" at Grand Mumtaz is its own rate row: re-price.
+    const reprice = (acc) => {
+      const hotel = findById(st.catalog.hotels, acc.hotelId)
+      const key = Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === acc.mealPlan)
+      if (!hotel || !key || !(hotel.price_sections || []).some((s) => s.meal_plan === key)) return
+      const section = findRateSection(hotel, acc.roomType, acc.checkIn, key)
+      if (section.price) {
+        acc.pricePerRoom = section.price
+        acc.bedPrices = bedPricesFromSection(section)
+      }
+    }
     const plan = MEAL_PLANS.find((p) => sameName(p, a.mealPlan))
     if (!plan) return st.warnings.push(`"${a.mealPlan}" is not a meal plan (${MEAL_PLANS.join(' / ')})`)
     if (a.stay === 'all') {
@@ -604,6 +629,7 @@ const HANDLERS = {
       const changed = stays.filter((acc) => acc.mealPlan !== plan)
       changed.forEach((acc) => {
         acc.mealPlan = plan
+        reprice(acc)
       })
       if (changed.length) {
         st.changes.push(`Meal plan: ${plan} in ${changed.length === stays.length ? 'every hotel' : plural(changed.length, 'hotel')}`)
@@ -614,6 +640,7 @@ const HANDLERS = {
     if (!acc || acc.mealPlan === plan) return
     st.changes.push(`${hotelStay(acc)} meal plan: ${acc.mealPlan || 'not set'} → ${plan}`)
     acc.mealPlan = plan
+    reprice(acc)
   },
 
   SET_VEHICLE(st, a) {

@@ -10,7 +10,7 @@
 // Each clause of the utterance becomes zero or more actions; a clause that can't be
 // understood goes to `unrecognized` — never a guessed action.
 
-import { convertNumberWords, stripWakePhrase, titleCase } from './text.js'
+import { convertNumberWords, normalizeTripWords, stripWakePhrase, titleCase } from './text.js'
 import { extractDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
 import { parseInclusionClause } from './inclusions.js'
@@ -34,6 +34,12 @@ const NO_SPLIT_PREV = new Set([
   'to', 'you', 'i', 'we', 'please', 'pls', 'can', 'could', 'would', 'will', 'lets', "let's", 'kindly', 'and',
   'then', 'also', 'just', 'now', 'us', "i'd", 'me', 'should', 'must', 'not', "don't", 'dont', 'the',
   'my', 'your', 'his', 'her', 'their', 'a', 'an', 'by', 'via', 'on', 'in', 'of', 'no', 'it', 'through', 'over',
+])
+const SPLIT_NOUNS = new Set(['margin', 'markup', 'gst'])
+const CARRY_LEAD = new Set(['no', 'without', 'with', 'plus', 'including', 'excluding', 'zero'])
+const NOUN_LEAD = new Set([
+  ...NO_SPLIT_PREV, 'with', 'without', 'including', 'excluding', 'inclusive', 'exclusive', 'plus', 'minus', 'trip',
+  'profit', 'our', 'total', 'percent', 'of',
 ])
 const LEAD_FILLER =
   /^(?:(?:please|pls|kindly|can you|could you|would you|will you|i want to|i want you to|i would like to|i'd like to|i need to|i need you to|let's|lets|just|now|ok|okay|also|and|then|so|ching|hey|hi|hello|go ahead and)\s+)+/
@@ -338,10 +344,25 @@ function hCommands(c, toks, env) {
 // 1.2 lakh", "price it at 15000 per person" → the margin that hits it.
 const AMOUNT = String.raw`(?:rs\.?|₹|inr|rupees)?\s*(\d[\d,]*(?:\.\d+)?\s*(?:k|thousand|lakhs?|lacs?|l)?)\b`
 const TARGET_RE = new RegExp(
-  String.raw`\b(?:quote(?:\s+(?:it|this|the\s+(?:trip|package|client)))?(?:\s+(?:at|for|as))?|price\s+(?:it|this|the\s+(?:trip|package))\s+at|sell\s+(?:it|this)\s+(?:at|for)|make\s+(?:the\s+|it\s+)?(?:total|final\s+price|price|package\s+price|grand\s+total|quote|cost)(?:\s+(?:to|as))?|(?:the\s+)?(?:total|final\s+price|grand\s+total|package\s+price|quoted\s+price|price)\s+(?:should\s+be|to\s+be|must\s+be|will\s+be|is|of|at|=)|(?:set|change|bring|round)\s+(?:the\s+)?(?:total|final\s+price|price|grand\s+total)(?:\s+(?:to|at|down\s+to|up\s+to))?)\s+` + AMOUNT,
+  String.raw`\b(?:quote(?:\s+(?:it|this|the\s+(?:trip|package|client)))?(?:\s+(?:at|for|as))?|price\s+(?:it|this|the\s+(?:trip|package))\s+at|sell\s+(?:it|this)\s+(?:at|for)|make\s+(?:the\s+|it\s+)?(?:total|final\s+price|price|package\s+price|grand\s+total|quote|cost)(?:\s+(?:to|as))?|(?:the\s+)?(?:total|final\s+price|grand\s+total|package\s+price|quoted\s+price|price)\s+(?:should\s+be|to\s+be|must\s+be|will\s+be|is|of|at|=)|(?:set|change|bring|round)\s+(?:the\s+)?(?:total|final\s+price|price|grand\s+total)(?:\s+(?:to|at|down\s+to|up\s+to))?|(?:final\s+(?:price|total|quote|amount|cost)|total\s+(?:price|amount|cost)|package\s+(?:price|cost)|grand\s+total|all\s+inclusive(?:\s+price)?(?:\s+of)?))\s+` + AMOUNT,
 )
+// "grand mumtaz room rate 5500", "the hotel price is 5000 per night".
+function hHotelRate(c, toks, env) {
+  if (!/\b(?:rate|price|tariff|cost|charges?)\b|\bper\s+(?:night|room)\b/.test(c)) return null
+  if (/\b(?:cab|cabs|car|vehicle|taxi|activity|activities|ticket|tickets|margin|markup|gst|total|quote|quotation|person|head|pax|final|package|overall|budget|inclusive|trip)\b/.test(c)) return null
+  const named = stayMentions(toks, env.S).list.length > 0
+  if (!named && !/\b(?:hotel|hotels|room|rooms|tariff)\b|\bper\s+(?:night|room)\b/.test(c)) return null
+  const amounts = [...c.matchAll(/(?:rs\.?|₹|inr)?\s*(\d[\d,]*(?:\.\d+)?\s*(?:k\b|thousand\b)?)(?!\s*(?:nights?|days?|rooms?|adults?|star|stars|%|percent))/g)]
+    .map((m) => parseAmount(m[1]))
+    .filter((n) => n >= 300)
+  if (!amounts.length) return null
+  return scopeStays(toks, env).map((stay) => ({ type: 'SET_HOTEL_RATE', stay, price: amounts[0] }))
+}
+
 function hTargetTotal(c, toks, env) {
   if (/\b(?:margin|profit|markup|mark up|gst)\b/.test(c)) return null
+  // A hotel's, cab's or ticket's price is not the trip total.
+  if (/\b(?:hotel|room|rooms|tariff|cab|car|vehicle|taxi|activity|ticket|bed)\b|\bper\s+(?:night|room|day)\b/.test(c)) return null
   const m = c.match(TARGET_RE)
   if (!m) return null
   let amount = parseAmount(m[1])
@@ -361,7 +382,13 @@ function hMargin(c, toks, env) {
       if (money && amount != null) return [{ type: 'SET_MARGIN_AMOUNT', amount }]
     }
   }
-  const m = c.match(/(\d+(?:\.\d+)?)\s*(?:%|percent\b|pc\b)?/)
+  // The number next to the word ("15% margin", "margin of 15"), never just the
+  // first number in a long clause ("… 28th november … 15% margin").
+  const near =
+    c.match(/(\d+(?:\.\d+)?)\s*(?:%|percent\b|pc\b)\s*(?:of\s+)?(?:profit\s+)?(?:margin|markup|mark up|profit)\b/) ||
+    c.match(/\b(?:margin|markup|mark up|profit)\s*(?:of|to|at|is|as|=|:|by)?\s*(\d+(?:\.\d+)?)/) ||
+    c.match(/(\d+(?:\.\d+)?)\s*(?:of\s+)?(?:profit\s+)?(?:margin|markup|mark up|profit)\b/)
+  const m = near || (toksOf(c).length <= 6 ? c.match(/(\d+(?:\.\d+)?)\s*(?:%|percent\b|pc\b)?/) : null)
   if (!m) {
     if (/\b(?:remove|no|zero|without)\b/.test(c)) return [{ type: 'SET_MARGIN', percent: 0 }]
     return null
@@ -780,6 +807,31 @@ function hAddActivity(c, toks, env) {
   const { S, cat } = env
   const vm = c.match(/^(?:also\s+)?(?:add|include|book|put|schedule|plus)\s+(.+)$/)
   if (!vm) return null
+  // "add shikara on day 2 and gondola phase 2 on day 3": one activity per day.
+  const parts = vm[1].split(/(?<=\bday\s+\d{1,2})\s+(?:and|&|also|plus)\s+(?:also\s+)?/)
+  if (parts.length > 1) {
+    const out = []
+    for (const p of parts) {
+      const one = hAddActivity(`add ${p}`, toksOf(`add ${p}`), env)
+      if (!one) return null
+      out.push(...one)
+    }
+    return out
+  }
+  // "add shikara ride and pony ride": both are catalog activities.
+  const pair = vm[1].split(/\s+(?:and|&)\s+(?:also\s+|a\s+|the\s+)?/)
+  if (pair.length > 1 && pair.every((p) => !/^\d/.test(p))) {
+    const out = []
+    for (const p of pair) {
+      const one = hAddActivity(`add ${p}`, toksOf(`add ${p}`), env)
+      if (!one || !one.every((x) => x.type === 'ADD_ACTIVITY')) {
+        out.length = 0
+        break
+      }
+      out.push(...one)
+    }
+    if (out.length) return out
+  }
   let rest = vm[1]
   let day = null
   let persons = null
@@ -918,7 +970,7 @@ function hInclusions(c) {
 }
 
 const HANDLERS = [
-  hInclusions, hCommands, hTargetTotal, hMargin, hGst, hClientName, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
+  hInclusions, hCommands, hHotelRate, hTargetTotal, hMargin, hGst, hClientName, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
   hAddActivity, hGuests,
 ]
 
@@ -963,6 +1015,33 @@ function splitClauses(s) {
       }
     }
     if (SPLIT_VERBS.has(t) && cur.length && !NO_SPLIT_PREV.has(cur[cur.length - 1])) flush()
+    // Speech has no commas: "add gondola on day 3 margin 15 percent" — a
+    // margin/GST clause starts at its noun unless a word leads into it
+    // ("set margin", "with gst", "no margin", "the margin").
+    if (SPLIT_NOUNS.has(t) && cur.length) {
+      const prev = cur[cur.length - 1]
+      // "margin 12% gst 18%", "margin 20 percent no gst": one noun per clause.
+      if (cur.some((w) => SPLIT_NOUNS.has(w))) {
+        const carry = []
+        // "… margin 20% 5% gst": the number right before belongs to this noun
+        // unless it follows the earlier noun directly ("margin 12% gst").
+        if ((CARRY_LEAD.has(prev) || /^\d/.test(prev)) && cur.length >= 2 && !SPLIT_NOUNS.has(cur[cur.length - 2])) carry.push(cur.pop())
+        else if (CARRY_LEAD.has(prev)) carry.push(cur.pop())
+        flush()
+        cur.push(...carry)
+      } else if (!NOUN_LEAD.has(prev) && !SPLIT_VERBS.has(prev) && !/^\d/.test(prev)) {
+        flush()
+      } else if (/^\d+$/.test(prev) && /^\d/.test(/^(?:of|to|at|is|=)$/.test(nx) ? nx2 : nx)) {
+        // "… on day 3 margin 15 percent": the margin has its own number, so
+        // the bare 3 before it belongs to the clause before.
+        flush()
+      } else if (CARRY_LEAD.has(prev) && cur.length >= 2 && !NOUN_LEAD.has(cur[cur.length - 2]) && !SPLIT_VERBS.has(cur[cur.length - 2])) {
+        // "… with innova no gst": "no gst" is its own clause.
+        cur.pop()
+        flush()
+        cur.push(prev)
+      }
+    }
     cur.push(t)
   }
   flush()
@@ -1005,7 +1084,7 @@ export function parseChingEdit(text, context, catalog, { today, force = false } 
     // "45,000" / "1,20,000" are one number, not two clauses ("days 2,3" stay apart).
     .replace(/(\d),(?=\d{2},\d{3}\b)/g, '$1')
     .replace(/(\d),(?=\d{3}\b)/g, '$1')
-  s = convertNumberWords(s)
+  s = normalizeTripWords(convertNumberWords(s))
   const ph = extractPhone(s)
   if (ph.phone) {
     env.client.clientPhone = ph.phone

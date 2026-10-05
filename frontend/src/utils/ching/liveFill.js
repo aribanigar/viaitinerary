@@ -10,6 +10,7 @@
 import { parseChingCommand, validateChingCommand } from "./parseCommand.js";
 import { parseChingEdit } from "./parseEdit.js";
 import { buildEditContext, applyEditActions } from "./editTrip.js";
+import { applyCorrections } from "./corrections.js";
 import { buildChingTripParts } from "./buildTrip.js";
 import { startingInclusions } from "./inclusions.js";
 import { placeKey } from "./places.js";
@@ -39,7 +40,17 @@ const FILL_EXTRAS = new Set([
   "SET_GST",
   "SET_ROOMS",
   "INCLUSION",
+  "SET_TARGET_TOTAL",
+  "SET_MARGIN_AMOUNT",
+  "SET_HOTEL_RATE",
 ]);
+// Price goals ("quote 45000", "margin ₹10,000") are worked out on the whole
+// trip, so they run after everything else said in the same breath.
+const PRICE_GOALS = new Set(["SET_TARGET_TOTAL", "SET_MARGIN_AMOUNT"]);
+const goalsLast = (actions) => [
+  ...actions.filter((a) => !PRICE_GOALS.has(a?.type)),
+  ...actions.filter((a) => PRICE_GOALS.has(a?.type)),
+];
 
 /**
  * The agent's own words for things ("when I say Heaven I mean Heevan Resort"),
@@ -200,7 +211,7 @@ function planFill(base, rawText, { catalog, settings, today }) {
     // A single "day N …" route rides along; several were already planned by the fill.
     const extras = actions.filter((a) => FILL_EXTRAS.has(a?.type) || (a?.type === "SET_DAY_ROUTES" && !command.dayPlan));
     if (extras.length) {
-      const res = applyEditActions(snapshot, extras, { catalog, settings });
+      const res = applyEditActions(snapshot, goalsLast(extras), { catalog, settings });
       snapshot = res.snapshot;
       extraChanges = res.changes;
       warnings.push(...res.warnings);
@@ -238,7 +249,7 @@ function planEdit(base, text, { catalog, settings, today }) {
   const actions = Array.isArray(r.actions) ? r.actions : [];
   const stateActions = actions.filter((a) => !COMMAND_TYPES.has(a?.type));
   const res = stateActions.length
-    ? applyEditActions(base, stateActions, { catalog, settings })
+    ? applyEditActions(base, goalsLast(stateActions), { catalog, settings })
     : { snapshot: base, changes: [], warnings: [] };
   return {
     mode: "edit",
@@ -265,6 +276,8 @@ export function planLive(base, text, { catalog, settings, today } = {}) {
     standard: catalog?.standard || {},
   };
   const opts = { catalog: cat, settings: settings || {}, today };
+  // "3 nights no sorry 4 nights", "grand mumtaz actually make it lalit".
+  text = applyCorrections(text, cat);
   if (!String(text || "").trim()) {
     return { mode: isBlankTrip(base) ? "fill" : "edit", snapshot: base, changes: [], warnings: [], unrecognized: [], commands: [] };
   }

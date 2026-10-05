@@ -7,7 +7,7 @@
 // catalog = { hotels, destinations, vehicles } in the /api/builder/init shapes.
 // See the Ching contract for the ChingCommand shape.
 
-import { convertNumberWords, stripWakePhrase, hasWakePhrase, titleCase } from './text.js'
+import { convertNumberWords, normalizeTripWords, stripWakePhrase, hasWakePhrase, titleCase } from './text.js'
 import { extractDate, isValidIsoDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
 import { placeKey } from './places.js'
@@ -75,7 +75,10 @@ const DAY_UNITS = new Set(['day', 'days'])
 const COUNT_UNITS = new Set([
   ...NIGHT_UNITS, ...DAY_UNITS, 'adult', 'adults', 'child', 'children', 'kid', 'kids', 'infant', 'infants',
   'guest', 'guests', 'people', 'pax', 'person', 'persons',
+  // "grand mumtaz 2 rooms", "khyber 1 extra bed", "innova 2 cabs": a count ends a hotel name.
+  'room', 'rooms', 'bed', 'beds', 'extra', 'cab', 'cabs', 'car', 'cars', 'vehicle', 'vehicles', 'taxi', 'taxis',
 ])
+const MONTHS_RE = /^(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*$/
 const PREPS = new Set(['in', 'at', 'inside'])
 const TRIP_WORDS = new Set(['itinerary', 'itineraries', 'trip', 'tour', 'package', 'holiday', 'holidays', 'vacation', 'plan'])
 // Words that end a hotel phrase ("2 nights in <hotel> then ...").
@@ -265,6 +268,13 @@ export function extractEmail(s) {
   const typed = /(?:\b(?:e-?mail|mail)(?:\s+(?:id|address))?\s*(?:is\s+|:\s*|-\s*)?)?\b([a-z0-9._%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,})\b/
   let m = typed.exec(s)
   if (m) return { email: m[1], s: s.slice(0, m.index) + ' | ' + s.slice(m.index + m[0].length) }
+  // Spoken symbols in the address: "asha underscore k", "rahul dot sharma at …".
+  if (/\b(?:e-?mail|mail)\b/.test(s)) {
+    s = s
+      .replace(/\s+underscore\s+/g, '_')
+      .replace(/\s+(?:dash|hyphen)\s+/g, '-')
+      .replace(/\b([a-z0-9_-]+)\s+dot\s+([a-z0-9_-]+)(?=\s+(?:at|@)\b)/g, '$1.$2')
+  }
   const spoken =
     /\b(?:e-?mail|mail)(?:\s+(?:id|address))?\s*(?:is\s+|:\s*)?([a-z0-9._]+)\s*(?:@|at\s+the\s+rate(?:\s+of)?|at)\s*([a-z0-9-]+)\s*(?:dot|\.)\s*(com|in|org|net|co\s*(?:dot|\.)\s*in|co)\b/
   m = spoken.exec(s)
@@ -458,7 +468,7 @@ export function parseChingCommand(text, catalog, { today } = {}) {
 
   // Hyphens inside words/number-units: "5-day" -> "5 day", "twenty-one" -> "twenty one".
   s = s.replace(/([a-z])-(?=[a-z])/g, '$1 ').replace(/(\d)-(?=[a-z])/g, '$1 ').replace(/([a-z])-(?=\d)/g, '$1 ')
-  s = convertNumberWords(s)
+  s = normalizeTripWords(convertNumberWords(s))
 
   const ph = extractPhone(s)
   const clientPhone = ph.phone
@@ -470,6 +480,47 @@ export function parseChingCommand(text, catalog, { today } = {}) {
   const meal = extractMealPlan(s)
   const mealPlan = meal.plan
   s = meal.s
+
+  // Room details said with the stay ("2 rooms", "super deluxe room", "1 extra
+  // bed") and the cab count ("2 cabs") — read here, blanked out so they never
+  // become part of a hotel's name.
+  const blank = (m) => {
+    s = s.slice(0, m.index) + ' | ' + s.slice(m.index + m[0].length)
+  }
+  let roomType = ''
+  const rt = s.match(/\b(super\s+deluxe|deluxe|premium|executive|superior|standard|luxury|family|suite|club|cottage)\s+rooms?\b/)
+  if (rt) {
+    roomType = titleCase(rt[1].replace(/\s+/g, ' '))
+    blank(rt)
+  }
+  let extraBeds = 0
+  const eb = s.match(/\b(?:(\d{1,2})|an?|one|with(?:\s+an?)?)\s+extra\s+(?:beds?|mattress(?:es)?)\b/)
+  if (eb) {
+    extraBeds = eb[1] ? +eb[1] : 1
+    blank(eb)
+  }
+  // One room count for the whole trip; several ("2 rooms … 3 rooms") are per
+  // stay and left to the edit pass.
+  let rooms = 0
+  const roomHits = [...s.matchAll(/\b(\d{1,2})\s+(?:double\s+|twin\s+|triple\s+)?rooms?\b/g)]
+  if (roomHits.length === 1 && +roomHits[0][1] >= 1) {
+    rooms = +roomHits[0][1]
+    blank(roomHits[0])
+  }
+  // "add gondola for 2 adults and 1 child": the activity's tickets, not the
+  // trip's guests.
+  for (;;) {
+    const ap = s.match(/\b(?:add|include|plus|book)\s+(?!(?:a\s+|the\s+|new\s+)?(?:trip|itinerary|tour|package|holiday)\b)[^|]*?(\bfor\s+\d{1,3}\s+(?:adults?|people|persons?|pax|guests?|tickets?)(?:\s+(?:and|&|plus)\s+\d{1,2}\s+(?:children|child|kids?))?\b)/)
+    if (!ap) break
+    const at = ap.index + ap[0].length - ap[1].length
+    s = s.slice(0, at) + ' | ' + s.slice(at + ap[1].length)
+  }
+  let vehicleQuantity = 1
+  const vq = s.match(/\b([2-9])\s+(?:cabs|cars|vehicles|taxis)\b/)
+  if (vq) {
+    vehicleQuantity = +vq[1]
+    blank(vq)
+  }
 
   let startDate = ''
   const dt = extractDate(s, todayDate)
@@ -503,8 +554,18 @@ export function parseChingCommand(text, catalog, { today } = {}) {
   }
   s = s.replace(/\b(\d{1,2})\s*n\b/g, '$1 nights').replace(/\b(\d{1,2})\s*d\b/g, '$1 days')
 
+  // "Mr and Mrs Bhat" is one client (a couple).
+  s = s.replace(/\bmr\.?\s+(?:and|&)\s+mrs\.?\s+/g, 'mr ')
+
   const guests = extractGuests(s)
   s = guests.s
+
+  // "srinagar 2 gulmarg 2": a catalog city followed by a bare count is that
+  // many nights there (not adults, rooms, a date or a percentage).
+  s = s.replace(/\b([a-z]+)\s+(\d{1,2})\b(?!\s*(?:nights?|nites?|days?|n\b|d\b|adults?|people|pax|persons?|guests?|kids?|child|children|infants?|rooms?|star|stars|%|percent|cabs?|cars?|beds?|extra|tickets?|st\b|nd\b|rd\b|th\b|of\b|[a-z]{3,9}\s+\d{4}))(?![\s\S]{0,1}\d)/g, (m, w, n) => {
+    if (+n < 1 || +n > 20 || MONTHS_RE.test(w) || !cityLookup([w], cat)) return m
+    return `${w} ${n} nights`
+  })
 
   // ---- token stage ----
   const tok = tokenize(s)
@@ -620,7 +681,8 @@ export function parseChingCommand(text, catalog, { today } = {}) {
       while (['stay', 'stays', 'staying', 'of'].includes(at(j))) j++
       if (PREPS.has(at(j))) return false
       const a = collectAfter(j)
-      if (!a.words.length) return true
+      // Nothing after the last count, or nothing that's a place ("… 2 nights sedan").
+      if (!a.words.length || !(cityLookup(a.words, cat) || placeTail(a.words) > 0 || matchHotel(a.words, '', cat).hotel)) return true
       let nk = a.end + 1
       if (at(nk) === 'for') nk++
       if (!(isNum(at(nk)) && NIGHT_UNITS.has(at(nk + 1)))) return false
@@ -735,11 +797,39 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     mark(i, i + 1)
     i += 1
   }
+  // "3 night trip … stay at highlands park": a hotel named with no count of
+  // its own takes the whole trip (only when it's the only stay).
+  if (!stays.length && nightsTotal) {
+    for (let i = 0; i < tok.length; i++) {
+      if (!['stay', 'staying', 'stays', 'hotel', 'at', 'in'].includes(at(i))) continue
+      let j = i + 1
+      while (['at', 'in', 'the', 'hotel'].includes(at(j))) j++
+      const a = collectAfter(j)
+      if (!a.words.length) continue
+      const h = matchHotel(a.words, '', cat).hotel
+      if (!h) continue
+      addStay(nightsTotal, a.words, i, a.end)
+      break
+    }
+  }
+  // … or named bare anywhere ("4 nights from 1st december grand mumtaz innova").
+  if (!stays.length && nightsTotal) {
+    for (let i = 0; i < tok.length; i++) {
+      if (at(i) === '|' || BOUNDARY.has(at(i)) || PREPS.has(at(i)) || isNum(at(i)) || at(i - 1) === 'for') continue
+      const a = collectAfter(i)
+      if (!a.words.length || cityLookup(a.words, cat)) continue
+      const h = matchHotel(a.words, '', cat).hotel
+      if (!h || !a.words.some((w) => w.length >= 4 && h.tokens.includes(w))) continue
+      addStay(nightsTotal, a.words, i, a.end)
+      break
+    }
+  }
   stays.sort((a, b) => a.pos - b.pos)
 
   // Leftover "N days"
   for (let i = 0; i < tok.length; i++) {
-    if (isNum(at(i)) && DAY_UNITS.has(at(i + 1))) {
+    // Not "day 2 day trip to …" (a day number, then a day trip).
+    if (isNum(at(i)) && DAY_UNITS.has(at(i + 1)) && at(i - 1) !== 'day') {
       if (!days) days = +tok[i]
       mark(i, i + 1)
     }
@@ -756,6 +846,8 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     if (t === 'for') start = i + 1
     else if (t === 'customer' || t === 'client' || t === "customer's" || t === "client's") start = i + 1
     else if (t === 'name' && at(i + 1) === 'is') start = i + 2
+    // "…for 4 pax, Mr Lone, arriving …": a title starts a name on its own.
+    else if (['mr', 'mrs', 'ms', 'miss', 'mister', 'dr', 'shri', 'smt'].includes(t)) start = i + 1
     if (start < 0) continue
     while (NAME_SKIP.has(at(start))) start++
     const words = []
@@ -763,6 +855,8 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     while (words.length < 4) {
       const w = at(k)
       if (w === '|' || NAME_STOP.has(w) || !/^[a-z][a-z'.]*$/.test(w)) break
+      // "trip for rahul gulmarg …": a catalog city ends the name.
+      if (words.length && w.length >= 4 && cityLookup([w], cat)) break
       words.push(w)
       k++
     }
@@ -906,7 +1000,11 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     dayPlan,
     vehicleId,
     vehicleName,
+    vehicleQuantity,
     mealPlan,
+    roomType,
+    rooms,
+    extraBeds,
     missing: [],
     warnings,
   }

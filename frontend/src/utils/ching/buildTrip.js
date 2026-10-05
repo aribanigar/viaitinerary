@@ -8,6 +8,9 @@ import {
   findRoomTypeSection,
   bedPricesFromSection,
   hotelCategoryLabel,
+  findRateSection,
+  MEAL_PLAN_LABEL,
+  toRoomTypeSlug,
 } from "../hotelRates.js";
 import { destinationActivityLabels } from "../destinationActivities.js";
 import { hotelInCity, findDestinationFor, placeKey, samePlace } from "./places.js";
@@ -310,8 +313,14 @@ export function buildChingTripParts(command, catalog) {
     for (const stay of command.stays || []) {
       const hotel = hotels.find((h) => String(h.id) === String(stay.hotelId));
       if (hotel && stay.nights > 0) {
-        const roomType = hotelRoomTypes(hotel)[0] || "Deluxe";
-        const section = findRoomTypeSection(hotel, roomType, cursor);
+        // The room type said ("super deluxe room") when the hotel has it,
+        // priced from the row for the meal plan said when the sheet has one.
+        const types = hotelRoomTypes(hotel);
+        const spoken = command.roomType ? types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(command.roomType)) : null;
+        const roomType = spoken || types[0] || "Deluxe";
+        const mealKey = Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === mealPlan) || "";
+        const rated = mealKey ? findRateSection(hotel, roomType, cursor, mealKey) : {};
+        const section = rated.price ? rated : findRoomTypeSection(hotel, roomType, cursor);
         accommodations.push({
           id: newId(),
           hotelId: hotel.id,
@@ -319,11 +328,11 @@ export function buildChingTripParts(command, catalog) {
           city: displayCity(stay.city || hotel.city, destinations),
           category: hotelCategoryLabel(hotel.category) || "4 Star",
           roomType,
-          rooms: String(Math.max(1, Math.ceil((command.adults || 1) / 2))),
+          rooms: String(command.rooms || Math.max(1, Math.ceil((command.adults || 1) / 2))),
           // Kids 5–12 share the parents' room (child-no-bed rate); under-5s are free.
           cnbCount: String(command.children || 0),
           extraBeds5To12Count: "0",
-          extraBedsAbove12Count: "0",
+          extraBedsAbove12Count: String(command.extraBeds || 0),
           extraAdultCount: "0",
           mealPlan,
           pricePerRoom: section.price || 0,
@@ -348,7 +357,7 @@ export function buildChingTripParts(command, catalog) {
   const itinerary = [];
   // A spoken day-by-day route (dayPlan.js) gives each day its own title,
   // destination and cab route; otherwise the plan follows the hotel cities.
-  const planDays = (command.dayPlan?.days || []).length === days ? command.dayPlan.days : null;
+  const planDays = command.dayPlan?.days?.length && command.dayPlan.days.length === days ? command.dayPlan.days : null;
   for (let day = 1; day <= days; day += 1) {
     const here = cities[day - 1] ?? lastCity;
     const prev = day > 1 ? cities[day - 2] : null;
@@ -392,7 +401,7 @@ export function buildChingTripParts(command, catalog) {
   }
   const transportation =
     vehicle && start && days
-      ? dayWiseCabs({ days: itinerary, vehicle, dateOf: (n) => addDays(start, n - 1), newId })
+      ? dayWiseCabs({ days: itinerary, vehicle, dateOf: (n) => addDays(start, n - 1), newId, quantity: command.vehicleQuantity })
       : [];
 
   const place = command.destinationName || [...new Set(cities)].filter(Boolean).join(" - ");

@@ -114,7 +114,8 @@ export function extractDate(s, todayInput) {
 
   // november 10 2026 / nov 10th, 2026 / november the 10th
   each(
-    new RegExp(`\\b(${MONTH_ALT})\\.?\\s+(?:the\\s+)?(\\d{1,2})(?:st|nd|rd|th)?\\b(?:\\s*,?\\s*(\\d{4})\\b)?`, 'g'),
+    // "10 november 4 nights": a number followed by a count unit is not a day.
+    new RegExp(`\\b(${MONTH_ALT})\\.?\\s+(?:the\\s+)?(\\d{1,2})(?:st|nd|rd|th)?\\b(?!\\s*(?:nights?|nites?|days?|n\\b|d\\b|adults?|people|pax|persons?|guests?|kids?|child|children|infants?|rooms?))(?:\\s*,?\\s*(\\d{4})\\b)?`, 'g'),
     (m) => {
       const mo = MONTHS[m[1].slice(0, 3)]
       const d = +m[2]

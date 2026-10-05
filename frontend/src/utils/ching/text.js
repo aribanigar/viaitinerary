@@ -125,3 +125,19 @@ export function titleCase(s) {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ')
 }
+
+/**
+ * Everyday ways of saying trip terms, after number words became digits:
+ * "1 week" → "7 nights", Hinglish "2 raat" → "2 nights", "4 din" → "4 days",
+ * "Rahul ke liye" → "for Rahul". Lower-case input.
+ */
+export function normalizeTripWords(s) {
+  return String(s || '')
+    .replace(/\b(?:a|1)\s+week(?:'s)?\b/g, '7 nights')
+    .replace(/\b([2-4])\s+weeks\b/g, (m, n) => `${n * 7} nights`)
+    .replace(/\b(\d{1,2})\s+(?:raat|raatein|raaten|rath|nite)\b/g, '$1 nights')
+    .replace(/\b(\d{1,2})\s+(?:din|dino)\b/g, '$1 days')
+    .replace(/\b([a-z]+(?:\s+[a-z]+)?)\s+(?:ke|ki|ka)\s+(?:liye|liya|lie)\b/g, 'for $1')
+    // "day trip to sonamarg on day 2" → "day 2 day trip to sonamarg" (the day-plan form).
+    .replace(/\b((?:a\s+)?day\s+(?:trip|excursion)\s+to\s+[a-z]+(?:\s+[a-z]+)?)\s+on\s+(?:the\s+)?day\s+(\d{1,2})\b/g, 'day $2 $1')
+}

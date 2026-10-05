@@ -19,7 +19,7 @@ export const cabRouteOf = (title) => stripDay(title).replace(' to ', ' → ')
  * days: [{ day, title, location }] in order; vehicle: catalog vehicle
  * ({ id, name, rate_type }); dateOf(n) → "YYYY-MM-DD" of day n; newId() → id.
  */
-export function dayWiseCabs({ days, vehicle, dateOf, newId }) {
+export function dayWiseCabs({ days, vehicle, dateOf, newId, quantity = 1 }) {
   const perTrip = vehicle?.rate_type === 'per_trip'
   const cities = [...new Set(days.map((d) => d.location).filter(Boolean))]
   return days.map((d, i) => {
@@ -34,7 +34,7 @@ export function dayWiseCabs({ days, vehicle, dateOf, newId }) {
       destination: d.location || '',
       date: dateOf(Number(d.day) || i + 1),
       vehicleType: vehicle.name,
-      quantity: 1,
+      quantity: Math.max(1, Number(quantity) || 1),
       remarks: perTrip ? (priced ? `Full-trip rate${cities.length > 1 ? `: ${cities.join(' → ')}` : ''}` : INCLUDED_NOTE) : '',
       markupPercentage: '',
     }
