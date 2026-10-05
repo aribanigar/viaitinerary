@@ -14,6 +14,7 @@
 import { hotelInCity, samePlace } from './places.js'
 import { getStays, nightsOf, sortDays } from './editTripUtil.js'
 import { isIncludedCab } from './cabPlan.js'
+import { isRoadCab } from './buildTrip.js'
 import { tripActivityTotal } from '../activityRates.js'
 
 const firstPrice = (h) => Number((h?.price_sections || [])[0]?.price) || 0
@@ -69,14 +70,14 @@ export function cheaperPlan(snapshot, catalog = {}) {
   const cabs = s.transportation || []
   if (cabs.length) {
     const guests = (Number(s.tripInfo?.adults) || 0) + (Number(s.tripInfo?.kids5to12) || 0)
-    const priced = cabs.filter((t) => t.vehicleId && !isIncludedCab(t))
+    const priced = cabs.filter((t) => t.vehicleId && !isIncludedCab(t) && isRoadCab({ name: t.vehicleType }))
     const current = priced[0] ? vehicles.find((v) => String(v.id) === String(priced[0].vehicleId)) : null
     if (current) {
       const days = cabs.length
       const costOf = (v) => (v.rate_type === 'per_trip' ? Number(v.price) || 0 : (Number(v.price) || 0) * days)
       const now = costOf(current)
       const better = vehicles
-        .filter((v) => String(v.id) !== String(current.id) && v.is_available !== false && Number(v.price) > 0)
+        .filter((v) => String(v.id) !== String(current.id) && v.is_available !== false && Number(v.price) > 0 && isRoadCab(v))
         .filter((v) => !guests || !Number(v.seating_capacity) || Number(v.seating_capacity) >= guests)
         .map((v) => ({ v, cost: costOf(v) }))
         .filter((x) => now - x.cost >= 500)

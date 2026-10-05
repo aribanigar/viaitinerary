@@ -64,8 +64,8 @@ import {
 import { formatPhone, prepareCatalog, cityLookup } from './parseCommand.js'
 import { buildDayPlan } from './dayPlan.js'
 import { samePlace } from './places.js'
-import { pickHotel, pickVehicle } from './buildTrip.js'
-import { dayWiseCabs, repriceCabs, isIncludedCab, keepPerTripPriced } from './cabPlan.js'
+import { pickHotel, pickVehicle, isRoadCab } from './buildTrip.js'
+import { dayWiseCabs, repriceCabs, isIncludedCab, keepPerTripPriced, routeForDay, plainDestinationDay } from './cabPlan.js'
 import { applyInclusion } from './inclusions.js'
 import { activityRateOptions, findActivityRate, dateForDay } from '../activityRates.js'
 import { marginForTotal, marginForProfit } from './pricing.js'
@@ -298,6 +298,25 @@ function removeStay(st, acc) {
 // children, meal plan, the rate for that room + meal plan + date, extra-bed
 // prices and photo. `opts` carries what was said ({ roomType, rooms,
 // mealPlan, extraBeds }); otherwise the stay next to it, then the rate sheet.
+// Days ready for cab rows: a day that is only its destination ("Day 2:
+// Gulmarg", added from the Itinerary picker) gets its route worked out from
+// the hotel nights around it (cabPlan.routeForDay) — Arrival, Sightseeing,
+// "Srinagar → Gulmarg → Srinagar" day trip, "Srinagar → Gulmarg" move.
+function routedDays(st, subset) {
+  const all = sortDays(st.s.itinerary)
+  const start = st.s.tripInfo.startDate
+  const nightCity = (i) => {
+    const date = addDays(start, i)
+    const acc = st.s.accommodations.find((x) => !isCancelled(x) && x.checkIn <= date && x.checkOut > date)
+    return acc?.city || ''
+  }
+  return subset.map((d) => {
+    if (d.route || !plainDestinationDay(d)) return d
+    const i = all.indexOf(d)
+    return i < 0 ? d : { ...d, ...routeForDay(all, i, nightCity) }
+  })
+}
+
 // The itinerary city of the night that starts on `date`.
 function nightCity(st, date) {
   const k = diffDays(st.s.tripInfo.startDate, date)
@@ -770,7 +789,8 @@ const HANDLERS = {
     const vehicles = st.catalog.vehicles || []
     const v = findById(vehicles, a.vehicleId) || (a.vehicleId == null ? findByName(vehicles, a.vehicleName) : null)
     if (!v) return st.warnings.push(`${a.vehicleName || `Vehicle #${a.vehicleId}`} is not in your vehicle list`)
-    const cabs = st.s.transportation
+    // The day-wise road cab only — an extra shikara / pony booking stays as it is.
+    const cabs = st.s.transportation.filter((t) => isRoadCab({ name: t.vehicleType }))
     if (cabs.length) {
       const changed = cabs.filter((t) => t.vehicleType !== v.name || (t.vehicleId != null && String(t.vehicleId) !== String(v.id)))
       const wasPerTrip = cabs.some(isIncludedCab)
@@ -786,7 +806,8 @@ const HANDLERS = {
     if (!needDates(st)) return
     const days = sortDays(st.s.itinerary)
     if (!days.length) return st.warnings.push('The trip has no day plan to book cabs against')
-    cabs.push(...dayWiseCabs({ days, vehicle: v, dateOf: (n) => dateOfDay(st, n), newId }))
+    st.s.transportation.push(...dayWiseCabs({ days: routedDays(st, days), vehicle: v, dateOf: (n) => dateOfDay(st, n), newId }))
+    st.s.transportation.sort((x, y) => String(x.date || '').localeCompare(String(y.date || '')))
     st.changes.push(
       v.rate_type === 'per_trip'
         ? `Vehicle: ${v.name} added (${plural(days.length, 'day')}, priced once for the full trip)`
@@ -806,6 +827,22 @@ const HANDLERS = {
     if (named && a.days == null && !a.quantity && !a.tripType && !a.route && st.s.transportation.length) return HANDLERS.SET_VEHICLE(st, a)
     const ti = st.s.tripInfo
     const guests = (Number(ti.adults) || 0) + (Number(ti.kids5to12) || 0)
+    // A shikara / pony / gondola named from the Transportation list is an extra
+    // booking on its day — never in place of the day's road cab.
+    if (named && !isRoadCab(named)) {
+      if (!needDates(st)) return
+      const pick = sortDays(st.s.itinerary).filter((d) => !a.days || a.days.includes(Number(d.day)))
+      if (!pick.length) return st.warnings.push('Those days are not on the trip')
+      for (const d of pick) {
+        st.s.transportation.push({
+          id: newId(), vehicleId: named.id, tripType: a.tripType || 'Sightseeing', route: a.route || named.name,
+          destination: d.location || '', date: dateOfDay(st, d.day), vehicleType: named.name, quantity: a.quantity || 1, remarks: '', markupPercentage: '',
+        })
+      }
+      st.s.transportation.sort((x, y) => String(x.date || '').localeCompare(String(y.date || '')))
+      st.changes.push(`Added ${named.name} on ${pick.length === 1 ? `day ${pick[0].day}` : plural(pick.length, 'day')} (alongside the cab)`)
+      return
+    }
     const v = named || pickVehicle(vehicles, Math.max(1, guests), st.catalog.memory)
     if (!v) return st.warnings.push('No cab in your vehicle list seats the group — add one in Transportation')
     if (!needDates(st)) return
@@ -813,13 +850,13 @@ const HANDLERS = {
     if (!all.length) return st.warnings.push('The trip has no day plan to book cabs against')
     const days = a.days ? all.filter((d) => a.days.includes(Number(d.day))) : all
     if (!days.length) return st.warnings.push('Those days are not on the trip')
-    const rows = dayWiseCabs({ days, vehicle: v, dateOf: (n) => dateOfDay(st, n), newId, quantity: a.quantity || 1 })
+    const rows = dayWiseCabs({ days: routedDays(st, days), vehicle: v, dateOf: (n) => dateOfDay(st, n), newId, quantity: a.quantity || 1 })
     let added = 0
     let updated = 0
     for (const row of rows) {
       if (a.tripType) row.tripType = a.tripType
       if (a.route) row.route = a.route
-      const existing = st.s.transportation.find((t) => t.date === row.date)
+      const existing = st.s.transportation.find((t) => t.date === row.date && isRoadCab({ name: t.vehicleType }))
       if (existing) {
         Object.assign(existing, { vehicleId: row.vehicleId, vehicleType: row.vehicleType, quantity: row.quantity, remarks: row.remarks || existing.remarks })
         if (a.tripType) existing.tripType = a.tripType

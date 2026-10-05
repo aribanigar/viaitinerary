@@ -124,8 +124,16 @@ export function pickHotel(city, hotels, pref = {}, memory = null, why = {}) {
  * available cab that seats everyone — per-day rates before per-trip ones,
  * cheapest among equals. → vehicle or null.
  */
+// What isn't a road cab, though it may sit in the Transportation list
+// (a "Sunset Shikara - Nagin Lake", a pony, a gondola): never picked for the
+// day-wise cab — only when the agent names it.
+const NOT_A_CAB = /\b(?:shikara|shikaras|boat|boats|houseboat|cruise|ferry|kayak|raft|rafting|pony|ponies|horse|horses|mule|gondola|cable\s*car|ropeway|atv|quad|bike|scooty|scooter|snow\s*mobile|snowmobile|sledge|sled|ski|paraglid\w*|helicopter|heli|chopper|flight|train|walk|trek)\b/i;
+export const isRoadCab = (v) => !NOT_A_CAB.test(`${v?.name || ""} ${v?.vehicle_type || ""}`);
+// A self-drive car comes without a driver: chauffeur-driven cabs first.
+const selfDrive = (v) => /self[\s-]*drive/i.test(`${v?.name || ""} ${v?.vehicle_type || ""}`);
+
 export function pickVehicle(vehicles, guests, memory = null, why = {}) {
-  const usable = vehicles.filter((v) => v.is_available !== false && Number(v.price) > 0);
+  const usable = vehicles.filter((v) => v.is_available !== false && Number(v.price) > 0 && isRoadCab(v));
   const seats = (v) => Number(v.seating_capacity) || 0;
   const learned = (memory?.vehicles || [])
     .filter((m) => guests >= (m.minGuests || 0) - 1 && guests <= (m.maxGuests || 99) + 1)
@@ -140,6 +148,7 @@ export function pickVehicle(vehicles, guests, memory = null, why = {}) {
     .filter((v) => seats(v) >= guests)
     .sort(
       (a, b) =>
+        selfDrive(a) - selfDrive(b) ||
         (a.rate_type === "per_trip") - (b.rate_type === "per_trip") ||
         seats(a) - seats(b) ||
         Number(a.price) - Number(b.price),

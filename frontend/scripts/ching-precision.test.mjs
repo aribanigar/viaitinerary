@@ -354,5 +354,35 @@ for (const [said, nights, total] of W) {
   }
 }
 
+
+// ── 7. Cabs: only road cabs are picked; each day routed from the itinerary ──
+// (agent report: "Sunset Shikara - Nagin Lake" from the Transportation list
+// was booked as the cab every day, and picker-made days were routed "Gulmarg").
+{
+  const cat3 = {
+    ...catalog,
+    vehicles: [{ id: 60, name: 'Sunset Shikara - Nagin Lake', price: 1500, rate_type: 'per_day', seating_capacity: 4, vehicle_type: 'Shikara', is_available: true }, ...catalog.vehicles],
+  }
+  const o3 = { ...opts, catalog: cat3 }
+  const pday = (n, name, id) => ({ id: n, day: n, title: `Day ${n}: ${name}`, destination: name, destinationId: id, location: name, description: '', activities: [] })
+  const picked = {
+    ...blank,
+    tripInfo: { ...blank.tripInfo, clientName: 'Arfat', adults: 2, startDate: '2026-10-07', duration: '4' },
+    itinerary: [pday(1, 'Srinagar', 1), pday(2, 'Gulmarg', 2), pday(3, 'Pahalgam', 3), pday(4, 'Srinagar', 1), pday(5, 'Srinagar', 1)],
+    accommodations: [{ id: 1, hotelId: 11, name: 'Hotel Grand Mumtaz', city: 'Srinagar', checkIn: '2026-10-07', checkOut: '2026-10-11', rooms: '1', roomType: 'Deluxe', pricePerRoom: 5200, mealPlan: '' }],
+  }
+  const rows = (s) => s.transportation.map((t) => [t.vehicleType, t.tripType, t.route])
+  let s = planLive(picked, 'add transportation', o3).snapshot
+  report('[cab] add transportation on picker-made days', diff([[rows(s), [
+    ['Swift Dzire', 'Transfer', 'Arrival in Srinagar'], ['Swift Dzire', 'Day Trip', 'Srinagar → Gulmarg → Srinagar'],
+    ['Swift Dzire', 'Day Trip', 'Srinagar → Pahalgam → Srinagar'], ['Swift Dzire', 'Sightseeing', 'Srinagar Sightseeing'], ['Swift Dzire', 'Transfer', 'Departure from Srinagar'],
+  ]]]))
+  s = planLive(blank, 'create a trip for Arfat 2 adults 7 october 4 nights in srinagar at grand mumtaz', o3).snapshot
+  report('[cab] a new trip never gets the shikara as its cab', s.transportation.some((t) => /shikara/i.test(t.vehicleType)) ? ['shikara booked as the cab'] : [])
+  s = planLive(planLive(picked, 'add transportation', o3).snapshot, 'add sunset shikara on day 4', o3).snapshot
+  const day4 = s.transportation.filter((t) => t.date === '2026-10-10').map((t) => t.vehicleType).sort()
+  report('[cab] a named shikara is added alongside the day\'s cab', diff([[day4, ['Sunset Shikara - Nagin Lake', 'Swift Dzire']]]))
+}
+
 console.log(`\n${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)
