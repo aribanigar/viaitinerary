@@ -385,6 +385,9 @@ export default function ChingPanel({
   speech,
   handsFree,
   onToggleHandsFree,
+  lang = "en-IN",
+  langs = [],
+  onChangeLang,
   status,
   init,
   notice,
@@ -488,6 +491,21 @@ export default function ChingPanel({
         >
           {voiceOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-[#181c22]/45" />}
         </button>
+        {langs.length > 1 && onChangeLang && (
+          <button
+            type="button"
+            onClick={() => {
+              const i = langs.findIndex((l) => l.code === lang);
+              onChangeLang(langs[(i + 1) % langs.length].code);
+            }}
+            disabled={!supported}
+            title={`Listening in ${langs.find((l) => l.code === lang)?.label || "English"} — tap to change (English / हिन्दी / اردو)`}
+            aria-label="Change the language Ching listens in"
+            className="grid place-items-center h-8 min-w-8 px-2 rounded-full border border-black/10 bg-white hover:bg-black/[0.03] text-[11px] font-bold disabled:opacity-40 shrink-0"
+          >
+            {langs.find((l) => l.code === lang)?.short || "EN"}
+          </button>
+        )}
         <button
           type="button"
           role="switch"

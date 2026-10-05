@@ -93,6 +93,8 @@ const WAKE_NAME = "(?:ching(?:'s|s)?|chink?|jing|jin|cheng|chang|cheeng|chingu)"
 const GREETING = '(?:hello|hallo|helo|hey|hi|ok|okay|oye)'
 const WAKE_START_RE = new RegExp(`^\\s*(?:${GREETING}[\\s,.!-]+)?${WAKE_NAME}\\b[\\s,.!:?-]*`, 'i')
 const WAKE_ANY_RE = new RegExp(`\\b${GREETING}[\\s,.!-]+${WAKE_NAME}\\b[\\s,.!:?-]*`, 'i')
+// "हेलो चिंग" / "ہیلو چنگ" — Hindi and Urdu speech recognition writes it in script.
+const WAKE_SCRIPT_RE = /(?:^|\s)(?:हेलो|हैलो|हलो|हाय|हे|ہیلو|ہائے|ہیلوو)[\s,.!।-]*(?:चिंग|चींग|छिंग|चिन|जिंग|चंग|چنگ|چینگ|جنگ|چِنگ)(?=$|[\s,.!?।:])[\s,.!?।:-]*/
 
 /**
  * Strip the wake phrase ("hello ching", "hey ching", misheard "hello chin"/"hello jing").
@@ -105,6 +107,8 @@ export function stripWakePhrase(input) {
   if (start) return { text: s.slice(start[0].length).trim(), woke: true }
   const any = WAKE_ANY_RE.exec(s)
   if (any) return { text: s.slice(any.index + any[0].length).trim(), woke: true }
+  const script = WAKE_SCRIPT_RE.exec(s)
+  if (script) return { text: s.slice(script.index + script[0].length).trim(), woke: true }
   return { text: s.trim(), woke: false }
 }
 
@@ -114,7 +118,8 @@ export function stripWakePhrase(input) {
  * start of an overheard sentence is too easy to hit by accident.
  */
 export function hasWakePhrase(input) {
-  return WAKE_ANY_RE.test(String(input ?? ''))
+  const s = String(input ?? '')
+  return WAKE_ANY_RE.test(s) || WAKE_SCRIPT_RE.test(s)
 }
 
 export function titleCase(s) {

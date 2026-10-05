@@ -10,7 +10,7 @@
 import { convertNumberWords, normalizeTripWords, stripWakePhrase, hasWakePhrase, titleCase } from './text.js'
 import { extractDate, isValidIsoDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
-import { placeKey } from './places.js'
+import { placeKey, samePlace } from './places.js'
 import { parseDayPlan, buildDayPlan, withoutClaimed } from './dayPlan.js'
 
 export { stripWakePhrase, hasWakePhrase }
@@ -240,6 +240,12 @@ export function resolveStay(nights, words, cat) {
     stay.hotelId = m.hotel.id
     stay.hotelName = m.hotel.name
     stay.city = m.hotel.city || city || ''
+    // "1 night srinagar apple tree resorts" with Apple Tree in Gulmarg: the
+    // night is in the city said — the conflict is settled once all stays are known.
+    if (city && m.hotel.city && !sameCity(m.hotel.city, city) && !samePlace(m.hotel.city, city)) {
+      stay.city = city
+      stay.cityConflict = m.hotel.city
+    }
     if (m.hotel.raw.is_available === false) warnings.push(`${m.hotel.name} is marked unavailable`)
   } else {
     const hotelText = hotelWords.join(' ')
@@ -955,6 +961,31 @@ export function parseChingCommand(text, catalog, { today } = {}) {
 
   // Nights / days reconciliation
   let stayList = stays.map((x) => x.stay)
+  // A hotel is never booked in a city it isn't in. Named for one city but in
+  // another: it goes to a stay in its own city that has no hotel yet (the
+  // words were just in the wrong place); otherwise that city gets a hotel
+  // picked from its own list, and the agent is told.
+  stayList.forEach((st, i) => {
+    if (!st.cityConflict) return
+    const hotelCity = st.cityConflict
+    const name = st.hotelName
+    const order = [i + 1, i - 1, ...stayList.map((_, k) => k)]
+    const target = order.map((k) => stayList[k]).find((o) => o && o !== st && !o.hotelId && (sameCity(o.city, hotelCity) || samePlace(o.city, hotelCity)))
+    if (target) {
+      target.hotelId = st.hotelId
+      target.hotelName = name
+      // that stay isn't missing a hotel any more
+      for (let w = warnings.length - 1; w >= 0; w--) {
+        if (/^No hotel named for \d+ nights? in /.test(warnings[w]) && samePlace(warnings[w].replace(/^No hotel named for \d+ nights? in (.+?) — pick one$/, '$1'), hotelCity)) warnings.splice(w, 1)
+      }
+      warnings.push(`${name} is in ${hotelCity} — booked it for the ${hotelCity} nights and picked a ${st.city} hotel for ${st.city}`)
+    } else {
+      warnings.push(`${name} is in ${hotelCity}, not ${st.city} — picked a ${st.city} hotel instead`)
+    }
+    st.hotelId = null
+    st.hotelName = ''
+    delete st.cityConflict
+  })
   let dayPlan = null
   if (dayRoutes) {
     // The day plan decides where they sleep; a hotel named for a city ("stay at

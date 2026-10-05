@@ -20,7 +20,12 @@ const FILLER_WORD =
 
 const FILLER_PHRASES = [/\byou know\b,?/gi];
 
-const isFiller = (w) => FILLER_WORD.test(w.replace(/[.,!?…]+$/g, ""));
+// Hindi / Urdu hesitation sounds as the recogniser writes them.
+const SCRIPT_FILLER = /^(?:अं+|उ+म+्?म*|हम्+|ह्म+|आ+ह?|एह|उह|अह|ام+|اں+|ہمم+|آں+|اہ)$/
+const isFiller = (w) => {
+  const t = w.replace(/[.,!?…।]+$/g, "");
+  return FILLER_WORD.test(t) || SCRIPT_FILLER.test(t);
+};
 
 export function stripFillers(text) {
   let s = String(text || "");
@@ -56,7 +61,10 @@ export function stripFillers(text) {
 // Words a sentence can't end on: the agent is still thinking.
 const DANGLING =
   /\b(?:and|or|with|in|at|to|for|from|of|the|a|an|then|also|but|because|plus|by|on|after|before|until|till|via|is|are|will|would|should|want|need|named|called|name|hotel|stay|staying|stays|night|nights|day|days|cab|car|vehicle|meal|plan|budget|under|around|about|between|like|my|his|her|their|our|this|that|some|per|each|price|rate|margin|markup|phone|number|email|client|guest|guests|adults?|kids?|children|child|activity|activities|trip|starting|start|arriving|arrival|departure|book|add|make|set|change|replace|put|use|include|excluding|including)\s*[,]?$/i;
-const ENDS_WITH_NUMBER = /\b\d+\s*[,]?$/;
+const ENDS_WITH_NUMBER = /(?:\b\d+|[\u0966-\u096F\u06F0-\u06F9]+)\s*[,]?$/;
+// Hindi / Urdu sentences end on the verb; one ending on "and / of / in / from /
+// to / for" (और, के, में, से, तक, लिए / اور، کے، میں، سے، تک، لیے) isn't finished.
+const SCRIPT_DANGLING = /(?:^|\s)(?:और|के|की|का|में|से|तक|लिए|लिये|को|पर|फिर|साथ|اور|کے|کی|کا|میں|سے|تک|لیے|لئے|کو|پر|پھر|ساتھ|aur|ke|ki|ka|mein|se|tak|liye|ko|par|phir|saath)\s*[,،]?$/;
 const ENDS_WITH_COMMA = /,\s*$/;
 const TRAILING_FILLER = /\b(?:u+h*m+|u+h+|a+h+|e+h+|e+h*m+|e+r+m*|h+m+)[\s.,…]*$/i;
 
@@ -74,7 +82,7 @@ export function endOfTurnDelay(text) {
   if (TRAILING_FILLER.test(raw)) return TURN_MS.thinking;
   const s = stripFillers(raw);
   if (!s) return TURN_MS.thinking;
-  if (DANGLING.test(s) || ENDS_WITH_COMMA.test(s)) return TURN_MS.thinking;
+  if (DANGLING.test(s) || ENDS_WITH_COMMA.test(s) || SCRIPT_DANGLING.test(s)) return TURN_MS.thinking;
   if (ENDS_WITH_NUMBER.test(s)) return TURN_MS.number;
   const words = s.split(/\s+/).length;
   return words <= 4 ? TURN_MS.short : TURN_MS.normal;

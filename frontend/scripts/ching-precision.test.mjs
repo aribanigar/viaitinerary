@@ -318,5 +318,41 @@ for (const [said, nights, total] of W) {
   report(`[${nights}N/${nights + 1}D] ${said.slice(0, 60)}…`, sanity(s, bad))
 }
 
+
+// ── 6. A hotel is never booked in a city it isn't in (agent report: Apple
+// Tree Resorts, a Gulmarg hotel, was put on the Srinagar night) ────────────
+{
+  const cat2 = {
+    ...catalog,
+    hotels: [
+      ...catalog.hotels,
+      { id: 41, name: 'Apple Tree Resorts', city: 'Gulmarg', category: '3', is_available: true, price_sections: [{ room_type: 'Deluxe', price: 4500 }] },
+      { id: 42, name: 'Hotel Khaleel Palace', city: 'Gulmarg', category: '4', is_available: true, price_sections: [{ room_type: 'Deluxe', price: 6000 }] },
+      { id: 43, name: 'Hotel Meerz', city: 'Srinagar', category: '4', is_available: true, price_sections: [{ room_type: 'Deluxe', price: 5000 }] },
+    ],
+  }
+  const o2 = { ...opts, catalog: cat2 }
+  const cities = (s) => s.accommodations.map((a) => [a.city.replace(/ City$/, ''), cat2.hotels.find((h) => h.id === a.hotelId)?.city.replace(/ City$/, '')])
+  const sameCityEverywhere = (s) => cities(s).every(([a, b]) => a === b)
+  for (const said of [
+    'trip for shah 4 adults 3 children 18 february 2027 1 night srinagar apple tree resorts 1 night gulmarg 3 nights srinagar ertiga',
+    'trip for shah 4 adults 18 february 2027 1 night in srinagar at apple tree resorts then 1 night gulmarg then 3 nights srinagar',
+  ]) {
+    const s = planLive(blank, said, o2).snapshot
+    const bad = []
+    if (!sameCityEverywhere(s)) bad.push(`hotel in the wrong city: ${JSON.stringify(cities(s))}`)
+    if (!s.accommodations.some((a) => a.hotelId === 41 && /Gulmarg/.test(a.city))) bad.push('Apple Tree Resorts should be on the Gulmarg night')
+    report(`[city] ${said}`, bad)
+  }
+  const trip = planLive(blank, 'trip for shah 4 adults 18 february 2027 1 night srinagar hotel meerz 1 night gulmarg khaleel palace 3 nights srinagar grand mumtaz', o2).snapshot
+  for (const said of ['apple tree resorts for gulmarg day 2 build it', 'use apple tree resorts for srinagar', 'replace hotel meerz with apple tree resorts']) {
+    const s = planLive(trip, said, o2).snapshot
+    const bad = []
+    if (!sameCityEverywhere(s)) bad.push(`hotel in the wrong city: ${JSON.stringify(cities(s))}`)
+    if (s.accommodations[1]?.hotelId !== 41) bad.push('Apple Tree Resorts should replace the Gulmarg hotel')
+    report(`[city edit] ${said}`, bad)
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

@@ -88,6 +88,7 @@ const NAV_VERB = /^(?:please |can you |could you |kindly )?(?:open|go to|goto|ta
  *   { type: "recall" } / { type: "forget", all | match }
  *   { type: "back" }                         "go back"
  *   { type: "pending" }                      "what's pending?"
+ *   { type: "lang", code }                   "switch to hindi", "हिंदी में सुनो", "اردو میں سنو", "english please"
  *   { type: "profit" }                       "what's my profit?", "how much am I making?"
  *   { type: "total" }                        "what's the total?"
  *   { type: "voice", on }                    "stop talking" / "talk to me"
@@ -110,6 +111,12 @@ export function understandAssistant(text, { inBuilder = false } = {}) {
   if (/^(?:go |take me )?back$|^previous page$/.test(t)) return { type: "back" };
   if (/\b(?:what(?:'s| is)?|anything|which (?:fields?|sections?)|kya)\b.*\b(?:pending|missing|left|remaining|baki|baaki)\b|\bwhat else (?:do i need|is needed)\b|\bis (?:it|the trip) (?:ready|complete)\b/.test(t)) {
     return { type: "pending" };
+  }
+  // The language Ching listens in.
+  const langWord = t.match(/\b(hindi|urdu|english|angrezi|inglish)\b/);
+  if (langWord && words <= 7 && (words <= 2 || /\b(?:switch|change|listen|speak|talk|language|mode|samjho|suno|bolo|mein|me|in|please|use)\b/.test(t))) {
+    const code = { hindi: "hi-IN", urdu: "ur-PK" }[langWord[1]] || "en-IN";
+    return { type: "lang", code };
   }
   if (
     words <= 10 &&

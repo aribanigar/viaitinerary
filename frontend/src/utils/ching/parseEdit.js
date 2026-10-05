@@ -14,6 +14,7 @@ import { convertNumberWords, normalizeTripWords, stripWakePhrase, titleCase } fr
 import { extractDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
 import { parseInclusionClause } from './inclusions.js'
+import { samePlace } from './places.js'
 import { parseDayPlan, withoutClaimed } from './dayPlan.js'
 import { parseAmount } from './pricing.js'
 import { prepareCatalog, cityLookup, sameCity, matchHotel, extractMealPlan, extractEmail, extractPhone } from './parseCommand.js'
@@ -893,6 +894,17 @@ function hHotel(c, toks, env) {
     m = c.match(/^(?:the\s+)?(.+?)\s+instead\s+of\s+(?:the\s+)?(.+)$/)
     if (m) [Y, X] = [m[1], m[2]]
   }
+  // No verb: "apple tree resorts for gulmarg (day 2)" — a catalog hotel for a city.
+  if (!m) {
+    const bare = c
+      .replace(/\s+(?:on\s+)?(?:the\s+)?day\s+\d+\b/g, '')
+      .replace(/\s+(?:and\s+)?(?:then\s+)?(?:build|confirm)\s+it\b.*$/, '')
+      .match(/^(?:the\s+)?(.+?)\s+(?:for|in|at)\s+(?:the\s+)?([a-z ]+?)(?:\s+(?:stay|nights?|hotel))?$/)
+    if (bare && matchHotel(toksOf(bare[1]), '', cat).hotel && cityLookup(toksOf(bare[2]), cat)) {
+      m = bare
+      Y = `${bare[1]} for ${bare[2]}`
+    }
+  }
   if (!m || !Y) return null
   Y = Y.replace(/\s+instead$/, '').trim()
   let cityHint = ''
@@ -939,8 +951,17 @@ function hHotel(c, toks, env) {
     env.warnings.push(`${stay.city || 'That stay'} is already at ${h.hotel.name}`)
     return []
   }
-  if (h.hotel.city && stay.city && !sameCity(h.hotel.city, stay.city)) {
-    env.warnings.push(`${h.hotel.name} is in ${h.hotel.city}, not ${stay.city}`)
+  // A hotel is never put in a city it isn't in: use the stay in its own city,
+  // or leave the hotel as it is and say why.
+  if (h.hotel.city && stay.city && !sameCity(h.hotel.city, stay.city) && !samePlace(h.hotel.city, stay.city)) {
+    const own = S.stays.filter((s) => sameCity(s.city, h.hotel.city) || samePlace(s.city, h.hotel.city))
+    if (!own.length) {
+      env.warnings.push(`${h.hotel.name} is in ${h.hotel.city}, not ${stay.city} — hotel not changed`)
+      return []
+    }
+    env.warnings.push(`${h.hotel.name} is in ${h.hotel.city} — put it on the ${h.hotel.city} stay, not ${stay.city}`)
+    stay = own[0]
+    if (String(stay.hotelId) === String(h.hotel.id)) return []
   }
   return [{ type: 'REPLACE_HOTEL', stay: stay.index, hotelId: h.hotel.id, hotelName: h.hotel.name, city: h.hotel.city || stay.city }]
 }

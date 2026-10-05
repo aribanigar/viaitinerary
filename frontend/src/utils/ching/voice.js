@@ -100,3 +100,27 @@ export function stopSpeaking() {
   if (supported()) window.speechSynthesis.cancel();
   if (speaking) setSpeaking(false);
 }
+
+// The language Ching listens in: English (India), Hindi or Urdu. Whatever is
+// heard is turned into Ching's English commands (utils/ching/language.js).
+const LANG_KEY = "ching_lang";
+export const CHING_LANGS = [
+  { code: "en-IN", short: "EN", label: "English" },
+  { code: "hi-IN", short: "हिं", label: "हिन्दी (Hindi)" },
+  { code: "ur-PK", short: "اردو", label: "اردو (Urdu)" },
+];
+export function chingLang() {
+  try {
+    const v = localStorage.getItem(LANG_KEY);
+    return CHING_LANGS.some((l) => l.code === v) ? v : "en-IN";
+  } catch {
+    return "en-IN";
+  }
+}
+export function setChingLang(code) {
+  try {
+    localStorage.setItem(LANG_KEY, code);
+  } catch {
+    // Blocked storage — the choice just isn't remembered.
+  }
+}

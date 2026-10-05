@@ -34,7 +34,7 @@ const STOP_GRACE_MS = 1500; // wait this long for `end` after stop()
 
 // Spoken end-of-command markers ("... breakfast and dinner, done").
 const END_RE =
-  /[\s,.]*\b(?:done|that'?s it|that is it|over(?: and out)?)[\s.!]*$/i;
+  /(?:[\s,.]*\b(?:done|that'?s it|that is it|over(?: and out)?)|(?:^|[\s,.।])(?:बस|हो गया|बस इतना|ختم|بس|ہو گیا|بس اتنا))[\s.!।]*$/i;
 
 const FATAL_ERRORS = new Set([
   "not-allowed",
@@ -496,7 +496,8 @@ class SpeechEngine {
   onError(code) {
     this.lastError = code;
     if (code === "language-not-supported" && this.lang !== "en-US") {
-      this.lang = "en-US"; // retry once with plain English on the next spawn
+      // Hindi/Urdu not available in this browser → English (India), then plain English.
+      this.lang = this.lang === "en-IN" ? "en-US" : "en-IN";
       this.lastError = "retry-lang";
       return;
     }
@@ -559,6 +560,19 @@ class SpeechEngine {
     }
   }
 
+  // The language to listen in ("en-IN", "hi-IN", "ur-PK"); a running
+  // hands-free listener restarts in it.
+  setLang(code) {
+    const next = code || LANG;
+    if (next === this.lang) return;
+    this.lang = next;
+    if (this.recMode === "wake") {
+      this.reset();
+      this.set({ phase: "idle" });
+      this.resumeWake(200);
+    }
+  }
+
   setHandlers(handlers) {
     this.handlers = { ...this.handlers, ...handlers };
   }
@@ -587,6 +601,7 @@ class SpeechEngine {
 export default function useSpeech({
   handsFree = false,
   paused = false,
+  lang = LANG,
   onCommand,
   onWake,
   onStart,
@@ -607,6 +622,10 @@ export default function useSpeech({
   useEffect(() => {
     engine.setWakeEnabled(handsFree);
   }, [engine, handsFree]);
+
+  useEffect(() => {
+    engine.setLang(lang);
+  }, [engine, lang]);
 
   useEffect(() => {
     engine.setPaused(paused);

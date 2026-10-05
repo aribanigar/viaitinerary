@@ -12,6 +12,7 @@ import lazyWithReload, {
   reloadOnceForStaleChunks,
 } from "../../utils/lazyWithReload";
 import { stripFillers } from "../../utils/ching/speechClean.js";
+import { toEnglishCommand } from "../../utils/ching/language.js";
 import useSpeech, { primeAudio } from "./useSpeech";
 import { fetchTrips } from "../../api/trips";
 import {
@@ -31,6 +32,9 @@ import {
   voiceEnabled,
   setVoiceEnabled,
   onSpeakingChange,
+  chingLang,
+  setChingLang,
+  CHING_LANGS,
 } from "../../utils/ching/voice";
 
 // Ching — voice trip builder, always mounted on portal routes (App.jsx), so it
@@ -169,6 +173,12 @@ export default function ChingWidget() {
   const editor = useChingEditor();
   const [open, setOpen] = useState(false);
   const [handsFree, setHandsFree] = useState(readHandsFree);
+  // The language Ching listens in (English / Hindi / Urdu) — remembered.
+  const [listenLang, setListenLang] = useState(chingLang);
+  const changeLang = useCallback((code) => {
+    setChingLang(code);
+    setListenLang(code);
+  }, []);
   const [status, setStatus] = useState("idle"); // idle | running (commands)
   const [init, setInit] = useState(null);
   const [notice, setNotice] = useState(null); // { kind: unknown|no-editor|error, text, unrecognized? }
@@ -252,6 +262,9 @@ export default function ChingWidget() {
       }),
     [token],
   );
+
+  // Names Hindi/Urdu speech is matched against: the agency's catalog (and past clients).
+  const catalogForLanguage = useCallback(() => ({ ...(initRef.current || {}), memory: getChingMemory() }), []);
 
   const openPanel = useCallback(() => {
     setOpen(true);
@@ -384,6 +397,7 @@ export default function ChingWidget() {
     (text) => {
       const S = sessionRef.current;
       if (!S || S.ended || !text) return;
+      text = toEnglishCommand(text, catalogForLanguage()) || text;
       S.text = text;
       if (S.navigating) return;
       const core = coreRef.current;
@@ -402,7 +416,7 @@ export default function ChingWidget() {
       }
       liveUpdate(S, text);
     },
-    [attach, liveUpdate, openDraft],
+    [attach, liveUpdate, openDraft, catalogForLanguage],
   );
 
   // The utterance is over: commit (or decide there was nothing to do).
@@ -728,6 +742,10 @@ export default function ChingWidget() {
         }
         const pending = list(safe(() => ed.summary().pending, []));
         respond(pendingReply(pending), { pending });
+      } else if (ask.type === "lang") {
+        changeLang(ask.code);
+        const name = CHING_LANGS.find((l) => l.code === ask.code)?.label || "English";
+        respond(`Okay — I'm listening in ${name} now. Tap the mic and speak.`);
       } else if (ask.type === "profit") {
         const p = ed ? safe(() => ed.summary().profit, null) : null;
         if (!ed) {
@@ -755,7 +773,7 @@ export default function ChingWidget() {
         respond(name ? ask.reply.replace(/^(Hello|Hi|Namaste|Hey)!/, `$1, ${name}!`) : ask.reply);
       }
     },
-    [askConfirm, ensureCore, navigate, respond, token],
+    [askConfirm, changeLang, ensureCore, navigate, respond, token],
   );
   const assistRef = useRef(null);
 
@@ -789,16 +807,18 @@ export default function ChingWidget() {
 
   const handleCommand = useCallback(
     (said) => {
-      // Typed or spoken, "umm"/"ahh"/stutters never reach the parsers.
-      const text = stripFillers(said) || said;
-      chingSaid("you", text);
+      // Typed or spoken, "umm"/"ahh"/stutters never reach the parsers, and
+      // Hindi / Urdu become Ching's English commands.
+      const clean = stripFillers(said) || said;
+      const text = toEnglishCommand(clean, catalogForLanguage()) || clean;
+      chingSaid("you", clean);
       const S = sessionRef.current || startSession();
       S.ended = true;
       S.text = text;
       S.finalText = text;
       finish(S);
     },
-    [finish, startSession],
+    [finish, startSession, catalogForLanguage],
   );
 
   const handleWake = useCallback(() => {
@@ -808,6 +828,7 @@ export default function ChingWidget() {
 
   const speech = useSpeech({
     handsFree,
+    lang: listenLang,
     paused: status === "running" || speaking, // don't hear our own voice
     onCommand: handleCommand,
     onWake: handleWake,
@@ -978,6 +999,9 @@ export default function ChingWidget() {
             speech={speech}
             handsFree={handsFree}
             onToggleHandsFree={toggleHandsFree}
+            lang={listenLang}
+            langs={CHING_LANGS}
+            onChangeLang={changeLang}
             status={status}
             init={init}
             notice={notice}
