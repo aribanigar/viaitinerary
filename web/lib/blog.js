@@ -1,15 +1,15 @@
 import prisma from "@/lib/prisma";
 
-// Port of the blog domain: BlogPost / BlogCategory / BlogTag models plus the
-// Admin\Blog* controllers and the public Api\BlogController. Blog content is
-// scoped by team_id; the super admin owns the "agency" blog team.
+// The blog domain: BlogPost / BlogCategory / BlogTag, used by the super-admin
+// blog routes and the public /api/blog routes. Blog content is scoped by
+// team_id; the super admin owns the "agency" blog team.
 
 const STOP_WORDS = new Set([
   "a", "an", "the", "in", "on", "at", "by", "of", "for", "with", "about",
   "to", "from", "is", "are", "was", "were", "and", "but", "or", "nor",
 ]);
 
-/** Laravel Str::slug equivalent: lowercase, ASCII-ish, hyphen-separated. */
+/** URL slug: lowercase, ASCII-ish, hyphen-separated. */
 export function strSlug(value) {
   return String(value || "")
     .normalize("NFKD")
@@ -19,7 +19,7 @@ export function strSlug(value) {
     .replace(/(^-|-$)/g, "");
 }
 
-/** Post slug: Str::slug + stop-word stripping (kept if title is very short). */
+/** Post slug: slugify + stop-word stripping (kept if title is very short). */
 function postBaseSlug(title) {
   const slug = strSlug(title);
   const words = slug.split("-").filter(Boolean);
@@ -55,7 +55,7 @@ export function calculateReadingTime(html) {
   return Math.max(1, Math.ceil(words / 200));
 }
 
-/** Find-or-create a Team to own this user's blog content (lazy, like Laravel). */
+/** Find-or-create a Team to own this user's blog content (created lazily). */
 export async function resolveBlogTeamId(user) {
   if (user.role === "super_admin") {
     const agency = await prisma.team.findFirst({ where: { slug: "agency" } });

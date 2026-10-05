@@ -1,6 +1,5 @@
 // ViaItinerary — Prisma schema (Supabase / PostgreSQL)
-// Ported from the Laravel models. JSON columns hold the same array/object data
-// the original casts produced.
+// JSON columns hold arrays/objects exactly as the API sends them to the SPA.
 
 generator client {
   provider = "prisma-client-js"

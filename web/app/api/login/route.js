@@ -47,8 +47,8 @@ async function linkSupabaseIdentity(user, password) {
   }
 }
 
-// POST /api/login — email + password, returns a bearer token (Sanctum-compatible
-// shape the existing frontend expects) and sets a session cookie.
+// POST /api/login — email + password, returns a bearer token ({ token, user },
+// the shape the frontend expects) and sets a session cookie.
 //
 // The local bcrypt hash is checked first — no network, and the right answer
 // for almost every login. Supabase Auth is only asked when that fails, to

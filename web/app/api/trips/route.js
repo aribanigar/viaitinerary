@@ -18,6 +18,14 @@ function slugify(s) {
 }
 const rand = () => Math.random().toString(36).slice(2, 8);
 
+// The columns the list below sends — a trip row has ~55 (JSON lists, proposal
+// and reminder bookkeeping…), and the dashboard asks for up to 1000 trips.
+const LIST_COLUMNS = {
+  id: true, userId: true, tripId: true, tripTitle: true, clientName: true, clientPhone: true, startDate: true,
+  duration: true, cost: true, paidAmount: true, refundedAmount: true, currency: true, imagePath: true, status: true,
+  proposalResponse: true, proposalMessage: true, proposalViewedAt: true, updatedAt: true,
+};
+
 // GET /api/trips — paginated list scoped to the admin context.
 export async function GET(request) {
   const user = await userFromRequest(request);
@@ -76,6 +84,7 @@ export async function GET(request) {
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * perPage,
       take: perPage,
+      select: LIST_COLUMNS,
     }),
   ]);
 

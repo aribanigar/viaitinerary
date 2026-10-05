@@ -118,8 +118,11 @@ const SupplierConfirm = lazy(() => import("./pages/SupplierConfirm"));
 const Operations = lazy(() => import("./components/dashboard/Operations"));
 
 import ScrollToHashElement from "./components/utils/ScrollToHashElement";
-import ChingWidget from "./components/ching/ChingWidget";
 
+// Ching (the voice assistant) is only for signed-in portal pages: its code —
+// parsers, language tables, speech — loads with those pages, never on the
+// public site or the login screen.
+const ChingWidget = lazy(() => import("./components/ching/ChingWidget"));
 const Login = lazy(() => import("./components/auth/Login"));
 const Signup = lazy(() => import("./components/auth/Signup"));
 const ForgotPassword = lazy(() => import("./components/auth/ForgotPassword"));
@@ -247,7 +250,11 @@ const PortalChing = () => {
   const { token, passwordUpdateRequired } = useAuth();
   const { pathname } = useLocation();
   if (!token || passwordUpdateRequired || !isPortalPath(pathname)) return null;
-  return <ChingWidget />;
+  return (
+    <Suspense fallback={null}>
+      <ChingWidget />
+    </Suspense>
+  );
 };
 
 const PublicWhatsAppCTA = () => {

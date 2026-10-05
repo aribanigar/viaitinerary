@@ -6,11 +6,8 @@ ever being able to add their own destinations/hotels/vehicles.
 
 ## Where the code lives
 
-This bridge is implemented in `web/` (the live Next.js + Prisma app deployed
-to Vercel, `crm.viakashmir.in`) — **not** in `backend/`/`frontend/` (the
-Laravel + Vite app). That app was superseded by `web/` around 2026-06/07 and
-is no longer deployed; if you see DMC-bridge-shaped code there too, it's a
-leftover from before that was noticed and should be treated as dead.
+This bridge is implemented in `web/` (the Next.js + Prisma app deployed to
+Vercel, `crm.viakashmir.in`); the SPA in `frontend/` only calls its API.
 
 - `web/lib/dmcBridge.js` — token verification (HMAC, shared secret),
   `syncDmcInventory()`, `pushDmcItinerary()`.

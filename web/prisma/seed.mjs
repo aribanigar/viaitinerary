@@ -58,7 +58,7 @@ async function main() {
     await prisma.user.update({ where: { id: user.id }, data: { teamId: team.id } });
   }
 
-  // Default subscription plans (from the original config/plans.php).
+  // Default subscription plans.
   const plans = [
     { key: "trial", name: "Trial", price: 0, durationMonths: 3, tripLimit: 3, isActive: true },
     { key: "monthly", name: "Monthly", price: 999, durationMonths: 1, tripLimit: null, isActive: true },

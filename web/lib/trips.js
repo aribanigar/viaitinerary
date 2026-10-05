@@ -104,7 +104,7 @@ export async function buildTripScalars(body, { partial = false } = {}) {
   return data;
 }
 
-/** Replicate the Laravel syncRelations: delete-missing + upsert each child. */
+/** Sync a trip's children: delete the ones no longer sent, upsert the rest. */
 export async function syncTripRelations(tripDbId, body) {
   // Itineraries
   if (Array.isArray(body.itineraries)) {

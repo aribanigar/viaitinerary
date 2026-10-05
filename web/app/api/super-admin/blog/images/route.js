@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const ALLOWED = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const MAX_BYTES = 5 * 1024 * 1024; // 5 MB, matching the Laravel rule.
+const MAX_BYTES = 5 * 1024 * 1024; // 5 MB per image.
 
 // POST /api/super-admin/blog/images — editor image upload. Uploads to Supabase
 // Storage and returns the public URL; falls back to an inline data URL if

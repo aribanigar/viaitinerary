@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## System
 
-`web/` (API) + `frontend/` (UI) is the entire product — a Next.js (App Router) + Prisma + Supabase (Postgres) backend serving a Vite/React SPA, deployed as one Vercel app. There used to be a second, original Laravel implementation (`backend/`, plus a root `Dockerfile`/`render.yaml` for a Docker/Render deploy); it was removed since it was unmaintained, had drifted out of sync with `frontend/`, and was never the deployed system. If you see any reference to a Laravel backend, Blade templates, `php artisan`, or Sanctum in old docs/notes/history, it's about that removed system, not this one.
+`web/` (API) + `frontend/` (UI) is the entire product — a Next.js (App Router) + Prisma + Supabase (Postgres) backend serving a Vite/React SPA, deployed as one Vercel app. There is no other backend: the codebase is JavaScript end to end, and the owner's standing rule is that no code, config or references from the older, deleted implementation ever come back into it.
 
 ## Commands
 
@@ -45,19 +45,21 @@ Ching's parsers have plain-Node tests, one file each — run a single one with e
 
 **Function region is pinned to `hnd1` (Tokyo) in `web/vercel.json` because the Supabase database is in `ap-northeast-1` (Tokyo).** Every API request makes several sequential DB round trips; Vercel's default region (US East) put ~150 ms of trans-Pacific latency on each one. If the database ever moves, move `regions` with it.
 
+Bundle shape (keep it): the entry chunk holds only the router shell + the landing page; `react`, `react-dom/client` and `react-router-dom` are the one forced `vendor` chunk (stable across deploys); everything else (icons, framer-motion, toasts, Ching, charts, PDF, Excel, editor) splits by the screens that import it. Ching is `lazy()` in `App.jsx` and only loads on signed-in portal pages. Don't add a catch-all manual chunk — the old "ui" group made the login / proposal / supplier pages preload framer-motion. `index.html` loads only the fonts the CSS uses (Urbanist, Manrope, Noto Serif). List endpoints `select` the columns they send (`LIST_COLUMNS` in `app/api/trips/route.js`, `HOTEL_LITE`/`VEHICLE_LITE` in `builder/init`) and `builder/init` runs all of its queries in one parallel round.
+
 `/assets/*` (Vite's content-hashed output) is served `immutable`, and a missing chunk 404s rather than falling through to `index.html`. Lazy routes use `frontend/src/utils/lazyWithReload.js`, which reloads the page once when a chunk from a previous deploy is gone — keep using it instead of plain `React.lazy` for route-level splits.
 
 ### Request flow: Prisma (camelCase) → serialize.js (snake_case) → frontend
 
-The frontend was originally written against a Laravel API and still expects Laravel-shaped snake_case JSON. Prisma models use camelCase. Every API route converts one to the other via `web/lib/serialize.js` — e.g. `serializeTrip`, `catalogHotel`, `settingsToCamel`. When adding a Prisma field that the frontend needs, it must also be added to the relevant `serialize*`/`catalog*` function or it silently never reaches the client. `web/lib/catalog.js`'s `mapHotel`/`mapVehicle`/etc. do the reverse conversion (request body → Prisma `data`) for writes.
+The API's response contract is snake_case JSON. Prisma models use camelCase. Every API route converts one to the other via `web/lib/serialize.js` — e.g. `serializeTrip`, `catalogHotel`, `settingsToCamel`. When adding a Prisma field that the frontend needs, it must also be added to the relevant `serialize*`/`catalog*` function or it silently never reaches the client. `web/lib/catalog.js`'s `mapHotel`/`mapVehicle`/etc. do the reverse conversion (request body → Prisma `data`) for writes.
 
 Two shapes of the same model often coexist and must be kept in sync independently: e.g. `serializeHotel` (lite, used by `/api/builder/init` for the Trip Builder's hotel picker) vs. `catalogHotel` (full, used by the Accommodation catalog CRUD pages) in `web/lib/serialize.js`. A field added to one does not automatically appear in the other.
 
 ### Multi-tenancy: `adminIdOf`
 
-`web/lib/scope.js`'s `adminIdOf(user)` is the tenant-scoping primitive mirrored from the original Laravel `BelongsToAdmin` trait: an admin/super_admin's tenant is their own `id`; a `team`-role user's tenant is the `id` of the admin who owns their team. Every query that touches tenant-owned data (`Trip`, `Hotel`, `Vehicle`, `Destination`, `AgencySetting`, `Policy`, etc.) must filter `where: { userId: await adminIdOf(user) }` (or scope through a relation that does). Skipping this is a cross-tenant data leak, not just a bug — check it explicitly when reviewing or writing any new route.
+`web/lib/scope.js`'s `adminIdOf(user)` is the tenant-scoping primitive: an admin/super_admin's tenant is their own `id`; a `team`-role user's tenant is the `id` of the admin who owns their team. Every query that touches tenant-owned data (`Trip`, `Hotel`, `Vehicle`, `Destination`, `AgencySetting`, `Policy`, etc.) must filter `where: { userId: await adminIdOf(user) }` (or scope through a relation that does). Skipping this is a cross-tenant data leak, not just a bug — check it explicitly when reviewing or writing any new route.
 
-Auth itself (`web/lib/auth.js`): JWT in an httpOnly cookie (`vi_token`) or `Authorization: Bearer`, verified by `userFromRequest(request)`. Passwords use bcrypt and `verifyPassword` accepts the `$2y$` hash format Laravel produces, so accounts migrated from the old system log in unchanged (and are rehashed down to cost 10 on their next login).
+Auth itself (`web/lib/auth.js`): JWT in an httpOnly cookie (`vi_token`) or `Authorization: Bearer`, verified by `userFromRequest(request)`. Passwords use bcrypt; `verifyPassword` accepts every bcrypt prefix (`$2a$`/`$2b$`/`$2y$` — some older accounts still hold `$2y$` hashes, so don't narrow it) and costlier hashes are rehashed down to cost 10 on the next login.
 
 `/api/login` checks the local bcrypt hash first (no network). Only if that fails does it ask Supabase Auth (`web/lib/supabaseAuth.js`), for the account's linked `supabaseId` only — and a Supabase match rewrites the local hash, so that account's next login is local again. That fallback exists because until 2026-09-19 the deploy-time seed reset the super admin's local hash to `password` on every build while Supabase kept the real one. Every path that sets a password must call `hashPassword` **and**, if the user has a `supabaseId`, `supabaseSetPassword` — a path that skips Supabase leaves the old password working through the fallback.
 

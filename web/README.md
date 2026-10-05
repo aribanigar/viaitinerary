@@ -1,76 +1,27 @@
-# ViaItinerary — Next.js port (`web/`)
+# ViaItinerary — `web/`
 
-A from-Laravel rewrite of the backend into **Next.js (App Router)** on
-**Supabase (PostgreSQL)** via **Prisma**, so the whole system (UI + API) runs as
-**one app on Vercel**. The existing React frontend is migrated in during a later
-phase; the API is built first to match the current REST contract.
+The whole product: a **Next.js (App Router)** API on **Supabase (PostgreSQL)**
+via **Prisma**, serving the React (Vite) SPA from `../frontend` — **one app on
+Vercel**. See the repository's `CLAUDE.md` for how the pieces fit together.
 
-## Status (phased port)
+## What's here
 
-- [x] **Phase 1 — scaffold + DB + auth**: Prisma schema (User, Team), Prisma
-      client, JWT/bcrypt auth (verifies existing `$2y$` Laravel hashes),
-      endpoints `POST /api/login`, `GET /api/user`, `POST /api/logout`,
-      `POST /api/signup`, and a seed for the super admin.
-- [x] **Phase 2 — trips + builder API**: Prisma models (Trip, Itinerary,
-      Accommodation, Transportation, Destination, Hotel, Vehicle, AgencySetting,
-      Policy); `GET /api/builder/init`, full `GET/POST /api/trips`,
-      `GET/PUT/DELETE /api/trips/:tripId`, `POST /api/trips/:tripId/duplicate` —
-      with nested itineraries/logistics and the same snake_case response shape
-      the frontend expects.
-- [x] **Phase 3 — catalogs + settings + policies**: full CRUD for
-      `/api/destinations`, `/api/hotels`, `/api/vehicles` (paginated, scoped);
-      `/api/settings` (GET/PUT, all fields) + `/api/settings/verify-ifsc`
-      (live IFSC lookup); `/api/policies` (GET/PUT with defaults);
-      `/api/inclusion-exclusions` CRUD (grouped by type). SMTP-test and bulk
-      Excel import/export are stubbed pending the email/Excel phase.
-- [x] **Phase 4 — subscriptions + Razorpay**: Plan + Subscription models;
-      subscription engine (trial init, upgrade, expiry, trip-limit gating,
-      included seats); `GET /api/subscription/status`, `POST
-      /api/subscription/upgrade`, `POST /api/subscription/assign-member`;
-      `POST /api/razorpay/create-order`, `POST /api/razorpay/verify-payment`
-      (HMAC verify → upgrade). Trip creation now enforces the plan; signup
-      starts a trial; seed adds the default plans.
-- [~] Phase 5 — leads, blog, accounting, super-admin
-  - [x] **5a — leads / inquiries**: LeadInquiry model (→ `trip_inquiries`);
-        `GET/POST /api/lead-inquiries`, public submit / `PATCH` / `DELETE`
-        `/api/lead-inquiries/:id`, `/assignable-members`, `/convert-to-trip`,
-        `POST /api/public-inquiries`.
-  - [x] **5b — accounting ledger**: AccountingObligation + AccountingSettlement
-        models; ledger service (derive receivable from trip cost + payables from
-        accommodations/transportations, settlements feed back into trip
-        paid/refunded totals); `GET /api/accounting/ledger`,
-        `GET /api/accounting/ledger/:tripId`, `POST /api/accounting/settlements`,
-        `PUT`/`DELETE /api/accounting/settlements/:id`.
-  - [x] **5c — super-admin + blog**: super-admin business management
-        (`GET /api/super-admin/dashboard`, businesses CRUD + `/status`,
-        `/bypass-subscription`, `/assign-member`, `/public-inquiries` +
-        `/:id/assign`); blog domain (BlogPost / BlogCategory / BlogTag /
-        BlogPostTag models) with public read endpoints (`/api/blog/posts`,
-        `/api/blog/posts/:slug`, `/api/blog/categories`) and super-admin
-        management (posts CRUD + publish/unpublish, categories CRUD + reorder,
-        tags list/create/delete/merge). Image upload + HTML sanitization are
-        deferred to the storage phase (501 stub).
-- [x] **Phase 6 — one app**: the existing React (Vite) SPA in `../frontend` now
-      builds straight into this app's `public/` and is served by Next, with the
-      SPA pointed at same-origin `/api`. `next.config.mjs` rewrites every
-      non-`/api` path to `/index.html` so React Router handles client-side
-      routing. One Vercel deploy serves both the UI and the API — no separate
-      frontend host.
-- [x] **Phase 7 — PDF / Excel / email**
-  - [x] **email** (nodemailer): per-agency SMTP transport; real
-        `/api/settings/smtp/test`; `POST /api/trips/:tripId/send-confirmation`
-        (client / hotel / cab / payment_voucher / invoice) with PDF attachments.
-  - [x] **Excel** (SheetJS): `POST /api/bulk-import`, `GET /api/bulk-export`,
-        `GET /api/bulk-import/template`, `POST /api/lead-inquiries-bulk-import`.
-  - [x] **PDF** (@react-pdf/renderer, no Chromium): `GET /api/trips/:tripId/pdf`,
-        `/confirmation-pdf`, `/payment-voucher-pdf`, `/invoice-pdf` — functional
-        reproductions of the dompdf documents (same content/sections).
-  - [x] **blog images**: `POST /api/super-admin/blog/images` returns an inline
-        data URL (images stored inline, no external object store).
-
-  > Note: emails require each agency to configure SMTP in Agency Settings.
-  > PDFs are functional react-pdf documents (not a pixel match to the original
-  > dompdf Blade templates); refine styling as needed.
+- **Auth** — JWT (httpOnly cookie or bearer) + bcrypt, Supabase Auth fallback
+  (`lib/auth.js`, `app/api/login`).
+- **Trips + Trip Builder** — nested itineraries / hotels / cabs / activities in
+  one request (`lib/trips.js`), snake_case JSON to the SPA (`lib/serialize.js`).
+- **Catalogs, settings, policies** — destinations / hotels / vehicles /
+  activities CRUD (`lib/catalog.js`), agency settings, inclusions & exclusions.
+- **Subscriptions + Razorpay** — plans, trials, trip limits, seats
+  (`lib/subscription.js`).
+- **Sales & operations** — leads, proposals (`/p/:token`), client payments,
+  follow-ups, supplier confirmations (`/s/:token`), vouchers, daily ops board.
+- **Accounting ledger** — receivables / payables and settlements
+  (`lib/accounting.js`).
+- **Documents** — PDFs with @react-pdf/renderer (`lib/pdf.js`), Excel with
+  SheetJS, email over each agency's own SMTP (nodemailer).
+- **Super-admin + blog**, the **Ching** voice assistant's memory API, and the
+  Via Kashmir catalog bridge (`lib/viaKashmirCatalog.js`).
 
 ## Architecture (one app)
 
@@ -88,7 +39,7 @@ phase; the API is built first to match the current REST contract.
 cp .env.example .env.local      # set DATABASE_URL/DIRECT_URL (Supabase) + JWT_SECRET
 npm install
 npx prisma db push              # create tables in Supabase
-npm run seed                    # super admin: viakashmir.in@gmail.com / password
+npm run seed                    # default plans + the super admin (viakashmir.in@gmail.com)
 npm run dev
 
 # UI (Vite dev server, proxies /api → :3000) — in another shell
@@ -106,6 +57,5 @@ Import the repo in Vercel and set **Root Directory = `web`**. Add env vars
 single deploy serves the UI and the API. Run `npx prisma db push` (or
 `prisma migrate deploy`) once against Supabase to create the tables.
 
-> Note: Prisma's engine binary can't be downloaded inside the restricted build
-> sandbox used to author this, so `next build` is verified on Vercel / your
-> machine (full network), not here.
+Secrets (database URLs, JWT secret, bridge keys, SMTP) live only in Vercel's
+environment variables or a local `.env.local` — never in the repository.

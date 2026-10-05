@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 
-// Port of Laravel's AccountingLedgerService. The "obligations" are derived
+// The accounting ledger. The "obligations" are derived
 // from a trip's client cost (receivable) and its accommodation/transportation
 // line items (payables); "settlements" record money received or paid against
 // them. Everything is scoped by the resolved admin user_id.

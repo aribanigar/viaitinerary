@@ -15,7 +15,7 @@ export async function hashPassword(password) {
 
 /**
  * True when a stored hash is costlier than this app's own standard — e.g.
- * cost-12 hashes carried over from the Laravel system, each ~4x slower to
+ * cost-12 hashes on older accounts, each ~4x slower to
  * verify in pure-JS bcrypt. Rehashing on the next successful login brings
  * them down to the same cost every new password already uses.
  */
@@ -28,8 +28,8 @@ export function needsRehash(hash) {
 }
 
 /**
- * Verify a password against a hash. bcryptjs understands the $2y$ prefix that
- * PHP/Laravel produces, so existing seeded accounts log in unchanged.
+ * Verify a password against a bcrypt hash — every bcrypt prefix ($2a$, $2b$,
+ * $2y$) is accepted, so older accounts' stored hashes keep working.
  */
 export async function verifyPassword(password, hash) {
   if (!hash) return false;

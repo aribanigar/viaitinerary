@@ -1,5 +1,5 @@
 // Convert Prisma records (camelCase) into the snake_case JSON shapes the
-// existing React frontend expects from the original Laravel API.
+// React frontend reads (the API's response contract).
 
 const num = (d) => (d == null ? null : Number(d));
 const dateOnly = (d) => (d ? new Date(d).toISOString().slice(0, 10) : null);
@@ -324,7 +324,7 @@ export function catalogVehicleBlackout(b) {
   };
 }
 
-// --- /settings camelCase shape (matches AgencySettingsController::show) ---
+// --- /settings camelCase shape (GET /api/settings) ---
 export function settingsToCamel(s) {
   return {
     agencyName: s.agencyName,

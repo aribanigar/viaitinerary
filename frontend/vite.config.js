@@ -81,8 +81,12 @@ export default defineConfig({
         // picker download the whole Excel library — charts, the editor, and
         // xlsx are left to split by where they're actually imported.
         manualChunks: {
-          vendor: ["react", "react-dom", "react-router-dom"],
-          ui: ["lucide-react", "framer-motion", "react-toastify"],
+          // react-dom/client is the 170 kB renderer itself — without it here
+          // it landed in the entry chunk, whose name changes every deploy.
+          vendor: ["react", "react-dom", "react-dom/client", "react-router-dom"],
+          // No forced "ui" group: lucide icons, framer-motion and toasts go with
+          // the screens that import them, so the login, proposal (/p/) and
+          // supplier (/s/) pages don't preload the animation library.
         },
       },
     },

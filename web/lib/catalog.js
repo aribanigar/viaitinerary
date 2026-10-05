@@ -137,7 +137,7 @@ export function catalogItem({ model, mapBody, serialize, include }) {
   };
 }
 
-// --- Per-resource body mappers (mirror the Laravel validation/fields) ---
+// --- Per-resource body mappers (request body → Prisma data) ---
 
 export async function mapDestination(body) {
   if (!body.name) return { error: "name is required." };
