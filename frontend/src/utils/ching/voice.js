@@ -63,37 +63,109 @@ const spoken = (text) =>
     .replace(/[\u{1F300}-\u{1FAFF}]/gu, "")
     .trim();
 
-/** Say `text` (replacing anything Ching was saying). Resolves when done. */
-export function speak(text) {
+// A voice for Urdu replies: an Urdu one, else a Hindi one (spoken Urdu and
+// Hindi are one language — the reply carries its words in Devanagari too).
+let speechTurn = 0;
+function voiceFor(prefix) {
+  const voices = window.speechSynthesis.getVoices() || [];
+  const all = voices.filter((v) => new RegExp(`^${prefix}`, "i").test(v.lang));
+  const score = (v) => (/google|natural|online/i.test(v.name) ? 10 : 0) + (v.localService ? 1 : 0);
+  return all.sort((a, b) => score(b) - score(a))[0] || null;
+}
+
+/**
+ * Say an Urdu reply (utils/ching/replyUrdu.js `urduReply`): Urdu sentences in
+ * an Urdu voice, or a Hindi voice reading the same words, and the bits that
+ * stay English (names, change lists) in Ching's English voice. No Urdu or
+ * Hindi voice in this browser → the English reply.
+ */
+function speakUrdu(urdu, english, resolve) {
+  const ur = voiceFor("ur");
+  const hi = ur ? null : voiceFor("hi");
+  if (!ur && !hi) {
+    speakText(english, resolve);
+    return;
+  }
+  const en = pickVoice();
+  const synth = window.speechSynthesis;
+  synth.cancel();
+  const queue = urdu.parts
+    .map((p) => (p.ur ? { text: ur ? p.ur : p.hi, voice: ur || hi } : { text: spoken(p.en), voice: en }))
+    .filter((q) => q.text);
+  if (!queue.length) {
+    resolve();
+    return;
+  }
+  let finished = false;
+  const turn = ++speechTurn;
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    if (turn === speechTurn) setSpeaking(false);
+    resolve();
+  };
+  setSpeaking(true);
+  queue.forEach((q, i) => {
+    const u = new SpeechSynthesisUtterance(q.text);
+    if (q.voice) {
+      u.voice = q.voice;
+      u.lang = q.voice.lang;
+    } else u.lang = "en-IN";
+    u.rate = q.voice === en ? 1.04 : 0.98;
+    if (i === queue.length - 1) {
+      u.onend = done;
+      u.onerror = done;
+    }
+    synth.speak(u);
+  });
+  const chars = queue.reduce((n, q) => n + q.text.length, 0);
+  setTimeout(done, Math.min(30000, 3000 + chars * 85));
+}
+
+/**
+ * Say `text` (replacing anything Ching was saying). Resolves when done.
+ * `{ urdu }` — the same reply in Urdu (`urduReply(text)`), when the agent spoke Urdu.
+ */
+export function speak(text, { urdu = null } = {}) {
   return new Promise((resolve) => {
-    const say = spoken(text);
-    if (!supported() || !voiceEnabled() || !say) {
+    if (!supported() || !voiceEnabled() || !String(text || "").trim()) {
       resolve();
       return;
     }
-    const synth = window.speechSynthesis;
-    synth.cancel();
-    const u = new SpeechSynthesisUtterance(say);
-    const v = pickVoice();
-    if (v) {
-      u.voice = v;
-      u.lang = v.lang;
-    } else {
-      u.lang = "en-IN";
-    }
-    u.rate = 1.04;
-    u.pitch = 1.05;
-    const done = () => {
-      setSpeaking(false);
-      resolve();
-    };
-    u.onend = done;
-    u.onerror = done;
-    setSpeaking(true);
-    synth.speak(u);
-    // Some browsers never fire onend for long text; don't block listening forever.
-    setTimeout(() => speaking && done(), Math.min(20000, 2500 + say.length * 75));
+    if (urdu?.parts?.length) speakUrdu(urdu, text, resolve);
+    else speakText(text, resolve);
   });
+}
+
+function speakText(text, resolve) {
+  const say = spoken(text);
+  if (!say) {
+    resolve();
+    return;
+  }
+  const synth = window.speechSynthesis;
+  synth.cancel();
+  speechTurn++;
+  const u = new SpeechSynthesisUtterance(say);
+  const v = pickVoice();
+  if (v) {
+    u.voice = v;
+    u.lang = v.lang;
+  } else {
+    u.lang = "en-IN";
+  }
+  u.rate = 1.04;
+  u.pitch = 1.05;
+  const done = () => {
+    setSpeaking(false);
+    resolve();
+  };
+  u.onend = done;
+  u.onerror = done;
+  setSpeaking(true);
+  synth.speak(u);
+  // Some browsers never fire onend for long text; don't block listening forever.
+  setTimeout(() => speaking && done(), Math.min(20000, 2500 + say.length * 75));
 }
 
 export function stopSpeaking() {

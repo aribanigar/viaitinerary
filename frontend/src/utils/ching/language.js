@@ -91,6 +91,19 @@ const PHRASES = [
   ['जी एस टी', 'gst'], ['جی ایس ٹی', 'gst'], ['एक्स्ट्रा बेड', 'extra bed'], ['ایکسٹرا بیڈ', 'extra bed'],
   ['डे ट्रिप', 'day trip'], ['ڈے ٹرپ', 'day trip'], ['एयरपोर्ट पिकअप', 'airport pickup'], ['ایئرپورٹ پک اپ', 'airport pickup'],
   ['हो गया', 'done'], ['ہو گیا', 'done'],
+  // questions to Ching ("کیا باقی ہے" = what's pending, "ٹوٹل کتنا ہے" = what's the total)
+  ['کیا باقی ہے', 'what is pending'], ['کیا رہ گیا ہے', 'what is pending'], ['کیا رہ گیا', 'what is pending'], ['کیا بچا ہے', 'what is pending'],
+  ['क्या बाकी है', 'what is pending'], ['क्या बाक़ी है', 'what is pending'], ['क्या बचा है', 'what is pending'], ['क्या रह गया है', 'what is pending'],
+  ['क्या रह गया', 'what is pending'], ['kya baki hai', 'what is pending'], ['kya baaki hai', 'what is pending'], ['kya bacha hai', 'what is pending'],
+  ['ٹوٹل کتنا', 'what is the total'], ['کل کتنا', 'what is the total'], ['کل رقم کتنی', 'what is the total'], ['قیمت کتنی', 'what is the total'],
+  ['टोटल कितना', 'what is the total'], ['कुल कितना', 'what is the total'], ['कीमत कितनी', 'what is the total'], ['total kitna', 'what is the total'],
+  ['منافع کتنا', 'what is my profit'], ['پرافٹ کتنا', 'what is my profit'], ['मुनाफा कितना', 'what is my profit'], ['मुनाफ़ा कितना', 'what is my profit'],
+  ['प्रॉफिट कितना', 'what is my profit'], ['munafa kitna', 'what is my profit'], ['profit kitna', 'what is my profit'],
+  // email addresses ("राहुल एट जीमेल डॉट कॉम")
+  ['ई मेल', 'email'], ['ای میل', 'email'], ['ای-میل', 'email'], ['एट द रेट', 'at the rate'], ['ایٹ دی ریٹ', 'at the rate'],
+  ['जी मेल', 'gmail'], ['جی میل', 'gmail'], ['ہاٹ میل', 'hotmail'], ['हॉट मेल', 'hotmail'], ['آؤٹ لک', 'outlook'],
+  ['ڈاٹ کام', 'dot com'], ['ڈاٹ ان', 'dot in'], ['ڈاٹ کو', 'dot co'], ['ڈاٹ او آر جی', 'dot org'], ['انڈر سکور', 'underscore'],
+  ['डॉट कॉम', 'dot com'], ['डॉट इन', 'dot in'], ['डॉट को', 'dot co'], ['डॉट ओआरजी', 'dot org'], ['अंडर स्कोर', 'underscore'],
   // verbs (clause-final in Hindi/Urdu)
   ['बना दो', 'VERB:create'], ['बना दीजिए', 'VERB:create'], ['तैयार करो', 'VERB:create'], ['بنا دو', 'VERB:create'],
   ['تیار کرو', 'VERB:create'], ['bana do', 'VERB:create'], ['bana dijiye', 'VERB:create'], ['taiyar karo', 'VERB:create'],
@@ -147,6 +160,8 @@ const WORDS = {
   // contact
   फोन: 'phone', मोबाइल: 'mobile', नंबर: 'number', ईमेल: 'email', डॉट: 'dot', فون: 'phone', موبائل: 'mobile',
   نمبر: 'number', ای: 'e', میل: 'mail', ڈاٹ: 'dot',
+  एट: 'at', ऐट: 'at', ایٹ: 'at', जीमेल: 'gmail', جیمیل: 'gmail', याहू: 'yahoo', یاہو: 'yahoo',
+  हॉटमेल: 'hotmail', ہاٹمیل: 'hotmail', आउटलुक: 'outlook', कॉम: 'com', अंडरस्कोर: 'underscore', انڈرسکور: 'underscore',
   // connectors / postpositions
   और: 'and', तथा: 'and', फिर: 'then', اور: 'and', پھر: 'then', aur: 'and', phir: 'then', fir: 'then',
   से: 'SE', سے: 'SE', se: 'SE', तक: '@', تک: '@', tak: '@',
@@ -309,6 +324,11 @@ const ENGLISH = [
   'hello', 'ching', 'done', 'confirm', 'cancel', 'yes', 'okay', 'open', 'show', 'ledger', 'pending',
 ]
 
+const KEEP_ENGLISH = new Set([
+  ...ENGLISH, 'what', 'is', 'the', 'my', 'at', 'dot', 'com', 'in', 'co', 'org', 'gmail', 'yahoo', 'hotmail', 'outlook',
+  'underscore', 'rate', 'and', 'for', 'to', 'on', 'of', 'room only', 'all',
+])
+
 // Common names (Kashmir and wider South Asia). Urdu script leaves out short
 // vowels — عمران is "mrn" — so a client's name is matched to these by sound.
 const NAMES = (
@@ -423,6 +443,8 @@ export function toEnglishCommand(text, catalog = null) {
     else if (MONTH[key]) tokens.push(MONTH[key])
     else if (WORDS[key] != null) tokens.push(WORDS[key])
     else if (script === 'latin') tokens.push(key)
+    // English already (from the phrase table, or said in English): keep it.
+    else if (KEEP_ENGLISH.has(tok.toLowerCase())) tokens.push(tok.toLowerCase())
     else {
       // Transliterate, then snap to the catalog (names) or English loanwords.
       const lat = script === 'deva' ? translitDeva(tok) : translitUrdu(tok)

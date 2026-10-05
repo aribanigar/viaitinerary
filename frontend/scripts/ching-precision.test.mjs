@@ -384,5 +384,25 @@ for (const [said, nights, total] of W) {
   report('[cab] a named shikara is added alongside the day\'s cab', diff([[day4, ['Sunset Shikara - Nagin Lake', 'Swift Dzire']]]))
 }
 
+// ── 8. Spoken email addresses: one address, no spaces ─────────────────────
+// (agent report: the email field got spaces / half the name)
+for (const [said, want] of [
+  ['email rahul sharma@gmail.com', 'rahulsharma@gmail.com'],
+  ['email is rahul sharma at gmail dot com', 'rahulsharma@gmail.com'],
+  ['email id Rahul Sharma 123 at gmail.com', 'rahulsharma123@gmail.com'],
+  ['email rahul sharma 1 2 3 @ gmail.com', 'rahulsharma123@gmail.com'],
+  ['email r a h u l at gmail dot com', 'rahul@gmail.com'],
+  ['email address rahul underscore sharma at yahoo dot co dot in', 'rahul_sharma@yahoo.co.in'],
+  ['email rahul dot sharma at the rate gmail dot com', 'rahul.sharma@gmail.com'],
+  ['email info at kashmir travels dot in', 'info@kashmirtravels.in'],
+  ['email rahul sharma at gmail', 'rahulsharma@gmail.com'],
+  ['email id rahul.sharma@gmail.com', 'rahul.sharma@gmail.com'],
+]) {
+  const s = fill(`create a trip for Rahul Sharma 2 adults 10 november 2 nights grand mumtaz ${said} innova`)
+  report(`[email] ${said}`, diff([[s.tripInfo.clientEmail, want], [s.tripInfo.clientName, 'Rahul Sharma'], [s.accommodations.length, 1]]))
+  const e = planLive({ ...blank, tripInfo: { ...blank.tripInfo, clientName: 'Rahul Sharma' }, accommodations: s.accommodations, transportation: s.transportation, itinerary: s.itinerary }, `change the client ${said}`, opts).snapshot
+  report(`[email edit] change the client ${said}`, diff([[e.tripInfo.clientEmail, want]]))
+}
+
 console.log(`\n${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

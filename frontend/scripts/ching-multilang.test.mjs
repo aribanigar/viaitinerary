@@ -5,6 +5,8 @@
 import { planLive } from '../src/utils/ching/liveFill.js'
 import { stripFillers } from '../src/utils/ching/speechClean.js'
 import { toEnglishCommand } from '../src/utils/ching/language.js'
+import { urduReply } from '../src/utils/ching/replyUrdu.js'
+import { replyAfter, pendingReply, understandAssistant } from '../src/utils/ching/assistant.js'
 
 const catalog = {
   destinations: [
@@ -111,6 +113,54 @@ check('roman pricing', 'margin 18 percent kar do aur gst hatao', planned, (s) =>
 // English still exactly as before
 check('english', 'create a trip for Rahul Sharma 2 adults from 10th november 2 nights in srinagar at grand mumtaz and 2 nights in gulmarg at highlands park with innova', blank, (s) => [
   [s.tripInfo.clientName, 'Rahul Sharma'], [H(s), [[11, '2026-11-10', '2026-11-12'], [13, '2026-11-12', '2026-11-14']]]])
+
+// Spoken email addresses — one address, no spaces (agent report).
+check('hi email', 'ईमेल राहुल शर्मा एट जीमेल डॉट कॉम', planned, (s) => [[s.tripInfo.clientEmail, 'rahulsharma@gmail.com']])
+check('ur email', 'ای میل عمران خان ایٹ جی میل ڈاٹ کام', planned, (s) => [[s.tripInfo.clientEmail, 'imrankhan@gmail.com']])
+check('ur email', 'ای میل عمران 123 ایٹ یاہو ڈاٹ کو ڈاٹ ان', planned, (s) => [[s.tripInfo.clientEmail, 'imran123@yahoo.co.in']])
+
+// Replies in Urdu (the agent spoke Urdu): Ching's English reply → Urdu text,
+// with the same words in Devanagari for a Hindi voice; names stay as they are.
+const urCase = (label, english, wantUr, wantHi) => {
+  const r = urduReply(english)
+  const hi = r.parts.map((p) => p.hi || p.en).join(' ')
+  const bad = []
+  for (const w of wantUr) if (!r.text.includes(w)) bad.push(`urdu lacks ${w}: ${r.text}`)
+  for (const w of wantHi) if (!hi.includes(w)) bad.push(`hindi voice lacks ${w}: ${hi}`)
+  if (bad.length) {
+    fail++
+    console.log(`  FAIL [reply] ${label}\n       ${bad.join('\n       ')}`)
+  } else pass++
+}
+const pend = [{ key: 'clientPhone', label: 'Client phone', level: 'required' }, { key: 'meal0', label: 'Meal plan for Hotel Grand Mumtaz', level: 'recommended' }]
+urCase('fill', replyAfter({ mode: 'fill', changes: ['x'], pending: pend, total: '₹45,000', clientName: 'Imran Khan' }),
+  ['ہو گیا', 'Imran کا ٹرپ تیار ہے', '45,000 روپے', 'کلائنٹ کا فون نمبر', 'Hotel Grand Mumtaz کا میل پلان'], ['हो गया', 'Imran का ट्रिप', '45,000 रुपये', 'क्लाइंट का फ़ोन नंबर'])
+urCase('pending', pendingReply(pend), ['یہ بھرنا ضروری ہے: کلائنٹ کا فون نمبر'], ['यह भरना ज़रूरी है'])
+urCase('total', 'The total is ₹52,300.', ['کل رقم 52,300 روپے ہے'], ['कुल रक़म 52,300 रुपये है'])
+urCase('not understood', "Hmm, I didn't catch that. Try something like \"make Gulmarg 2 nights\".", ['سمجھ نہیں پایا'], ['समझ नहीं पाया'])
+urCase('before sending', replyAfter({ mode: 'edit', changes: [], pending: pend, commandLines: ['Trip saved'], remind: true, outgoing: true }),
+  ['ٹرپ محفوظ ہو گیا', 'بھیجنے سے پہلے'], ['भेजने से पहले'])
+urCase('draft', "Here's the draft for Imran Khan: 2 adults, 10 Nov – 13 Nov. Srinagar 2 nights, Gulmarg 1 night. Say “confirm” to build it, or tell me what to change.",
+  ['Imran Khan کا ڈرافٹ', '2 بڑے', 'Srinagar 2 راتیں', 'Gulmarg 1 رات', 'کنفرم'], ['ड्राफ़्ट', 'कन्फ़र्म'])
+// Questions asked in Urdu / Hindi reach the assistant.
+for (const [said, type] of [['کیا باقی ہے', 'pending'], ['क्या बाकी है', 'pending'], ['ٹوٹل کتنا ہے', 'total'], ['कुल कितना हुआ', 'total'], ['منافع کتنا ہے', 'profit'], ['kya baaki hai', 'pending']]) {
+  const got = understandAssistant(toEnglishCommand(said, catalog), { inBuilder: true })?.type
+  if (got !== type) {
+    fail++
+    console.log(`  FAIL [ask] ${said} → ${toEnglishCommand(said, catalog)} → ${got}, want ${type}`)
+  } else pass++
+}
+// English replies are untouched when the agent didn't speak Urdu: the widget
+// only calls urduReply for an Urdu turn; and an edit only repeats the pending
+// list when asked to (remind), so small edits don't read it out every time.
+{
+  const quiet = replyAfter({ mode: 'edit', changes: ['Margin 15%'], pending: pend, total: '₹50,000' })
+  const told = replyAfter({ mode: 'edit', changes: ['Margin 15%'], pending: pend, total: '₹50,000', remind: true })
+  if (/Still need/.test(quiet) || !/Still need client phone\. Also worth adding: meal plan for Hotel Grand Mumtaz\./.test(told)) {
+    fail++
+    console.log(`  FAIL [reply] pending reminder on edits\n       ${quiet}\n       ${told}`)
+  } else pass++
+}
 
 console.log(`\n${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

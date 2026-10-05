@@ -458,13 +458,26 @@ const lower1 = (label) => label.charAt(0).toLowerCase() + label.slice(1);
 const list3 = (items) =>
   items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 
-/** Spoken reply after a fill / edit, from what changed and what's still pending. */
-export function replyAfter({ mode, changes = [], pending = [], total = null, clientName = "", commandLines = [] }) {
+/** What's still pending, as one or two spoken sentences ("" when nothing is). */
+export function pendingLine(pending = [], { outgoing = false } = {}) {
   const required = pending.filter((p) => p.level === "required").map((p) => lower1(p.label));
+  const nice = pending.filter((p) => p.level !== "required").map((p) => lower1(p.label));
+  const some = (xs, n) => `${list3(xs.slice(0, n))}${xs.length > n ? ` and ${xs.length - n} more` : ""}`;
+  const out = [];
+  if (required.length) out.push(outgoing ? `Before you send it, still need ${some(required, 3)}.` : `Still need ${some(required, 3)}.`);
+  if (nice.length) out.push(`${required.length ? "" : "Everything required is filled. "}Also worth adding: ${some(nice, 2)}.`);
+  return out.join(" ");
+}
+
+/**
+ * Spoken reply after a fill / edit, from what changed and what's still pending.
+ * `remind` — also read out what's pending (always after a fill; the widget
+ * decides for edits); `outgoing` — the agent is saving / exporting / sending.
+ */
+export function replyAfter({ mode, changes = [], pending = [], total = null, clientName = "", commandLines = [], remind = mode === "fill", outgoing = false }) {
   const money = total ? ` Total comes to ${total}.` : "";
-  const missing = required.length
-    ? ` Still need ${list3(required.slice(0, 3))}${required.length > 3 ? ` and ${required.length - 3} more` : ""}.`
-    : " Everything's filled — just hit save or export.";
+  const left = remind ? pendingLine(pending, { outgoing }) : "";
+  const missing = left ? ` ${left}` : mode === "fill" ? " Everything's filled — just hit save or export." : "";
   if (mode === "fill") {
     const who = clientName ? `${clientName.split(" ")[0]}'s trip` : "The trip";
     return `${pick(["Done!", "All set!", "There you go!", "Ta-da!"])} ${who} is filled in.${money}${missing}`;
@@ -472,9 +485,9 @@ export function replyAfter({ mode, changes = [], pending = [], total = null, cli
   if (changes.length) {
     const first = changes[0].replace(/\s*\(.*?\)\s*$/, "");
     const more = changes.length > 1 ? ` and ${changes.length - 1} more change${changes.length > 2 ? "s" : ""}` : "";
-    return `${pick(["Done.", "Got it.", "Updated."])} ${first}${more}.${money}`;
+    return `${pick(["Done.", "Got it.", "Updated."])} ${first}${more}.${money}${missing}`;
   }
-  if (commandLines.length) return `${commandLines[0]}.`;
+  if (commandLines.length) return `${commandLines[0]}.${missing}`;
   return notUnderstood();
 }
 

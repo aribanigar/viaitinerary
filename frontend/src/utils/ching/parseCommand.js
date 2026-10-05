@@ -270,24 +270,96 @@ export function extractMealPlan(s) {
   return { plan: '', s }
 }
 
+// Spoken email addresses: speech recognition writes what it hears as words
+// ("rahul sharma at gmail dot com", "rahul sharma@gmail.com", "r a h u l 1 2 3
+// at the rate yahoo dot co dot in"). Everything said between "email" and the
+// "at" is ONE local part — joined with no spaces.
+const EMAIL_KEY = /\b(?:e[\s-]?mail|mail)\b/
+const EMAIL_SKIP = new Set(['id', 'address', 'is', 'of', 'the', 'client', 'guest', 'customer', 'his', 'her', 'their', 'will', 'be', 'hai', 'to', 'as', 'it', 'its', "it's", ':', '-'])
+const EMAIL_PROVIDER = { gmail: 'gmail.com', googlemail: 'googlemail.com', yahoo: 'yahoo.com', ymail: 'ymail.com', hotmail: 'hotmail.com', outlook: 'outlook.com', rediffmail: 'rediffmail.com', rediff: 'rediffmail.com', icloud: 'icloud.com', live: 'live.com', protonmail: 'protonmail.com', proton: 'proton.me', aol: 'aol.com', zoho: 'zoho.com', msn: 'msn.com' }
+const EMAIL_TLD = /^(?:com|in|org|net|co|io|me|info|biz|edu|gov|ac|travel|uk|us|ae|pk|nic|res|tours|holidays|app|dev|ai)$/
+const DIGIT_WORD = { zero: '0', oh: '0', one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9' }
+
+function emailParts(s) {
+  // Words with their offsets; "@" and "." inside a word are their own parts.
+  const parts = []
+  for (const m of s.matchAll(/\S+/g)) {
+    let at = m.index
+    for (const piece of m[0].split(/(@|\.)/)) {
+      if (piece) parts.push({ t: piece.replace(/[,;!?]+$/, ''), start: at, end: at + piece.length })
+      at += piece.length
+    }
+  }
+  return parts
+}
+
+function spokenEmail(s) {
+  const key = EMAIL_KEY.exec(s)
+  if (!key) return null
+  const parts = emailParts(s).filter((p) => p.start >= key.index + key[0].length)
+  let i = 0
+  while (i < parts.length && EMAIL_SKIP.has(parts[i].t)) i++
+  const from = i
+  // The separator: "@", "at", "at the rate (of)", "at rate", "at d rate".
+  const sepAt = (j) => {
+    const t = parts[j]?.t
+    if (t === '@') return j + 1
+    if (t !== 'at') return 0
+    let k = j + 1
+    if (/^(?:the|d|da|di)$/.test(parts[k]?.t || '') && parts[k + 1]?.t === 'rate') k += 2
+    else if (parts[k]?.t === 'rate') k += 1
+    if (k > j + 1 && parts[k]?.t === 'of') k++
+    if (parts[k]?.t === '@') k++
+    return k
+  }
+  for (let j = from + 1; j <= from + 8 && j < parts.length; j++) {
+    const after = sepAt(j)
+    if (!after) continue
+    const local = parts.slice(from, j)
+    if (!local.length || !local.every((p) => /^[a-z0-9_+-]+$/.test(p.t) || p.t === '.')) continue
+    // Domain words up to "dot <tld>" (or a well-known provider on its own).
+    const dom = []
+    let k = after
+    while (k < parts.length && dom.length < 3 && /^[a-z0-9-]+$/.test(parts[k].t) && parts[k].t !== 'dot') {
+      dom.push(parts[k].t)
+      k++
+      if (parts[k]?.t === 'dot' || parts[k]?.t === '.' || EMAIL_PROVIDER[dom.join('')]) break
+    }
+    if (!dom.length) continue
+    // "dotcom" heard as one word.
+    if (/^dot(com|in|org|net)$/.test(dom[dom.length - 1]) && dom.length > 1) {
+      const tld = dom.pop().slice(3)
+      return finish(local, dom.join('') + '.' + tld, parts[k - 1].end)
+    }
+    const tlds = []
+    let end = parts[k - 1].end
+    while ((parts[k]?.t === 'dot' || parts[k]?.t === '.') && EMAIL_TLD.test(parts[k + 1]?.t || '')) {
+      tlds.push(parts[k + 1].t)
+      end = parts[k + 1].end
+      k += 2
+    }
+    const domain = dom.join('')
+    if (tlds.length) return finish(local, `${domain}.${tlds.join('.')}`, end)
+    if (EMAIL_PROVIDER[domain]) return finish(local, EMAIL_PROVIDER[domain], end)
+  }
+  return null
+
+  function finish(local, domain, end) {
+    const name = local
+      .map((p) => (p.t === 'dot' || p.t === '.' ? '.' : p.t === 'underscore' ? '_' : p.t === 'dash' || p.t === 'hyphen' ? '-' : DIGIT_WORD[p.t] || p.t))
+      .join('')
+      .replace(/^[._-]+|[._-]+$/g, '')
+    if (!name) return null
+    return { email: `${name}@${domain}`, s: s.slice(0, key.index) + ' | ' + s.slice(end) }
+  }
+}
+
 export function extractEmail(s) {
+  const spoken = spokenEmail(s)
+  if (spoken) return spoken
   const typed = /(?:\b(?:e-?mail|mail)(?:\s+(?:id|address))?\s*(?:is\s+|:\s*|-\s*)?)?\b([a-z0-9._%+-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,})\b/
-  let m = typed.exec(s)
+  const m = typed.exec(s)
   if (m) return { email: m[1], s: s.slice(0, m.index) + ' | ' + s.slice(m.index + m[0].length) }
-  // Spoken symbols in the address: "asha underscore k", "rahul dot sharma at …".
-  if (/\b(?:e-?mail|mail)\b/.test(s)) {
-    s = s
-      .replace(/\s+underscore\s+/g, '_')
-      .replace(/\s+(?:dash|hyphen)\s+/g, '-')
-      .replace(/\b([a-z0-9_-]+)\s+dot\s+([a-z0-9_-]+)(?=\s+(?:at|@)\b)/g, '$1.$2')
-  }
-  const spoken =
-    /\b(?:e-?mail|mail)(?:\s+(?:id|address))?\s*(?:is\s+|:\s*)?([a-z0-9._]+)\s*(?:@|at\s+the\s+rate(?:\s+of)?|at)\s*([a-z0-9-]+)\s*(?:dot|\.)\s*(com|in|org|net|co\s*(?:dot|\.)\s*in|co)\b/
-  m = spoken.exec(s)
-  if (m) {
-    const tld = m[3].replace(/\s*(?:dot|\.)\s*/, '.').replace(/\s+/g, '')
-    return { email: `${m[1]}@${m[2]}.${tld}`, s: s.slice(0, m.index) + ' | ' + s.slice(m.index + m[0].length) }
-  }
   return { email: '', s }
 }
 

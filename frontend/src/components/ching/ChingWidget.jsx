@@ -12,7 +12,8 @@ import lazyWithReload, {
   reloadOnceForStaleChunks,
 } from "../../utils/lazyWithReload";
 import { stripFillers } from "../../utils/ching/speechClean.js";
-import { toEnglishCommand } from "../../utils/ching/language.js";
+import { toEnglishCommand, scriptOf } from "../../utils/ching/language.js";
+import { urduReply } from "../../utils/ching/replyUrdu.js";
 import useSpeech, { primeAudio } from "./useSpeech";
 import { fetchTrips } from "../../api/trips";
 import {
@@ -21,6 +22,7 @@ import {
   notUnderstood,
   navigatingTo,
   pendingReply,
+  pendingLine,
 } from "../../utils/ching/assistant";
 import { handleAssist } from "./assistActions";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
@@ -175,10 +177,20 @@ export default function ChingWidget() {
   const [handsFree, setHandsFree] = useState(readHandsFree);
   // The language Ching listens in (English / Hindi / Urdu) — remembered.
   const [listenLang, setListenLang] = useState(chingLang);
+  const listenLangRef = useRef(listenLang);
+  listenLangRef.current = listenLang;
   const changeLang = useCallback((code) => {
     setChingLang(code);
     setListenLang(code);
+    listenLangRef.current = code;
   }, []);
+  // Spoken (or typed) in Urdu → Ching answers in Urdu, on screen and aloud.
+  const urduTurn = useRef(false);
+  const lastPendingSaid = useRef("");
+  const noteLanguage = useCallback((raw) => {
+    urduTurn.current = scriptOf(raw) === "urdu" || listenLangRef.current === "ur-PK";
+  }, []);
+  const localized = useCallback((text) => (urduTurn.current && text ? urduReply(text) : null), []);
   const [status, setStatus] = useState("idle"); // idle | running (commands)
   const [init, setInit] = useState(null);
   const [notice, setNotice] = useState(null); // { kind: unknown|no-editor|error, text, unrecognized? }
@@ -195,18 +207,22 @@ export default function ChingWidget() {
   useEffect(() => onSpeakingChange(setSpeaking), []);
 
   // Ching talks back (when voice replies are on) and shows the same words.
-  const say = useCallback((text) => {
-    if (!text) return;
-    speak(text);
-    chingSaid("ching", text);
-  }, []);
+  const say = useCallback(
+    (text) => {
+      if (!text) return;
+      const urdu = localized(text);
+      speak(text, { urdu });
+      chingSaid("ching", urdu?.text || text);
+    },
+    [localized],
+  );
   const respond = useCallback(
     (text, extra = {}) => {
       setOutcome(null);
-      setNotice({ kind: "reply", text, ...extra });
+      setNotice({ kind: "reply", text: localized(text)?.text || text, ...extra });
       say(text);
     },
-    [say],
+    [say, localized],
   );
 
   // A question Ching asked before doing something that moves money or cancels
@@ -397,6 +413,7 @@ export default function ChingWidget() {
     (text) => {
       const S = sessionRef.current;
       if (!S || S.ended || !text) return;
+      noteLanguage(text);
       text = toEnglishCommand(text, catalogForLanguage()) || text;
       S.text = text;
       if (S.navigating) return;
@@ -416,7 +433,7 @@ export default function ChingWidget() {
       }
       liveUpdate(S, text);
     },
-    [attach, liveUpdate, openDraft, catalogForLanguage],
+    [attach, liveUpdate, openDraft, catalogForLanguage, noteLanguage],
   );
 
   // The utterance is over: commit (or decide there was nothing to do).
@@ -507,7 +524,14 @@ export default function ChingWidget() {
         setNotice(null);
         setCompact(false);
         confirmRef.current = { run: () => confirmDraftRef.current?.(), cancel: () => cancelDraftRef.current?.(), draft: true };
-        say(draftSpeech(res.draft));
+        // Read the draft back, with what's still pending once the builder
+        // has taken it in ("Still need client phone and client email.").
+        const draft = res.draft;
+        setTimeout(() => {
+          const speech = draftSpeech(draft);
+          const left = draft.ok ? pendingLine(list(safe(() => ed.summary().pending, []))) : "";
+          say(left ? speech.replace(/ Say “confirm”/, ` ${left} Say “confirm”`) : speech);
+        }, 700);
         return;
       }
       // An edit while a draft waits: refresh the card with the corrected trip.
@@ -576,13 +600,23 @@ export default function ChingWidget() {
       // Speak once the builder has re-priced the trip (the total follows the commit).
       setTimeout(() => {
         const sum = safe(() => ed.summary(), null) || {};
+        // What's still pending is said after every fill, and after an edit
+        // or a save / export / send whenever the list has changed since Ching
+        // last read it out (not on every small edit).
+        const pendingNow = list(sum.pending);
+        const pendingKey = pendingNow.map((p) => p.key).join("|");
+        const outgoing = commands.some((c) => /^(?:SAVE|EXPORT_PDF|EXPORT_EXCEL|EMAIL_ME|SEND_PROPOSAL|SEND_PAYMENT_LINK)$/.test(c.type));
+        const remind = res.mode === "fill" || (pendingNow.length > 0 && (outgoing || pendingKey !== lastPendingSaid.current));
+        if (remind) lastPendingSaid.current = pendingKey;
         const reply = replyAfter({
           mode: res.mode,
           changes,
-          pending: list(sum.pending),
+          pending: pendingNow,
           total: sum.total,
           clientName: sum.clientName,
           commandLines: lines,
+          remind,
+          outgoing,
         });
         // After a fill, one add-on idea from the catalog (upselling, gently).
         let tip = "";
@@ -590,11 +624,11 @@ export default function ChingWidget() {
           const first = list(safe(() => ed.addOns(), []))[0];
           if (first?.activities?.[0]) tip = ` Tip: in ${first.city}, ${first.activities[0].name} is a popular add-on — say “add ${first.activities[0].name} on day ${first.day}”.`;
         }
-        setOutcome((o) => (o ? { ...o, reply: reply + tip, pending: list(sum.pending) } : o));
+        setOutcome((o) => (o ? { ...o, reply: localized(reply + tip)?.text || reply + tip, pending: list(sum.pending) } : o));
         say(reply + tip);
       }, 700);
     },
-    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond],
+    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized],
   );
 
   // ── Confirm & Build ─────────────────────────────────────────────────────
@@ -810,6 +844,7 @@ export default function ChingWidget() {
       // Typed or spoken, "umm"/"ahh"/stutters never reach the parsers, and
       // Hindi / Urdu become Ching's English commands.
       const clean = stripFillers(said) || said;
+      noteLanguage(clean);
       const text = toEnglishCommand(clean, catalogForLanguage()) || clean;
       chingSaid("you", clean);
       const S = sessionRef.current || startSession();
@@ -818,7 +853,7 @@ export default function ChingWidget() {
       S.finalText = text;
       finish(S);
     },
-    [finish, startSession, catalogForLanguage],
+    [finish, startSession, catalogForLanguage, noteLanguage],
   );
 
   const handleWake = useCallback(() => {

@@ -192,7 +192,7 @@ const Reply = ({ text }) =>
       <span className="grid place-items-center w-6 h-6 rounded-full shrink-0" style={{ background: INK }}>
         <AudioLines className="w-3 h-3" style={{ color: LIME }} />
       </span>
-      <p className="flex-1 rounded-2xl rounded-tl-sm bg-[#f4f5f6] px-3 py-2 text-[13px] leading-snug">{text}</p>
+      <p dir="auto" className="flex-1 rounded-2xl rounded-tl-sm bg-[#f4f5f6] px-3 py-2 text-[13px] leading-snug">{text}</p>
     </div>
   ) : null;
 
