@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   AudioLines,
   Check,
@@ -418,6 +418,16 @@ export default function ChingPanel({
   const listening = phase === "command";
   const running = status === "running";
   const example = useMemo(() => exampleCommand(init?.hotels), [init]);
+  // On a phone the body is short: bring Ching's newest answer into view so
+  // the agent doesn't have to scroll to read it.
+  const bodyRef = useRef(null);
+  const latest = `${notice?.text || ""}|${outcome?.reply || ""}|${outcome?.title || ""}|${tripDraft ? 1 : 0}`;
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el || el.scrollHeight <= el.clientHeight) return;
+    const id = requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight, behavior: "smooth" }));
+    return () => cancelAnimationFrame(id);
+  }, [latest]);
   const blank = editor ? safeCall(() => editor.isBlank(), false) : false;
   const tripLabel = editor?.tripLabel || "this trip";
 
@@ -543,7 +553,7 @@ export default function ChingPanel({
       </div>
 
       {/* Body */}
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3.5 py-3 space-y-3">
+      <div ref={bodyRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3.5 py-3 space-y-3">
         <div className="flex items-start gap-3">
           <MicButton
             listening={listening}

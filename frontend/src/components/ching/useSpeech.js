@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 // Imported from text.js directly so the eager bundle doesn't carry the parser.
 import { hasWakePhrase, stripWakePhrase } from "../../utils/ching/text.js";
 import { stripFillers, endOfTurnDelay, TURN_MS } from "../../utils/ching/speechClean.js";
+import { unlockSpeech } from "../../utils/ching/voice.js";
 
 // Voice layer for Ching, on the browser's Web Speech API (no keys, no server).
 //
@@ -89,6 +90,7 @@ function joinText(a, b) {
 let audioCtx = null;
 
 export function primeAudio() {
+  unlockSpeech(); // a tap is the moment phones allow speech to start
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;

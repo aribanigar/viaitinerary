@@ -1,3 +1,5 @@
+// First: the browser's one-time install offer must be caught before anything else mounts.
+import './utils/pwaInstall.js'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

@@ -80,7 +80,10 @@ function voiceFor(prefix) {
  * Hindi voice in this browser → the English reply.
  */
 function speakUrdu(urdu, english, resolve) {
-  const ur = voiceFor("ur");
+  // Android Chrome often lists no voices at all (they load late): then ask
+  // for Urdu by language and let the phone's own speech engine pick it.
+  const listed = (window.speechSynthesis.getVoices() || []).length > 0;
+  const ur = voiceFor("ur") || (listed ? null : { lang: "ur-PK", unlisted: true });
   const hi = ur ? null : voiceFor("hi");
   if (!ur && !hi) {
     speakText(english, resolve);
@@ -107,7 +110,8 @@ function speakUrdu(urdu, english, resolve) {
   setSpeaking(true);
   queue.forEach((q, i) => {
     const u = new SpeechSynthesisUtterance(q.text);
-    if (q.voice) {
+    if (q.voice?.unlisted) u.lang = q.voice.lang;
+    else if (q.voice) {
       u.voice = q.voice;
       u.lang = q.voice.lang;
     } else u.lang = "en-IN";
@@ -166,6 +170,22 @@ function speakText(text, resolve) {
   synth.speak(u);
   // Some browsers never fire onend for long text; don't block listening forever.
   setTimeout(() => speaking && done(), Math.min(20000, 2500 + say.length * 75));
+}
+
+// Phones (iOS Safari above all) only let a page speak once speech has been
+// started from a tap. Ching answers a moment after the agent stops talking —
+// outside that tap — so the mic tap unlocks it with a silent utterance.
+let unlocked = false;
+export function unlockSpeech() {
+  if (unlocked || !supported()) return;
+  unlocked = true;
+  try {
+    const u = new SpeechSynthesisUtterance(" ");
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+  } catch {
+    unlocked = false;
+  }
 }
 
 export function stopSpeaking() {

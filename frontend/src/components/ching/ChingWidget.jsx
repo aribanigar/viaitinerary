@@ -911,6 +911,7 @@ export default function ChingWidget() {
     (raw) => {
       const text = String(raw || "").trim();
       if (!text || status === "running") return;
+      primeAudio(); // the send tap lets a phone speak the reply
       if (listening) cancelCommand();
       startSession();
       handleCommand(text);
