@@ -2,6 +2,7 @@
 // Plain-Node tests for the Ching trip-edit engine.
 // Run: node frontend/scripts/ching-edit.test.mjs
 import assert from 'node:assert/strict'
+import { priceBreakdown } from '../src/utils/ching/pricing.js'
 import { buildEditContext, applyEditActions } from '../src/utils/ching/editTrip.js'
 
 // ── Catalog (/api/builder/init shapes) ────────────────────────────────────
@@ -611,6 +612,21 @@ test('ADD_ACTIVITY: adults + children, rate option and the season of that day', 
   // No option said: the base rate; no children said, trip has none → none.
   a = go({ day: 2, persons: null }).snapshot.tripActivities.at(-1)
   assert.deepEqual([a.pricePerTicket, a.childCount, a.rateOption], [1800, '0', ''])
+})
+test('SET_TARGET_TOTAL / SET_MARGIN_AMOUNT use the builder\'s own prices', () => {
+  // A stand-in for the builder's calculators: ₹30,000 of cost, no item markups.
+  const priceOf = (s) => priceBreakdown({ items: [{ cost: 30000 }], marginPct: s.profitMarginPercentage, gstPct: s.gstPercentage, includeGST: s.includeGST !== false })
+  const go = (a) => applyEditActions(kashmir(), [a], { catalog, settings: { ...settings, priceOf } })
+  let r = go({ type: 'SET_TARGET_TOTAL', amount: 45000 })
+  const s = r.snapshot
+  assert.equal(Math.round(priceOf(s).total), 45000)
+  assert.match(r.changes[0], /total ₹45,000/)
+  r = go({ type: 'SET_MARGIN_AMOUNT', amount: 6000 })
+  assert.equal(r.snapshot.profitMarginPercentage, 20)
+  // Below cost: refused with the floor named, nothing changed.
+  r = go({ type: 'SET_TARGET_TOTAL', amount: 20000 })
+  assert.deepEqual(r.changes, [])
+  assert.match(r.warnings[0], /below cost/)
 })
 test('REMOVE_ACTIVITY by context index', () => {
   const r = run([{ type: 'REMOVE_ACTIVITY', index: 0 }])

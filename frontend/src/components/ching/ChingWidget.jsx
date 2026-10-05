@@ -728,6 +728,20 @@ export default function ChingWidget() {
         }
         const pending = list(safe(() => ed.summary().pending, []));
         respond(pendingReply(pending), { pending });
+      } else if (ask.type === "profit") {
+        const p = ed ? safe(() => ed.summary().profit, null) : null;
+        if (!ed) {
+          navigate("/accounting-summary");
+          respond("Here's your profit and loss. Open a trip and ask again for that trip's profit.");
+        } else if (!p) {
+          respond("No cost on this trip yet — add hotels, a cab or activities and I'll work out your profit.");
+        } else {
+          respond(
+            `This trip costs you ${p.cost}. At ${p.margin}% margin you make ${p.profit}` +
+              (p.gst ? `, plus ${p.gst} GST` : "") +
+              ` — the client pays ${p.total}.`,
+          );
+        }
       } else if (ask.type === "total") {
         const total = ed ? safe(() => ed.summary().total, null) : null;
         respond(total ? `The total is ${total}.` : "No price yet — add hotels or a cab and I'll do the maths.");

@@ -20,6 +20,14 @@ const test = (name, fn) => {
 
 console.log('Ching assistant tests')
 
+test('profit questions', () => {
+  for (const t of ["what's my profit on this trip", 'how much am I making', 'what is the margin']) {
+    assert.deepEqual(u(t, { inBuilder: true }), { type: 'profit' }, t)
+  }
+  // Setting a margin is an edit, not a question.
+  assert.equal(u('set margin 15%', { inBuilder: true }), null)
+  assert.equal(u('make the margin 10000 rupees', { inBuilder: true }), null)
+})
 test('navigation', () => {
   assert.deepEqual(u('ching open me the ledger'), { type: 'navigate', path: '/ledger', label: 'the ledger' })
   assert.equal(u('hello ching go to accounting').path, '/accounting')

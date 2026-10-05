@@ -15,6 +15,7 @@ import { extractDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
 import { parseInclusionClause } from './inclusions.js'
 import { parseDayPlan, withoutClaimed } from './dayPlan.js'
+import { parseAmount } from './pricing.js'
 import { prepareCatalog, cityLookup, sameCity, matchHotel, extractMealPlan, extractEmail, extractPhone } from './parseCommand.js'
 
 const COMMAND_TYPES = new Set([
@@ -327,12 +328,39 @@ function hCommands(c, toks, env) {
     return null
   }
   if (/\b(?:export|download|print)\b/.test(c) || /\bpdf\b/.test(c)) return [{ type: 'EXPORT_PDF' }]
+  // "make the quotation" (no price said — "quote 45000" is a target price).
+  if (/\b(?:make|prepare|create|generate|build|give me)\s+(?:the\s+|a\s+|my\s+)?(?:quotation|quote)\b/.test(c) && !/\d/.test(c)) return [{ type: 'EXPORT_PDF' }]
   if (/\bsave\b/.test(c) && toksOf(c).length <= 5) return [{ type: 'SAVE' }]
   return null
 }
 
+// "quote 45000 all inclusive", "make the total 45k", "final price should be
+// 1.2 lakh", "price it at 15000 per person" → the margin that hits it.
+const AMOUNT = String.raw`(?:rs\.?|₹|inr|rupees)?\s*(\d[\d,]*(?:\.\d+)?\s*(?:k|thousand|lakhs?|lacs?|l)?)\b`
+const TARGET_RE = new RegExp(
+  String.raw`\b(?:quote(?:\s+(?:it|this|the\s+(?:trip|package|client)))?(?:\s+(?:at|for|as))?|price\s+(?:it|this|the\s+(?:trip|package))\s+at|sell\s+(?:it|this)\s+(?:at|for)|make\s+(?:the\s+|it\s+)?(?:total|final\s+price|price|package\s+price|grand\s+total|quote|cost)(?:\s+(?:to|as))?|(?:the\s+)?(?:total|final\s+price|grand\s+total|package\s+price|quoted\s+price|price)\s+(?:should\s+be|to\s+be|must\s+be|will\s+be|is|of|at|=)|(?:set|change|bring|round)\s+(?:the\s+)?(?:total|final\s+price|price|grand\s+total)(?:\s+(?:to|at|down\s+to|up\s+to))?)\s+` + AMOUNT,
+)
+function hTargetTotal(c, toks, env) {
+  if (/\b(?:margin|profit|markup|mark up|gst)\b/.test(c)) return null
+  const m = c.match(TARGET_RE)
+  if (!m) return null
+  let amount = parseAmount(m[1])
+  if (!amount) return null
+  if (/\bper\s+(?:person|head|pax|adult)\b/.test(c)) amount *= Math.max(1, (env.S.adults || 0) + (env.S.children || 0))
+  return [{ type: 'SET_TARGET_TOTAL', amount }]
+}
+
 function hMargin(c, toks, env) {
   if (!/\b(?:margin|profit|markup|mark up)\b/.test(c)) return null
+  // "make the margin 10000 rupees" / "margin ₹10k": an amount, not 10000%.
+  if (!/%|\bpercent\b|\bpc\b|\bby\b/.test(c)) {
+    const am = c.match(/(?:rs\.?|₹|inr)?\s*(\d[\d,]*(?:\.\d+)?)\s*(k|thousand|lakhs?|lacs?|l|rs|rupees|inr)?\b/)
+    if (am) {
+      const amount = parseAmount(am[0].replace(/\b(?:rs|rupees|inr)\b/, ''))
+      const money = /₹|\brs\b|\brupees\b|\binr\b/.test(c) || (am[2] && !/^(?:rs|rupees|inr)$/.test(am[2])) || amount > 100
+      if (money && amount != null) return [{ type: 'SET_MARGIN_AMOUNT', amount }]
+    }
+  }
   const m = c.match(/(\d+(?:\.\d+)?)\s*(?:%|percent\b|pc\b)?/)
   if (!m) {
     if (/\b(?:remove|no|zero|without)\b/.test(c)) return [{ type: 'SET_MARGIN', percent: 0 }]
@@ -890,7 +918,7 @@ function hInclusions(c) {
 }
 
 const HANDLERS = [
-  hInclusions, hCommands, hMargin, hGst, hClientName, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
+  hInclusions, hCommands, hTargetTotal, hMargin, hGst, hClientName, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
   hAddActivity, hGuests,
 ]
 
@@ -974,6 +1002,9 @@ export function parseChingEdit(text, context, catalog, { today, force = false } 
     .replace(/\b(?:whats|what's|what|wats|watts)\s*app\b|\bwhatsapp?\b|\bwatsapp\b/g, 'whatsapp')
     .replace(/([a-z])-(?=[a-z])/g, '$1 ')
     .replace(/(\d)-(?=[a-z])/g, '$1 ')
+    // "45,000" / "1,20,000" are one number, not two clauses ("days 2,3" stay apart).
+    .replace(/(\d),(?=\d{2},\d{3}\b)/g, '$1')
+    .replace(/(\d),(?=\d{3}\b)/g, '$1')
   s = convertNumberWords(s)
   const ph = extractPhone(s)
   if (ph.phone) {

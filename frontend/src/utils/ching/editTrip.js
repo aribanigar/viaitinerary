@@ -68,6 +68,7 @@ import { pickHotel } from './buildTrip.js'
 import { dayWiseCabs, repriceCabs, isIncludedCab, keepPerTripPriced } from './cabPlan.js'
 import { applyInclusion } from './inclusions.js'
 import { activityRateOptions, findActivityRate, dateForDay } from '../activityRates.js'
+import { marginForTotal, marginForProfit } from './pricing.js'
 
 const COMMANDS = new Set(['EXPORT_PDF', 'EMAIL_ME', 'SAVE', 'UNDO'])
 
@@ -658,6 +659,35 @@ const HANDLERS = {
     if (pct === old) return
     st.s.profitMarginPercentage = pct
     st.changes.push(`Margin: ${old}% → ${pct}%`)
+  },
+
+  // "quote ₹45,000 all inclusive": the trip margin that lands on that total.
+  SET_TARGET_TOTAL(st, a) {
+    const amount = Number(a.amount)
+    if (!(amount > 0)) return st.warnings.push(`"${a.amount}" is not a price`)
+    const p = typeof st.settings.priceOf === 'function' ? st.settings.priceOf(st.s) : null
+    if (!p || !(p.base > 0)) return st.warnings.push('Add hotels, a cab or activities first — there is no cost to price yet')
+    const pct = marginForTotal(p, amount, { gstPct: st.s.gstPercentage, includeGST: st.s.includeGST !== false })
+    if (pct == null) {
+      const floor = (p.flexBase + p.fixedMarked) * (1 + (st.s.includeGST !== false ? (Number(st.s.gstPercentage) || 0) / 100 : 0))
+      return st.warnings.push(`${money(amount)} is below cost — the lowest total with no margin is ${money(Math.ceil(floor))}. Nothing changed.`)
+    }
+    const old = Number(st.s.profitMarginPercentage) || 0
+    st.s.profitMarginPercentage = pct
+    st.changes.push(`Margin: ${old}% → ${pct}% (total ${money(amount)})`)
+  },
+
+  // "make the margin ₹10,000": the trip margin that earns that much.
+  SET_MARGIN_AMOUNT(st, a) {
+    const amount = Number(a.amount)
+    if (!(amount >= 0)) return st.warnings.push(`"${a.amount}" is not an amount`)
+    const p = typeof st.settings.priceOf === 'function' ? st.settings.priceOf(st.s) : null
+    if (!p || !(p.base > 0)) return st.warnings.push('Add hotels, a cab or activities first — there is no cost to put a margin on yet')
+    const pct = marginForProfit(p, amount)
+    if (pct == null) return st.warnings.push(`Item margins already earn more than ${money(amount)}. Nothing changed.`)
+    const old = Number(st.s.profitMarginPercentage) || 0
+    st.s.profitMarginPercentage = pct
+    st.changes.push(`Margin: ${old}% → ${pct}% (${money(amount)} profit)`)
   },
 
   SET_GST(st, a) {

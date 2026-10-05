@@ -70,6 +70,7 @@ import TripPayments from "./trip-builder/TripPayments";
 import TripBookings from "./trip-builder/TripBookings";
 import { HotelModal, TransportModal, ActivityModal } from "./trip-builder/TripBuilderModals";
 import { tripActivityTotal, dateForDay } from "../../utils/activityRates";
+import { priceBreakdown } from "../../utils/ching/pricing";
 import TripInfoTab from "./trip-builder/TripInfoTab";
 import { registerChingEditor } from "../../utils/ching/editorBridge";
 import { getChingMemory, invalidateChingMemory } from "../../utils/ching/memoryStore";
@@ -1538,6 +1539,20 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       gst_percentage: gstPercentage,
       profit_percentage: profitMarginPercentage,
       include_gst: includeGST,
+      // Ching's "quote ₹45,000" / "margin ₹10,000" / "what's my profit"
+      // price a (planned) trip with the builder's own cost calculators.
+      priceOf: (snap) =>
+        priceBreakdown({
+          items: [
+            ...(snap.accommodations || []).map((h) => ({ cost: calculateHotelCost(h), markup: h.markupPercentage })),
+            ...(snap.transportation || []).map((t) => ({ cost: calculateVehicleCost(t), markup: t.markupPercentage })),
+            ...(snap.tripActivities || []).map((a) => ({ cost: calculateActivityCost(a), markup: a.markupPercentage })),
+          ],
+          other: totalOtherCost,
+          marginPct: snap.profitMarginPercentage,
+          gstPct: snap.gstPercentage,
+          includeGST: snap.includeGST !== false,
+        }),
     },
     label: `${currentTitle}${urlTripId ? ` · ${urlTripId}` : ""}`,
     urlTripId,
@@ -1631,7 +1646,14 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       summary: () => {
         const { snapshot, pendingItems: pending, currencySymbol } = chingState.current;
         const cost = Number(snapshot.tripInfo.cost) || 0;
+        const p = chingState.current.settings.priceOf(snapshot);
+        const fmt = (n) => `${currencySymbol}${Math.round(n).toLocaleString("en-IN")}`;
         return {
+          // "What's my profit": cost before margin, what the margin earns, GST.
+          profit:
+            p.base > 0
+              ? { cost: fmt(p.base), profit: fmt(p.profit), gst: p.gst > 0 ? fmt(p.gst) : null, total: fmt(p.total), margin: snapshot.profitMarginPercentage }
+              : null,
           pending,
           total: cost > 0 ? `${currencySymbol}${cost.toLocaleString("en-IN")}` : null,
           clientName: snapshot.tripInfo.clientName || "",

@@ -167,6 +167,21 @@ test('add gondola phase 2 for 2 adults and 1 child on day 3', () =>
   only('add gondola phase 2 for 2 adults and 1 child on day 3', [
     { type: 'ADD_ACTIVITY', day: 3, activityId: 32, name: 'Gondola Phase 2', location: 'Gulmarg', persons: 2, children: 1 },
   ]))
+test('target price: "quote 45,000", "45k", "1.2 lakh", per person', () => {
+  assert.deepEqual(acts('quote 45000 all inclusive'), [{ type: 'SET_TARGET_TOTAL', amount: 45000 }])
+  assert.deepEqual(acts('make the total 45,000'), [{ type: 'SET_TARGET_TOTAL', amount: 45000 }])
+  assert.deepEqual(acts('final price should be 1.2 lakh'), [{ type: 'SET_TARGET_TOTAL', amount: 120000 }])
+  // 2 adults + 1 child in the test trip.
+  assert.deepEqual(acts('price it at 15000 per person'), [{ type: 'SET_TARGET_TOTAL', amount: 45000 }])
+})
+test('margin in rupees is an amount, in % a percentage', () => {
+  assert.deepEqual(acts('make the margin 10000 rupees'), [{ type: 'SET_MARGIN_AMOUNT', amount: 10000 }])
+  assert.deepEqual(acts('margin ₹12k'), [{ type: 'SET_MARGIN_AMOUNT', amount: 12000 }])
+  assert.deepEqual(acts('set margin 15%'), [{ type: 'SET_MARGIN', percent: 15 }])
+})
+test('"make the quotation and whatsapp it to the client"', () => {
+  assert.deepEqual(acts('make the quotation and whatsapp it to the client'), [{ type: 'EXPORT_PDF' }, { type: 'SEND_PROPOSAL', channel: 'whatsapp' }])
+})
 test('remove the gondola ride', () => only('remove the gondola ride', [{ type: 'REMOVE_ACTIVITY', index: 0 }]))
 test('add Pari Mahal to day 2 (not in catalog)', () => only('add Pari Mahal to day 2', [{ type: 'ADD_DAY_ITEM', day: 2, text: 'Pari Mahal' }]))
 test('add something unknown with no day -> unrecognized', () => {

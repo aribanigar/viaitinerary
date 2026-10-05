@@ -88,6 +88,7 @@ const NAV_VERB = /^(?:please |can you |could you |kindly )?(?:open|go to|goto|ta
  *   { type: "recall" } / { type: "forget", all | match }
  *   { type: "back" }                         "go back"
  *   { type: "pending" }                      "what's pending?"
+ *   { type: "profit" }                       "what's my profit?", "how much am I making?"
  *   { type: "total" }                        "what's the total?"
  *   { type: "voice", on }                    "stop talking" / "talk to me"
  *   { type: "smalltalk", reply }             "how are you", "tell me a joke"…
@@ -109,6 +110,14 @@ export function understandAssistant(text, { inBuilder = false } = {}) {
   if (/^(?:go |take me )?back$|^previous page$/.test(t)) return { type: "back" };
   if (/\b(?:what(?:'s| is)?|anything|which (?:fields?|sections?)|kya)\b.*\b(?:pending|missing|left|remaining|baki|baaki)\b|\bwhat else (?:do i need|is needed)\b|\bis (?:it|the trip) (?:ready|complete)\b/.test(t)) {
     return { type: "pending" };
+  }
+  if (
+    words <= 10 &&
+    (/\b(?:what(?:'s| is| are)?|tell me|show me|how much)\b.*\b(?:profit|profits|margin|earnings?)\b/.test(t) ||
+      /\bhow much (?:am i|are we|do i|do we|will i|will we) (?:making|earning|make|earn)\b/.test(t)) &&
+    !/\b(?:set|make|give|change|increase|decrease|reduce|raise|lower|add|remove|keep it)\b.*\d/.test(t)
+  ) {
+    return { type: "profit" };
   }
   if (/\b(?:what(?:'s| is)|tell me|how much is)\b.*\b(?:total|price|cost|quote)\b/.test(t) && words <= 9) return { type: "total" };
 
