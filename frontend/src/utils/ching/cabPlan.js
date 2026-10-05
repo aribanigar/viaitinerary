@@ -29,7 +29,7 @@ export function dayWiseCabs({ days, vehicle, dateOf, newId, quantity = 1 }) {
     return {
       id: newId(),
       vehicleId: priced ? vehicle.id : null,
-      tripType: d.tripType || (/Sightseeing|day trip|leisure/i.test(route) ? 'Sightseeing' : 'Transfer'),
+      tripType: d.tripType || (/day trip|excursion/i.test(route) ? 'Day Trip' : /Sightseeing|leisure/i.test(route) ? 'Sightseeing' : 'Transfer'),
       route,
       destination: d.location || '',
       date: dateOf(Number(d.day) || i + 1),

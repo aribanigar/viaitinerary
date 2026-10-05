@@ -64,7 +64,7 @@ import {
 import { formatPhone, prepareCatalog, cityLookup } from './parseCommand.js'
 import { buildDayPlan } from './dayPlan.js'
 import { samePlace } from './places.js'
-import { pickHotel } from './buildTrip.js'
+import { pickHotel, pickVehicle } from './buildTrip.js'
 import { dayWiseCabs, repriceCabs, isIncludedCab, keepPerTripPriced } from './cabPlan.js'
 import { applyInclusion } from './inclusions.js'
 import { activityRateOptions, findActivityRate, dateForDay } from '../activityRates.js'
@@ -294,10 +294,53 @@ function removeStay(st, acc) {
 }
 
 /** Catalog hotel -> accommodation, priced exactly like buildTrip.js's stayAccommodation. */
-function pricedStay(st, hotel, checkIn, nights, neighbour) {
-  const roomType = hotelRoomTypes(hotel)[0] || 'Deluxe'
-  const section = findRoomTypeSection(hotel, roomType, checkIn)
+// The whole hotel form, as the Add Hotel modal fills it: room type, rooms,
+// children, meal plan, the rate for that room + meal plan + date, extra-bed
+// prices and photo. `opts` carries what was said ({ roomType, rooms,
+// mealPlan, extraBeds }); otherwise the stay next to it, then the rate sheet.
+// The itinerary city of the night that starts on `date`.
+function nightCity(st, date) {
+  const k = diffDays(st.s.tripInfo.startDate, date)
+  return k >= 0 ? sortDays(st.s.itinerary)[k]?.location || '' : ''
+}
+
+// Nights of the trip with no hotel yet, as runs of consecutive nights in one
+// itinerary city: [{ start, nights, city }]. Night k sleeps in day k's city.
+function openNightRuns(st) {
+  const start = st.s.tripInfo.startDate
+  const total = st.nights
+  if (!start || !(total > 0)) return []
+  const covered = new Set()
+  for (const acc of st.s.accommodations) {
+    if (isCancelled(acc) || !acc.checkIn || !acc.checkOut) continue
+    for (let d = acc.checkIn; d < acc.checkOut; d = addDays(d, 1)) covered.add(d)
+  }
+  const days = sortDays(st.s.itinerary)
+  const runs = []
+  for (let k = 0; k < total; k++) {
+    const date = addDays(start, k)
+    if (covered.has(date)) continue
+    const city = days[k]?.location || ''
+    const last = runs[runs.length - 1]
+    if (last && addDays(last.start, last.nights) === date && (samePlace(last.city, city) || (!last.city && !city))) last.nights += 1
+    else runs.push({ start: date, nights: 1, city })
+  }
+  return runs
+}
+
+function pricedStay(st, hotel, checkIn, nights, neighbour, opts = {}) {
+  const types = hotelRoomTypes(hotel)
+  const said = opts.roomType ? types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(opts.roomType)) : null
+  const roomType = said || types[0] || 'Deluxe'
+  const mealSaid = opts.mealPlan || neighbour?.mealPlan || ''
+  const usual = st.catalog.memory?.mealPlan || ''
+  const mealKey = Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === mealSaid) || ''
+  const rated = mealKey ? findRateSection(hotel, roomType, checkIn, mealKey) : {}
+  const section = rated.price ? rated : findRoomTypeSection(hotel, roomType, checkIn)
+  // No meal plan said: the plan of the rate row the price came from.
+  const mealPlan = mealSaid || (section.meal_plan ? MEAL_PLAN_LABEL[section.meal_plan] || '' : '') || usual
   const adults = Number(st.s.tripInfo.adults) || 1
+  const rooms = opts.rooms || neighbour?.rooms || Math.max(1, Math.ceil(adults / 2))
   return {
     id: newId(),
     hotelId: hotel.id,
@@ -305,12 +348,12 @@ function pricedStay(st, hotel, checkIn, nights, neighbour) {
     city: hotel.city,
     category: hotelCategoryLabel(hotel.category) || '4 Star',
     roomType,
-    rooms: String(Math.max(1, Math.ceil(adults / 2))),
+    rooms: String(rooms),
     cnbCount: String(Number(st.s.tripInfo.kids5to12) || 0),
     extraBeds5To12Count: '0',
-    extraBedsAbove12Count: '0',
+    extraBedsAbove12Count: String(opts.extraBeds || neighbour?.extraBedsAbove12Count || 0),
     extraAdultCount: '0',
-    mealPlan: neighbour?.mealPlan || '',
+    mealPlan,
     pricePerRoom: section.price || 0,
     bedPrices: bedPricesFromSection(section),
     photo: hotel.image_url || hotel.image_path || null,
@@ -360,6 +403,64 @@ const HANDLERS = {
     removeStay(st, acc)
   },
 
+  // The Add Hotel form by voice (parseEdit hAddHotel): hotel or city, nights /
+  // dates / days, rooms, room type, meal plan, extra beds. The hotel goes into
+  // nights the trip already plans but has no hotel for; a hotel only named by
+  // city is picked from the agency's own list there.
+  ADD_HOTEL(st, a) {
+    if (!needDates(st)) return
+    const start = st.s.tripInfo.startDate
+    const runs = openNightRuns(st)
+    let hotel = a.hotelId != null ? findById(st.catalog.hotels, a.hotelId) : null
+    if (a.hotelId != null && !hotel) return st.warnings.push(`Hotel #${a.hotelId} is not in your hotel list`)
+    const city = hotel?.city || a.city || ''
+    // Where: exact dates, itinerary days, the open nights in that city, or all of them.
+    const places = []
+    if (a.checkIn || a.fromDay != null) {
+      const from = a.checkIn || addDays(start, a.fromDay - 1)
+      const nights = a.checkOut ? diffDays(from, a.checkOut) : a.nights || (a.toDay != null ? a.toDay - a.fromDay + 1 : 0)
+      if (!(nights >= 1)) return st.warnings.push('How many nights is the stay?')
+      places.push({ start: from, nights, city: city || nightCity(st, from) })
+    } else if (city) {
+      const run = runs.find((r) => r.city && samePlace(r.city, city)) || (runs.length === 1 ? runs[0] : null)
+      if (!run) {
+        // Every night already has a hotel (or none is in that city): the old
+        // "add N nights at X" — a new stay that lengthens the trip.
+        if (a.nights >= 1) return HANDLERS.ADD_STAY(st, { ...a, city, hotelName: hotel?.name || a.hotelName || '' })
+        return st.warnings.push(runs.length ? `The open nights aren't in ${city} — say the dates or days` : 'Every night already has a hotel — say which stay to change')
+      }
+      places.push({ start: run.start, nights: Math.min(a.nights || run.nights, run.nights), city: run.city || city })
+      if (a.nights > run.nights) st.warnings.push(`Only ${plural(run.nights, 'night')} in ${run.city || city} need a hotel — booked those`)
+    } else {
+      if (!runs.length) return st.warnings.push('Every night already has a hotel')
+      places.push(...runs)
+    }
+    for (const p of places) {
+      // The nights must be free.
+      const taken = st.s.accommodations.find((x) => !isCancelled(x) && x.checkIn < addDays(p.start, p.nights) && x.checkOut > p.start)
+      if (taken) {
+        st.warnings.push(`${fmtRange(p.start, addDays(p.start, p.nights))} already has ${taken.name || 'a hotel'} — change that stay instead`)
+        continue
+      }
+      const h = hotel || (p.city ? pickHotel(p.city, st.catalog.hotels || [], {}, st.catalog.memory) : null)
+      if (!h) {
+        st.warnings.push(`No hotel in your list for ${p.city || 'those nights'} — pick one`)
+        continue
+      }
+      if (h.is_available === false) st.warnings.push(`${h.name} is marked unavailable`)
+      const prev = getStays(st.s.accommodations).filter((x) => x.checkOut <= p.start).pop() || null
+      const acc = pricedStay(st, h, p.start, p.nights, prev, a)
+      st.s.accommodations.push(acc)
+      st.s.accommodations.sort((x, y) => String(x.checkIn || '').localeCompare(String(y.checkIn || '')))
+      addKnown(st, h.city)
+      const price = acc.pricePerRoom ? `, ${money(acc.pricePerRoom)}/room/night` : ''
+      st.changes.push(`Added ${h.city} stay: ${h.name}, ${plural(p.nights, 'night')} (${fmtRange(acc.checkIn, acc.checkOut)}${price})${hotel ? '' : ' — picked from your list'}`)
+      const planned = nightCity(st, p.start)
+      if (planned && !samePlace(planned, h.city)) st.warnings.push(`${h.name} is in ${h.city}, but the itinerary has ${planned} that night`)
+      if (addDays(p.start, p.nights) > addDays(start, st.nights)) st.warnings.push(`${h.name} runs past the trip's last night`)
+    }
+  },
+
   ADD_STAY(st, a) {
     const nights = toInt(a.nights)
     if (!(nights >= 1)) return st.warnings.push('Say how many nights the new stay is')
@@ -369,6 +470,28 @@ const HANDLERS = {
     const city = hotel?.city || String(a.city || '').trim()
     const name = hotel?.name || String(a.hotelName || '').trim()
     if (!city) return st.warnings.push(`Which city is ${name || 'the new hotel'} in? Stay not added`)
+
+    // The trip already plans nights with no hotel yet (Trip Info + Itinerary
+    // filled, Logistics empty): book the hotel INTO those nights — the open
+    // nights in its city first — instead of adding days to the trip.
+    if (a.after == null) {
+      const open = openNightRuns(st)
+      const run = open.find((r) => r.city && samePlace(r.city, city)) || (open.length === 1 || !open.some((r) => r.city) ? open[0] : null)
+      if (run && nights <= run.nights) {
+        const prev = getStays(st.s.accommodations).filter((x) => x.checkOut <= run.start).pop() || null
+        const acc = hotel
+          ? pricedStay(st, hotel, run.start, nights, prev, a)
+          : { ...pricedStay(st, { id: null, name, city }, run.start, nights, prev, a), category: '', pricePerRoom: 0, bedPrices: [] }
+        if (!hotel) st.warnings.push(`${name || 'The new hotel'} is not in your hotel list — price not set`)
+        else if (hotel.is_available === false) st.warnings.push(`${hotel.name} is marked unavailable`)
+        st.s.accommodations.push(acc)
+        st.s.accommodations.sort((x, y) => String(x.checkIn || '').localeCompare(String(y.checkIn || '')))
+        const price = acc.pricePerRoom ? `, ${money(acc.pricePerRoom)}/room/night` : ''
+        st.changes.push(`Added ${city} stay: ${name || 'hotel'}, ${plural(nights, 'night')} (${fmtRange(acc.checkIn, acc.checkOut)}${price})`)
+        if (run.city && !samePlace(run.city, city)) st.warnings.push(`${name || 'The hotel'} is in ${city}, but the itinerary has ${run.city} on those nights`)
+        return
+      }
+    }
 
     let neighbour = null
     let pivot
@@ -669,6 +792,49 @@ const HANDLERS = {
         ? `Vehicle: ${v.name} added (${plural(days.length, 'day')}, priced once for the full trip)`
         : `Vehicle: ${v.name} added (${plural(days.length, 'per-day booking')})`,
     )
+  },
+
+  // The Add Transport form by voice (parseEdit hAddCab): a cab for the days
+  // said (all days if none), quantity, trip type and route. Days that already
+  // have a cab get it updated; the rest get a new row. No cab named → the
+  // smallest available one that seats the group.
+  ADD_CAB(st, a) {
+    const vehicles = st.catalog.vehicles || []
+    const named = a.vehicleId != null ? findById(vehicles, a.vehicleId) : a.vehicleName ? findByName(vehicles, a.vehicleName) : null
+    if ((a.vehicleId != null || a.vehicleName) && !named) return st.warnings.push(`${a.vehicleName || `Vehicle #${a.vehicleId}`} is not in your vehicle list`)
+    // Just "add innova" on a trip that has cabs: change them all (as before).
+    if (named && a.days == null && !a.quantity && !a.tripType && !a.route && st.s.transportation.length) return HANDLERS.SET_VEHICLE(st, a)
+    const ti = st.s.tripInfo
+    const guests = (Number(ti.adults) || 0) + (Number(ti.kids5to12) || 0)
+    const v = named || pickVehicle(vehicles, Math.max(1, guests), st.catalog.memory)
+    if (!v) return st.warnings.push('No cab in your vehicle list seats the group — add one in Transportation')
+    if (!needDates(st)) return
+    const all = sortDays(st.s.itinerary)
+    if (!all.length) return st.warnings.push('The trip has no day plan to book cabs against')
+    const days = a.days ? all.filter((d) => a.days.includes(Number(d.day))) : all
+    if (!days.length) return st.warnings.push('Those days are not on the trip')
+    const rows = dayWiseCabs({ days, vehicle: v, dateOf: (n) => dateOfDay(st, n), newId, quantity: a.quantity || 1 })
+    let added = 0
+    let updated = 0
+    for (const row of rows) {
+      if (a.tripType) row.tripType = a.tripType
+      if (a.route) row.route = a.route
+      const existing = st.s.transportation.find((t) => t.date === row.date)
+      if (existing) {
+        Object.assign(existing, { vehicleId: row.vehicleId, vehicleType: row.vehicleType, quantity: row.quantity, remarks: row.remarks || existing.remarks })
+        if (a.tripType) existing.tripType = a.tripType
+        if (a.route) existing.route = a.route
+        updated += 1
+      } else {
+        st.s.transportation.push(row)
+        added += 1
+      }
+    }
+    st.s.transportation.sort((x, y) => String(x.date || '').localeCompare(String(y.date || '')))
+    const which = a.days ? (days.length === 1 ? `day ${days[0].day}` : `days ${days.map((d) => d.day).join(', ')}`) : `all ${plural(days.length, 'day')}`
+    const qty = (a.quantity || 1) > 1 ? ` ×${a.quantity}` : ''
+    const extra = [a.tripType, a.route].filter(Boolean).join(', ')
+    st.changes.push(`Cab: ${v.name}${qty} for ${which}${extra ? ` (${extra})` : ''}${named ? '' : ' — picked for the group'}${updated ? ` · ${updated} updated` : ''}${added && updated ? ` · ${added} added` : ''}`)
   },
 
   REMOVE_VEHICLE(st) {

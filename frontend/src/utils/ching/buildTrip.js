@@ -334,7 +334,8 @@ export function buildChingTripParts(command, catalog) {
           extraBeds5To12Count: "0",
           extraBedsAbove12Count: String(command.extraBeds || 0),
           extraAdultCount: "0",
-          mealPlan,
+          // No meal plan said: the plan of the rate row the price came from.
+          mealPlan: mealPlan || (section.meal_plan ? MEAL_PLAN_LABEL[section.meal_plan] || "" : ""),
           pricePerRoom: section.price || 0,
           bedPrices: bedPricesFromSection(section),
           photo: hotel.image_url || hotel.image_path || null,
@@ -348,6 +349,25 @@ export function buildChingTripParts(command, catalog) {
         });
       }
       cursor = addDays(cursor, stay.nights || 0);
+    }
+  }
+
+  // No meal plan said: the one the rate sheets gave (or the agency's usual)
+  // goes on every stay of the trip, so no hotel is left without one.
+  if (!mealPlan) {
+    const tripPlan = accommodations.map((a) => a.mealPlan).find(Boolean) || memory?.mealPlan || "";
+    if (tripPlan) {
+      const key = Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === tripPlan) || "";
+      for (const acc of accommodations) {
+        if (acc.mealPlan) continue;
+        acc.mealPlan = tripPlan;
+        const hotel = hotels.find((h) => String(h.id) === String(acc.hotelId));
+        const rated = key && hotel ? findRateSection(hotel, acc.roomType, acc.checkIn, key) : {};
+        if (rated.price && rated.meal_plan === key) {
+          acc.pricePerRoom = rated.price;
+          acc.bedPrices = bedPricesFromSection(rated);
+        }
+      }
     }
   }
 

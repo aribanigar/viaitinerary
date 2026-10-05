@@ -207,6 +207,7 @@ const C2 = [
     [hotels(s), [[16, '2026-11-05', '2026-11-06'], [11, '2026-11-06', '2026-11-08']]], [s.tripActivities.map((a) => [a.activityId, a.dayNumber]), [[32, 3]]], [s.tripInfo.kids5to12, 1]]],
   ['fill', 'create a trip for Rohan 2 adults 10 november 3 nights grand mumtaz innova gst 12 percent', (s) => [[s.gstPercentage, 12], [s.includeGST, true]]],
   ['fill', 'create a trip for Rohan 2 adults 10 november 3 nights grand mumtaz innova without gst', (s) => [[s.includeGST, false]]],
+  ['fill', 'create a trip for Rohan 2 adults 10 november 3 nights grand mumtaz innova gst 5 percent quote 70000', (s) => [[s.gstPercentage, 5], [Math.round(priceOf(s).total), 70000]]],
   ['fill', 'create a trip for Rohan 2 adults 10 november 3 nights grand mumtaz innova final price 60000', (s) => [[Math.round(priceOf(s).total), 60000]]],
   ['fill', 'create a trip for Rohan Mehta email rohan.mehta@yahoo.com phone +91 99060 12345 2 adults 10 november 2 nights grand mumtaz innova', (s) => [[s.tripInfo.clientEmail, 'rohan.mehta@yahoo.com'], [s.tripInfo.clientPhone, '+919906012345'], [s.tripInfo.clientName, 'Rohan Mehta']]],
   ['fill', 'family of 5 trip for Gupta 10 november 2 nights grand mumtaz innova', (s) => [[s.tripInfo.clientName, 'Gupta'], [s.tripInfo.adults, 5]]],
@@ -260,6 +261,61 @@ const C3 = [
 for (const [said, check] of C3) {
   const s = fill(said)
   report(said, sanity(s, diff(check(s))))
+}
+
+
+// ── 4. Logistics by voice: Trip Info + Itinerary filled, then "add …" ──────
+// Every field of the Add Hotel / Add Transport form; the trip keeps its nights.
+const planned = (() => {
+  const day = (n, title, location, destinationId) => ({ day: n, title: `Day ${n}: ${title}`, location, destinationId, description: '', activities: [] })
+  return {
+    ...blank,
+    tripInfo: { ...blank.tripInfo, clientName: 'Rahul', adults: 2, kids5to12: 1, startDate: '2026-11-10', duration: '4' },
+    itinerary: [day(1, 'Arrival in Srinagar', 'Srinagar', 1), day(2, 'Srinagar Sightseeing', 'Srinagar', 1), day(3, 'Srinagar to Gulmarg', 'Gulmarg', 2), day(4, 'Gulmarg Sightseeing', 'Gulmarg', 2), day(5, 'Departure from Gulmarg', 'Gulmarg', 2)],
+  }
+})()
+const onPlanned = (said) => planLive(planned, stripFillers(said), opts).snapshot
+const stay = (a) => [a.hotelId, a.checkIn, a.checkOut, a.rooms, a.roomType, a.mealPlan, a.pricePerRoom, a.cnbCount, a.extraBedsAbove12Count]
+const cabRow = (t) => [t.date, t.vehicleId, t.quantity, t.tripType, t.route]
+const L = [
+  ['add accommodation grand mumtaz for 2 nights 2 rooms breakfast and dinner super deluxe room 1 extra bed', (s) => [[s.accommodations.map(stay), [[11, '2026-11-10', '2026-11-12', '2', 'Super Deluxe', 'Breakfast + Dinner', 7000, '1', '1']]]]],
+  ['add 2 nights at grand mumtaz', (s) => [[s.accommodations.map(stay), [[11, '2026-11-10', '2026-11-12', '1', 'Deluxe', 'Only Room + Breakfast', 5200, '1', '0']]]]],
+  ['add hotel highlands park in gulmarg', (s) => [[s.accommodations.map((a) => [a.hotelId, a.checkIn, a.checkOut]), [[13, '2026-11-12', '2026-11-14']]]]],
+  ['add grand mumtaz from 10th to 12th november', (s) => [[s.accommodations.map((a) => [a.hotelId, a.checkIn, a.checkOut]), [[11, '2026-11-10', '2026-11-12']]], [s.tripInfo.startDate, '2026-11-10']]],
+  ['add grand mumtaz for day 1 and 2', (s) => [[s.accommodations.map((a) => [a.hotelId, a.checkIn, a.checkOut]), [[11, '2026-11-10', '2026-11-12']]]]],
+  ['add a hotel in srinagar', (s) => [[s.accommodations.map((a) => [a.city, a.checkIn, a.checkOut]), [['Srinagar', '2026-11-10', '2026-11-12']]]]],
+  ['add accommodation', (s) => [[s.accommodations.map((a) => [a.city.replace(/ City$/, ''), a.checkIn, a.checkOut]), [['Srinagar', '2026-11-10', '2026-11-12'], ['Gulmarg', '2026-11-12', '2026-11-14']]]]],
+  ['add transportation', (s) => [[s.transportation.length, 5], [s.transportation[0]?.vehicleId, 22]]],
+  ['add 2 innovas', (s) => [[s.transportation.map((t) => [t.vehicleId, t.quantity]), Array(5).fill([21, 2])]]],
+  ['add cab innova for day 3 from srinagar to gulmarg', (s) => [[s.transportation.map(cabRow), [['2026-11-12', 21, 1, 'Transfer', 'Srinagar → Gulmarg']]]]],
+  ['add airport pickup on day 1 by dzire', (s) => [[s.transportation.map(cabRow), [['2026-11-10', 22, 1, 'Transfer', 'Airport pickup']]]]],
+  ['add dzire for sightseeing on day 2', (s) => [[s.transportation.map(cabRow), [['2026-11-11', 22, 1, 'Sightseeing', 'Srinagar Sightseeing']]]]],
+  ['add transport innova for day 1 to 3', (s) => [[s.transportation.map((t) => t.date), ['2026-11-10', '2026-11-11', '2026-11-12']]]],
+]
+for (const [said, check] of L) {
+  const s = onPlanned(said)
+  const bad = diff(check(s))
+  if (s.tripInfo.duration !== '4' || s.itinerary.length !== 5) bad.push(`trip changed: ${s.tripInfo.duration} nights, ${s.itinerary.length} days`)
+  report(`[logistics] ${said}`, bad)
+}
+
+// ── 5. Whole trips 4N/5D … 7N/8D: every section filled, total computed ─────
+const W = [
+  ['create a 4 night 5 day trip for Rahul Sharma phone 9876543210 email rahul@gmail.com 2 adults 1 child from 10th november 2 nights srinagar grand mumtaz 2 nights gulmarg highlands park breakfast and dinner innova add gondola phase 2 on day 3 margin 15 percent', 4, 62669],
+  ['5 nights 6 days itinerary for the Malik family phone 9419012345 4 adults 2 kids from 1st december 2 nights srinagar lalit grand palace 1 night sonamarg snowland 2 nights pahalgam heevan resort 2 rooms tempo traveller add shikara ride on day 2 and pony ride on day 5 margin 12%', 5, 135240],
+  ['6N7D trip for Priya phone 9906012345 2 adults 15 january 2027 day 1 arrival in srinagar day 2 srinagar to gulmarg day 3 gulmarg sightseeing day 4 gulmarg to pahalgam day 5 pahalgam sightseeing day 6 pahalgam to srinagar day 7 departure dzire', 6, null],
+  ['7 nights 8 days kashmir package for Mr Khan phone 9797012345 3 adults from 20 november 3 nights srinagar grand mumtaz 2 nights gulmarg khyber 2 nights pahalgam pine spring resort innova breakfast only add gondola on day 4 gst 5 percent quote 150000', 7, 150000],
+]
+for (const [said, nights, total] of W) {
+  const s = fill(said)
+  const bad = []
+  if (Number(s.tripInfo.duration) !== nights) bad.push(`nights ${s.tripInfo.duration} want ${nights}`)
+  if (s.itinerary.length !== nights + 1) bad.push(`days ${s.itinerary.length} want ${nights + 1}`)
+  if (!s.tripInfo.clientName || !s.tripInfo.startDate || !/^\+91\d{10}$/.test(s.tripInfo.clientPhone)) bad.push('trip info incomplete')
+  if (s.transportation.length !== nights + 1) bad.push(`cab rows ${s.transportation.length} want ${nights + 1}`)
+  if (s.accommodations.some((a) => !a.hotelId || !(a.pricePerRoom > 0) || !a.roomType || !a.rooms)) bad.push('a hotel form is incomplete')
+  if (total != null && Math.round(priceOf(s).total) !== total) bad.push(`total ${Math.round(priceOf(s).total)} want ${total}`)
+  report(`[${nights}N/${nights + 1}D] ${said.slice(0, 60)}…`, sanity(s, bad))
 }
 
 console.log(`\n${pass} passed, ${fail} failed`)

@@ -480,6 +480,55 @@ function vehicleHits(toks, cat) {
   return [...byPos.values()].sort((a, b) => a.pos - b.pos)
 }
 
+// The Add Transport form by voice: "add transportation", "add 2 innovas",
+// "add cab innova for day 3 from srinagar to gulmarg", "add airport pickup on
+// day 1 by dzire", "add dzire for sightseeing on day 2", "add innova for day
+// 1 to 3" → ADD_CAB { vehicle, quantity, days, tripType, route }.
+const CAB_WORD = /\b(?:transport|transportation|cabs?|cars?|taxis?|vehicles?|pick\s?up|pickups|drops?|transfers?)\b/
+function hAddCab(c, toks, env) {
+  const vm = c.match(/^(?:also\s+)?(?:add|book|put|include|assign|arrange|fill(?:\s+in)?)\s+(.+)$/)
+  if (!vm) return null
+  if (/\b(?:change|replace|instead|switch|swap|remove|delete)\b/.test(c)) return null
+  const hits = vehicleHits(toks, env.cat)
+  if (!CAB_WORD.test(c) && !hits.length) return null
+  // An activity or hotel clause that merely mentions a car isn't ours.
+  if (HOTEL_NOUN.test(c) && !hits.length) return null
+  let rest = ` ${vm[1]} `
+  const a = { type: 'ADD_CAB' }
+  const cut = (re, fn) => {
+    const m = rest.match(re)
+    if (!m) return
+    fn(m)
+    rest = rest.slice(0, m.index) + ' ' + rest.slice(m.index + m[0].length)
+  }
+  cut(/\b(?:for\s+|on\s+)?(?:the\s+)?days?\s+(\d{1,2})(?:\s*(?:and|&|to|till|through|-)\s*(?:day\s+)?(\d{1,2}))?\b/, (m) => {
+    const from = +m[1]
+    const to = m[2] ? +m[2] : from
+    const list = /\band|&/.test(m[0]) ? [from, to] : Array.from({ length: Math.max(1, to - from + 1) }, (_, i) => from + i)
+    a.days = [...new Set(list)].filter((d) => checkDay(d, env.S, env.warnings))
+  })
+  cut(/\b(?:for\s+)?(?:all|the\s+whole|the\s+entire|whole|entire|every)\s+(?:the\s+)?(?:days?|trip|tour)\b/, () => {
+    a.days = null
+  })
+  if (/\bday\s+trip\b|\bexcursion\b/.test(rest)) a.tripType = 'Day Trip'
+  else if (/\bsight\s?seeing\b|\blocal\b/.test(rest)) a.tripType = 'Sightseeing'
+  else if (/\b(?:pick\s?up|drop|transfer|airport)\b/.test(rest)) a.tripType = 'Transfer'
+  const air = rest.match(/\bairport\s+(pick\s?up|drop)\b|\b(pick\s?up|drop)\s+(?:from|at|to)\s+(?:the\s+)?airport\b/)
+  if (air) a.route = /drop/.test(air[0]) ? 'Airport drop' : 'Airport pickup'
+  const ft = rest.match(/\bfrom\s+([a-z]+(?:\s+[a-z]+)?)\s+to\s+([a-z]+(?:\s+[a-z]+)?)\b/)
+  if (ft) {
+    const x = cityLookup(toksOf(ft[1]), env.cat)
+    const y = cityLookup(toksOf(ft[2]), env.cat)
+    if (x && y) a.route = `${x} → ${y}`
+  }
+  const v = hits.find((h) => !/\b(?:from|of)\b/.test(toks.slice(Math.max(0, h.pos - 2), h.pos).join(' ')))
+  if (v) Object.assign(a, { vehicleId: v.v.id, vehicleName: v.v.name })
+  // "add 2 innovas", "2 cabs"
+  const q = c.match(/\b([2-9])\s+(?:cabs|cars|taxis|vehicles)\b/) || (v && /^\d$/.test(toks[v.pos - 1] || '') ? [null, toks[v.pos - 1]] : null)
+  if (q) a.quantity = +q[1]
+  return [a]
+}
+
 function hVehicle(c, toks, env) {
   const hits = vehicleHits(toks, env.cat)
   const generic = VEHICLE_WORD.test(c)
@@ -580,6 +629,99 @@ function hDate(c, toks, env) {
   if (!d) return null
   env.warnings.push(...d.notes)
   return [{ type: 'SET_START_DATE', date: d.iso }]
+}
+
+// "add accommodation grand mumtaz for 2 nights 2 rooms breakfast and dinner",
+// "add hotel highlands park in gulmarg", "add grand mumtaz from 10th to 12th
+// november", "add a hotel in srinagar", "add hotels for all nights", "add
+// grand mumtaz for day 1 and 2" → ADD_HOTEL: the whole Add Hotel form.
+const HOTEL_NOUN = /\b(?:accommodations?|accomodations?|acommodations?|hotels?|stays?|resorts?|lodging)\b/
+function hAddHotel(c, toks, env) {
+  // ("use X" swaps a hotel — that's hHotel.)
+  const vm = c.match(/^(?:also\s+)?(?:add|book|put|include|assign|fill(?:\s+in)?)\s+(.+)$/)
+  if (!vm) return null
+  // "add breakfast to all hotels": a change to the hotels, not a new one.
+  if (/\b(?:to|in|for|at)\s+(?:all|every|each|both|the)\s+(?:the\s+)?(?:hotels?|stays?)\b/.test(c)) return null
+  // Plain "add 2 nights in sonamarg at glacier resort": the add-stay path
+  // (which also books into open nights) — unless room details ride along.
+  if (/\b\d+\s+(?:more\s+|extra\s+)?nights?\s+(?:stay\s+)?(?:in|at)\b/.test(c) && !/\brooms?\b|\bextra\s+bed|\bbreakfast|\bdinner|\bmeals?\b|\bmap\b|\bcp\b|\bap\b|\bdays?\s+\d|\bfrom\s+\d/.test(c)) return null
+  let rest = ` ${vm[1]} `
+  if (/\b(?:more|extra|another|additional)\s+rooms?\b|\bnights?\s+(?:to|in)\s+(?:the\s+)?(?:[a-z]+\s+)?(?:stay|hotel)\b/.test(rest)) return null
+  const nounSaid = HOTEL_NOUN.test(rest) || /\brooms?\b/.test(rest)
+  const a = { type: 'ADD_HOTEL' }
+  const cut = (re, fn) => {
+    const m = rest.match(re)
+    if (!m) return
+    fn(m)
+    rest = rest.slice(0, m.index) + ' ' + rest.slice(m.index + m[0].length)
+  }
+  // Dates: "from 10th to 12th november", "10 to 12 nov", "from 10 nov till 12 nov"
+  cut(/\b(?:from\s+)?(\d{1,2}(?:st|nd|rd|th)?(?:\s+(?:of\s+)?[a-z]{3,9})?)\s+(?:to|till|until|-)\s+(\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?[a-z]{3,9}(?:\s+\d{4})?)\b/, (m) => {
+    const end = extractDate(m[2], env.today)
+    let startText = m[1]
+    if (end && /^\d{1,2}(?:st|nd|rd|th)?$/.test(startText.trim())) startText = `${startText} ${m[2].replace(/^\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?/, '')}`
+    const start = extractDate(startText, env.today)
+    if (start && end) Object.assign(a, { checkIn: start.iso, checkOut: end.iso })
+  })
+  // Days: "for day 1 and 2", "days 3 to 4", "on day 2"
+  cut(/\b(?:for\s+|on\s+)?(?:the\s+)?days?\s+(\d{1,2})(?:\s*(?:and|&|to|till|through|-)\s*(?:day\s+)?(\d{1,2}))?\b/, (m) => {
+    a.fromDay = +m[1]
+    a.toDay = m[2] ? +m[2] : +m[1]
+  })
+  cut(/\b(?:for\s+)?(?:all|the\s+whole|the\s+entire|whole|entire|every)\s+(?:the\s+)?(?:nights?|trip|stay|days?)\b|\bfor\s+all\b/, () => {
+    a.all = true
+  })
+  cut(/\b(?:for\s+)?(\d{1,2})\s+nights?\b/, (m) => {
+    a.nights = +m[1]
+  })
+  cut(/\b(super\s+deluxe|deluxe|premium|executive|superior|standard|luxury|family|suite|club|cottage)\s+rooms?\b/, (m) => {
+    a.roomType = titleCase(m[1].replace(/\s+/g, ' '))
+  })
+  cut(/\b(?:with\s+)?(?:(\d{1,2})|an?|one)\s+extra\s+(?:beds?|mattress(?:es)?)\b/, (m) => {
+    a.extraBeds = m[1] ? +m[1] : 1
+  })
+  cut(/\b(\d{1,2})\s+(?:double\s+|twin\s+|triple\s+)?rooms?\b/, (m) => {
+    a.rooms = +m[1]
+  })
+  const meal = extractMealPlan(rest)
+  if (meal.plan) {
+    a.mealPlan = meal.plan
+    rest = ` ${meal.s} `
+  }
+  const words = toksOf(
+    rest
+      .replace(HOTEL_NOUN, ' ')
+      .replace(/\b(?:a|an|the|for|on|of|at|to|please|also|with|some|good|nice|rooms?|meal|plan|night|trip)\b/g, ' ')
+      .replace(/[|,.]/g, ' '),
+  )
+  // "highlands park in gulmarg": hotel words, then the city.
+  let cityWords = []
+  let hotelWords = words
+  const inAt = words.indexOf('in')
+  if (inAt >= 0) {
+    hotelWords = words.slice(0, inAt)
+    cityWords = words.slice(inAt + 1)
+  }
+  if (cityWords.length) {
+    const city = cityLookup(cityWords, env.cat)
+    if (city) a.city = city
+  }
+  if (hotelWords.length) {
+    const asCity = !cityWords.length && cityLookup(hotelWords, env.cat)
+    if (asCity) a.city = asCity
+    else {
+      const h = matchHotel(hotelWords, a.city || '', env.cat)
+      if (h.hotel) Object.assign(a, { hotelId: h.hotel.id, hotelName: h.hotel.name, city: a.city || h.hotel.city })
+      else if (nounSaid) {
+        env.warnings.push(`Couldn't find "${hotelWords.join(' ')}" in your hotels`)
+        return []
+      } else return null
+    }
+  }
+  // Nothing hotel-like at all ("add shikara ride"): not ours.
+  if (!nounSaid && a.hotelId == null) return null
+  if (a.hotelId == null && !a.city && !a.checkIn && a.fromDay == null) a.all = true
+  return [a]
 }
 
 function parseAddStay(c, nights, env) {
@@ -970,7 +1112,7 @@ function hInclusions(c) {
 }
 
 const HANDLERS = [
-  hInclusions, hCommands, hHotelRate, hTargetTotal, hMargin, hGst, hClientName, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
+  hInclusions, hCommands, hAddHotel, hAddCab, hHotelRate, hTargetTotal, hMargin, hGst, hClientName, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
   hAddActivity, hGuests,
 ]
 
@@ -1018,6 +1160,8 @@ function splitClauses(s) {
     // Speech has no commas: "add gondola on day 3 margin 15 percent" — a
     // margin/GST clause starts at its noun unless a word leads into it
     // ("set margin", "with gst", "no margin", "the margin").
+    // "gst 5 percent quote 150000": the price goal is its own clause.
+    if (/^(?:quote|final|quotation)$/.test(t) && cur.some((w) => SPLIT_NOUNS.has(w))) flush()
     if (SPLIT_NOUNS.has(t) && cur.length) {
       const prev = cur[cur.length - 1]
       // "margin 12% gst 18%", "margin 20 percent no gst": one noun per clause.

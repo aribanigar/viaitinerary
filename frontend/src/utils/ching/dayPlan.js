@@ -215,7 +215,7 @@ export function buildDayPlan(parsed, { base = [], nights: wantNights = 0, firstC
       overnight = e.from && e.from !== e.to ? e.from : prev
       title = `Day trip to ${e.to}`
       route = `${overnight} → ${e.to} → ${overnight}`
-      tripType = 'Sightseeing'
+      tripType = 'Day Trip'
       location = e.to
     } else if (kind === 'leisure') {
       overnight = e.city || prev

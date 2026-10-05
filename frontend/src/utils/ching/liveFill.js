@@ -75,6 +75,18 @@ const AUTO_TITLE = /\d+\s*N\s*\/\s*\d+\s*D\s*$/i;
  * few hand-made days don't count — a full trip request fills such a trip in
  * place (keeping what's there) instead of opening a new draft.
  */
+/**
+ * "add 2 nights at grand mumtaz", "book an innova", "put highlands park for
+ * the gulmarg nights": adding to the trip on screen, never a new trip — even
+ * though the words would also parse as one ("2 nights at X").
+ */
+export function isAddRequest(text) {
+  const t = String(text || "").toLowerCase().trim();
+  if (/\b(?:create|new|make|plan|build|prepare)\b[^.]*\b(?:trip|itinerary|package|tour|quotation|quote)\b/.test(t)) return false;
+  if (/\b(?:trip|itinerary|package|tour|quotation)\s+for\b/.test(t)) return false;
+  return /^(?:(?:please|pls|now|also|and|then|ok|okay|ching|hey|can you|could you|i want to|let's|lets)\s+)*(?:add|book|put|include|assign|select|choose|pick|use|give|fill)\b/.test(t);
+}
+
 export function isBlankTrip(snapshot) {
   const s = snapshot || {};
   return !(s.accommodations || []).length && !(s.transportation || []).length && !(s.tripActivities || []).length;
@@ -287,7 +299,7 @@ export function planLive(base, text, { catalog, settings, today } = {}) {
   // "day 3 Gulmarg to Pahalgam" or "add Shikara on day 2" edit those days.
   const c = fill.command || {};
   const isRequest = c.intent === "create_trip" && (Number(c.nights) > 0 || (c.stays || []).length > 0 || !!c.dayPlan);
-  if ((base.itinerary || []).length && !isRequest) return planEdit(base, text, opts);
+  if ((base.itinerary || []).length && (!isRequest || isAddRequest(text))) return planEdit(base, text, opts);
   const { command, ...rest } = fill; // eslint-disable-line no-unused-vars
   return rest;
 }
