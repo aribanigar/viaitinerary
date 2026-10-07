@@ -28,7 +28,7 @@ import { handleAssist } from "./assistActions";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
 import { draftSpeech } from "../../utils/ching/tripDraft";
 import { vocabularyFrom } from "../../utils/ching/vocabulary";
-import { chingSaid, setChingListening, setChingStage } from "../../utils/ching/chingBus";
+import { chingSaid, setChingListening, setChingStage, setChingUnderstanding } from "../../utils/ching/chingBus";
 import {
   speak,
   stopSpeaking,
@@ -315,6 +315,15 @@ export default function ChingWidget() {
       pending: list(res?.pending),
     });
   }, []);
+
+  // Pages like the AI Assistant show what Ching is picking up as it happens.
+  useEffect(() => {
+    if (live) {
+      setChingUnderstanding({ phase: live.phase, changes: live.changes, warnings: live.warnings, unrecognized: live.unrecognized, pending: live.pending });
+    } else if (outcome) {
+      setChingUnderstanding({ phase: "done", changes: list(outcome.lines), warnings: list(outcome.warnings), unrecognized: list(outcome.unrecognized), pending: [] });
+    }
+  }, [live, outcome]);
 
   const endSession = useCallback(() => {
     const S = sessionRef.current;

@@ -15,7 +15,7 @@ const readHistory = () => {
   }
 };
 
-let state = { history: readHistory(), listening: false, interim: "", stage: null, pdfAt: 0 };
+let state = { history: readHistory(), listening: false, interim: "", stage: null, pdfAt: 0, understanding: null };
 const listeners = new Set();
 const emit = () => listeners.forEach((fn) => fn());
 
@@ -53,6 +53,13 @@ export const setChingListening = (listening, interim = "") =>
 
 /** Build walkthrough stage: "Trip Info" | "Itinerary" | "Logistics" | "Pricing" | "PDF" | null. */
 export const setChingStage = (stage) => set({ stage, ...(stage === "PDF:done" ? { pdfAt: Date.now(), stage: null } : {}) });
+
+/**
+ * What Ching made of the latest request, live while the agent speaks and
+ * after: { phase: "listening" | "finishing" | "done", changes, warnings,
+ * unrecognized, pending } — shown as "picked up / needs you / didn't catch".
+ */
+export const setChingUnderstanding = (understanding) => set({ understanding });
 
 const subscribe = (fn) => {
   listeners.add(fn);
