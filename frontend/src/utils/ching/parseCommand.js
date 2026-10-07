@@ -8,8 +8,10 @@
 // See the Ching contract for the ChingCommand shape.
 
 import { convertNumberWords, stripWakePhrase, hasWakePhrase, titleCase } from './text.js'
-import { extractDate, isValidIsoDate, toLocalMidnight } from './dates.js'
+import { extractDate, extractDateRange, isValidIsoDate, toLocalMidnight } from './dates.js'
+import { tripDestination, gazetteerKey, GAZETTEER } from './places.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
+import { shortestPath } from './graph.js'
 
 export { stripWakePhrase, hasWakePhrase }
 
@@ -103,7 +105,15 @@ const NAME_STOP = new Set([
   'arriving', 'arrival', 'via', 'by', 'is', 'are', 'please', 'people', 'pax', 'persons', 'couple', 'members',
   'hotel', 'stay', 'staying', 'total', 'the', 'a', 'an', 'then', 'booking', 'book', 'need', 'needs', 'want',
   'wants', 'will', 'would', 'should', 'can', 'has', 'have', 'also', 'i', 'we', 'he', 'she', 'they', 'it',
-  'this', 'that', 'ji', 'group', 'plan', 'vacation', 'as', 'under', 'name', 'named',
+  'this', 'that', 'ji', 'group', 'plan', 'vacation', 'as', 'under', 'name', 'named', 'next', 'coming',
+  'week', 'weekend', 'month', 'tomorrow', 'today', 'tonight',
+])
+// Words that are never a client's name when it's said without "for"/"customer".
+const LOOSE_NAME_REJECT = new Set([
+  'new', 'quick', 'short', 'long', 'weekend', 'winter', 'summer', 'snow', 'romantic', 'luxury', 'budget',
+  'create', 'make', 'build', 'book', 'plan', 'start', 'ok', 'okay', 'thanks', 'yes', 'no', 'hello', 'hi',
+  'hey', 'ching', 'cab', 'car', 'taxi', 'room', 'rooms', 'meals', 'breakfast', 'dinner', 'lunch', 'only',
+  'and', 'then', 'also', 'one', 'another', 'same', 'school', 'office', 'corporate', 'college', 'friends',
 ])
 const NAME_REJECT = new Set([
   ...NAME_STOP, 'my', 'our', 'your', 'his', 'her', 'their', 'me', 'us', 'him', 'them', 'someone', 'somebody',
@@ -112,6 +122,7 @@ const NAME_REJECT = new Set([
 const VEHICLE_GENERIC = new Set(['car', 'cab', 'taxi', 'vehicle', 'ac', 'non', 'with', 'and', 'the', 'seater', 'driver'])
 const TRAIL_TRIM = new Set(['and', 'the', 'stay', 'of', 'in', 'at'])
 
+const REGIONS = new Set(Object.values(GAZETTEER).map((g) => g[2].toLowerCase()))
 const isNum = (t) => /^\d+$/.test(t || '')
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 
@@ -197,6 +208,22 @@ export function matchHotel(words, city, cat) {
   return { hotel: null, ambiguous: r.runnersUp }
 }
 
+/**
+ * " — did you mean X or Y?" for a hotel name that matched nothing confidently:
+ * the closest catalog names (in that city first), or '' when nothing is close.
+ */
+export function didYouMean(words, city, cat) {
+  const tokens = normTokens((Array.isArray(words) ? words : [words]).join(' '))
+  const pool = city ? cat.hotels.filter((h) => sameCity(h.city, city)) : []
+  const near = [
+    ...bestMatch(tokens, pool, { threshold: 0.35 }).runnersUp,
+    ...bestMatch(tokens, cat.hotels, { threshold: 0.4 }).runnersUp,
+  ].filter((h, i, a) => a.indexOf(h) === i)
+  if (!near.length && city && pool.length) near.push(...pool.slice(0, 2))
+  const label = (h) => (h.city && !sameCity(h.city, city) ? `${h.name} (${h.city})` : h.name)
+  return near.length ? ` — did you mean ${near.slice(0, 2).map(label).join(' or ')}?` : ''
+}
+
 /** Resolve the raw words of one stay to a catalog hotel / city. */
 export function resolveStay(nights, words, cat) {
   const heard = words.join(' ')
@@ -224,7 +251,7 @@ export function resolveStay(nights, words, cat) {
       const label = (h) => (h.city ? `${h.name} (${h.city})` : h.name)
       warnings.push(`"${hotelText}" could be ${m.ambiguous.map(label).join(' or ')} — pick one`)
     } else {
-      warnings.push(`Couldn't find "${hotelText}" in your hotels`)
+      warnings.push(`Couldn't find "${hotelText}" in your hotels${didYouMean(hotelWords, city, cat)}`)
     }
   }
   return { stay, warnings, cityOnly: false }
@@ -322,6 +349,136 @@ function extractGuests(input) {
   return { ...g, s }
 }
 
+// ---- reading stays: the sentence as a shortest-path problem ----
+//
+// Nodes are word positions 0..n. From each position there are edges:
+//   skip   one word nobody explained                  cost 1 (0.3 for filler words)
+//   stay   a span that reads as "<N> nights in <X>", "<X> for <N> nights",
+//          "<N> nights <X>", "<X> <N> nights", "<X> <N>"  cost 0.1 + how unsure the name is
+//   bare   "<N> nights" on its own (the trip length)  cost 0.6
+// Dijkstra finds the cheapest path from the first word to the last: the reading
+// that explains the most words with the best catalog matches. Greedy
+// left-to-right reading gets "lalit 2 nights khyber 1 night" wrong (it pairs
+// "2 nights" with khyber); the global shortest path pairs both correctly, and
+// works whichever order the agent said things in.
+const SKIP_CHEAP = new Set(['and', 'the', 'a', 'an', 'in', 'at', 'of', 'then', 'with', 'for', 'stay', 'staying', 'hotel', 'please', 'ok', 'okay', 'also', 'plus', 'followed', 'by', 'after', 'that'])
+const NAME_BEFORE = new Set(['for', 'customer', 'client', 'mr', 'mrs', 'ms', 'name'])
+
+function entityScorer(cat) {
+  const vocab = new Set()
+  cat.hotels.forEach((h) => h.tokens.forEach((t) => vocab.add(t)))
+  for (const k of cat.cities.keys()) k.split(' ').forEach((t) => vocab.add(t))
+  const near = new Map()
+  const isNear = (t) => {
+    if (!near.has(t)) {
+      let ok = vocab.has(t)
+      if (!ok && t.length >= 4) {
+        for (const v of vocab) {
+          if (v.length >= 4 && (v.startsWith(t.slice(0, 4)) || levRatio(t, v) >= 0.75)) {
+            ok = true
+            break
+          }
+        }
+      }
+      near.set(t, ok)
+    }
+    return near.get(t)
+  }
+  const memo = new Map()
+  // 0..1: how surely these words name a catalog hotel or city (0 = not at all).
+  return (words) => {
+    const key = words.join(' ')
+    if (memo.has(key)) return memo.get(key)
+    let score = 0
+    if (words.some(isNear)) {
+      const { city, hotelWords } = splitCity(words, cat)
+      if (city && !hotelWords.length) score = 1
+      const tryMatch = (ws, pool) => {
+        if (!ws.length || !pool.length) return
+        const r = bestMatch(normTokens(ws.join(' ')), pool)
+        if (r.confident) score = Math.max(score, r.score)
+      }
+      if (city) {
+        const pool = cat.hotels.filter((h) => sameCity(h.city, city))
+        tryMatch(words, pool)
+        tryMatch(hotelWords, pool)
+      }
+      tryMatch(words, cat.hotels)
+      if (city && hotelWords.length && score === 0) score = 0.5 // known city + an unknown hotel name
+    }
+    memo.set(key, score)
+    return score
+  }
+}
+
+/**
+ * The best reading of the stays in a token list (tokens already used by
+ * dates/guests/contacts are free to skip). Returns the chosen edges in order:
+ * { kind: 'stay', n, words, from, to } | { kind: 'bare', n, from, to }.
+ */
+export function readStays(tok, used, cat, { collectAfter }) {
+  const at = (i) => (i >= 0 && i < tok.length && !used[i] ? tok[i] : '|')
+  const score = entityScorer(cat)
+  const isWord = (t) => t !== '|' && !isNum(t)
+  const nameCost = (words, unknownPerWord) => {
+    const sc = score(words)
+    if (sc > 0) return (1 - sc) * words.length * 0.5
+    return unknownPerWord == null ? Infinity : unknownPerWord * words.length
+  }
+  const edgesOf = (i) => {
+    if (i >= tok.length) return []
+    const t = at(i)
+    const edges = [{ to: i + 1, cost: t === '|' ? 0 : SKIP_CHEAP.has(t) ? 0.3 : 1, kind: 'skip' }]
+    const add = (kind, n, words, from, to, cost) => {
+      if (cost < Infinity && words.join('').length >= 3) edges.push({ to: to + 1, cost: 0.1 + cost, kind, n, words, from })
+    }
+    // "<N> nights …"
+    if (isNum(t) && NIGHT_UNITS.has(at(i + 1))) {
+      const n = +t
+      edges.push({ to: i + 2, cost: 0.6, kind: 'bare', n, from: i })
+      let j = i + 2
+      while (['stay', 'stays', 'staying', 'of'].includes(at(j)) && j < i + 4) j++
+      const prep = PREPS.has(at(j))
+      const nx = at(prep ? j + 1 : j)
+      if (prep || (nx !== '|' && !isNum(nx) && !BOUNDARY.has(nx) && nx !== 'and')) {
+        const a = collectAfter(prep ? j + 1 : j)
+        for (let k = 1; k <= a.words.length; k++) {
+          const words = a.words.slice(0, k)
+          const end = (prep ? j + 1 : j) + k - 1
+          // "3 nights kashmir trip" is a trip length + destination, not a stay.
+          if (!prep && TRIP_WORDS.has(at(end + 1)) && !splitCity(words, cat).hotelWords.length) continue
+          if (TRAIL_TRIM.has(words[words.length - 1])) continue
+          add('stay', n, words, i, end, nameCost(words, prep ? 0.3 : 0.5))
+        }
+      }
+    }
+    // "<X> for <N> nights", "<X> <N> nights", "<X> <N>"
+    if (isWord(t) && !BACK_STOP.has(t) && !TRAIL_TRIM.has(t) && t !== 'a' && t !== 'an') {
+      const words = []
+      for (let p = i; p < tok.length && words.length < 6; p++) {
+        const w = at(p)
+        if (!isWord(w) || BACK_STOP.has(w)) {
+          const hasFor = w === 'for'
+          const q = hasFor ? p + 1 : p
+          if (!words.length || !isNum(at(q))) break
+          const n = +at(q)
+          if (NIGHT_UNITS.has(at(q + 1))) {
+            const weak = hasFor && !NAME_BEFORE.has(at(i - 1)) ? 0.6 : null
+            add('stay', n, words, i, q + 1, nameCost(words, weak))
+          } else if (!hasFor && !COUNT_UNITS.has(at(q + 1)) && n >= 1 && n <= 20) {
+            add('stay', n, words, i, q, nameCost(words, null))
+          }
+          break
+        }
+        words.push(w)
+      }
+    }
+    return edges
+  }
+  const path = shortestPath(0, tok.length, edgesOf)
+  return path ? path.edges.filter((e) => e.kind !== 'skip').map((e) => ({ ...e, to: e.to - 1 })) : []
+}
+
 function tokenize(s) {
   return s
     .replace(/\b(mr|mrs|ms|dr|st|no|smt)\./g, '$1 ')
@@ -370,7 +527,16 @@ export function parseChingCommand(text, catalog, { today } = {}) {
   s = meal.s
 
   let startDate = ''
-  const dt = extractDate(s, todayDate)
+  // "from 10th to 14th november" → start date + nights
+  let rangeNights = 0
+  const rng = extractDateRange(s, todayDate)
+  if (rng) {
+    startDate = rng.iso
+    rangeNights = rng.nights
+    warnings.push(...rng.notes)
+    s = s.slice(0, rng.index) + ' | ' + s.slice(rng.index + rng.length)
+  }
+  const dt = startDate ? null : extractDate(s, todayDate)
   if (dt) {
     startDate = dt.iso
     warnings.push(...dt.notes)
@@ -433,18 +599,6 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     while (words.length && TRAIL_TRIM.has(words[words.length - 1])) words.pop()
     return { words, end: k - 1, stop }
   }
-  const collectBefore = (end) => {
-    const words = []
-    let k = end
-    while (k >= 0 && words.length < 6) {
-      const t = at(k)
-      if (t === '|' || isNum(t) || BACK_STOP.has(t)) break
-      words.unshift(t)
-      k--
-    }
-    while (words.length && TRAIL_TRIM.has(words[0])) words.shift()
-    return { words, start: k + 1, before: at(k) }
-  }
 
   // Vehicle. Exact names are taken before the stays so "… at pine spring innova"
   // doesn't swallow the cab into the hotel phrase; near-misses are tried after.
@@ -477,7 +631,7 @@ export function parseChingCommand(text, catalog, { today } = {}) {
   }
   findVehicle(false)
 
-  // Stays
+  // Stays — read as a shortest path through the words (see readStays).
   const stays = []
   const addStay = (n, words, from, to) => {
     const r = resolveStay(n, words, cat)
@@ -486,58 +640,13 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     mark(from, to)
     return r
   }
-  for (let i = 0; i < tok.length; i++) {
-    if (!isNum(at(i)) || !NIGHT_UNITS.has(at(i + 1))) continue
-    const n = +tok[i]
-    let j = i + 2
-    while (['stay', 'stays', 'staying', 'of'].includes(at(j)) && j < i + 4) j++
-    if (PREPS.has(at(j))) {
-      const a = collectAfter(j + 1)
-      if (a.words.length) {
-        addStay(n, a.words, i, a.end)
-        i = a.end
-        continue
-      }
+  for (const e of readStays(tok, used, cat, { collectAfter })) {
+    if (e.kind === 'bare') {
+      if (!nightsTotal) nightsTotal = e.n
+      mark(e.from, e.to)
+    } else {
+      addStay(e.n, e.words, e.from, e.to)
     }
-    if (at(i - 1) === 'for') {
-      const b = collectBefore(i - 2)
-      if (b.words.length && !['for', 'customer', 'client', 'mr', 'mrs', 'ms', 'name'].includes(b.before)) {
-        addStay(n, b.words, b.start, i + 1)
-        i += 1
-        continue
-      }
-      // "trip for ravi lalit for 2 nights": words right after "for" are probably the client's
-      // name, so only take a trailing part that clearly names a catalog hotel.
-      let taken = false
-      for (let k = 1; k < b.words.length && !taken; k++) {
-        const tail = b.words.slice(k)
-        if (matchHotel(tail, '', cat).hotel) {
-          addStay(n, tail, b.start + k, i + 1)
-          taken = true
-        }
-      }
-      if (taken) {
-        i += 1
-        continue
-      }
-    }
-    const nx = at(j)
-    if (nx !== '|' && !isNum(nx) && !BOUNDARY.has(nx) && nx !== 'and' && !PREPS.has(nx)) {
-      const a = collectAfter(j)
-      if (a.words.length) {
-        // "3 nights kashmir trip" is a trip length + destination, not a stay.
-        const probe = splitCity(a.words, cat)
-        if (!(probe.hotelWords.length === 0 && TRIP_WORDS.has(a.stop))) {
-          addStay(n, a.words, i, a.end)
-          i = a.end
-          continue
-        }
-      }
-    }
-    // A bare "N nights" = trip length.
-    if (!nightsTotal) nightsTotal = n
-    mark(i, i + 1)
-    i += 1
   }
   stays.sort((a, b) => a.pos - b.pos)
 
@@ -576,6 +685,35 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     mark(start, k - 1)
   }
 
+  // Name said without "for"/"customer": "Rahul's trip", "Rahul Sharma trip",
+  // or a short phrase on its own between commas ("…, Rahul Sharma, 4 adults").
+  const looseName = (from, to) => {
+    const words = tok.slice(from, to + 1)
+    if (!words.length || words.length > 3 || words.some((w, k) => used[from + k])) return ''
+    if (!words.every((w) => /^[a-z][a-z'.]*$/.test(w) && w.length >= 2)) return ''
+    const plain = words.map((w) => w.replace(/'s$/, ''))
+    if (plain.some((w) => NAME_STOP.has(w) || NAME_REJECT.has(w) || LOOSE_NAME_REJECT.has(w) || BOUNDARY.has(w))) return ''
+    if (cityLookup(plain, cat) || plain.some((w) => cityLookup([w], cat) || gazetteerKey(w) || REGIONS.has(w))) return ''
+    if (matchHotel(plain, '', cat).hotel || cat.vehicles.some((v) => v.tokens.some((t) => plain.includes(t)))) return ''
+    mark(from, to)
+    return titleCase(plain.join(' '))
+  }
+  for (let i = 0; i < tok.length && !clientName; i++) {
+    if (!TRIP_WORDS.has(tok[i])) continue
+    for (let k = 3; k >= 1 && !clientName; k--) {
+      if (i - k < 0 || (i - k - 1 >= 0 && at(i - k - 1) !== '|' && !['a', 'the', 'create', 'make', 'new'].includes(at(i - k - 1)))) continue
+      clientName = looseName(i - k, i - 1)
+    }
+  }
+  for (let i = 0; i < tok.length && !clientName; i++) {
+    if (at(i) === '|' || (i > 0 && at(i - 1) !== '|')) continue
+    let j = i
+    while (j + 1 < tok.length && at(j + 1) !== '|') j++
+    if (j + 1 >= tok.length && i === 0) break // the whole sentence is not a name
+    clientName = looseName(i, j)
+    i = j
+  }
+
   // Destination: a catalog destination named anywhere (outside stays/name), else first stay's city.
   let destinationId = null
   let destinationName = ''
@@ -596,16 +734,28 @@ export function parseChingCommand(text, catalog, { today } = {}) {
   if (found) {
     destinationId = found.d.id
     destinationName = found.d.name
-  } else if (stays.length && stays[0].stay.city) {
-    const city = stays[0].stay.city
-    const d = cat.destinations.find((x) => sameCity(x.name, city) || sameCity(x.raw.city, city))
-    destinationId = d ? d.id : null
-    destinationName = d ? d.name : city
+  } else {
+    // A region the catalog doesn't have ("trip to Ladakh"), else the region /
+    // city the stays are in (Srinagar + Gulmarg + Pahalgam → Kashmir).
+    const region = tok.findIndex((t, i) => !used[i] && REGIONS.has(t))
+    const fromStays = tripDestination(
+      stays.map((x) => x.stay.city),
+      cat.destinations.map((d) => d.raw),
+    )
+    if (region >= 0) destinationName = titleCase(tok[region])
+    else if (fromStays) {
+      destinationId = fromStays.id
+      destinationName = fromStays.name
+    }
   }
 
   // Nights / days reconciliation
   const stayList = stays.map((x) => x.stay)
   const staySum = stayList.reduce((a, x) => a + (Number(x.nights) || 0), 0)
+  if (rangeNights && nightsTotal && nightsTotal !== rangeNights) {
+    warnings.push(`The dates are ${plural(rangeNights, 'night')} but you said ${plural(nightsTotal, 'night')} — using the dates`)
+  }
+  if (rangeNights) nightsTotal = rangeNights
   let nights = nightsTotal || (days > 1 ? days - 1 : 0) || staySum
   if (!days && nights) days = nights + 1
   if (stayList.length && staySum !== nights) {

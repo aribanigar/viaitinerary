@@ -659,5 +659,79 @@ test('new ids are unique and > 1e9', () => {
   assert.equal(s.tripInfo.duration, '8')
 })
 
+console.log('SORT_STAYS')
+// Pahalgam said first: Pahalgam 1N (10–11), Srinagar 2N (11–13), Gulmarg 1N (13–14).
+function roundabout() {
+  const s = kashmir()
+  const [sri, gul, pah, cancelled] = s.accommodations
+  Object.assign(pah, { checkIn: '2026-11-10', checkOut: '2026-11-11' })
+  Object.assign(cancelled, { checkIn: '2026-11-10', checkOut: '2026-11-11' })
+  Object.assign(sri, { checkIn: '2026-11-11', checkOut: '2026-11-13' })
+  Object.assign(gul, { checkIn: '2026-11-13', checkOut: '2026-11-14' })
+  s.itinerary = [
+    day(1, 'Arrival in Pahalgam', 'Pahalgam', PAH, 14),
+    day(2, 'Pahalgam to Srinagar', 'Srinagar', SRI, 12),
+    day(3, 'Srinagar Sightseeing', 'Srinagar', SRI, 12),
+    day(4, 'Srinagar to Gulmarg', 'Gulmarg', GUL, 13),
+    day(5, 'Departure from Gulmarg', 'Gulmarg', [], 13),
+  ]
+  s.transportation = [
+    cab(301, '2026-11-10', 'Transfer', 'Arrival in Pahalgam', 'Pahalgam'),
+    cab(302, '2026-11-11', 'Transfer', 'Pahalgam → Srinagar', 'Srinagar'),
+    cab(303, '2026-11-12', 'Sightseeing', 'Srinagar Sightseeing', 'Srinagar'),
+    cab(304, '2026-11-13', 'Transfer', 'Srinagar → Gulmarg', 'Gulmarg'),
+    cab(305, '2026-11-14', 'Transfer', 'Departure from Gulmarg', 'Gulmarg'),
+  ]
+  s.tripActivities = [{ ...s.tripActivities[0], dayNumber: 4 }]
+  return s
+}
+test('sort: Srinagar (the airport) first; days, cabs, activities and cancelled booking move with their stay', () => {
+  const { snapshot: s, changes } = run([{ type: 'SORT_STAYS' }], roundabout())
+  assert.deepEqual(dates(s), [
+    'Srinagar:2026-11-10>2026-11-12',
+    'Pahalgam:2026-11-12>2026-11-13',
+    'Gulmarg:2026-11-13>2026-11-14',
+    'Pahalgam:2026-11-12>2026-11-13',
+  ])
+  assert.deepEqual(titles(s), [
+    'Day 1: Arrival in Srinagar',
+    'Day 2: Srinagar Sightseeing',
+    'Day 3: Srinagar to Pahalgam',
+    'Day 4: Pahalgam to Gulmarg',
+    'Day 5: Departure from Gulmarg',
+  ])
+  assert.deepEqual(s.transportation.map((t) => `${t.date} ${t.route}`), [
+    '2026-11-10 Arrival in Srinagar',
+    '2026-11-11 Srinagar Sightseeing',
+    '2026-11-12 Srinagar → Pahalgam',
+    '2026-11-13 Pahalgam → Gulmarg',
+    '2026-11-14 Departure from Gulmarg',
+  ])
+  assert.equal(s.tripActivities[0].dayNumber, 4) // Gulmarg's day didn't move
+  assert.ok(changes[0].startsWith('Route: Pahalgam → Srinagar → Gulmarg ⇒ Srinagar → Pahalgam → Gulmarg'), changes[0])
+})
+test('sort: already in the best order says so', () => {
+  const { changes, snapshot } = run([{ type: 'SORT_STAYS' }])
+  assert.match(changes[0], /already the best order/)
+  assert.deepEqual(dates(snapshot), dates(kashmir()))
+})
+test('sort with an explicit sequence', () => {
+  const { snapshot: s } = run([{ type: 'SORT_STAYS', sequence: ['Pahalgam', 'Gulmarg'] }])
+  assert.deepEqual(s.accommodations.filter((a) => !a.cancelledAt).map((a) => a.city), ['Pahalgam', 'Gulmarg', 'Srinagar'])
+  assert.equal(s.tripActivities[0].dayNumber, 2) // the Gondola day follows Gulmarg
+})
+test('sort: a city with no known location → warning, nothing moves', () => {
+  const s = kashmir()
+  s.accommodations[1].city = 'Atlantis'
+  const { warnings, snapshot } = run([{ type: 'SORT_STAYS' }], s)
+  assert.ok(warnings.some((w) => /Atlantis/.test(w)), warnings.join(' | '))
+  assert.deepEqual(dates(snapshot), dates(s))
+})
+test('ADD_STAY with only a city picks a hotel there', () => {
+  const { snapshot: s, changes } = run([{ type: 'ADD_STAY', hotelId: null, hotelName: '', city: 'Sonamarg', nights: 1, after: null }])
+  assert.equal(s.accommodations.find((a) => a.city === 'Sonamarg').hotelId, 6)
+  assert.ok(changes.some((c) => c.includes('Sonamarg Glacier Resort')), changes.join(' | '))
+})
+
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed) process.exit(1)

@@ -363,5 +363,86 @@ test('validator: null command', () => {
   assert.equal(validateChingCommand(null).ok, false)
 })
 
+// ---- Any order, few words (shortest-path reading of the sentence) ----
+test('random order: hotel before nights, name between commas, cab and date anywhere', () => {
+  const c = parse('Khyber for 2 nights, Lalit 2 nights, Rahul Sharma, 4 adults, 10 November, innova')
+  assert.equal(c.clientName, 'Rahul Sharma')
+  assert.equal(c.adults, 4)
+  assert.equal(c.startDate, '2026-11-10')
+  assert.deepEqual(staysOf(c), [[2, 5], [2, 4]])
+  assert.equal(c.vehicleId, 21)
+  assert.equal(c.nights, 4)
+})
+test('"lalit 2 nights khyber 1 night" pairs each count with the hotel before it', () => {
+  assert.deepEqual(staysOf(parse('lalit two nights khyber one night')), [[2, 4], [1, 5]])
+})
+test('terse: "Rahul, 2 people, 10 nov, lalit 2, khyber 1"', () => {
+  const c = parse('Rahul, 2 people, 10 nov, lalit 2, khyber 1')
+  assert.equal(c.clientName, 'Rahul')
+  assert.deepEqual(staysOf(c), [[2, 4], [1, 5]])
+  assert.equal(c.nights, 3)
+})
+test('terse cities: "srinagar 2 gulmarg 1 pahalgam 1"', () => {
+  const c = parse('srinagar 2 gulmarg 1 pahalgam 1')
+  assert.deepEqual(c.stays.map((s) => [s.nights, s.city]), [[2, 'Srinagar'], [1, 'Gulmarg'], [1, 'Pahalgam']])
+  assert.equal(c.nights, 4)
+})
+test('name before "trip": "Rahul trip, gulmarg 2 nights, srinagar 2 nights"', () => {
+  const c = parse('Rahul trip, gulmarg 2 nights, srinagar 2 nights')
+  assert.equal(c.clientName, 'Rahul')
+  assert.deepEqual(c.stays.map((s) => [s.nights, s.city]), [[2, 'Gulmarg'], [2, 'Srinagar']])
+})
+test('"kashmir trip" and "honeymoon trip" are not names', () => {
+  assert.equal(parse('kashmir trip 3 nights from 10 nov').clientName, '')
+  assert.equal(parse('honeymoon trip, 3 nights in hotel a').clientName, '')
+})
+test('"next week" is not part of the name', () => {
+  assert.equal(parse('trip for Rahul next week 3 nights').clientName, 'Rahul')
+})
+test('unknown hotel gets a suggestion', () => {
+  const c = parse('trip for Rahul 2 nights in lalit grand palas 1 night in khiber himalayan')
+  assert.deepEqual(staysOf(c), [[2, 4], [1, 5]])
+  const d = parse('trip for Rahul 2 nights in grand mumtz')
+  assert.ok(d.warnings.some((w) => /did you mean Grand Mumtaz/.test(w)) || d.stays[0].hotelId === 7, d.warnings.join(' | '))
+})
+
+// ---- Date ranges ----
+test('range: "from 10th to 14th november" = start + 4 nights', () => {
+  const c = parse('trip for Rahul from 10th to 14th november, 2 adults')
+  assert.equal(c.startDate, '2026-11-10')
+  assert.deepEqual([c.nights, c.days], [4, 5])
+})
+test('range: "10 november to 14 november", "november 10 to 14", "between 10 and 14 november"', () => {
+  for (const t of ['trip for Rahul 10 november to 14 november', 'trip for Rahul november 10 to 14', 'trip for Rahul between 10 and 14 november']) {
+    const c = parse(t)
+    assert.deepEqual([c.startDate, c.nights], ['2026-11-10', 4], t)
+  }
+})
+test('range across months: "28th to 3rd december"', () => {
+  const c = parse('trip for Rahul 28th to 3rd december')
+  assert.deepEqual([c.startDate, c.nights], ['2026-11-28', 5])
+})
+test('range vs spoken nights disagree → dates win, with a warning', () => {
+  const c = parse('3 nights trip for Rahul from 10 to 14 november')
+  assert.equal(c.nights, 4)
+  assert.ok(c.warnings.some((w) => /using the dates/.test(w)))
+})
+test('spoken all-numeric date with year: "10 11 2026"', () => {
+  assert.equal(parse('trip for Rahul 10 11 2026 3 nights').startDate, '2026-11-10')
+})
+
+// ---- Destination ----
+test('stays in several Kashmir towns → destination Kashmir (the region)', () => {
+  const c = parse('trip for Rahul 2 nights in hotel a 1 night in hotel b 1 night in hotel c')
+  assert.equal(c.destinationName, 'Kashmir')
+  assert.equal(c.destinationId, 11)
+})
+test('one town → that town', () => {
+  assert.equal(parse('trip for Rahul 3 nights in hotel a').destinationName, 'Srinagar')
+})
+test('a region the catalog lacks: "trip to Ladakh"', () => {
+  assert.equal(parse('trip to ladakh for Rahul 5 nights').destinationName, 'Ladakh')
+})
+
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed) process.exit(1)

@@ -10,7 +10,8 @@
 import { parseChingCommand, validateChingCommand } from "./parseCommand.js";
 import { parseChingEdit } from "./parseEdit.js";
 import { buildEditContext, applyEditActions } from "./editTrip.js";
-import { buildChingTripParts } from "./buildTrip.js";
+import { buildChingTripParts, pickHotelsForCityStays } from "./buildTrip.js";
+import { bestStayOrder } from "./route.js";
 
 // Commands run once, when the agent stops speaking — never live.
 export const COMMAND_TYPES = new Set([
@@ -36,7 +37,13 @@ const FILL_EXTRAS = new Set([
   "SET_MARGIN",
   "SET_GST",
   "SET_ROOMS",
+  "SORT_STAYS",
 ]);
+
+// "No hotel named for 2 nights in Gulmarg — pick one" is moot once Ching picked one there.
+const dropPicked = (warnings, picked) =>
+  warnings.filter((w) => !picked.some((city) => /^No hotel named\b/.test(w) && w.toLowerCase().includes(String(city).toLowerCase())));
+const pickedLine = (city, name) => `${city}: picked ${name} — say "change the ${city} hotel to …" to swap`;
 
 const AUTO_TITLE = /\d+\s*N\s*\/\s*\d+\s*D\s*$/i;
 
@@ -69,7 +76,9 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 function planFill(base, text, { catalog, settings, today }) {
   const createCatalog = { hotels: catalog.hotels, destinations: catalog.destinations, vehicles: catalog.vehicles };
-  const command = parseChingCommand(text, createCatalog, { today });
+  const parsed = parseChingCommand(text, createCatalog, { today });
+  const pick = pickHotelsForCityStays(parsed, createCatalog.hotels);
+  const command = { ...parsed, stays: pick.stays };
   const parts = buildChingTripParts(command, createCatalog);
 
   const tripInfo = { ...base.tripInfo, ...parts.tripInfo };
@@ -108,7 +117,8 @@ function planFill(base, text, { catalog, settings, today }) {
   if (command.clientPhone) changes.push(`Phone: ${command.clientPhone}`);
   if (command.clientEmail) changes.push(`Email: ${command.clientEmail}`);
 
-  const warnings = [...(command.warnings || [])];
+  const warnings = dropPicked([...(command.warnings || [])], pick.picked.map((p) => p.city));
+  pick.picked.forEach((p) => warnings.push(pickedLine(p.city, p.name)));
   if (command.intent === "create_trip") {
     const v = validateChingCommand(command, createCatalog);
     // Missing pieces are normal mid-sentence; only flag what's actually wrong.
@@ -125,6 +135,13 @@ function planFill(base, text, { catalog, settings, today }) {
     const actions = Array.isArray(r.actions) ? r.actions : [];
     commands = actions.filter((a) => COMMAND_TYPES.has(a?.type));
     const extras = actions.filter((a) => FILL_EXTRAS.has(a?.type));
+    // Not asked to sort, but the hotels were said in a roundabout order: say so.
+    if (!extras.some((a) => a.type === "SORT_STAYS") && command.stays.length > 1) {
+      const r = bestStayOrder(command.stays, { hotels: catalog.hotels });
+      if (r.ok && r.changed && r.spokenKm - r.km >= Math.max(30, r.km * 0.1)) {
+        warnings.push(`Shorter route: ${r.path.join(" → ")} saves ~${r.spokenKm - r.km} km — say "sort the hotels"`);
+      }
+    }
     if (extras.length) {
       const res = applyEditActions(snapshot, extras, { catalog, settings });
       snapshot = res.snapshot;
@@ -151,12 +168,13 @@ function planEdit(base, text, { catalog, settings, today }) {
   const stateActions = actions.filter((a) => !COMMAND_TYPES.has(a?.type));
   const res = stateActions.length
     ? applyEditActions(base, stateActions, { catalog, settings })
-    : { snapshot: base, changes: [], warnings: [] };
+    : { snapshot: base, changes: [], warnings: [], picked: [] };
+  const picked = res.picked || [];
   return {
     mode: "edit",
     snapshot: res.snapshot,
     changes: res.changes,
-    warnings: [...new Set([...(r.warnings || []), ...res.warnings])],
+    warnings: [...new Set([...dropPicked(r.warnings || [], picked), ...res.warnings])],
     unrecognized: r.unrecognized || [],
     commands: actions.filter((a) => COMMAND_TYPES.has(a?.type)),
   };

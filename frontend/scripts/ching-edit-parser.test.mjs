@@ -401,5 +401,33 @@ test('isCreateRequest: false for edit phrasings', () => {
   ]) assert.equal(isCreateRequest(t), false, t)
 })
 
+// ---- Route order ----
+test('"sort the hotels" / "best route" / "arrange by route" → SORT_STAYS', () => {
+  for (const t of ['sort the hotels', 'arrange the hotels by route', 'best route please', 'optimise the route', 'reorder the stays']) {
+    assert.deepEqual(acts(t), [{ type: 'SORT_STAYS' }], t)
+  }
+})
+test('"start with Gulmarg" / "Pahalgam first" → SORT_STAYS with a first city', () => {
+  assert.deepEqual(acts('start with gulmarg'), [{ type: 'SORT_STAYS', first: 'Gulmarg' }])
+  assert.deepEqual(acts('pahalgam first'), [{ type: 'SORT_STAYS', first: 'Pahalgam' }])
+})
+test('"pahalgam first then gulmarg" → explicit order', () => {
+  assert.deepEqual(acts('pahalgam first then gulmarg'), [{ type: 'SORT_STAYS', sequence: ['Pahalgam', 'Gulmarg'] }])
+})
+test('"starting from 12 november" is still a date change, not a sort', () => {
+  assert.equal(acts('starting from 12 november')[0].type, 'SET_START_DATE')
+})
+test('terse hotel swap: "srinagar heevan", "heevan for srinagar"', () => {
+  for (const t of ['srinagar heevan', 'heevan for srinagar']) {
+    const a = acts(t)
+    assert.equal(a.length, 1, t)
+    assert.deepEqual([a[0].type, a[0].stay, a[0].hotelId], ['REPLACE_HOTEL', 0, 3], t)
+  }
+})
+test('misheard hotel → "did you mean"', () => {
+  const r = edit('replace pine n peak with grand mumtz')
+  assert.ok(r.actions.some((a) => a.hotelId === 8) || r.warnings.some((w) => /did you mean Grand Mumtaz/.test(w)), r.warnings.join(' | '))
+})
+
 console.log(`\n${passed} passed, ${failed} failed`)
 if (failed) process.exit(1)

@@ -199,6 +199,8 @@ export function serializeHotel(h) {
   return {
     id: h.id, name: h.name, city: h.city, category: h.category,
     is_available: h.isAvailable ?? true,
+    // Map pin, when the agency set one — Ching uses it to order a trip's hotels by road distance.
+    latitude: h.latitude ?? null, longitude: h.longitude ?? null,
     price_sections: h.priceSections ?? [], image_path: h.imagePath, image_url: h.imagePath,
   };
 }

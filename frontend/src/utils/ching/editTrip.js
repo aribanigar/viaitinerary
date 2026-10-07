@@ -46,6 +46,7 @@ import {
 } from './editTripUtil.js'
 import {
   dateOfDay,
+  dayOfDate,
   isFullTripCab,
   routeOf,
   isAutoTitle,
@@ -58,6 +59,8 @@ import {
   finishStructural,
   cabLine,
 } from './editTripTimeline.js'
+import { bestStayOrder } from './route.js'
+import { rankHotelsForCity } from './places.js'
 
 const COMMANDS = new Set(['EXPORT_PDF', 'EMAIL_ME', 'SAVE', 'UNDO'])
 
@@ -332,6 +335,95 @@ const withoutLeisure = (lines) => lines.filter((l) => !sameName(l, LEISURE_LINE)
 /* ───────────────────────────── actions ───────────────────────────── */
 
 const HANDLERS = {
+  /** Reorder the hotels into the shortest road loop (route.js), moving each stay's days, cabs and activities with it. */
+  SORT_STAYS(st, a) {
+    if (!needDates(st)) return
+    const stays = getStays(st.s.accommodations)
+    if (stays.length < 2) return st.warnings.push('There is only one hotel — nothing to sort')
+    const start = st.s.tripInfo.startDate
+    const backToBack = stays.every((acc, i) => nightsOf(acc) >= 1 && acc.checkIn === (i ? stays[i - 1].checkOut : start))
+    if (!backToBack) return st.warnings.push("The hotels aren't back to back from the start date, so they can't be reordered automatically")
+
+    const cities = stays.map((acc) => ({ city: acc.city }))
+    let r
+    if (Array.isArray(a.sequence) && a.sequence.length) {
+      // An order the agent spelled out: those cities first, in that order; the rest after, as they were.
+      const rank = (acc) => {
+        const i = a.sequence.findIndex((c) => sameName(c, acc.city))
+        return i < 0 ? a.sequence.length : i
+      }
+      const order = stays.map((acc, i) => i).sort((x, y) => rank(stays[x]) - rank(stays[y]) || x - y)
+      const km = bestStayOrder(order.map((i) => cities[i]), { hotels: st.catalog.hotels || [] })
+      r = { ok: true, order, changed: order.some((v, i) => v !== i), km: km.spokenKm, spokenKm: km.spokenKm, path: [...new Set(order.map((i) => stays[i].city))], unknown: [] }
+    } else {
+      r = bestStayOrder(cities, { hotels: st.catalog.hotels || [], first: a.first || '' })
+    }
+    if (!r.ok) {
+      const where = r.unknown.length ? `where ${r.unknown.join(', ')} ${r.unknown.length === 1 ? 'is' : 'are'}` : 'the roads between these cities'
+      return st.warnings.push(`Can't sort by route: I don't know ${where} — add a map location to that hotel`)
+    }
+    const path = r.path.join(' → ')
+    if (!r.changed) return st.changes.push(a.sequence ? `Route: already ${path}` : `Route: already the best order — ${path} (~${r.km} km)`)
+
+    const seq = staySequence(st)
+    const before = stays.map((acc) => acc.city).filter((c, i, arr) => !i || !sameName(c, arr[i - 1])).join(' → ')
+    // Old day → new day: each stay's nights move as a block; the departure day stays last.
+    const move = new Map()
+    let cursor = 1
+    const order = r.order.map((i) => stays[i])
+    for (const acc of order) {
+      const d0 = dayOfDate(st, acc.checkIn)
+      const n = nightsOf(acc)
+      for (let j = 0; j < n; j += 1) move.set(d0 + j, cursor + j)
+      cursor += n
+    }
+    const to = (d) => move.get(d) ?? d
+    const days = st.s.itinerary
+    if (days.length >= cursor - 1) {
+      const next = new Array(days.length)
+      days.forEach((day, i) => {
+        next[to(i + 1) - 1] = day
+      })
+      st.s.itinerary = next
+    } else {
+      st.warnings.push('The day plan is shorter than the hotel nights — check the day order')
+    }
+    // Cancelled bookings inside a stay's dates move with that stay.
+    const tagAlong = st.s.accommodations
+      .filter((x) => isCancelled(x) && x.checkIn)
+      .map((x) => ({ x, owner: stays.find((acc) => acc.checkIn <= x.checkIn && x.checkIn < acc.checkOut), was: x.checkIn }))
+      .filter((t) => t.owner)
+      .map((t) => ({ ...t, ownerWas: t.owner.checkIn }))
+    order.reduce((checkIn, acc) => {
+      const n = nightsOf(acc)
+      acc.checkIn = checkIn
+      acc.checkOut = addDays(checkIn, n)
+      return acc.checkOut
+    }, start)
+    for (const { x, owner, ownerWas } of tagAlong) {
+      const shift = diffDays(ownerWas, owner.checkIn)
+      const n = nightsOf(x)
+      x.checkIn = addDays(x.checkIn, shift)
+      if (Number.isFinite(n)) x.checkOut = addDays(x.checkIn, n)
+    }
+    st.s.accommodations = [...order, ...st.s.accommodations.filter((acc) => !order.includes(acc))]
+    for (const t of st.s.transportation) {
+      if (t.date && !isFullTripCab(t)) t.date = dateOfDay(st, to(dayOfDate(st, t.date)))
+    }
+    st.s.transportation = st.s.transportation
+      .map((t, i) => ({ t, i }))
+      .sort((x, y) => String(x.t.date || '').localeCompare(String(y.t.date || '')) || x.i - y.i)
+      .map(({ t }) => t)
+    for (const act of st.s.tripActivities) {
+      const n = toInt(act.dayNumber)
+      if (Number.isInteger(n) && n >= 1) act.dayNumber = typeof act.dayNumber === 'string' ? String(to(n)) : to(n)
+    }
+    finishStructural(st, seq)
+    const saved = r.spokenKm - r.km
+    const km = r.km ? ` (~${r.km} km${saved > 0 ? `, ~${saved} km shorter` : ''})` : ''
+    st.changes.push(`Route: ${before} ⇒ ${path}${km}`)
+  },
+
   SET_STAY_NIGHTS(st, a) {
     const acc = stayAt(st, a.stay)
     if (!acc) return
@@ -353,8 +445,15 @@ const HANDLERS = {
     const nights = toInt(a.nights)
     if (!(nights >= 1)) return st.warnings.push('Say how many nights the new stay is')
     if (!needDates(st)) return
-    const hotel = findById(st.catalog.hotels, a.hotelId)
+    let hotel = findById(st.catalog.hotels, a.hotelId)
     if (a.hotelId != null && !hotel) st.warnings.push(`Hotel #${a.hotelId} is not in your hotel list`)
+    if (!hotel && a.hotelId == null && !String(a.hotelName || '').trim() && String(a.city || '').trim()) {
+      // Only a city was said: suggest the agency's best match there (same stars as the trip, cheapest).
+      const stars = getStays(st.s.accommodations).map((x) => parseInt(x.category, 10)).filter(Boolean)
+      const date = normDate(st.s.tripInfo.startDate) ? addDays(st.s.tripInfo.startDate, st.nights) : ''
+      hotel = rankHotelsForCity(a.city, st.catalog.hotels || [], { category: stars[0] ?? null, date })[0] || null
+      if (hotel) st.picked.push(a.city)
+    }
     const city = hotel?.city || String(a.city || '').trim()
     const name = hotel?.name || String(a.hotelName || '').trim()
     if (!city) return st.warnings.push(`Which city is ${name || 'the new hotel'} in? Stay not added`)
@@ -844,6 +943,7 @@ export function applyEditActions(snapshot, actions, { catalog = {}, settings = {
     origStays: getStays(s.accommodations),
     origDays: [...s.itinerary],
     origActs: [...s.tripActivities],
+    picked: [],
     explicit: new Set(),
     hasSetRooms: list.some((a) => a?.type === 'SET_ROOMS'),
   }
@@ -887,5 +987,5 @@ export function applyEditActions(snapshot, actions, { catalog = {}, settings = {
     st.changes.push(`Trip: ${startNights} → ${plural(st.nights, 'night')}${when}`)
   }
 
-  return { snapshot: s, changes: st.changes, warnings: st.warnings }
+  return { snapshot: s, changes: st.changes, warnings: st.warnings, picked: st.picked }
 }

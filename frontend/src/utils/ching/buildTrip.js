@@ -10,6 +10,7 @@ import {
   hotelCategoryLabel,
 } from "../hotelRates.js";
 import { destinationActivityLabels } from "../destinationActivities.js";
+import { destinationForCity, rankHotelsForCity } from "./places.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -22,6 +23,33 @@ export function addDays(ymd, n) {
 
 const sameName = (a, b) =>
   String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+
+const stars = (h) => Number(String(h?.category ?? "").replace(/\D/g, "")) || null;
+
+/**
+ * Stays where only a city was said ("2 nights in Gulmarg") get the agency's
+ * best-ranked hotel there — same star rating as the rest of the trip, then
+ * cheapest for the date (places.js rankHotelsForCity). Returns the stays with
+ * hotelId filled in, plus what was picked so the agent can be told.
+ */
+export function pickHotelsForCityStays(command, hotels) {
+  const named = (command.stays || []).map((s) => hotels.find((h) => h.id === s.hotelId)).filter(Boolean);
+  const counts = new Map();
+  named.forEach((h) => stars(h) && counts.set(stars(h), (counts.get(stars(h)) || 0) + 1));
+  const category = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const picked = [];
+  let cursor = /^\d{4}-\d{2}-\d{2}$/.test(command.startDate || "") ? command.startDate : "";
+  const stays = (command.stays || []).map((stay) => {
+    const date = cursor;
+    if (cursor) cursor = addDays(cursor, stay.nights || 0);
+    if (stay.hotelId != null || String(stay.hotelName || "").trim() || !stay.city) return stay;
+    const hotel = rankHotelsForCity(stay.city, hotels, { category, date })[0];
+    if (!hotel) return stay;
+    picked.push({ city: stay.city, name: hotel.name });
+    return { ...stay, hotelId: hotel.id, hotelName: hotel.name, city: hotel.city || stay.city };
+  });
+  return { stays, picked };
+}
 
 /**
  * The city the travellers are in on each night (index 0 = night of day 1),
@@ -58,7 +86,7 @@ export function buildChingTripParts(command, catalog) {
   const start = /^\d{4}-\d{2}-\d{2}$/.test(command.startDate || "") ? command.startDate : "";
   const cities = nightlyCities({ ...command, nights }, hotels);
   const lastCity = cities[cities.length - 1] || command.destinationName || "";
-  const destinationFor = (city) => destinations.find((d) => sameName(d.name, city));
+  const destinationFor = (city) => destinationForCity(city, destinations);
 
   // ── Hotels: one stay per hotel, back to back from the start date.
   const accommodations = [];
