@@ -250,6 +250,10 @@ function planFill(base, rawText, { catalog, settings, today }) {
       return k && !said.includes(` ${k} `);
     }),
     pickedHotels: parts.autoPicked.filter((p) => p.hotel).map((p) => p.hotel),
+    // Asked back in the draft until answered: "day 2 Gulmarg — day trip or transfer?",
+    // and hotels the agent named that aren't in the catalog.
+    dayQuestions: command.dayPlan?.questions || [],
+    unmatchedHotels: command.unmatchedHotels || [],
   };
 
   return {
@@ -279,6 +283,11 @@ function planEdit(base, text, { catalog, settings, today }) {
     warnings: [...new Set([...(r.warnings || []), ...res.warnings])],
     unrecognized: r.unrecognized || [],
     commands: actions.filter((a) => COMMAND_TYPES.has(a?.type)),
+    // What this edit answered, for the pending Trip Draft's questions.
+    answered: {
+      days: stateActions.filter((a) => a.type === "SET_DAY_ROUTES").flatMap((a) => Object.keys(a.entries || {}).map(Number)),
+      hotels: stateActions.some((a) => ["REPLACE_HOTEL", "ADD_STAY", "ADD_HOTEL", "SET_HOTEL"].includes(a.type)),
+    },
   };
 }
 

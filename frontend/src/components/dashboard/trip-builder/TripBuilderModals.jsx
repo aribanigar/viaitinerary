@@ -16,6 +16,9 @@ import {
   findRoomTypeSection,
 } from "../../../utils/hotelRates";
 
+// "4", "4 Star", 4 → 4; unrated → 0.
+const starsOf = (hotel) => Number(String(hotel?.category ?? "").match(/[1-5]/)?.[0]) || 0;
+
 const expandDateRange = (startStr, endStr) => {
   const dates = [];
   const start = new Date(startStr);
@@ -63,6 +66,20 @@ export const HotelModal = ({
 }) => {
   const selectedHotel = masterHotels.find(
     (hotel) => hotel.id === hotelForm.hotelId,
+  );
+
+  // Star rating filter (the rating saved on each hotel in Accommodation).
+  // Kept per city: picking another city starts from "Any star" again.
+  const [starPick, setStarPick] = useState({ city: "", value: "" });
+  const starFilter = starPick.city === hotelForm.city ? starPick.value : "";
+  const setStarFilter = (value) => setStarPick({ city: hotelForm.city, value });
+  const starCounts = hotelsInCity.reduce((acc, h) => {
+    const n = starsOf(h);
+    acc[n] = (acc[n] || 0) + 1;
+    return acc;
+  }, {});
+  const visibleHotels = hotelsInCity.filter(
+    (h) => !starFilter || String(starsOf(h)) === starFilter || h.id === hotelForm.hotelId,
   );
 
   const roomTypeOptions = (selectedHotel?.price_sections || [])
@@ -135,6 +152,39 @@ export const HotelModal = ({
 
           <div>
             <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+              Star Rating
+            </label>
+            {/* Narrows the hotel list to the star rating saved on each hotel
+                (Accommodation → Star Category). Picking a hotel sets the
+                booking's category from that same rating. */}
+            <select
+              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
+              value={starFilter}
+              onChange={(e) => {
+                const next = e.target.value;
+                setStarFilter(next);
+                if (selectedHotel && next && String(starsOf(selectedHotel)) !== next) {
+                  setHotelForm({ ...hotelForm, hotelId: null, name: "", category: next === "0" ? hotelForm.category : `${next} Star` });
+                } else if (!selectedHotel && next && next !== "0") {
+                  setHotelForm({ ...hotelForm, category: `${next} Star` });
+                }
+              }}
+              disabled={!hotelForm.city}
+            >
+              <option value="">Any star ({hotelsInCity.length})</option>
+              {[5, 4, 3, 2, 1].map((n) => (
+                <option key={n} value={String(n)} disabled={!starCounts[n]}>
+                  {n} Star ({starCounts[n] || 0})
+                </option>
+              ))}
+              {starCounts[0] ? <option value="0">Not rated ({starCounts[0]})</option> : null}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
               Hotel Name
             </label>
             <select
@@ -179,7 +229,9 @@ export const HotelModal = ({
                     ...hotelForm,
                     hotelId: selectedHotel.id,
                     name: selectedHotel.name,
-                    category: hotelCategoryLabel(selectedHotel.category) || hotelForm.category,
+                    category:
+                      hotelCategoryLabel(selectedHotel.category) ||
+                      (starFilter && starFilter !== "0" ? `${starFilter} Star` : hotelForm.category),
                     roomType: initialRoomType,
                     pricePerRoom: initialPrice,
                     bedPrices: allBedPrices,
@@ -190,33 +242,13 @@ export const HotelModal = ({
               disabled={!hotelForm.city}
             >
               <option value="">Select Hotel</option>
-              {hotelsInCity.map((hotel) => (
+              {visibleHotels.map((hotel) => (
                 <option key={hotel.id} value={hotel.id}>
                   {hotel.name}
+                  {starsOf(hotel) ? ` · ${starsOf(hotel)}★` : ""}
                   {hotel.is_available === false ? " (Unavailable)" : ""}
                 </option>
               ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 leading-none">
-              Hotel Category
-            </label>
-            <select
-              className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
-              value={hotelForm.category}
-              onChange={(e) =>
-                setHotelForm({ ...hotelForm, category: e.target.value })
-              }
-            >
-              <option value="1 Star">1 Star</option>
-              <option value="2 Star">2 Star</option>
-              <option value="3 Star">3 Star</option>
-              <option value="4 Star">4 Star</option>
-              <option value="5 Star">5 Star</option>
             </select>
           </div>
           <div>

@@ -177,6 +177,9 @@ function resolveStays(command, hotels, nights, destinations = [], memory = null)
   };
   let stays = (command.stays || []).map((st) => {
     if (st.hotelId || !st.city) return st;
+    // The agent named a hotel we couldn't find: never swap in one of our own —
+    // the Trip Draft asks "did you mean …" (command.unmatchedHotels).
+    if ((command.unmatchedHotels || []).some((u) => u.heard === st.hotelName && (!u.city || samePlace(u.city, st.city)))) return st;
     const h = pick(st.city);
     if (!h) return st;
     return { ...st, hotelId: h.id, hotelName: h.name, city: displayCity(st.city || h.city, destinations) };

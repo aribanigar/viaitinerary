@@ -14,6 +14,7 @@ import { convertNumberWords, normalizeTripWords, stripWakePhrase, titleCase } fr
 import { extractDate, toLocalMidnight } from './dates.js'
 import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './fuzzy.js'
 import { parseInclusionClause } from './inclusions.js'
+import { cleanNameWords, DISFLUENCY, ROLE_WORDS, HONORIFICS } from './names.js'
 import { samePlace } from './places.js'
 import { parseDayPlan, withoutClaimed } from './dayPlan.js'
 import { parseAmount } from './pricing.js'
@@ -415,6 +416,8 @@ function hGst(c) {
 }
 
 const NAME_STOP = new Set(['and', 'with', 'for', 'on', 'in', 'at', 'from', 'to', 'the', 'please', 'phone', 'email', 'mobile', 'then'])
+const NAME_PAD = new Set([...DISFLUENCY, ...ROLE_WORDS, ...HONORIFICS, 'not', 'no', 'sorry', 'mean', 'meant', 'rather', 'correction', 'i'])
+
 function hClientName(c, toks, env) {
   const m =
     c.match(/\b(?:client|customer|guest)(?:'s)?\s+name\s+(?:to|is|as|should be|=)?\s*(.+)$/) ||
@@ -422,13 +425,13 @@ function hClientName(c, toks, env) {
     c.match(/^(?:change|update|set|correct)\s+(?:the\s+)?name\s+(.+)$/) ||
     c.match(/\brename\s+(?:the\s+)?(?:client|customer|guest|trip)?\s*(?:to|as)\s+(.+)$/)
   if (!m) return null
-  const words = []
+  const heard = []
   for (const w of toksOf(m[1])) {
-    if (NAME_STOP.has(w) || !/^[a-z][a-z'.]*$/.test(w) || words.length >= 4) break
-    words.push(w)
+    if (!/^[a-z][a-z'.]*$/.test(w) || heard.length >= 8) break
+    if (NAME_STOP.has(w) && !NAME_PAD.has(w)) break
+    heard.push(w)
   }
-  const skip = new Set(['mr', 'mrs', 'ms', 'dr', 'miss', 'shri', 'smt'])
-  while (words.length && skip.has(words[0].replace(/\.$/, ''))) words.shift()
+  const words = cleanNameWords(heard)
   if (!words.length) return null
   env.client.clientName = titleCase(words.join(' ').replace(/\.+$/, ''))
   return [{ type: 'SET_CLIENT', _marker: true }]
@@ -917,6 +920,21 @@ function hNights(c, toks, env) {
 }
 
 function hHotel(c, toks, env) {
+  // "gulmarg hotel khyber", "khyber for gulmarg", "book khyber in gulmarg" when that
+  // city has no hotel yet (the Trip Draft asked for one): book it into the open nights.
+  {
+    const m =
+      c.match(/^(?:the\s+)?([a-z ]+?)\s+(?:hotel|stay)\s+(?:is\s+|should\s+be\s+|will\s+be\s+|to\s+|as\s+)?(?:the\s+)?([a-z][a-z' ]+)$/) ||
+      c.match(/^(?:book\s+|use\s+|put\s+)?(?:the\s+)?([a-z][a-z' ]+?)\s+(?:for|in|at)\s+(?:the\s+)?([a-z ]+?)(?:\s+(?:stay|nights?|hotel))?$/)
+    if (m) {
+      const [cityWords, hotelWords] = cityLookup(toksOf(m[1]), env.cat) ? [m[1], m[2]] : [m[2], m[1]]
+      const city = cityLookup(toksOf(cityWords), env.cat)
+      if (city && !env.S.stays.some((st) => sameCity(st.city, city) || samePlace(st.city, city))) {
+        const h = matchHotel(toksOf(hotelWords), city, env.cat)
+        if (h.hotel && sameCity(h.hotel.city, city)) return hAddHotel(`add hotel ${hotelWords} in ${city.toLowerCase()}`, toksOf(`add hotel ${hotelWords} in ${city.toLowerCase()}`), env)
+      }
+    }
+  }
   const { S, cat } = env
   // "change grand mumtaz to lalit and highlands park to khyber": one change each.
   const many = c.match(/^(?:please\s+)?(replace|swap|switch|change)\s+(.+\s+(?:with|to|by)\s+.+?)\s+and\s+(?:(?:also|then)\s+)?(?:(?:replace|swap|switch|change)\s+)?(.+\s+(?:with|to|by)\s+.+)$/)

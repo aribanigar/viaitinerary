@@ -9,6 +9,8 @@
 // A "save" check (phone / email) doesn't block building, but the builder
 // can't save the trip until it's there. A "warn" check is worth a look.
 
+import { dayQuestionText } from "./dayPlan.js";
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAY = 86400000;
 
@@ -156,6 +158,26 @@ export function buildTripDraft(snapshot, meta = {}) {
 
   const noPlace = days.filter((d) => !String(d.location || d.destination || "").trim());
   if (days.length) add(!noPlace.length, "warn", noPlace.length ? `Day ${noPlace[0].day} has no destination` : "Every day has a destination");
+
+  // Questions only the agent can answer (see dayPlan.js / parseCommand.js):
+  // a bare "day 2 Gulmarg" — day trip or transfer? — and a hotel we couldn't
+  // find. They block Confirm & Build until answered, so nothing is guessed.
+  const answeredDays = new Set(list(meta.answeredDays).map(Number));
+  list(meta.dayQuestions)
+    .filter((q) => !answeredDays.has(Number(q.day)))
+    .forEach((q) => add(false, "blocking", dayQuestionText(q)));
+  list(meta.unmatchedHotels)
+    .filter((u) => {
+      // Answered once that city has a hotel the agent chose (not one Ching picked).
+      if (meta.answeredHotels) return false;
+      return !stays.some((a) => a.hotelId && u.city && cityKey(a.city) === cityKey(u.city) && !picked.has(String(a.name).toLowerCase()));
+    })
+    .forEach((u) => {
+      const where = u.city ? ` in ${u.city}` : "";
+      const guess = list(u.suggestions).length ? ` Did you mean ${list(u.suggestions).slice(0, 2).join(" or ")}?` : "";
+      const say = u.city ? `"${u.city} hotel <name>"` : `"<city> hotel <name>"`;
+      add(false, "blocking", `I heard the hotel "${u.heard}" but it isn't in your hotels${where}.${guess} Say ${say}.`);
+    });
 
   const sug = grouped.filter((g) => g.suggested);
   if (sug.length) add(false, "warn", `Ching suggested ${sug.map((g) => `${g.city} (${plural(g.nights, "night")})`).join(", ")} — change it if that's not right`);

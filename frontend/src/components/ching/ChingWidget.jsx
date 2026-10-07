@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Mic, X } from "lucide-react";
 import { toast } from "react-toastify";
@@ -27,6 +27,7 @@ import {
 import { handleAssist } from "./assistActions";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
 import { draftSpeech } from "../../utils/ching/tripDraft";
+import { vocabularyFrom } from "../../utils/ching/vocabulary";
 import { chingSaid, setChingListening, setChingStage } from "../../utils/ching/chingBus";
 import {
   speak,
@@ -864,7 +865,10 @@ export default function ChingWidget() {
     openPanel();
   }, [openPanel]);
 
+  // The agency's hotel / city / cab names, to help the recognizer hear them.
+  const vocabulary = useMemo(() => (init ? vocabularyFrom(init) : null), [init]);
   const speech = useSpeech({
+    vocabulary,
     handsFree,
     lang: listenLang,
     paused: status === "running" || speaking, // don't hear our own voice

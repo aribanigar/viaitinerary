@@ -717,7 +717,7 @@ const AccommodationForm = () => {
 
             <div>
               <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
-                Category
+                Star Rating
                 {googleRating != null && (
                   <span
                     className="normal-case font-bold text-amber-500 tracking-normal"
@@ -751,7 +751,13 @@ const AccommodationForm = () => {
                     />
                   </button>
                 ))}
+                <span className="ml-2 text-xs font-bold text-slate-600">
+                  {Number(formData.category) ? `${formData.category} Star` : "Not rated"}
+                </span>
               </div>
+              <p className="mt-1.5 px-1 text-[11px] text-slate-400">
+                Used to filter hotels by star rating in the Trip Builder, and by Ching ("a 4 star hotel in Gulmarg").
+              </p>
             </div>
             </div>
 

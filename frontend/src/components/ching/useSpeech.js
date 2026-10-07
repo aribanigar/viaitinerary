@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { hasWakePhrase, stripWakePhrase } from "../../utils/ching/text.js";
 import { stripFillers, endOfTurnDelay, TURN_MS } from "../../utils/ching/speechClean.js";
 import { unlockSpeech } from "../../utils/ching/voice.js";
+import { pickAlternative } from "../../utils/ching/vocabulary.js";
 
 // Voice layer for Ching, on the browser's Web Speech API (no keys, no server).
 //
@@ -241,7 +242,19 @@ class SpeechEngine {
     }
     rec.lang = this.lang;
     rec.interimResults = true;
-    rec.maxAlternatives = 1;
+    // Several guesses per phrase while taking a command, so the one naming the
+    // agency's own hotels / cities can win (utils/ching/vocabulary.js).
+    rec.maxAlternatives = mode === "command" && this.vocab?.words?.size ? 5 : 1;
+    // Contextual biasing: the catalog's names as hints, only where on-device
+    // recognition is installed (it's required for phrases; experimental API).
+    if (mode === "command" && this.biasOk && this.vocab?.phrases?.length) {
+      try {
+        rec.processLocally = true;
+        rec.phrases = this.vocab.phrases.map((p) => new window.SpeechRecognitionPhrase(p, 3.0));
+      } catch {
+        this.biasOk = false;
+      }
+    }
     // Android's continuous mode re-sends earlier text in every result; single
     // utterances + our own restart/stitching are more reliable there.
     rec.continuous = !IS_ANDROID;
@@ -267,6 +280,10 @@ class SpeechEngine {
     };
     rec.onerror = (e) => {
       if (rec !== this.rec) return;
+      // On-device recognition refused (language pack gone, phrases not supported): drop biasing for good.
+      if (rec.processLocally && ["phrases-not-supported", "language-not-supported", "service-not-allowed"].includes(e?.error)) {
+        this.biasOk = false;
+      }
       this.onError(e?.error || "unknown");
     };
     rec.onend = () => {
@@ -345,6 +362,23 @@ class SpeechEngine {
     else this.startCommand();
   }
 
+  /** The agency's catalog words (vocabularyFrom); checks once whether biasing is possible here. */
+  setVocabulary(vocab) {
+    this.vocab = vocab || null;
+    this.biasOk = false;
+    if (!vocab?.phrases?.length || typeof window === "undefined" || !window.SpeechRecognitionPhrase) return;
+    const lang = this.lang;
+    try {
+      Promise.resolve(SR?.available?.({ langs: [lang], processLocally: true }))
+        .then((status) => {
+          if (this.vocab === vocab && this.lang === lang) this.biasOk = status === "available";
+        })
+        .catch(() => {});
+    } catch {
+      // Not supported: re-ranking alone.
+    }
+  }
+
   armSilence(ms) {
     this.clearTimer("silence");
     this.timers.silence = setTimeout(() => this.finishCommand(), ms);
@@ -357,7 +391,10 @@ class SpeechEngine {
   onCommandResult(e) {
     const parts = [];
     for (let i = this.cmd.baseIndex; i < e.results.length; i += 1) {
-      parts.push(e.results[i][0]?.transcript || "");
+      const r = e.results[i];
+      const alts = [];
+      for (let k = 0; k < (r?.length || 0); k += 1) alts.push(r[k]?.transcript || "");
+      parts.push(pickAlternative(alts, this.vocab) || "");
     }
     let text = norm(parts.join(" "));
     if (this.cmd.fromWake) {
@@ -608,6 +645,7 @@ export default function useSpeech({
   onWake,
   onStart,
   onAbort,
+  vocabulary = null,
 } = {}) {
   const [engine] = useState(() => new SpeechEngine());
   const state = useSyncExternalStore(engine.subscribe, engine.getSnapshot, engine.getSnapshot);
@@ -632,6 +670,10 @@ export default function useSpeech({
   useEffect(() => {
     engine.setPaused(paused);
   }, [engine, paused]);
+
+  useEffect(() => {
+    engine.setVocabulary(vocabulary);
+  }, [engine, vocabulary, lang]);
 
   // Stable identities, so callers can list them as effect dependencies.
   const actions = useMemo(

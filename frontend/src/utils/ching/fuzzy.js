@@ -65,9 +65,29 @@ export function significantTokens(tokens) {
   return noThe.length ? noThe : tokens
 }
 
+/**
+ * How a word sounds, roughly, for Indian-English speech recognition: "german"
+ * and "jarman" → "jrmn", "khaleel" and "khalil" → "kl". Digraphs folded
+ * (kh, sh, ph…), soft c/g, z→s, w→v, vowels after the first letter dropped,
+ * repeats collapsed.
+ */
+export function soundKey(word) {
+  let w = String(word || '').toLowerCase().replace(/[^a-z]/g, '')
+  if (!w) return ''
+  w = w
+    .replace(/ph/g, 'f').replace(/gh/g, 'g').replace(/kh/g, 'k').replace(/sh/g, 's').replace(/ch/g, 'c')
+    .replace(/th/g, 't').replace(/bh/g, 'b').replace(/dh/g, 'd').replace(/q/g, 'k')
+    .replace(/c(?=[eiy])/g, 's').replace(/c/g, 'k').replace(/x/g, 'ks').replace(/z/g, 's').replace(/w/g, 'v')
+    .replace(/g(?=[eiy])/g, 'j').replace(/y/g, 'i')
+  const out = w[0] + w.slice(1).replace(/[aeiouh]/g, '')
+  return out.replace(/(.)\1+/g, '$1')
+}
+
 function tokenSim(a, b) {
   if (a === b) return 1
   if (a.length < 3 || b.length < 3) return 0
+  // Sounds the same ("german" / "jarman"): speech recognition spelled it its own way.
+  if (Math.min(a.length, b.length) >= 4 && soundKey(a).length >= 3 && soundKey(a) === soundKey(b)) return 0.85
   if (Math.min(a.length, b.length) >= 4 && (a.startsWith(b) || b.startsWith(a))) return 0.9
   if (a.length >= 4 && b.length >= 4) {
     const r = levRatio(a, b)

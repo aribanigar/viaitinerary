@@ -13,6 +13,7 @@ import { normTokens, normKey, significantTokens, levRatio, bestMatch } from './f
 import { placeKey, samePlace } from './places.js'
 import { tripDestination, GAZETTEER } from './geo.js'
 import { shortestPath } from './graph.js'
+import { cleanNameWords, DISFLUENCY, ROLE_WORDS, HONORIFICS } from './names.js'
 import { parseDayPlan, buildDayPlan, withoutClaimed } from './dayPlan.js'
 
 export { stripWakePhrase, hasWakePhrase }
@@ -116,6 +117,8 @@ const NAME_STOP = new Set([
   'this', 'that', 'ji', 'group', 'plan', 'vacation', 'as', 'under', 'name', 'named', 'next', 'coming',
   'week', 'weekend', 'month', 'tomorrow', 'today', 'tonight', 'between',
 ])
+// Words that can sit inside a spoken name without ending it (names.js strips them).
+const NAME_PAD = new Set([...DISFLUENCY, ...ROLE_WORDS, ...HONORIFICS, 'not', 'no', 'sorry', 'mean', 'meant', 'rather', 'correction', 'i'])
 // Region names the gazetteer knows ("ladakh", "kashmir"), for trips to a region the catalog lacks.
 const REGIONS = new Set(Object.values(GAZETTEER).map((g) => g[2].toLowerCase()))
 const NAME_REJECT = new Set([
@@ -231,15 +234,23 @@ export function matchHotel(words, city, cat) {
  * the closest catalog names (in that city first), or '' when nothing is close.
  */
 export function didYouMean(words, city, cat) {
-  const tokens = normTokens((Array.isArray(words) ? words : [words]).join(' '))
-  const pool = city ? cat.hotels.filter((h) => sameCity(h.city, city)) : []
-  const near = [
-    ...bestMatch(tokens, pool, { threshold: 0.35 }).runnersUp,
-    ...bestMatch(tokens, cat.hotels, { threshold: 0.4 }).runnersUp,
-  ].filter((h, i, a) => a.indexOf(h) === i)
-  if (!near.length && city && pool.length) near.push(...pool.slice(0, 2))
+  const near = closeHotels(words, city, cat)
   const label = (h) => (h.city && !sameCity(h.city, city) ? `${h.name} (${h.city})` : h.name)
   return near.length ? ` — did you mean ${near.slice(0, 2).map(label).join(' or ')}?` : ''
+}
+
+/** The catalog hotels closest to a misheard name (that city's first), up to 3. */
+export function closeHotels(words, city, cat) {
+  const tokens = normTokens((Array.isArray(words) ? words : [words]).join(' '))
+  const pool = city ? cat.hotels.filter((h) => sameCity(h.city, city)) : []
+  const inCity = bestMatch(tokens, pool, { threshold: 0.35 }).runnersUp
+  // Nothing close in that city: that city's own hotels come before look-alikes elsewhere.
+  const near = [
+    ...inCity,
+    ...(inCity.length ? [] : pool.slice(0, 2)),
+    ...bestMatch(tokens, cat.hotels, { threshold: 0.4 }).runnersUp,
+  ].filter((h, i, a) => a.indexOf(h) === i)
+  return near.slice(0, 3)
 }
 
 /** Resolve the raw words of one stay to a catalog hotel / city. */
@@ -531,6 +542,43 @@ function extractGuests(input) {
     g.heardAdults = true
   }
   return { ...g, s }
+}
+
+// "5 star", "budget hotel", "my usual": a preference, not a hotel's name.
+const PREFERENCE_WORDS = new Set([
+  'star', 'stars', 'budget', 'luxury', 'luxurious', 'cheap', 'cheapest', 'cheaper', 'premium', 'deluxe', 'best',
+  'good', 'nice', 'usual', 'any', 'standard', 'hotel', 'hotels', 'resort', 'resorts', 'property', 'room', 'rooms',
+  'one', 'a', 'the', 'some', 'decent', 'top', 'category', 'class', 'mid', 'range', 'economy', 'boutique', 'houseboat',
+])
+const namesAHotel = (text) => String(text || '').toLowerCase().split(/\s+/).some((w) => w && !/^\d+$/.test(w) && !PREFERENCE_WORDS.has(w))
+
+// ---- a hotel named inside one day of a day-by-day route ----
+const HOTEL_CUE = /\b(?:hotel|resort|houseboat|stay(?:ing)?\s+(?:at|in)|check\s*in\s+(?:at|to)|book)\s+(?:the\s+|at\s+)?([a-z][a-z' ]+)/
+const DAY_WORDS = new Set(['day', 'trip', 'arrival', 'arrive', 'departure', 'transfer', 'sightseeing', 'and', 'back', 'to', 'in', 'at', 'the', 'stay', 'hotel', 'night', 'nights', 'via', 'local', 'leisure', 'drive', 'then', 'from', 'excursion', 'resort'])
+
+/**
+ * "arrival in srinagar stay at lalit" → { hotel, heard: 'lalit' };
+ * "gulmarg hotel german residency" (not in the catalog) → { hotel: null, heard: 'german residency' }; else null.
+ */
+export function hotelInDay(body, cat) {
+  const w = String(body || '').toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/).filter(Boolean)
+  let best = null
+  for (let i = 0; i < w.length; i++) {
+    if (DAY_WORDS.has(w[i]) || cityLookup([w[i]], cat)) continue
+    for (let len = Math.min(4, w.length - i); len >= 1; len--) {
+      const span = w.slice(i, i + len)
+      if (span.some((x) => DAY_WORDS.has(x) && x !== 'the') || cityLookup(span, cat)) continue
+      const r = bestMatch(normTokens(span.join(' ')), cat.hotels)
+      if (r.confident && (!best || r.score > best.score)) best = { hotel: r.best, heard: span.join(' '), score: r.score }
+    }
+  }
+  if (best) return { hotel: best.hotel, heard: best.heard }
+  const cue = HOTEL_CUE.exec(w.join(' '))
+  if (cue) {
+    const heard = cue[1].split(' ').filter((x) => !DAY_WORDS.has(x) && !cityLookup([x], cat)).slice(0, 4).join(' ')
+    if (heard.length >= 3) return { hotel: null, heard }
+  }
+  return null
 }
 
 // ---- reading stays: the sentence as a shortest-path problem ----
@@ -1093,20 +1141,25 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     // "…for 4 pax, Mr Lone, arriving …": a title starts a name on its own.
     else if (['mr', 'mrs', 'ms', 'miss', 'mister', 'dr', 'shri', 'smt'].includes(t)) start = i + 1
     if (start < 0) continue
-    while (NAME_SKIP.has(at(start))) start++
-    const words = []
+    while (NAME_SKIP.has(at(start)) || NAME_PAD.has(at(start))) start++
+    // Collect generously — fillers, titles and self-corrections ride along
+    // ("Shah not customer", "Atif sorry Aamir Khan", "Atif Aslam sahab") —
+    // then names.js keeps only the name.
+    const heard = []
     let k = start
-    while (words.length < 4) {
+    while (heard.length < 8) {
       const w = at(k)
-      if (w === '|' || NAME_STOP.has(w) || !/^[a-z][a-z'.]*$/.test(w)) break
+      if (w === '|' || !/^[a-z][a-z'.]*$/.test(w)) break
+      if (!NAME_PAD.has(w.replace(/'s$/, '')) && NAME_STOP.has(w)) break
       // "trip for rahul gulmarg …": a catalog city ends the name.
-      if (words.length && w.length >= 4 && cityLookup([w], cat)) break
-      words.push(w)
+      if (heard.length && w.length >= 4 && cityLookup([w], cat)) break
+      heard.push(w)
       k++
     }
+    const words = cleanNameWords(heard)
     if (!words.length || NAME_REJECT.has(words[0]) || words[0].length < 2) continue
     if (cityLookup([words[0]], cat) || cityLookup(words, cat)) continue
-    clientName = titleCase(words.join(' ').replace(/\.+$/, '').replace(/'s$/, ''))
+    clientName = titleCase(words.join(' ').replace(/\.+$/, ''))
     mark(start, k - 1)
   }
 
@@ -1254,17 +1307,74 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     st.hotelName = ''
     delete st.cityConflict
   })
+  // Hotels the agent named that aren't in the catalog: never swapped for a
+  // pick of Ching's own — the Trip Draft asks ("did you mean …").
+  const unmatchedHotels = []
+  if (!dayRoutes) {
+    stayList.forEach((st) => {
+      if (st.hotelName && st.hotelId == null && namesAHotel(st.hotelName)) {
+        unmatchedHotels.push({ heard: st.hotelName, city: st.city || '', suggestions: closeHotels(String(st.heard || st.hotelName).toLowerCase().split(/\s+/), st.city, cat).map((h) => h.name) })
+      }
+    })
+  }
   let dayPlan = null
   if (dayRoutes) {
     // The day plan decides where they sleep; a hotel named for a city ("stay at
     // Heevan in Pahalgam") is kept for that city's nights.
-    dayPlan = buildDayPlan(dayRoutes, { nights: nightsTotal || (days > 1 ? days - 1 : 0) })
+    const planNights = nightsTotal || (days > 1 ? days - 1 : 0)
+    dayPlan = buildDayPlan(dayRoutes, { nights: planNights })
+    // Hotels named inside a day ("day 2 gulmarg hotel khyber"). One in the
+    // city they slept in the night before makes that day a day trip; one in
+    // the day's own city makes it a transfer — either way, no question.
+    const dayHotels = {}
+    for (const [d, e] of Object.entries(dayRoutes.entries)) {
+      const h = hotelInDay(e.body, cat)
+      if (h) dayHotels[d] = h
+    }
+    const outsideCue = HOTEL_CUE.exec(s.replace(/\|/g, ' '))
+    const outside = outsideCue ? hotelInDay(outsideCue[0], cat) : null
+    let replan = false
+    for (const q of dayPlan.questions) {
+      const hc = dayHotels[q.day]?.hotel?.city
+      if (hc && sameCity(hc, q.from)) dayRoutes.entries[q.day] = { kind: 'excursion', from: null, to: q.city, body: dayRoutes.entries[q.day].body }
+      else if (hc && sameCity(hc, q.city)) dayRoutes.entries[q.day] = { kind: 'move', from: null, to: q.city, body: dayRoutes.entries[q.day].body }
+      else continue
+      replan = true
+    }
+    if (replan) dayPlan = buildDayPlan(dayRoutes, { nights: planNights })
     stayList = dayPlan.stays.map((p) => {
+      // A hotel said for one of this stay's days, in this stay's city (or not found at all).
+      let fromDay = null
+      for (let d = p.fromDay; d < p.fromDay + p.nights && !fromDay; d++) {
+        const h = dayHotels[d]
+        if (h && (!h.hotel || sameCity(h.hotel.city, p.city))) fromDay = h
+      }
+      if (fromDay?.hotel) return { nights: p.nights, hotelId: fromDay.hotel.id, hotelName: fromDay.hotel.name, city: p.city, heard: fromDay.heard }
+      if (fromDay) {
+        unmatchedHotels.push({ heard: titleCase(fromDay.heard), city: p.city, suggestions: closeHotels(fromDay.heard.split(' '), p.city, cat).map((h) => h.name) })
+        return { nights: p.nights, hotelId: null, hotelName: titleCase(fromDay.heard), city: p.city, heard: fromDay.heard }
+      }
       const named = stayList.find((x) => x.hotelId && sameCity(x.city || cat.hotels.find((h) => h.id === x.hotelId)?.city, p.city))
-      return named ? { ...named, nights: p.nights, city: p.city } : { nights: p.nights, hotelId: null, hotelName: '', city: p.city, heard: p.city }
+      if (named) return { ...named, nights: p.nights, city: p.city }
+      // A hotel said outside the days ("…, day 4 departure, hotel lalit") goes to its own city's nights.
+      if (outside?.hotel && sameCity(outside.hotel.city, p.city)) return { nights: p.nights, hotelId: outside.hotel.id, hotelName: outside.hotel.name, city: p.city, heard: outside.heard }
+      return { nights: p.nights, hotelId: null, hotelName: '', city: p.city, heard: p.city }
     })
+    // A hotel named for a day where nobody sleeps (the departure day, or a day
+    // trip's own city) still has to be placed — ask.
+    for (const [d, h] of Object.entries(dayHotels)) {
+      const placed = stayList.some((x) => (h.hotel ? x.hotelId === h.hotel.id : x.hotelName === titleCase(h.heard)))
+      if (!placed) unmatchedHotels.push({ heard: titleCase(h.hotel ? h.hotel.name : h.heard), city: h.hotel?.city || '', day: +d, suggestions: h.hotel ? [] : closeHotels(h.heard.split(' '), '', cat).map((x) => x.name) })
+    }
     nightsTotal = dayPlan.nights
     days = dayPlan.nights + 1
+    if (!destinationName) {
+      const d = tripDestination(dayPlan.stays.map((x) => x.city), cat.destinations.map((x) => x.raw))
+      if (d) {
+        destinationId = d.id
+        destinationName = d.name
+      }
+    }
   }
   if (rangeNights && !dayPlan) {
     if (nightsTotal && nightsTotal !== rangeNights) {
@@ -1304,6 +1414,7 @@ export function parseChingCommand(text, catalog, { today } = {}) {
     // "… first" / "… at the end" put a stay somewhere on purpose: keep that order.
     stayOrderSaid: stays.some((x) => x.pos < -500 || x.pos > 500),
     dayPlan,
+    unmatchedHotels,
     vehicleId,
     vehicleName,
     vehicleQuantity,

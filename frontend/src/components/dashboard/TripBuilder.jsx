@@ -1713,6 +1713,15 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
               { before: live.base, label: plan.mode === "fill" ? "voice fill" : plan.changes.join("; ") },
             ];
           }
+          // An edit can answer the draft's questions ("day 2 day trip", "gulmarg hotel khyber").
+          if (plan.mode === "edit" && chingDraft.current && plan.answered) {
+            const meta = chingDraft.current.meta || {};
+            chingDraft.current.meta = {
+              ...meta,
+              answeredDays: [...(meta.answeredDays || []), ...plan.answered.days],
+              answeredHotels: meta.answeredHotels || plan.answered.hotels,
+            };
+          }
           // A new trip filled by voice is a draft until the agent confirms it.
           let draft = null;
           if (plan.mode === "fill" && plan.changes.length) {

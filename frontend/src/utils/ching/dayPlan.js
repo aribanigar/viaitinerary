@@ -24,6 +24,8 @@ const DEPART = /\b(?:depart(?:ure|ing|s)?|drop\s+(?:at|to|off)\s+(?:the\s+)?airp
 const ARRIVE = /\b(?:arriv(?:al|e|es|ing)|land(?:s|ing)?|pick\s*up|reach(?:es|ing)?\s+(?:at\s+)?(?:the\s+)?airport)\b/
 const EXCURSION = /\b(?:day\s*trip|excursion|half\s*day\s+trip|full\s*day\s+trip)\b|\band\s+(?:come\s+)?back\b|\breturn\s+(?:to|back)\b/
 const LEISURE = /\b(?:leisure|free\s+day|at\s+leisure|rest\s+day|relax(?:ing)?|day\s+off)\b/
+// Said = they sleep there: "stay in Gulmarg", "night in Gulmarg", "transfer to Gulmarg".
+const STAY_WORDS = /\b(?:stay(?:s|ing)?|night(?:s)?|overnight|sleep|check\s*-?\s*in|transfer|shift|move)\b/
 const MOVE_VERB = /\b(?:to|towards|drive|transfer|move|proceed|travel|shift|head|go(?:ing)?|via|then)\b/
 
 const words = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').split(/\s+/).filter(Boolean)
@@ -53,19 +55,24 @@ export function classifyDay(text, findCity) {
   const last = cities[cities.length - 1] || null
   if (DEPART.test(t)) return { kind: 'departure', from: cities.length > 1 ? first : null, to: last }
   if (ARRIVE.test(t)) return { kind: 'arrival', from: cities.length > 1 ? first : null, to: last }
-  if (cities.length && EXCURSION.test(t)) {
-    // "day trip to Sonamarg", "Srinagar to Sonamarg and back"
+  if (EXCURSION.test(t)) {
+    // "day trip to Sonamarg", "Srinagar to Sonamarg and back"; "day 2 is a day
+    // trip" (no city: the place that day already has).
     return { kind: 'excursion', from: cities.length > 1 ? first : null, to: last }
   }
   if (LEISURE.test(t)) return { kind: 'leisure', city: last }
   if (cities.length >= 2) return { kind: 'move', from: first, to: last }
+  // "day 2 transfer" / "day 2 stay there": they move to (and sleep in) that day's place.
+  if (!cities.length && STAY_WORDS.test(t)) return { kind: 'move', from: null, to: null }
+  if (cities.length === 1 && STAY_WORDS.test(t)) return { kind: 'move', from: null, to: first }
   if (cities.length === 1) {
     // "drive to Gulmarg" (move from wherever they are) vs "Gulmarg" / "Gulmarg sightseeing".
     const before = t.slice(0, t.indexOf(first.toLowerCase().split(' ')[0]))
     if (/\b(?:to|towards|drive|transfer|move|proceed|travel|shift|head|go)\s+(?:to\s+)?$/.test(before.trimEnd() + ' ')) {
       return { kind: 'move', from: null, to: first }
     }
-    return { kind: 'local', city: first }
+    // Just a city ("day 2 Gulmarg"): a day trip or a move? Only the agent knows.
+    return { kind: 'local', city: first, implicit: true }
   }
   return null
 }
@@ -97,6 +104,11 @@ export function parseDayPlan(text, findCity, { minMarkers = 2, edit = false } = 
     // Srinagar for Rahul, 2 adults"), so the client and guests aren't swallowed.
     const stop = tail.search(/[.;!?]|\|\s*\||\b(?:for|client|customer|starting|phone|mobile|email)\b|\b\d+\s+(?:adults?|kids?|child(?:ren)?|infants?|pax|people|persons|guests?)\b/)
     if (stop > 0 && i + 1 >= marks.length) end = mk.end + stop
+    // "… day 4 departure, hotel german residency": the departure day ends at the comma.
+    if (i + 1 >= marks.length) {
+      const comma = s.slice(mk.end, end).indexOf(',')
+      if (comma > 0 && DEPART.test(s.slice(mk.end, mk.end + comma))) end = mk.end + comma
+    }
     const body = s.slice(mk.end, end).replace(/^[\s,:-]*(?:is|will be|should be|=)?\s*/, '')
     if (edit) {
       // The clause around the marker: from the last comma / "and then" before it.
@@ -109,6 +121,7 @@ export function parseDayPlan(text, findCity, { minMarkers = 2, edit = false } = 
     if (edit && entry.kind === 'leisure' && !entry.city) return // "a leisure day" is SET_DAY_LEISURE's job
     const day = mk.day === 'last' ? 'last' : mk.day
     if (entry.kind === 'departure') departureDay = day
+    entry.body = body // the day's own words (a hotel named for that day is read from them)
     entries[day] = entry
     claimed.push([mk.at, end])
   })
@@ -160,6 +173,9 @@ export function buildDayPlan(parsed, { base = [], nights: wantNights = 0, firstC
   lastDay = Math.max(lastDay, 2)
 
   const days = []
+  // "day 2 Gulmarg" while sleeping in Srinagar: a day trip or a transfer? The
+  // plan assumes a transfer; the question goes back to the agent.
+  const questions = []
   let prev = firstCity || base[0]?.overnight || ''
   for (let d = 1; d <= lastDay; d += 1) {
     let e = entries[d] || null
@@ -179,7 +195,19 @@ export function buildDayPlan(parsed, { base = [], nights: wantNights = 0, firstC
       else e = { kind: 'local', city: b?.overnight || prev }
       changed = true
     }
+    // An answer with no city ("day 2 is a day trip") is about the place that day already has.
+    if ((e.kind === 'excursion' || e.kind === 'move') && !e.to) e = { ...e, to: b?.location || b?.overnight || prev }
+    if (e.kind === 'local' && e.implicit && d > 1 && !isLast && prev && e.city && e.city !== prev) {
+      const next = entries[d + 1]
+      const staysOn = next && (next.city === e.city || next.from === e.city)
+      // "day 3 Srinagar" right after a questioned "day 2 Gulmarg" is the way back: one question covers both.
+      const lastQ = questions[questions.length - 1]
+      const wayBack = lastQ && lastQ.day === d - 1 && lastQ.from === e.city
+      if (!staysOn && !wayBack) questions.push({ day: d, city: e.city, from: prev })
+    }
     if (d === 1 && (e.kind === 'local' || e.kind === 'move')) e = { kind: 'arrival', from: e.kind === 'move' ? e.from : null, to: e.to || e.city }
+    // A city that isn't where they slept last night: until the agent says "day trip", they move there.
+    else if (e.kind === 'local' && e.city && prev && e.city !== prev && !isLast) e = { kind: 'move', from: prev, to: e.city }
     let kind = e.kind
     let overnight = null
     let title
@@ -242,5 +270,10 @@ export function buildDayPlan(parsed, { base = [], nights: wantNights = 0, firstC
     if (last && last.city === d.overnight && last.fromDay + last.nights === d.day) last.nights += 1
     else stays.push({ city: d.overnight, nights: 1, fromDay: d.day })
   })
-  return { days, stays, nights: days.length - 1 }
+  return { days, stays, nights: days.length - 1, questions }
+}
+
+/** The question to put to the agent for an ambiguous day (see buildDayPlan). */
+export function dayQuestionText(q) {
+  return `Day ${q.day} – ${q.city}: a day trip from ${q.from} (hotel and cab back in ${q.from}), or a transfer to a ${q.city} hotel? Say "day ${q.day} day trip" or "day ${q.day} stay in ${q.city}".`
 }
