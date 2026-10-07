@@ -477,6 +477,36 @@ function extractGuests(input) {
     })
   }
   const KID = '(?:children|child|childs|kids|kid|kiddos?)'
+  const KIND = `(adults?|grown\\s*ups?|${KID}|infants?|babies|baby|toddlers?)`
+  const kindOf = (w) => (/^(?:adult|grown)/.test(w) ? 'adults' : /^(?:infant|bab|toddler)/.test(w) ? 'infants' : 'children')
+
+  // ---- semantic tags: how people describe a group, read before counting ----
+  // "where three are adults" / "out of which 2 are kids" / "2 of them kids" → "3 adults" / "2 kids"
+  s = s.replace(
+    new RegExp(`\\b(?:out\\s+of\\s+(?:which|whom|them)\\s+|of\\s+(?:which|whom)\\s+|where\\s+|among\\s+them\\s+|including\\s+)?(\\d{1,2})\\s+(?:of\\s+them\\s+)?(?:are|is|will\\s+be|being)\\s+${KIND}\\b`, 'g'),
+    (m, n, k) => ` ${n} ${k} `,
+  )
+  s = s.replace(new RegExp(`\\b(\\d{1,2})\\s+of\\s+them\\s+${KIND}\\b`, 'g'), (m, n, k) => ` ${n} ${k} `)
+  // "the rest are kids", "remaining children", "others adults", "all adults": the count is whatever is left of the total.
+  let rest = ''
+  s = s.replace(
+    new RegExp(`\\b(?:and\\s+)?(?:the\\s+)?(?:rest|remaining|others?|balance|all)(?:\\s+of\\s+them)?\\s+(?:are\\s+|is\\s+|will\\s+be\\s+|being\\s+)?${KIND}\\b`, 'g'),
+    (m, k) => {
+      rest = kindOf(k)
+      g.heardAny = true
+      return ' | '
+    },
+  )
+  // "one of them is 3 years old", "2 of them are under 5": ages for kids already counted.
+  const agesOfThem = []
+  s = s.replace(/\b(\d{1,2})\s+of\s+them\s+(?:is|are)\s+(?:(below|under|less\s+than)\s+)?(\d{1,2})(?:\s*(?:years?|yrs?)(?:\s+old)?)?\b/g, (m, n, below, age) => {
+    agesOfThem.push({ n: +n, infant: below ? +age <= 5 : +age < 5 })
+    return ' | '
+  })
+  // "a 4 year old kid", "one child of 4 years" → the age decides the band.
+  s = s.replace(new RegExp(`\\b(\\d{1,2})\\s+(\\d{1,2})\\s*(?:years?|yrs?)\\s*old\\s+${KID}\\b`, 'g'), (m, n, age) => ` ${n} ${+age < 5 ? 'infants' : 'kids'} `)
+  s = s.replace(new RegExp(`\\b(\\d{1,2})\\s+${KID}\\s+of\\s+(\\d{1,2})\\s*(?:years?|yrs?)(?:\\s+old)?\\b`, 'g'), (m, n, age) => ` ${n} ${+age < 5 ? 'infants' : 'kids'} `)
+
   // "2 kids aged 7 and 3", "two children ages 8, 4": each age decides the band
   // (under 5 → infant / free, 5–12 → child, 13+ → adult).
   take(
@@ -537,6 +567,20 @@ function extractGuests(input) {
     g.heardAny = true
     s = s.replace(/\b(?:for\s+)?(?:a\s+)?couple\b/, ' | ')
   }
+  // Solve the tags: "family of four, three adults, the rest kids" → 3 + 1.
+  if (rest && g.total) {
+    const left = Math.max(0, g.total - g.adults - g.children - g.infants)
+    g[rest] += left
+    if (rest === 'adults' && left) g.heardAdults = true
+  } else if (rest === 'adults' && !g.heardAdults && g.total) {
+    g.heardAdults = true
+  }
+  agesOfThem.forEach(({ n, infant }) => {
+    if (!infant) return
+    const k = Math.min(n, g.children)
+    g.children -= k
+    g.infants += k
+  })
   if (g.total && !g.heardAdults) {
     g.adults = Math.max(1, g.total - g.children - g.infants)
     g.heardAdults = true

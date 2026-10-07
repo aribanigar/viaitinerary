@@ -1728,8 +1728,8 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
             chingDraft.current = { meta: plan.draftMeta || {}, base: live.base };
             draft = buildTripDraft(plan.snapshot, chingDraft.current.meta);
           }
-          const { mode, changes, warnings, unrecognized, commands } = plan;
-          return { mode, changes, warnings, unrecognized, commands, draft, pending: livePending(plan.snapshot) };
+          const { mode, changes, warnings, unrecognized, commands, cancelled } = plan;
+          return { mode, changes, warnings, unrecognized, commands, draft, cancelled, pending: livePending(plan.snapshot) };
         },
         cancel: () => {
           const live = chingLive.current;

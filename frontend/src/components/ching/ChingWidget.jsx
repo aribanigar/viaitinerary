@@ -541,6 +541,11 @@ export default function ChingWidget() {
       // An edit while a draft waits: refresh the card with the corrected trip.
       const pendingDraft = safe(() => ed.draft?.(), null);
       if (pendingDraft) setTripDraft((d) => (d ? { ...d, draft: pendingDraft } : { draft: pendingDraft, commands: [] }));
+      // "… no stop", "cancel", "never mind": the trip is left as it was.
+      if (res.cancelled) {
+        respond("Okay, stopped — nothing was changed.");
+        return;
+      }
       if (!changes.length && !commands.length) {
         // Understood but nothing to change ("already in the inclusions", "no such hotel"):
         // say why instead of pretending not to understand.

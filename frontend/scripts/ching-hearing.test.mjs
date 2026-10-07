@@ -9,6 +9,7 @@ import { vocabularyFrom, pickAlternative } from '../src/utils/ching/vocabulary.j
 import { parseChingCommand } from '../src/utils/ching/parseCommand.js'
 import { planLive } from '../src/utils/ching/liveFill.js'
 import { buildTripDraft } from '../src/utils/ching/tripDraft.js'
+import { repairSpeech } from '../src/utils/ching/repair.js'
 
 let pass = 0
 let fail = 0
@@ -142,6 +143,51 @@ test('"5 star" / "budget hotel" are preferences, not hotel names', () => {
 test('a spoken star rating picks by the rating saved on the hotel', () => {
   const f = fill('trip for Shah, phone 9876543210, 2 adults from 10 nov, 2 nights gulmarg 4 star, 1 night srinagar 3 star')
   assert.deepEqual(f.snapshot.accommodations.map((a) => a.hotelId), [11, 8])
+})
+
+// ---- Guests: semantic tags (total, "the rest are …", "N of them are kids", ages) ----
+for (const [said, want] of [
+  ['build an itinerary for a family of four where three are adults and the rest are kids', [3, 1, 0]],
+  ['itinerary for family of four, three adults and rest kids', [3, 1, 0]],
+  ['6 people out of which 2 are kids', [4, 2, 0]],
+  ['group of 10, 8 adults rest children', [8, 2, 0]],
+  ['5 members, 2 of them kids', [3, 2, 0]],
+  ['3 adults and 2 kids one of them is 3 years old', [3, 1, 1]],
+  ['husband wife and one child of 4 years', [2, 0, 1]],
+  ['family of four all adults', [4, 0, 0]],
+  ['couple with 2 kids aged 8 and 3', [2, 1, 1]],
+]) {
+  test(`guests: "${said}" → ${want.join('/')}`, () => {
+    const c = parse(`${said} 3 nights in srinagar`)
+    assert.deepEqual([c.adults, c.children, c.infants], want)
+  })
+}
+
+// ---- Taking things back while speaking ----
+for (const [said, want] of [
+  ['trip for Rahul 3 nights in srinagar, no wait, 4 nights', 'trip for Rahul 4 nights in srinagar'],
+  ['trip for Rahul starting 10 november sorry 12 november 2 adults', 'trip for Rahul starting 12 november 2 adults'],
+  ['trip for Rahul, no, for Amit, 3 nights', 'trip for Amit, 3 nights'],
+  ['2 nights in gulmarg hotel lalit actually hotel khyber', '2 nights in gulmarg hotel khyber'],
+  ['trip for Kiran 2 adults 3 nights no sorry 4 nights from 1st december', 'trip for Kiran 2 adults 4 nights from 1st december'],
+  ['trip for Rahul 3 nights scratch that trip for Amit 2 nights in gulmarg', 'trip for Amit 2 nights in gulmarg'],
+  ['trip for Rahul 3 nights no meals', 'trip for Rahul 3 nights no meals'],
+  ['trip for Rahul with no breakfast', 'trip for Rahul with no breakfast'],
+]) {
+  test(`repair: "${said}"`, () => assert.equal(repairSpeech(said).text, want))
+}
+test('"… no stop", "cancel", "never mind" apply nothing', () => {
+  for (const t of ['trip for Rahul 3 nights in srinagar no stop', 'make gulmarg 2 nights cancel', 'add shikara ride never mind']) {
+    assert.equal(repairSpeech(t).cancelled, true, t)
+  }
+  const r = planLive(blank, 'trip for Rahul 3 nights in srinagar no stop', { catalog, today })
+  assert.equal(r.cancelled, true)
+  assert.deepEqual(r.snapshot, blank)
+})
+test('"the name is different, it is Amit Shah" swaps the name; without a new name Ching asks', () => {
+  assert.equal(parse(repairSpeech('trip for Rahul, okay the name is different, it is Amit Shah, 3 nights').text).clientName, 'Amit Shah')
+  const r = planLive(blank, 'trip for Rahul the name is wrong 3 nights in srinagar', { catalog, today })
+  assert.match(r.warnings[0], /What's the client's name\?/)
 })
 
 console.log(`\n${pass} passed, ${fail} failed`)

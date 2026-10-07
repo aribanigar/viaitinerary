@@ -11,6 +11,7 @@ import { parseChingCommand, validateChingCommand } from "./parseCommand.js";
 import { parseChingEdit } from "./parseEdit.js";
 import { buildEditContext, applyEditActions } from "./editTrip.js";
 import { applyCorrections } from "./corrections.js";
+import { repairSpeech } from "./repair.js";
 import { buildChingTripParts } from "./buildTrip.js";
 import { startingInclusions } from "./inclusions.js";
 import { placeKey } from "./places.js";
@@ -306,18 +307,27 @@ export function planLive(base, text, { catalog, settings, today } = {}) {
     standard: catalog?.standard || {},
   };
   const opts = { catalog: cat, settings: settings || {}, today };
-  // "3 nights no sorry 4 nights", "grand mumtaz actually make it lalit".
-  text = applyCorrections(text, cat);
-  if (!String(text || "").trim()) {
-    return { mode: isBlankTrip(base) ? "fill" : "edit", snapshot: base, changes: [], warnings: [], unrecognized: [], commands: [] };
+  // Taken back while speaking (repair.js): "… no stop" applies nothing,
+  // "scratch that …" keeps what follows, "3 nights in Srinagar, no wait, 4
+  // nights" and "the name is wrong, it's Amit" replace in place.
+  const repaired = repairSpeech(text);
+  if (repaired.cancelled) {
+    return { mode: isBlankTrip(base) ? "fill" : "edit", snapshot: base, changes: [], warnings: [], unrecognized: [], commands: [], cancelled: true };
   }
-  if (!isBlankTrip(base)) return planEdit(base, text, opts);
-  const fill = planFill(base, text, opts);
+  const ask = repaired.ask === "clientName" ? ["What's the client's name? Say “the client is …”."] : [];
+  // "3 nights no sorry 4 nights", "grand mumtaz actually make it lalit".
+  text = applyCorrections(repaired.text, cat);
+  if (!String(text || "").trim()) {
+    return { mode: isBlankTrip(base) ? "fill" : "edit", snapshot: base, changes: [], warnings: ask, unrecognized: [], commands: [] };
+  }
+  const withAsk = (plan) => (ask.length ? { ...plan, warnings: [...ask, ...(plan.warnings || [])] } : plan);
+  if (!isBlankTrip(base)) return withAsk(planEdit(base, text, opts));
+  const fill = withAsk(planFill(base, text, opts));
   // A trip with days but no hotels yet: only a real trip request refills it —
   // "day 3 Gulmarg to Pahalgam" or "add Shikara on day 2" edit those days.
   const c = fill.command || {};
   const isRequest = c.intent === "create_trip" && (Number(c.nights) > 0 || (c.stays || []).length > 0 || !!c.dayPlan);
-  if ((base.itinerary || []).length && (!isRequest || isAddRequest(text))) return planEdit(base, text, opts);
+  if ((base.itinerary || []).length && (!isRequest || isAddRequest(text))) return withAsk(planEdit(base, text, opts));
   const { command, ...rest } = fill; // eslint-disable-line no-unused-vars
   return rest;
 }
