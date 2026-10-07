@@ -99,6 +99,9 @@ export function extractDate(s, todayInput) {
     }
   })
 
+  // Spoken all-numeric with a full year: "10 11 2026" (day first)
+  each(/\b(\d{1,2})\s+(\d{1,2})\s+(20\d{2})\b/g, (m) => add(m, makeDate(+m[3], +m[2], +m[1])))
+
   // 10 november 2026 / 10th of nov / 10-nov-26
   each(
     new RegExp(
@@ -160,4 +163,60 @@ export function extractDate(s, todayInput) {
   const notes = [...best.notes]
   if (best.date < today) notes.push(`Start date ${toIsoDate(best.date)} is in the past`)
   return { iso: toIsoDate(best.date), index: best.index, length: best.length, notes }
+}
+
+const ORD = '(?:st|nd|rd|th)?'
+const RANGE_TO = '(?:to|till|until|upto|up\\s+to|through|thru|-|–)'
+const RANGE_RES = [
+  // (from) 10th (of november) to 14th (of) november (2026)
+  new RegExp(
+    `\\b(?:(?:from|between)\\s+(?:the\\s+)?)?(\\d{1,2})${ORD}(?:\\s+(?:of\\s+)?(${MONTH_ALT}))?\\s*(?:${RANGE_TO}|(?<=between\\s+\\S+(?:\\s+\\S+){0,2}\\s+)and)\\s*(?:the\\s+)?(\\d{1,2})${ORD}\\s+(?:of\\s+)?(${MONTH_ALT})\\b(?:[\\s,]*(\\d{4}))?`,
+    'g',
+  ),
+  // (from) november 10 to (november) 14 (2026)
+  new RegExp(
+    `\\b(?:(?:from|between)\\s+)?(${MONTH_ALT})\\s+(?:the\\s+)?(\\d{1,2})${ORD}\\s*(?:${RANGE_TO}|and)\\s*(?:(${MONTH_ALT})\\s+)?(?:the\\s+)?(\\d{1,2})${ORD}\\b(?:[\\s,]*(\\d{4}))?`,
+    'g',
+  ),
+]
+
+/**
+ * A stay window: "from 10th to 14th november", "10 nov to 14 nov 2026",
+ * "november 10 to 14", "between 10 and 14 november". The nights are the gap.
+ * Returns { iso, endIso, nights, index, length, notes } or null.
+ */
+export function extractDateRange(s, todayInput) {
+  const today = toLocalMidnight(todayInput)
+  for (const [k, re] of RANGE_RES.entries()) {
+    re.lastIndex = 0
+    const m = re.exec(s)
+    if (!m) continue
+    let d1, m1, d2, m2, y
+    if (k === 0) {
+      ;[d1, m1, d2, m2, y] = [+m[1], m[2], +m[3], m[4], m[5]]
+      if (/\band\s/.test(m[0]) && !/\bbetween\b/.test(m[0])) continue
+    } else {
+      ;[m1, d1, m2, d2, y] = [m[1], +m[2], m[3], +m[4], m[5]]
+      if (/\band\s/.test(m[0]) && !/\bbetween\b/.test(m[0])) continue
+    }
+    const mo2 = MONTHS[(m2 || m1).slice(0, 3)]
+    let mo1 = m1 ? MONTHS[m1.slice(0, 3)] : mo2
+    if (!m1 && d1 > d2) mo1 = mo2 === 1 ? 12 : mo2 - 1 // "28th to 3rd december" → 28 Nov
+    let start
+    if (y) {
+      const yr = fullYear(y)
+      start = makeDate(mo1 > mo2 ? yr - 1 : yr, mo1, d1)
+    } else {
+      start = nextOccurrence(mo1, d1, today)
+    }
+    if (!start) continue
+    let end = makeDate(start.getFullYear(), mo2, d2)
+    if (end && end <= start) end = makeDate(start.getFullYear() + 1, mo2, d2)
+    if (!end) continue
+    const nights = Math.round((end - start) / 86400000)
+    if (nights < 1 || nights > 60) continue
+    const notes = start < today ? [`Start date ${toIsoDate(start)} is in the past`] : []
+    return { iso: toIsoDate(start), endIso: toIsoDate(end), nights, index: m.index, length: m[0].length, notes }
+  }
+  return null
 }

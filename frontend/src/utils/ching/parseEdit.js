@@ -17,7 +17,7 @@ import { parseInclusionClause } from './inclusions.js'
 import { samePlace } from './places.js'
 import { parseDayPlan, withoutClaimed } from './dayPlan.js'
 import { parseAmount } from './pricing.js'
-import { prepareCatalog, cityLookup, sameCity, matchHotel, extractMealPlan, extractEmail, extractPhone } from './parseCommand.js'
+import { prepareCatalog, cityLookup, sameCity, matchHotel, didYouMean, extractMealPlan, extractEmail, extractPhone } from './parseCommand.js'
 
 const COMMAND_TYPES = new Set([
   'EXPORT_PDF', 'EXPORT_EXCEL', 'EMAIL_ME', 'SAVE', 'SEND_PROPOSAL', 'SEND_PAYMENT_LINK', 'SEND_REMINDER',
@@ -750,7 +750,7 @@ function hAddHotel(c, toks, env) {
       const h = matchHotel(hotelWords, a.city || '', env.cat)
       if (h.hotel) Object.assign(a, { hotelId: h.hotel.id, hotelName: h.hotel.name, city: a.city || h.hotel.city })
       else if (nounSaid) {
-        env.warnings.push(`Couldn't find "${hotelWords.join(' ')}" in your hotels`)
+        env.warnings.push(`Couldn't find "${hotelWords.join(' ')}" in your hotels${didYouMean(hotelWords, '', env.cat)}`)
         return []
       } else return null
     }
@@ -816,7 +816,7 @@ function parseAddStay(c, nights, env) {
       if (h.hotel.city && !sameCity(h.hotel.city, city)) env.warnings.push(`${h.hotel.name} is in ${h.hotel.city}, not ${city}`)
     } else {
       action.hotelName = titleCase(hotelText.join(' '))
-      env.warnings.push(`Couldn't find "${hotelText.join(' ')}" in your hotels — pick one for ${city}`)
+      env.warnings.push(`Couldn't find "${hotelText.join(' ')}" in your hotels${didYouMean(hotelText, city, env.cat) || ` — pick one for ${city}`}`)
     }
   } else {
     env.warnings.push(`No hotel named for the new ${plural(nights, 'night')} in ${city} — pick one`)
@@ -964,6 +964,22 @@ function hHotel(c, toks, env) {
       Y = `${bare[1]} for ${bare[2]}`
     }
   }
+  // Terse, no preposition: "srinagar radisson" — a hotel for a city already on the trip.
+  if (!m && !/\d/.test(c)) {
+    const ws = toks.filter((w) => !['hotel', 'the'].includes(w))
+    for (let k = 1; k <= 2 && !m && ws.length > k; k++) {
+      for (const [cw, hw] of [[ws.slice(0, k), ws.slice(k)], [ws.slice(-k), ws.slice(0, -k)]]) {
+        const city = cityLookup(cw, cat)
+        if (!city || !S.stays.some((st) => sameCity(st.city, city))) continue
+        const h = matchHotel(hw, city, cat)
+        if (h.hotel && sameCity(h.hotel.city, city)) {
+          m = true
+          Y = `${hw.join(' ')} in ${cw.join(' ')}`
+          break
+        }
+      }
+    }
+  }
   if (!m || !Y) return null
   Y = Y.replace(/\s+instead$/, '').trim()
   let cityHint = ''
@@ -992,7 +1008,7 @@ function hHotel(c, toks, env) {
   const h = matchHotel(toksOf(Y), targetStay?.city || cityHint || '', cat)
   if (!h.hotel) {
     if (!targetStay) return null
-    env.warnings.push(`Couldn't find "${Y}" in your hotels`)
+    env.warnings.push(`Couldn't find "${Y}" in your hotels${didYouMean(toksOf(Y), targetStay.city || cityHint || '', cat)}`)
     return []
   }
   let stay = targetStay
@@ -1280,7 +1296,44 @@ function hInclusions(c) {
   return parseInclusionClause(c)
 }
 
+// "sort the hotels", "arrange by route", "best route", "start with Srinagar", "Pahalgam first"
+const SORT_VERB = /\b(?:sort|arrange|re-?arrange|re-?order|order|optimi[sz]e|organi[sz]e|fix)\b/
+const SORT_WHAT = /\b(?:hotels?|stays?|route|routes|cities|order|sequence)\b/
+function hSort(c, toks, env) {
+  const first = (words) => findCity(words, env.S, env.cat)?.name || cityLookup(words, env.cat)
+  let m = /^(?:start|begin|starting|beginning)\s+(?:the\s+trip\s+)?(?:with|from|in|at)\s+(.+)$/.exec(c)
+  if (m && !/\d/.test(m[1])) {
+    const city = first(toksOf(m[1]))
+    if (city) return [{ type: 'SORT_STAYS', first: city }]
+  }
+  m = /^(?:go\s+to\s+|visit\s+|do\s+)?(.+?)\s+first$/.exec(c)
+  if (m) {
+    const city = first(toksOf(m[1]))
+    if (city) return [{ type: 'SORT_STAYS', first: city }]
+  }
+  if (/\b(?:best|shortest|optimal|logical|proper|right|correct)\s+(?:route|order|sequence)\b|\broute\s*wise\b|\bby\s+(?:route|distance)\b/.test(c)) return [{ type: 'SORT_STAYS' }]
+  if (SORT_VERB.test(c) && SORT_WHAT.test(c) && !/\b(?:day|date|price|activity|activities|cheaper|cheap)\b/.test(c)) return [{ type: 'SORT_STAYS' }]
+  return null
+}
+
+// "pahalgam first then gulmarg (then srinagar)": an explicit order for the hotels.
+function orderSequence(s, S, cat) {
+  if (!/\bfirst\b/.test(s) || !/\b(?:then|after\s+that|followed\s+by|next)\b/.test(s)) return null
+  const parts = s
+    .split(/\b(?:first|then|after\s+that|followed\s+by|next|and|finally)\b|[,.]/)
+    .map((p) => p.replace(/\b(?:go(?:ing)?\s+to|visit|do|we|will|should|the|please|stay\s+in|start\s+(?:with|in|from))\b/g, ' ').trim())
+    .filter(Boolean)
+  const cities = []
+  for (const p of parts) {
+    const f = findCity(toksOf(p), S, cat)
+    if (!f || toksOf(p).length > f.len + 1) return null
+    if (!cities.some((c) => sameCity(c, f.name))) cities.push(f.name)
+  }
+  return cities.length >= 2 ? cities : null
+}
+
 const HANDLERS = [
+  hSort,
   hInclusions, hCommands, hExtraBeds, hAddHotel, hAddCab, hHotelRate, hTargetTotal, hMargin, hGst, hClientName, hHotelWhen, hMeals, hRooms, hVehicle, hRemoveActivity, hDays, hDate, hNights, hHotel,
   hAddActivity, hGuests,
 ]
@@ -1411,6 +1464,13 @@ export function parseChingEdit(text, context, catalog, { today, force = false } 
     .replace(/\bday\s+(\d{1,2})(?:'s|s)\b/g, 'day $1')
     .replace(/\blast\s+day\b/g, S.days.length ? `day ${S.days.length}` : 'last day')
     .replace(/\s+/g, ' ')
+
+  const sequence = orderSequence(s, S, cat)
+  if (sequence) {
+    result.actions.push({ type: 'SORT_STAYS', sequence })
+    result.intent = 'edit'
+    return result
+  }
 
   let handled = false
   // A day-by-day route ("day 3 Gulmarg to Pahalgam", "day 6 departure") → one

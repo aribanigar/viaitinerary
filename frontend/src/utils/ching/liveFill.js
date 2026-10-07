@@ -14,6 +14,7 @@ import { applyCorrections } from "./corrections.js";
 import { buildChingTripParts } from "./buildTrip.js";
 import { startingInclusions } from "./inclusions.js";
 import { placeKey } from "./places.js";
+import { bestStayOrder } from "./route.js";
 
 // Commands run once, when the agent stops speaking — never live.
 export const COMMAND_TYPES = new Set([
@@ -43,6 +44,7 @@ const FILL_EXTRAS = new Set([
   "SET_TARGET_TOTAL",
   "SET_MARGIN_AMOUNT",
   "SET_HOTEL_RATE",
+  "SORT_STAYS",
 ]);
 // Price goals ("quote 45000", "margin ₹10,000") are worked out on the whole
 // trip, so they run after everything else said in the same breath.
@@ -222,6 +224,13 @@ function planFill(base, rawText, { catalog, settings, today }) {
     commands = actions.filter((a) => COMMAND_TYPES.has(a?.type));
     // A single "day N …" route rides along; several were already planned by the fill.
     const extras = actions.filter((a) => FILL_EXTRAS.has(a?.type) || (a?.type === "SET_DAY_ROUTES" && !command.dayPlan));
+    // Not asked to sort, but the hotels were said in a roundabout order: say so.
+    if (!extras.some((a) => a.type === "SORT_STAYS") && !command.dayPlan && parts.accommodations.length > 1) {
+      const route = bestStayOrder(parts.accommodations, { hotels: catalog.hotels });
+      if (route.ok && route.changed && route.spokenKm - route.km >= Math.max(30, route.km * 0.1)) {
+        warnings.push(`Shorter route: ${route.path.join(" → ")} saves ~${route.spokenKm - route.km} km — say "sort the hotels"`);
+      }
+    }
     if (extras.length) {
       const res = applyEditActions(snapshot, goalsLast(extras), { catalog, settings });
       snapshot = res.snapshot;
