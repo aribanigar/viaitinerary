@@ -3,6 +3,7 @@
 // the widget acts on what `understandAssistant` returns.
 
 import { chatReply } from "./chat.js";
+import { smalltalkIntent, personaLine } from "./persona.js";
 import { understandHotelSearch } from "./hotelQuery.js";
 
 const clean = (t) =>
@@ -107,7 +108,7 @@ export function understandAssistant(text, { inBuilder = false, chat = null } = {
   // Manners first: greetings, "how are you" (asked back), the agent's answer,
   // thanks, goodbyes — `chat` is what Ching last asked in small talk.
   const talk = chatReply(t, chat);
-  if (talk) return { type: "smalltalk", reply: talk.reply, topic: talk.topic };
+  if (talk) return { type: "smalltalk", reply: talk.reply, topic: talk.topic, intent: smalltalkIntent(t) };
 
   // Hotel search: "find a 4 star in Srinagar under 6000 with breakfast",
   // "use the cheapest available 4-star with breakfast", "use the first one".
@@ -184,7 +185,15 @@ export function understandAssistant(text, { inBuilder = false, chat = null } = {
   }
 
   const reply = smallTalk(t);
-  if (reply) return { type: "smalltalk", reply };
+  if (reply) return { type: "smalltalk", reply, intent: smalltalkIntent(t) };
+  // Ching's personality (persona.js): a tired agent, a roast, chai, a client
+  // bargaining… — only when the sentence carries nothing about a trip, so
+  // "add tea garden visit on day 2" still goes to the trip editor.
+  const intent = smalltalkIntent(t);
+  if (intent && !TRIP_WORDS.test(t)) {
+    const line = personaLine(intent, "en");
+    if (line) return { type: "smalltalk", reply: line.text, intent };
+  }
   return null;
 }
 
@@ -448,11 +457,14 @@ const SMALLTALK = [
   [/\b(?:are you better than|better than) (?:alexa|siri|google)\b/, () =>
     "Alexa plays music, Siri sets alarms. I build Kashmir itineraries with GST. I'll let you decide."],
   [/^(?:bye|goodbye|good night|see you|later)\b/, () => pick(["Bye! Go sell some holidays.", "Good night! I'll keep the trips warm."])],
-  [/\b(?:weather)\b/, () => "I don't have a weather feed yet — but if it's Kashmir, pack a jacket. Always pack a jacket."],
+  // Not "add a weather buffer day" — that's an edit.
+  [/^(?!.*\b(?:add|day|days|night|nights|buffer|make|change|remove|trip)\b).*\bweather\b/, () => "I don't have a weather feed yet — but if it's Kashmir, pack a jacket. Always pack a jacket."],
   [/^(?:what time is it|time)\b/, () => `It's ${new Date().toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}.`],
   [/^(?:what(?:'s| is) (?:the )?date|today'?s date)\b/, () =>
     `Today is ${new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}.`],
 ];
+
+const TRIP_WORDS = /\d|\b(?:day|days|night|nights|hotel|hotels|add|remove|change|make|replace|trip|itinerary|book|cab|car|adults?|kids?|rooms?|margin|gst|price|total|from|for)\b/;
 
 function smallTalk(t) {
   for (const [re, fn] of SMALLTALK) if (re.test(t)) return fn();

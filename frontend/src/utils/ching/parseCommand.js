@@ -490,7 +490,7 @@ function extractGuests(input) {
   // "the rest are kids", "remaining children", "others adults", "all adults": the count is whatever is left of the total.
   let rest = ''
   s = s.replace(
-    new RegExp(`\\b(?:and\\s+)?(?:the\\s+)?(?:rest|remaining|others?|balance|all)(?:\\s+of\\s+them)?\\s+(?:are\\s+|is\\s+|will\\s+be\\s+|being\\s+)?${KIND}\\b`, 'g'),
+    new RegExp(`\\b(?:and\\s+)?(?:the\\s+)?(?:rest|remaining|others?|balance|all|baaki|baki|baqi|bache\\s+hue)(?:\\s+of\\s+them)?\\s+(?:are\\s+|is\\s+|will\\s+be\\s+|being\\s+)?${KIND}\\b`, 'g'),
     (m, k) => {
       rest = kindOf(k)
       g.heardAny = true

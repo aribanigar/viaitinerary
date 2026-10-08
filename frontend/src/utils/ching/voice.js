@@ -83,7 +83,9 @@ function speakUrdu(urdu, english, resolve) {
   // Android Chrome often lists no voices at all (they load late): then ask
   // for Urdu by language and let the phone's own speech engine pick it.
   const listed = (window.speechSynthesis.getVoices() || []).length > 0;
-  const ur = voiceFor("ur") || (listed ? null : { lang: "ur-PK", unlisted: true });
+  // A Hindi turn (prefer "hi") reads the Devanagari with a Hindi voice first.
+  const preferHi = urdu.prefer === "hi" && voiceFor("hi");
+  const ur = preferHi ? null : voiceFor("ur") || (listed ? null : { lang: "ur-PK", unlisted: true });
   const hi = ur ? null : voiceFor("hi");
   if (!ur && !hi) {
     speakText(english, resolve);

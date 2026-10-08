@@ -394,7 +394,7 @@ export function vocabularyOf(catalog = {}) {
   return { words: [...words], phrases, kinds }
 }
 
-function snapWord(heard, list, { loose = false } = {}) {
+function snapWord(heard, list, { loose = false, urdu = false } = {}) {
   const hs = skeletons(heard)
   const hp = phonetic(heard.replace(/w/g, 'o'))
   let best = null
@@ -402,7 +402,9 @@ function snapWord(heard, list, { loose = false } = {}) {
     const sk = skeleton(w)
     const wp = phonetic(w)
     const r = ratio(hp, wp)
-    const same = hs.includes(sk) && (sk.length >= 3 || r >= 0.75 || (loose && sk.length >= 1 && r >= 0.5))
+    // Urdu script drops short vowels: "للت" (llt) is "lalit" — an exact 2-consonant
+    // skeleton is enough there, for the agency's own names.
+    const same = hs.includes(sk) && (sk.length >= 3 || r >= 0.75 || (loose && sk.length >= 1 && r >= 0.5) || (urdu && sk.length === 2 && heard.length >= 3))
     if (!same && !(r >= 0.86 && wp.length >= 5)) continue
     if (!best || r > best.r) best = { w, r }
   }
@@ -504,7 +506,7 @@ export function toEnglishCommand(text, catalog = null) {
   }
   tokens.forEach((t) => {
     if (typeof t !== 'object' || t.snapped) return
-    const hit = snapWord(t.lat, vocab.words) || snapWord(t.lat, ENGLISH) || (script === 'urdu' ? snapWord(t.lat, NAMES, { loose: true }) : null)
+    const hit = snapWord(t.lat, vocab.words, { urdu: script === 'urdu' }) || snapWord(t.lat, ENGLISH) || (script === 'urdu' ? snapWord(t.lat, NAMES, { loose: true }) : null)
     if (hit) Object.assign(t, { lat: hit, snapped: true, known: vocab.words.includes(hit) })
   })
   const known = vocab.kinds || new Map()
@@ -554,6 +556,12 @@ function reorder(words, known = new Map()) {
     if (out[i] !== 'SE') continue
     const prev = out[i - 1] || ''
     const next = out[i + 1] || ''
+    // "12 nov se 14 nov tak" / "12 se 14 november": a date range.
+    const month = (w) => MONTHS.test(w) || /^(?:jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)$/.test(w)
+    if ((isNum(prev) || month(prev)) && isNum(next) && month(out[i + 2] || '')) {
+      out[i] = 'to'
+      continue
+    }
     out[i] = isNum(prev) || MONTHS.test(prev) || UNIT.test(prev) || !next || isNum(next) || isVerb(next) || next === '@' ? '@' : 'to'
   }
   // "श्रीनगर में 2 रात ललित …" (in Srinagar, 2 nights, Lalit …) → "2 nights in srinagar at lalit …";

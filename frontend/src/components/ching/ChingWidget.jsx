@@ -14,6 +14,7 @@ import lazyWithReload, {
 import { stripFillers } from "../../utils/ching/speechClean.js";
 import { toEnglishCommand, scriptOf } from "../../utils/ching/language.js";
 import { urduReply } from "../../utils/ching/replyUrdu.js";
+import { replyStyle, personaLine, hinglishReply } from "../../utils/ching/persona.js";
 import useSpeech, { primeAudio } from "./useSpeech";
 import { fetchTrips } from "../../api/trips";
 import {
@@ -189,10 +190,27 @@ export default function ChingWidget() {
   const urduTurn = useRef(false);
   const lastPendingSaid = useRef("");
   const chatTopic = useRef(null);
+  // How the agent spoke this turn: "en" | "hinglish" | "hi" | "ur" (persona.js).
+  const styleRef = useRef("en");
   const noteLanguage = useCallback((raw) => {
     urduTurn.current = scriptOf(raw) === "urdu" || listenLangRef.current === "ur-PK";
+    styleRef.current = urduTurn.current ? "ur" : replyStyle(raw, listenLangRef.current);
   }, []);
-  const localized = useCallback((text) => (urduTurn.current && text ? urduReply(text) : null), []);
+  // Urdu turns answer in Urdu; Hindi turns in Hindi (the same table's Devanagari side).
+  const localized = useCallback((text) => {
+    if (!text) return null;
+    if (urduTurn.current) return urduReply(text);
+    if (styleRef.current === "hi") {
+      const r = urduReply(text);
+      if (!r.parts.some((p) => p.hi)) return null;
+      return { text: r.parts.map((p) => p.hi || p.en).join(" "), parts: r.parts, prefer: "hi" };
+    }
+    if (styleRef.current === "hinglish") {
+      const h = hinglishReply(text);
+      return h !== text ? { text: h, parts: null } : null;
+    }
+    return null;
+  }, []);
   const [status, setStatus] = useState("idle"); // idle | running (commands)
   const [init, setInit] = useState(null);
   const [notice, setNotice] = useState(null); // { kind: unknown|no-editor|error, text, unrecognized? }
@@ -213,7 +231,9 @@ export default function ChingWidget() {
     (text) => {
       if (!text) return;
       const urdu = localized(text);
-      speak(text, { urdu });
+      // Hinglish has no separate voice parts: speak the Hinglish words themselves.
+      if (urdu && !urdu.parts?.length) speak(urdu.text);
+      else speak(text, { urdu });
       chingSaid("ching", urdu?.text || text);
     },
     [localized],
@@ -226,6 +246,28 @@ export default function ChingWidget() {
     },
     [say, localized],
   );
+  // A persona line (persona.js) already in the agent's language: shown and spoken as is.
+  const respondLine = useCallback((line, fallback = "") => {
+    if (!line?.text) {
+      if (fallback) respond(fallback);
+      return;
+    }
+    setOutcome(null);
+    setNotice({ kind: "reply", text: line.text });
+    speak(line.text, { urdu: line.parts ? { parts: line.parts, prefer: line.prefer } : null });
+    chingSaid("ching", line.text);
+  }, [respond]);
+  // Speak + log a persona line without replacing the panel's notice.
+  const sayLine = useCallback((line) => {
+    if (!line?.text) return;
+    speak(line.text, { urdu: line.parts ? { parts: line.parts, prefer: line.prefer } : null });
+    chingSaid("ching", line.text);
+  }, []);
+  // In the agent's language when Ching has a line for it, else the English one.
+  const lineFor = useCallback((intent, english) => {
+    const style = styleRef.current;
+    return style === "en" ? { text: english } : personaLine(intent, style) || { text: english };
+  }, []);
 
   // A question Ching asked before doing something that moves money or cancels
   // ("Record ₹20,000 from Rahul by UPI? Say yes or no."): { run }.
@@ -503,7 +545,8 @@ export default function ChingWidget() {
         }
         endSession();
         setNotice({ kind: kind === "edit" ? "no-editor" : "unknown", text });
-        say(kind === "edit" ? "Open a trip in the Trip Builder and I'll change it for you." : notUnderstood());
+        if (kind === "edit") say("Open a trip in the Trip Builder and I'll change it for you.");
+        else sayLine(lineFor("notUnderstood", notUnderstood()));
         return;
       }
 
@@ -552,7 +595,7 @@ export default function ChingWidget() {
       if (pendingDraft) setTripDraft((d) => (d ? { ...d, draft: pendingDraft } : { draft: pendingDraft, commands: [] }));
       // "… no stop", "cancel", "never mind": the trip is left as it was.
       if (res.cancelled) {
-        respond("Okay, stopped — nothing was changed.");
+        respondLine(lineFor("cancelled", "Okay, stopped — nothing was changed."));
         return;
       }
       if (!changes.length && !commands.length) {
@@ -564,7 +607,7 @@ export default function ChingWidget() {
           return;
         }
         setNotice({ kind: "unknown", text, editing: true, unrecognized: list(res.unrecognized) });
-        say(notUnderstood());
+        sayLine(lineFor("notUnderstood", notUnderstood()));
         return;
       }
       // An email to the client (proposal, payment link, reminder) goes out only
@@ -646,7 +689,7 @@ export default function ChingWidget() {
         say(reply + tip);
       }, 700);
     },
-    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized],
+    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine],
   );
 
   // ── Confirm & Build ─────────────────────────────────────────────────────
@@ -822,10 +865,15 @@ export default function ChingWidget() {
       } else if (ask.type === "smalltalk") {
         // Greet by the name the agent asked to be called ("call me Arif").
         const name = getChingMemory()?.callMe;
-        respond(name ? ask.reply.replace(/^(Hello|Hi there|Hi|Namaste|Hey|Aadab|Wa alaikum assalam|Good (?:morning|afternoon|evening))!/, `$1, ${name}!`) : ask.reply);
+        const english = name ? ask.reply.replace(/^(Hello|Hi there|Hi|Namaste|Hey|Aadab|Wa alaikum assalam|Good (?:morning|afternoon|evening))!/, `$1, ${name}!`) : ask.reply;
+        // Hinglish / Hindi / Urdu small talk is answered in kind, with Ching's own humour.
+        const style = styleRef.current;
+        const line = style !== "en" && ask.intent ? personaLine(ask.intent, style, { name }) : null;
+        if (line) respondLine(line);
+        else respond(english);
       }
     },
-    [askConfirm, changeLang, ensureCore, navigate, respond, token],
+    [askConfirm, changeLang, ensureCore, navigate, respond, respondLine, token],
   );
   const assistRef = useRef(null);
 
