@@ -104,6 +104,9 @@ model Trip {
   inclusions      Json?
   exclusions      Json?
   otherCosts      Json?     @map("other_costs")
+  // Agency's names for the hotel packages (A, B, C… — see Trip Builder's
+  // optional hotels), e.g. ["Standard", "Deluxe"]. Empty → "Package A" etc.
+  hotelPackageNames Json?   @map("hotel_package_names")
   transportDetails Json?    @map("transport_details")
   followUpSent    Boolean   @default(false) @map("follow_up_sent")
   confirmationSent Boolean  @default(false) @map("confirmation_sent")

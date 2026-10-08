@@ -78,6 +78,70 @@ const num = (n) => Number(n || 0).toLocaleString("en-IN");
 const money = (n, cur) => `${curCode(cur)} ${num(n)}`;
 const MEAL = { room_only: "Room only (EP)", breakfast_only: "Breakfast (CP)", breakfast_dinner: "Breakfast & dinner (MAP)", all_meals: "All meals (AP)", ep: "Room only (EP)", cp: "Breakfast (CP)", map: "Breakfast & dinner (MAP)", ap: "All meals (AP)" };
 const mealLabel = (v) => MEAL[String(v || "").toLowerCase()] || txt(v);
+// ── Hotel packages (Standard / Deluxe / …) ─────────────────────────────
+// Server copy of frontend/src/utils/hotelOptions.js (stayPackageGroups /
+// hotelPackages) for the server-rendered itinerary — keep the two in step.
+// Each optional hotel carries `package` (index) and `supplement` (client-facing
+// difference over the stay's main hotel, stored by the builder at save).
+const DEFAULT_PACKAGE_NAMES = ["Standard", "Deluxe", "Luxury"];
+const pkgIndex = (o) => (parseInt(o?.package, 10) > 0 ? parseInt(o.package, 10) : 0);
+const isNum = (v) => v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v));
+const packageName = (trip, k) =>
+  txt(arr(trip.hotelPackageNames)[k]).trim() || DEFAULT_PACKAGE_NAMES[k] || `Package ${String.fromCharCode(65 + k)}`;
+function stayPackageGroups(trip, a) {
+  const options = arr(a.alternateOptions).filter((o) => txt(o?.name).trim());
+  const maxIndex = Math.max(0, ...options.map(pkgIndex));
+  const groups = [];
+  for (let k = 0; k <= maxIndex; k++) {
+    const members = options.filter((o) => pkgIndex(o) === k);
+    const list = k === 0 ? [{ name: a.name || a.hotel?.name, supplement: 0, isMain: true }, ...members] : members;
+    if (!list.length) continue;
+    const ref = list[0].supplement;
+    groups.push({
+      index: k,
+      name: packageName(trip, k),
+      hotels: list.map((o, i) => ({
+        ...o,
+        diff: i === 0 ? null : isNum(o.supplement) && isNum(ref) ? Math.round(Number(o.supplement)) - Math.round(Number(ref)) : null,
+      })),
+    });
+  }
+  return groups;
+}
+function tripPackages(trip, hotels) {
+  const stays = hotels
+    .filter((a) => !a.cancelledAt)
+    .sort((x, y) => new Date(x.checkIn || 8.64e15) - new Date(y.checkIn || 8.64e15));
+  const perStay = stays.map((a) => stayPackageGroups(trip, a));
+  const used = [...new Set(perStay.flatMap((gs) => gs.map((g) => g.index)))].sort((x, y) => x - y);
+  if (used.length < 2) return null;
+  const base = Math.round(Number(trip.cost) || 0);
+  return {
+    stays: stays.map((a) => ({
+      city: txt(a.city || a.hotel?.city),
+      nights: a.checkIn && a.checkOut ? Math.max(1, Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 86400000)) : 1,
+    })),
+    packages: used.map((k) => {
+      let total = base;
+      const cells = perStay.map((groups) => {
+        const own = groups.find((g) => g.index === k);
+        if (own && k > 0 && total != null) {
+          const ref = own.hotels[0].supplement;
+          total = isNum(ref) ? total + Math.round(Number(ref)) : null;
+        }
+        return (own || groups.find((g) => g.index === 0)).hotels;
+      });
+      return { index: k, name: packageName(trip, k), cells, total };
+    }),
+  };
+}
+const diffText = (n, cur) => {
+  if (!isNum(n)) return "";
+  const v = Math.round(Number(n));
+  if (v === 0) return "same price";
+  return v > 0 ? `+${money(v, cur)}` : `${money(-v, cur)} less`;
+};
+
 // Optional hotel's stored client-facing price difference for its stay.
 const supplementText = (n, cur) => {
   if (n == null || n === "" || Number.isNaN(Number(n))) return "";
@@ -245,6 +309,7 @@ function ItineraryDoc({ trip, settings }) {
   const nights = parseInt(trip.duration) || 0;
   const days = arr(trip.itineraries);
   const hotels = arr(trip.accommodations);
+  const packageData = tripPackages(trip, hotels);
   const transports = arr(trip.transportations).sort(
     (a, b) => new Date(a.date || 0) - new Date(b.date || 0),
   );
@@ -404,6 +469,31 @@ function ItineraryDoc({ trip, settings }) {
                   ...(() => {
                     const options = arr(a.alternateOptions).filter((o) => txt(o?.name));
                     if (!options.length) return [];
+                    if (packageData) {
+                      return [
+                        h(
+                          View,
+                          { key: "packages", style: { marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#dddddd", borderTopStyle: "dashed" } },
+                          h(Text, { style: { ...s.bold, color: green, fontSize: 8, letterSpacing: 1, marginBottom: 3 } }, "HOTEL CHOICES BY PACKAGE"),
+                          ...stayPackageGroups(trip, a).map((g) =>
+                            h(
+                              Text,
+                              { key: g.index, style: { fontSize: 10, color: "#444", marginTop: 2 } },
+                              h(Text, { style: { ...s.bold, color: brand } }, `${g.name.toUpperCase()}  `),
+                              ...g.hotels.map((o, j) =>
+                                h(
+                                  Text,
+                                  { key: j },
+                                  j > 0 ? "  or  " : "",
+                                  h(Text, { style: { ...s.bold, color: green } }, txt(o.name)),
+                                  diffText(o.diff, cur) ? ` (${diffText(o.diff, cur)})` : "",
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ];
+                    }
                     return [
                       h(
                         View,
@@ -436,6 +526,56 @@ function ItineraryDoc({ trip, settings }) {
                   ? h(Image, { src: pdfImg(a.imagePath || a.hotel?.imagePath), style: { width: 175, height: 115, borderRadius: 15, objectFit: "cover" } })
                   : null,
               ),
+            ),
+          ),
+          innerFooter(settings),
+        )
+      : null,
+
+    // ── Hotel packages ─────────────────────────────────────────────────
+    packageData
+      ? h(
+          BPage,
+          { powered: !!settings?._viaKashmirPowered, size: "A4", style: { ...s.page, backgroundColor: WHITE, paddingBottom: 80 } },
+          pageHeader(trip, settings),
+          sectionBar("CHOOSE YOUR HOTEL PACKAGE", settings),
+          h(
+            View,
+            { style: { width: "90%", marginHorizontal: "auto", marginTop: 26 } },
+            h(
+              View,
+              { style: { flexDirection: "row", backgroundColor: "#f8f8f8", borderWidth: 1, borderColor: "#ddd" } },
+              ...["Package", ...packageData.stays.map((st) => `${st.city || "Stay"} (${st.nights}N)`), "Total"].map((hd, i) =>
+                h(Text, { key: i, style: { ...s.bold, flexGrow: 1, flexBasis: 0, padding: 10, color: green, fontSize: 10 } }, hd),
+              ),
+            ),
+            ...packageData.packages.map((p) =>
+              h(
+                View,
+                { key: p.index, wrap: false, style: { flexDirection: "row", borderWidth: 1, borderTopWidth: 0, borderColor: "#ddd" } },
+                h(Text, { style: { ...s.bold, flexGrow: 1, flexBasis: 0, padding: 10, fontSize: 10, color: green } }, p.name),
+                ...p.cells.map((list, i) =>
+                  h(
+                    View,
+                    { key: i, style: { flexGrow: 1, flexBasis: 0, padding: 10 } },
+                    ...list.map((o, j) =>
+                      h(
+                        Text,
+                        { key: j, style: { fontSize: 9, color: TEXTGRAY, marginTop: j ? 2 : 0 } },
+                        j > 0 ? "or " : "",
+                        h(Text, { style: { ...s.bold, color: green } }, txt(o.name)),
+                        diffText(o.diff, cur) ? ` (${diffText(o.diff, cur)})` : "",
+                      ),
+                    ),
+                  ),
+                ),
+                h(Text, { style: { ...s.bold, flexGrow: 1, flexBasis: 0, padding: 10, fontSize: 11, color: green } }, p.total == null ? "On request" : money(p.total, cur)),
+              ),
+            ),
+            h(
+              Text,
+              { style: { fontSize: 9, color: TEXTGRAY, marginTop: 12, lineHeight: 1.5 } },
+              `Total price for the whole trip ${trip.includeGst === false ? "excluding" : "including"} GST. Where a package lists more than one hotel, choose any one — the first hotel is included in the package price; others cost the amount shown.`,
             ),
           ),
           innerFooter(settings),

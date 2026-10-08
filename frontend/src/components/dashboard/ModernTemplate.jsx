@@ -2,7 +2,16 @@ import { activityPages } from "../../utils/activityRows";
 import React from "react";
 import { Star } from "lucide-react";
 import ClassicTemplate from "./ClassicTemplate";
-import { hotelOptionsOf, hotelOptionsKey, starsLabel, supplementLabel } from "../../utils/hotelOptions";
+import {
+  hotelOptionsOf,
+  hotelOptionsKey,
+  starsLabel,
+  supplementLabel,
+  stayPackageGroups,
+  hotelPackages,
+  packageTotalLabel,
+  diffLabel,
+} from "../../utils/hotelOptions";
 
 const WhatsAppIcon = ({ size = 16, className = "" }) => (
   <svg
@@ -136,6 +145,12 @@ const ModernTemplate = ({
   };
 
   // Check if using Classic Template
+  // Standard / Deluxe / Luxury… table, when the agency offers 2+ packages.
+  const packageData = hotelPackages(accommodations, {
+    basePrice: tripInfo.cost,
+    names: tripInfo.hotelPackageNames,
+  });
+
   if (tripInfo.template === "ClassicTemplate") {
     return (
       <ClassicTemplate
@@ -324,6 +339,11 @@ const ModernTemplate = ({
         .hotel-option-stars { color: var(--primary-orange); font-size: 12px; }
         .hotel-option-meta { color: #666; font-size: 11px; }
         .hotel-option-price { color: var(--dark-green); font-size: 11px; font-weight: 800; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 10px; }
+        .hotel-option-choice { display: inline-flex; align-items: center; gap: 4px; }
+        .package-table td { vertical-align: top; font-size: 12px; line-height: 1.5; }
+        .package-diff { color: #666; font-size: 11px; }
+        .package-total { color: var(--dark-green); font-size: 15px; white-space: nowrap; }
+        .package-note { margin: 16px 60px 0; font-size: 11px; color: #666; line-height: 1.5; }
         .hotel-option-thumb { width: 48px; height: 34px; border-radius: 6px; object-fit: cover; }
 
         .day-header { display: flex; align-items: center; padding: 30px 60px; gap: 20px; }
@@ -913,36 +933,58 @@ const ModernTemplate = ({
                         {hotelOptions.length > 0 && (
                           <div className="hotel-options">
                             <div className="hotel-options-title">
-                              OR CHOOSE AN OPTIONAL HOTEL
+                              {packageData
+                                ? "HOTEL CHOICES BY PACKAGE"
+                                : "OR CHOOSE AN OPTIONAL HOTEL"}
                             </div>
-                            {hotelOptions.map((opt, optIdx) => (
-                              <div className="hotel-option-row" key={optIdx}>
-                                <span className="hotel-option-or">OR</span>
-                                {opt.photo && (
-                                  <img
-                                    src={formatImageUrl(opt.photo)}
-                                    alt={opt.name}
-                                    className="hotel-option-thumb"
-                                  />
-                                )}
-                                <b>{opt.name}</b>
-                                {starsLabel(opt.category) && (
-                                  <span className="hotel-option-stars">
-                                    {starsLabel(opt.category)}
-                                  </span>
-                                )}
-                                {opt.room_type && (
-                                  <span className="hotel-option-meta">
-                                    {opt.room_type}
-                                  </span>
-                                )}
-                                {supplementLabel(opt.supplement, tripInfo.currency) && (
-                                  <span className="hotel-option-price">
-                                    {supplementLabel(opt.supplement, tripInfo.currency)}
-                                  </span>
-                                )}
-                              </div>
-                            ))}
+                            {packageData
+                              ? stayPackageGroups(hotel, tripInfo.hotelPackageNames).map((group) => (
+                                  <div className="hotel-option-row" key={group.index}>
+                                    <span className="hotel-option-or">{group.name.toUpperCase()}</span>
+                                    {group.hotels.map((h, hIdx) => (
+                                      <span key={hIdx} className="hotel-option-choice">
+                                        {hIdx > 0 && <span className="hotel-option-meta">or </span>}
+                                        <b>{h.name}</b>
+                                        {!h.isMain && starsLabel(h.category) && (
+                                          <span className="hotel-option-stars"> {starsLabel(h.category)}</span>
+                                        )}
+                                        {diffLabel(h.diff, tripInfo.currency) && (
+                                          <span className="hotel-option-price">
+                                            {diffLabel(h.diff, tripInfo.currency)}
+                                          </span>
+                                        )}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ))
+                              : hotelOptions.map((opt, optIdx) => (
+                                  <div className="hotel-option-row" key={optIdx}>
+                                    <span className="hotel-option-or">OR</span>
+                                    {opt.photo && (
+                                      <img
+                                        src={formatImageUrl(opt.photo)}
+                                        alt={opt.name}
+                                        className="hotel-option-thumb"
+                                      />
+                                    )}
+                                    <b>{opt.name}</b>
+                                    {starsLabel(opt.category) && (
+                                      <span className="hotel-option-stars">
+                                        {starsLabel(opt.category)}
+                                      </span>
+                                    )}
+                                    {opt.room_type && (
+                                      <span className="hotel-option-meta">
+                                        {opt.room_type}
+                                      </span>
+                                    )}
+                                    {supplementLabel(opt.supplement, tripInfo.currency) && (
+                                      <span className="hotel-option-price">
+                                        {supplementLabel(opt.supplement, tripInfo.currency)}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
                           </div>
                         )}
                       </>
@@ -1002,6 +1044,98 @@ const ModernTemplate = ({
           </div>
         ));
       })()}
+
+      {/* HOTEL PACKAGES: one total per package (Standard / Deluxe / …) */}
+      {packageData && (
+        <div className="page">
+          <div className="orange-header-label secondary">
+            <h1>
+              {tripInfo.duration || "0"} NIGHT{" "}
+              {parseInt(tripInfo.duration || 0) + 1} DAYS
+            </h1>
+            <p>
+              TRAVEL ITINERARY BY{" "}
+              {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
+            </p>
+          </div>
+          <div className="brand-logo-right" style={{ top: "10px" }}>
+            {agencySettings.logo ? (
+              <img
+                src={formatImageUrl(agencySettings.logo)}
+                alt="Logo"
+                className="header-logo"
+              />
+            ) : (
+              <>
+                <h2>
+                  {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
+                </h2>
+                <span>TRAVEL SIMPLIFIED</span>
+              </>
+            )}
+          </div>
+          <div className="section-bar">
+            <h2>CHOOSE YOUR HOTEL PACKAGE</h2>
+          </div>
+
+          <table className="itinerary-table package-table">
+            <thead>
+              <tr>
+                <th>PACKAGE</th>
+                {packageData.stays.map((st, i) => (
+                  <th key={i}>
+                    {(st.city || "Stay").toUpperCase()} ({st.nights}N)
+                  </th>
+                ))}
+                <th>TOTAL PRICE</th>
+              </tr>
+            </thead>
+            <tbody>
+              {packageData.packages.map((pkg) => (
+                <tr key={pkg.index}>
+                  <td>
+                    <b>{pkg.name}</b>
+                  </td>
+                  {pkg.cells.map((cell, i) => (
+                    <td key={i}>
+                      {cell.hotels.map((h, hIdx) => (
+                        <div key={hIdx}>
+                          {hIdx > 0 && "or "}
+                          <b>{h.name}</b>
+                          {diffLabel(h.diff, tripInfo.currency) && (
+                            <span className="package-diff"> ({diffLabel(h.diff, tripInfo.currency)})</span>
+                          )}
+                        </div>
+                      ))}
+                    </td>
+                  ))}
+                  <td>
+                    <b className="package-total">
+                      {packageTotalLabel(pkg.total, tripInfo.currency)}
+                    </b>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="package-note">
+            Total price for the whole trip {includeGST ? "including" : "excluding"} GST.
+            Where a package lists more than one hotel, choose any one — the first hotel
+            is included in the package price; others cost the amount shown.
+          </p>
+
+          <div style={{ flex: 1 }}></div>
+          <div className="footer-line"></div>
+          <div className="footer">
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+              <WhatsAppIcon size={14} /> WhatsApp
+            </span>
+            <span>{agencySettings.whatsapp}</span>
+            <span>{agencySettings.email}</span>
+            <span>{agencySettings.website}</span>
+          </div>
+        </div>
+      )}
 
       {/* PAGE 3: TRANSPORTATIONS */}
       <div className="page">

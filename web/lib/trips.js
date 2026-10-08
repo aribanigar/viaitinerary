@@ -53,11 +53,17 @@ const SCALAR_SOURCES = {
   includeGst: ["include_gst"],
   useFlight: ["useFlight", "use_flight"],
   tagline: ["tagline"],
+  hotelPackageNames: ["hotelPackageNames", "hotel_package_names"],
   inclusions: ["inclusions"],
   exclusions: ["exclusions"],
   otherCosts: ["other_costs"],
   transportDetails: ["transport_details", "transportDetails"],
 };
+
+// Up to 10 short names. Not an array → undefined (column left as is; Prisma
+// rejects a plain null on Json columns). Templates fall back to "Package A".
+const packageNames = (value) =>
+  Array.isArray(value) ? value.slice(0, 10).map((n) => String(n ?? "").trim().slice(0, 40)) : undefined;
 
 /**
  * Map the builder payload to Trip scalar columns (excludes user/team/tripId).
@@ -88,6 +94,7 @@ export async function buildTripScalars(body, { partial = false } = {}) {
     includeGst: body.include_gst ?? true,
     useFlight: body.useFlight ?? body.use_flight ?? false,
     tagline: body.tagline ?? null,
+    hotelPackageNames: packageNames(body.hotelPackageNames ?? body.hotel_package_names),
     inclusions: body.inclusions ?? [],
     exclusions: body.exclusions ?? [],
     otherCosts: body.other_costs ?? [],

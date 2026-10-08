@@ -1,6 +1,14 @@
 import { activityPages } from "../../utils/activityRows";
 import React from "react";
-import { hotelOptionsOf, hotelOptionsKey, supplementLabel } from "../../utils/hotelOptions";
+import {
+  hotelOptionsOf,
+  hotelOptionsKey,
+  supplementLabel,
+  stayPackageGroups,
+  hotelPackages,
+  packageTotalLabel,
+  diffLabel,
+} from "../../utils/hotelOptions";
 
 const WhatsAppIcon = ({ size = 16, className = "" }) => (
   <svg
@@ -75,6 +83,12 @@ const ClassicTemplate = ({
   const primaryColor =
     agencySettings.primaryColor || agencySettings.brandColor || "#FAA61A";
   const secondaryColor = agencySettings.secondaryColor || "#0B7AAC";
+
+  // Standard / Deluxe / Luxury… table, when the agency offers 2+ packages.
+  const packageData = hotelPackages(accommodations, {
+    basePrice: tripInfo.cost,
+    names: tripInfo.hotelPackageNames,
+  });
   const fontFamily = agencySettings.font_family || "Montserrat";
 
   // Sort and group transportation
@@ -1049,7 +1063,7 @@ const ClassicTemplate = ({
                           <td>{hotel.city || "-"}</td>
                           <td>
                             {hotel.name || "-"}
-                            {hotelOptionsOf(hotel).map((opt, optIdx) => (
+                            {!packageData && hotelOptionsOf(hotel).map((opt, optIdx) => (
                               <div
                                 key={optIdx}
                                 style={{ fontSize: "11px", color: "#666", marginTop: "2px" }}
@@ -1280,9 +1294,23 @@ const ClassicTemplate = ({
                                         marginBottom: "4px",
                                       }}
                                     >
-                                      OR CHOOSE AN OPTIONAL HOTEL
+                                      {packageData ? "HOTEL CHOICES BY PACKAGE" : "OR CHOOSE AN OPTIONAL HOTEL"}
                                     </div>
-                                    {hotelOptionsOf(hotel).map((opt, optIdx) => (
+                                    {packageData && stayPackageGroups(hotel, tripInfo.hotelPackageNames).map((group) => (
+                                      <div key={group.index} style={{ marginTop: "4px" }}>
+                                        <b style={{ color: primaryColor }}>{group.name}:</b>{" "}
+                                        {group.hotels.map((h, hIdx) => (
+                                          <span key={hIdx}>
+                                            {hIdx > 0 && " or "}
+                                            <b>{h.name}</b>
+                                            {diffLabel(h.diff, tripInfo.currency) && (
+                                              <b style={{ color: secondaryColor }}>{` (${diffLabel(h.diff, tripInfo.currency)})`}</b>
+                                            )}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ))}
+                                    {!packageData && hotelOptionsOf(hotel).map((opt, optIdx) => (
                                       <div
                                         key={optIdx}
                                         style={{ marginTop: "4px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}
@@ -1321,6 +1349,74 @@ const ClassicTemplate = ({
           </>
         );
       })()}
+
+      {/* HOTEL PACKAGES: one total per package (Standard / Deluxe / …) */}
+      {packageData && (
+        <div className="classic-page">
+          <div className="classic-section-header">
+            <div className="classic-section-left">
+              <div className="classic-section-title">Choose Your Hotel Package</div>
+            </div>
+            {agencySettings.logo && (
+              <img
+                src={formatImageUrl(agencySettings.logo)}
+                alt="Logo"
+                className="classic-section-logo"
+              />
+            )}
+          </div>
+          <div className="classic-table-container" style={{ flex: 1 }}>
+            <table className="classic-table">
+              <thead>
+                <tr>
+                  <th>Package</th>
+                  {packageData.stays.map((st, i) => (
+                    <th key={i}>
+                      {st.city || "Stay"} ({st.nights}N)
+                    </th>
+                  ))}
+                  <th>Total Price</th>
+                </tr>
+              </thead>
+              <tbody>
+                {packageData.packages.map((pkg) => (
+                  <tr key={pkg.index}>
+                    <td>
+                      <b>{pkg.name}</b>
+                    </td>
+                    {pkg.cells.map((cell, i) => (
+                      <td key={i} style={{ verticalAlign: "top" }}>
+                        {cell.hotels.map((h, hIdx) => (
+                          <div key={hIdx}>
+                            {hIdx > 0 && "or "}
+                            <b>{h.name}</b>
+                            {diffLabel(h.diff, tripInfo.currency) && (
+                              <span style={{ color: "#666", fontSize: "11px" }}>
+                                {` (${diffLabel(h.diff, tripInfo.currency)})`}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </td>
+                    ))}
+                    <td style={{ whiteSpace: "nowrap" }}>
+                      <b style={{ color: secondaryColor }}>
+                        {packageTotalLabel(pkg.total, tripInfo.currency)}
+                      </b>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p style={{ marginTop: "16px", fontSize: "12px", color: "#666", lineHeight: 1.5 }}>
+              Total price for the whole trip {includeGST ? "including" : "excluding"} GST.
+              Where a package lists more than one hotel, choose any one — the first hotel
+              is included in the package price; others cost the amount shown.
+            </p>
+          </div>
+          <ClassicFooter />
+        </div>
+      )}
 
       {/* PAGE 3: Transportation Info */}
       <div className="classic-page">
