@@ -32,6 +32,9 @@ const slugify = (value) =>
 function roomToPriceSections(room, tariffStart, tariffEnd) {
   const roomType = slugify(room.category || room.type);
   const cnb = Number(room.childWob ?? room.cnb ?? 0) || 0;
+  // The portal has one extra-bed rate; it applies to every with-bed tier
+  // (child 5-12, above 12, extra adult). Without it extra beds priced at 0.
+  const extraBed = Number(room.extraBed ?? 0) || 0;
   const sections = [];
   for (const [field, mealPlan] of Object.entries(MEAL_PLAN_BY_FIELD)) {
     const price = Number(room[field] ?? 0);
@@ -41,6 +44,7 @@ function roomToPriceSections(room, tariffStart, tariffEnd) {
       meal_plan: mealPlan,
       price,
       cnb,
+      ...(extraBed ? { upto_5: extraBed, above_12: extraBed, extra_adult: extraBed } : {}),
       valid_from: tariffStart || null,
       valid_to: tariffEnd || null,
     });

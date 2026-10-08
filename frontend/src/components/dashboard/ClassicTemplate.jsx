@@ -1280,8 +1280,18 @@ const ClassicTemplate = ({
                                       OR CHOOSE AN OPTIONAL HOTEL
                                     </div>
                                     {hotelOptionsOf(hotel).map((opt, optIdx) => (
-                                      <div key={optIdx} style={{ marginTop: "2px" }}>
-                                        <b style={{ color: primaryColor }}>OR</b>{" "}
+                                      <div
+                                        key={optIdx}
+                                        style={{ marginTop: "4px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}
+                                      >
+                                        <b style={{ color: primaryColor }}>OR</b>
+                                        {opt.photo && (
+                                          <img
+                                            src={formatImageUrl(opt.photo)}
+                                            alt={opt.name}
+                                            style={{ width: "44px", height: "32px", borderRadius: "5px", objectFit: "cover" }}
+                                          />
+                                        )}
                                         <b>{opt.name}</b>
                                         {opt.category ? ` · ${opt.category}` : ""}
                                         {opt.room_type ? ` · ${opt.room_type}` : ""}

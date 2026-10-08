@@ -260,15 +260,26 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         (hotel) => String(hotel.id) === String(hotelId),
       );
       const hotelData = item.hotel || hotelMatch;
+      const photoOf = (h) => h?.image_url || h?.image_path || null;
+
+      // Optional hotels picked from the catalog show its current photo.
+      const alternateOptions = (item.alternateOptions || []).map((opt) => {
+        if (opt.photo) return opt;
+        const altHotel = masterHotels.find((h) => String(h.id) === String(opt.hotel_id));
+        return photoOf(altHotel) ? { ...opt, photo: photoOf(altHotel) } : opt;
+      });
 
       if (!hotelData) {
-        return item;
+        return { ...item, alternateOptions };
       }
 
       return {
         ...item,
         name: hotelData.name ?? item.name,
         city: hotelData.city ?? item.city,
+        // A stay picked before its hotel had a photo picks the photo up later.
+        photo: item.photo || photoOf(hotelMatch) || photoOf(item.hotel),
+        alternateOptions,
       };
     });
   }, [accommodations, masterHotels]);

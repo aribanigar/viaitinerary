@@ -323,6 +323,7 @@ const ModernTemplate = ({
         .hotel-option-or { background: var(--primary-orange); color: white; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
         .hotel-option-stars { color: var(--primary-orange); font-size: 12px; }
         .hotel-option-meta { color: #666; font-size: 11px; }
+        .hotel-option-thumb { width: 48px; height: 34px; border-radius: 6px; object-fit: cover; }
 
         .day-header { display: flex; align-items: center; padding: 30px 60px; gap: 20px; }
         .day-badge { background: var(--dark-green); color: var(--primary-orange); width: 80px; height: 80px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; }
@@ -916,6 +917,13 @@ const ModernTemplate = ({
                             {hotelOptions.map((opt, optIdx) => (
                               <div className="hotel-option-row" key={optIdx}>
                                 <span className="hotel-option-or">OR</span>
+                                {opt.photo && (
+                                  <img
+                                    src={formatImageUrl(opt.photo)}
+                                    alt={opt.name}
+                                    className="hotel-option-thumb"
+                                  />
+                                )}
                                 <b>{opt.name}</b>
                                 {starsLabel(opt.category) && (
                                   <span className="hotel-option-stars">

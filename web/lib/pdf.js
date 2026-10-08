@@ -404,11 +404,18 @@ function ItineraryDoc({ trip, settings }) {
                         h(Text, { style: { ...s.bold, color: green, fontSize: 8, letterSpacing: 1, marginBottom: 3 } }, "OR CHOOSE AN OPTIONAL HOTEL"),
                         ...options.map((o, j) =>
                           h(
-                            Text,
-                            { key: j, style: { fontSize: 10, color: "#444", marginTop: 2 } },
-                            h(Text, { style: { ...s.bold, color: brand } }, "OR  "),
-                            h(Text, { style: { ...s.bold, color: green } }, txt(o.name)),
-                            [txt(o.category), txt(o.room_type)].filter(Boolean).map((x) => `  ·  ${x}`).join(""),
+                            View,
+                            { key: j, style: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 } },
+                            isImg(o.photo)
+                              ? h(Image, { src: pdfImg(o.photo), style: { width: 40, height: 28, borderRadius: 4, objectFit: "cover" } })
+                              : null,
+                            h(
+                              Text,
+                              { style: { fontSize: 10, color: "#444" } },
+                              h(Text, { style: { ...s.bold, color: brand } }, "OR  "),
+                              h(Text, { style: { ...s.bold, color: green } }, txt(o.name)),
+                              [txt(o.category), txt(o.room_type)].filter(Boolean).map((x) => `  ·  ${x}`).join(""),
+                            ),
                           ),
                         ),
                       ),
