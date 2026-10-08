@@ -164,6 +164,11 @@ const LogisticsTab = ({
                       </span>
                     )}
                   </h4>
+                  {hotel.alternateOptions?.length > 0 && (
+                    <p className="text-xs font-semibold text-blue-600 mt-0.5">
+                      or {hotel.alternateOptions.map((o) => o.name).filter(Boolean).join(" / ")}
+                    </p>
+                  )}
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     <span className="text-xs font-bold text-[#9aa3b2] uppercase tracking-wider">
                       {hotel.city}

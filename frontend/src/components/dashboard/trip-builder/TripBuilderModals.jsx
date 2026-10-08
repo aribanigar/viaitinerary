@@ -13,6 +13,7 @@ import {
 import {
   normalizeRoomTypeValue,
   hotelCategoryLabel,
+  hotelRoomTypes,
   findRoomTypeSection,
 } from "../../../utils/hotelRates";
 
@@ -625,7 +626,7 @@ export const HotelModal = ({
         <div className="pt-2 border-t border-black/5">
           <div className="flex items-center justify-between mb-2">
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-[#181c22]/70 uppercase tracking-[0.12em]">
-              <Layers className="w-3.5 h-3.5" /> Similar Options
+              <Layers className="w-3.5 h-3.5" /> Optional Hotels
             </label>
             <button
               type="button"
@@ -634,68 +635,120 @@ export const HotelModal = ({
                   ...hotelForm,
                   alternateOptions: [
                     ...(hotelForm.alternateOptions || []),
-                    { name: "", room_type: "", price: "" },
+                    { hotel_id: null, name: "", category: "", room_type: "", price: "", photo: "" },
                   ],
                 })
               }
               className="flex items-center gap-1 text-[11px] font-bold text-blue-600"
             >
-              <Plus className="w-3 h-3" /> Add Alternate
+              <Plus className="w-3 h-3" /> Add Optional Hotel
             </button>
           </div>
           <p className="text-[10px] text-[#181c22]/40 font-medium mb-2">
-            Offer the client a choice for this night — the price shown will be the
-            highest of all options, so margin is protected either way.
+            Give the client a choice for these nights in {hotelForm.city || "this city"} —
+            "{hotelForm.name || "Hotel A"}" or an optional hotel. Options appear on the
+            itinerary as "OR" choices; the price used is the highest of all options, so
+            margin is protected either way.
           </p>
-          {(hotelForm.alternateOptions || []).map((opt, idx) => (
-            <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-2 items-center">
-              <input
-                type="text"
-                value={opt.name}
-                onChange={(e) => {
-                  const next = [...hotelForm.alternateOptions];
-                  next[idx] = { ...next[idx], name: e.target.value };
-                  setHotelForm({ ...hotelForm, alternateOptions: next });
-                }}
-                placeholder="Hotel name"
-                className="sm:col-span-2 bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
-              />
-              <input
-                type="text"
-                value={opt.room_type}
-                onChange={(e) => {
-                  const next = [...hotelForm.alternateOptions];
-                  next[idx] = { ...next[idx], room_type: e.target.value };
-                  setHotelForm({ ...hotelForm, alternateOptions: next });
-                }}
-                placeholder="Room type"
-                className="bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
-              />
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="number"
-                  value={opt.price}
-                  onChange={(e) => {
-                    const next = [...hotelForm.alternateOptions];
-                    next[idx] = { ...next[idx], price: e.target.value };
-                    setHotelForm({ ...hotelForm, alternateOptions: next });
-                  }}
-                  placeholder="Price"
-                  className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = hotelForm.alternateOptions.filter((_, i) => i !== idx);
-                    setHotelForm({ ...hotelForm, alternateOptions: next });
-                  }}
-                  className="text-slate-300 hover:text-red-500 shrink-0"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+          {(hotelForm.alternateOptions || []).map((opt, idx) => {
+            const updateAlt = (patch) => {
+              const next = [...hotelForm.alternateOptions];
+              next[idx] = { ...next[idx], ...patch };
+              setHotelForm({ ...hotelForm, alternateOptions: next });
+            };
+            const altHotel = masterHotels.find((h) => String(h.id) === String(opt.hotel_id));
+            const altRoomTypes = hotelRoomTypes(altHotel);
+            const altOptions = hotelsInCity.filter((h) => h.id !== hotelForm.hotelId);
+            return (
+              <div key={idx} className="mb-3 p-3 rounded-xl bg-[#f8f8f9] border border-black/5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-600">
+                    Option {String.fromCharCode(66 + idx)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = hotelForm.alternateOptions.filter((_, i) => i !== idx);
+                      setHotelForm({ ...hotelForm, alternateOptions: next });
+                    }}
+                    className="text-slate-300 hover:text-red-500 shrink-0"
+                    aria-label="Remove optional hotel"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                {altOptions.length > 0 && (
+                  <select
+                    value={opt.hotel_id || ""}
+                    onChange={(e) => {
+                      const picked = masterHotels.find((h) => String(h.id) === e.target.value);
+                      if (!picked) {
+                        updateAlt({ hotel_id: null });
+                        return;
+                      }
+                      const roomTypes = hotelRoomTypes(picked);
+                      const roomType = roomTypes.includes(hotelForm.roomType)
+                        ? hotelForm.roomType
+                        : roomTypes[0] || "";
+                      const section = findRoomTypeSection(picked, roomType, hotelForm.checkIn);
+                      updateAlt({
+                        hotel_id: picked.id,
+                        name: picked.name,
+                        category: hotelCategoryLabel(picked.category),
+                        room_type: roomType,
+                        price: section.price || "",
+                        photo: picked.image_url || picked.image_path || "",
+                      });
+                    }}
+                    className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22] appearance-none cursor-pointer"
+                  >
+                    <option value="">Pick from {hotelForm.city} hotels (or type below)</option>
+                    {altOptions.map((h) => (
+                      <option key={h.id} value={h.id}>
+                        {h.name}
+                        {starsOf(h) ? ` · ${starsOf(h)}★` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center">
+                  <input
+                    type="text"
+                    value={opt.name || ""}
+                    onChange={(e) => updateAlt({ name: e.target.value })}
+                    placeholder="Hotel name"
+                    className="sm:col-span-2 bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
+                  />
+                  <input
+                    type="text"
+                    list={`alt-room-types-${idx}`}
+                    value={opt.room_type || ""}
+                    onChange={(e) => {
+                      const roomType = e.target.value;
+                      const section = altHotel && altRoomTypes.includes(roomType)
+                        ? findRoomTypeSection(altHotel, roomType, hotelForm.checkIn)
+                        : null;
+                      updateAlt(section?.price ? { room_type: roomType, price: section.price } : { room_type: roomType });
+                    }}
+                    placeholder="Room type"
+                    className="bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
+                  />
+                  <datalist id={`alt-room-types-${idx}`}>
+                    {altRoomTypes.map((rt) => (
+                      <option key={rt} value={rt} />
+                    ))}
+                  </datalist>
+                  <input
+                    type="number"
+                    value={opt.price ?? ""}
+                    onChange={(e) => updateAlt({ price: e.target.value })}
+                    placeholder="Price / room"
+                    className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {isEditing && (
