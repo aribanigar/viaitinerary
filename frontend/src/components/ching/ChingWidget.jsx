@@ -157,7 +157,7 @@ async function runEditorCommands(commands, editor, setProgress) {
 
 const PanelFallback = () => (
   <div className="fixed z-[90] inset-x-0 bottom-0 sm:inset-x-auto sm:right-4 lg:right-6 sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:w-[400px] h-40 rounded-t-[28px] sm:rounded-[24px] bg-white border border-black/5 shadow-2xl grid place-items-center">
-    <span className="w-6 h-6 rounded-full border-2 border-[#181c22]/15 border-t-[#181c22] animate-spin" />
+    <span className="w-6 h-6 rounded-full border-2 border-brand/15 border-t-brand animate-spin" />
   </div>
 );
 
@@ -1078,12 +1078,12 @@ export default function ChingWidget() {
         }
         className={`fixed z-[45] right-4 lg:right-6 bottom-[calc(env(safe-area-inset-bottom)+68px)] lg:bottom-6 grid place-items-center w-14 h-14 rounded-full border border-black/5 shadow-[0_14px_34px_-10px_rgba(16,24,42,0.6)] transition-all duration-200 hover:scale-105 active:scale-95 ${
           listening
-            ? "bg-[#e7f63c] text-[#181c22]"
-            : "bg-[#181c22] text-white"
+            ? "bg-accent text-ink"
+            : "bg-brand text-white"
         } ${open ? "max-sm:hidden" : ""}`}
       >
         {listening && (
-          <span className="absolute inset-0 rounded-full bg-[#e7f63c] opacity-50 animate-ping" />
+          <span className="absolute inset-0 rounded-full bg-accent opacity-50 animate-ping" />
         )}
         {open ? (
           <X className="relative w-5 h-5" strokeWidth={2.2} />
@@ -1092,7 +1092,7 @@ export default function ChingWidget() {
         )}
         {phase === "wake" && !open && (
           <span
-            className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-[#e7f63c] ring-2 ring-[#181c22] animate-pulse"
+            className="absolute top-0.5 right-0.5 w-3 h-3 rounded-full bg-accent ring-2 ring-brand animate-pulse"
             aria-hidden
           />
         )}

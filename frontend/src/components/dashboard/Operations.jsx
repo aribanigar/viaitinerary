@@ -59,8 +59,8 @@ const waUrl = (phone, text) => {
 const Card = ({ title, icon, count, children, empty }) => (
   <section className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
     <div className="px-5 py-3.5 border-b border-black/5 flex items-center gap-2 bg-[#f3f3f4]/60">
-      {React.createElement(icon, { className: "w-4 h-4 text-[#181c22]/60" })}
-      <h3 className="text-xs font-bold text-[#181c22] uppercase tracking-widest">{title}</h3>
+      {React.createElement(icon, { className: "w-4 h-4 text-ink/60" })}
+      <h3 className="text-xs font-bold text-ink uppercase tracking-widest">{title}</h3>
       <span className="ml-auto text-xs font-bold text-[#8a93a2]">{count}</span>
     </div>
     {count ? <div className="divide-y divide-black/5">{children}</div> : <p className="px-5 py-6 text-sm text-[#8a93a2]">{empty}</p>}
@@ -69,7 +69,7 @@ const Card = ({ title, icon, count, children, empty }) => (
 
 const TripLine = ({ trip, extra }) => (
   <div className="min-w-0 flex-1">
-    <div className="text-sm font-semibold text-[#181c22] truncate">
+    <div className="text-sm font-semibold text-ink truncate">
       {trip.client_name || "Client"} <span className="font-normal text-[#5b6472]">· {trip.title}</span>
     </div>
     <div className="text-xs text-[#5b6472] truncate">
@@ -81,17 +81,17 @@ const TripLine = ({ trip, extra }) => (
 
 const IconBtn = ({ title, onClick, href, children, disabled }) =>
   href ? (
-    <a href={href} target="_blank" rel="noopener noreferrer" title={title} className="p-2 rounded-xl text-[#181c22]/60 hover:text-[#181c22] hover:bg-black/[0.04]">
+    <a href={href} target="_blank" rel="noopener noreferrer" title={title} className="p-2 rounded-xl text-ink/60 hover:text-ink hover:bg-black/[0.04]">
       {children}
     </a>
   ) : (
-    <button type="button" title={title} onClick={onClick} disabled={disabled} className="p-2 rounded-xl text-[#181c22]/60 hover:text-[#181c22] hover:bg-black/[0.04] disabled:opacity-40">
+    <button type="button" title={title} onClick={onClick} disabled={disabled} className="p-2 rounded-xl text-ink/60 hover:text-ink hover:bg-black/[0.04] disabled:opacity-40">
       {children}
     </button>
   );
 
 const OpenTrip = ({ id }) => (
-  <Link to={`/trip-builder/${id}`} title="Open trip" className="p-2 rounded-xl text-[#181c22]/50 hover:text-[#181c22] hover:bg-black/[0.04]">
+  <Link to={`/trip-builder/${id}`} title="Open trip" className="p-2 rounded-xl text-ink/50 hover:text-ink hover:bg-black/[0.04]">
     <ArrowRight className="w-4 h-4" />
   </Link>
 );
@@ -120,7 +120,7 @@ function DriverForm({ cab, onSave, onCancel }) {
             await onSave(f);
             setBusy(false);
           }}
-          className="px-3 py-1.5 rounded-lg bg-[#181c22] text-white text-sm font-semibold disabled:opacity-50"
+          className="px-3 py-1.5 rounded-lg bg-brand text-white text-sm font-semibold disabled:opacity-50"
         >
           {busy ? "Saving…" : "Save driver"}
         </button>
@@ -233,10 +233,10 @@ export default function Operations() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-5">
         <div className="flex flex-wrap items-end gap-3 justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-[#181c22]">Daily Operations</h1>
+            <h1 className="text-2xl font-semibold text-ink">Daily Operations</h1>
             <p className="text-sm text-[#5b6472]">Arrivals, check-ins, cabs and drivers — and what suppliers still have to confirm.</p>
           </div>
-          <button type="button" onClick={load} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-black/10 text-sm font-semibold text-[#181c22] hover:bg-black/[0.03]">
+          <button type="button" onClick={load} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-black/10 text-sm font-semibold text-ink hover:bg-black/[0.03]">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </button>
         </div>
@@ -248,7 +248,7 @@ export default function Operations() {
               type="button"
               onClick={() => setDate(d)}
               className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold border transition ${
-                d === date ? "bg-[#181c22] text-white border-[#181c22]" : "bg-white text-[#3a4250] border-black/10 hover:bg-black/[0.03]"
+                d === date ? "bg-brand text-white border-brand" : "bg-white text-[#3a4250] border-black/10 hover:bg-black/[0.03]"
               }`}
             >
               {dayLabel(d, today)}
@@ -266,8 +266,8 @@ export default function Operations() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {stats.map(([label, value, icon]) => (
             <div key={label} className="bg-white rounded-2xl border border-black/5 shadow-sm p-4">
-              {React.createElement(icon, { className: "w-4 h-4 text-[#181c22]/50" })}
-              <div className="mt-2 text-xl font-semibold text-[#181c22]">{loading && !data ? "—" : value}</div>
+              {React.createElement(icon, { className: "w-4 h-4 text-ink/50" })}
+              <div className="mt-2 text-xl font-semibold text-ink">{loading && !data ? "—" : value}</div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-[#8a93a2]">{label}</div>
             </div>
           ))}
@@ -275,7 +275,7 @@ export default function Operations() {
 
         {loading && !data ? (
           <div className="grid place-items-center py-16">
-            <Loader2 className="w-6 h-6 animate-spin text-[#181c22]/40" />
+            <Loader2 className="w-6 h-6 animate-spin text-ink/40" />
           </div>
         ) : (
           <div className="grid lg:grid-cols-2 gap-5">
@@ -306,7 +306,7 @@ export default function Operations() {
               {day.checkins.map((h) => (
                 <div key={h.id} className="px-5 py-3 flex items-center gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-[#181c22] truncate">
+                    <div className="text-sm font-semibold text-ink truncate">
                       {h.hotel} <span className="font-normal text-[#5b6472]">· {h.city}</span>
                     </div>
                     <div className="text-xs text-[#5b6472] truncate">
@@ -327,13 +327,13 @@ export default function Operations() {
                   <div key={c.id} className="px-5 py-3">
                     <div className="flex items-center gap-2">
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-[#181c22] truncate">
+                        <div className="text-sm font-semibold text-ink truncate">
                           {c.route || "Cab"} <span className="font-normal text-[#5b6472]">· {c.vehicle}</span>
                         </div>
                         <div className="text-xs text-[#5b6472] truncate">
                           {c.trip.client_name} · {c.trip.guests} pax ·{" "}
                           {c.driver_name ? (
-                            <span className="text-[#181c22] font-medium">
+                            <span className="text-ink font-medium">
                               <UserRound className="inline w-3 h-3 -mt-0.5" /> {c.driver_name} {c.driver_phone} {c.vehicle_number}
                             </span>
                           ) : (
@@ -374,9 +374,9 @@ export default function Operations() {
                   const key = `${c.kind}-${c.id}`;
                   return (
                     <div key={key} className="px-5 py-3 flex flex-wrap items-center gap-2">
-                      {c.kind === "hotel" ? <BedDouble className="w-4 h-4 text-[#181c22]/40" /> : <Car className="w-4 h-4 text-[#181c22]/40" />}
+                      {c.kind === "hotel" ? <BedDouble className="w-4 h-4 text-ink/40" /> : <Car className="w-4 h-4 text-ink/40" />}
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-[#181c22] truncate">
+                        <div className="text-sm font-semibold text-ink truncate">
                           {c.name} <span className="font-normal text-[#5b6472]">· {shortDate(c.date)}{c.days ? ` · ${c.days} days` : ""}</span>
                         </div>
                         <div className="text-xs text-[#5b6472] truncate">

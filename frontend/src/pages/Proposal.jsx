@@ -26,12 +26,13 @@ import PaymentSection from "../components/proposal/PaymentSection";
 import PaySheet from "../components/proposal/PaySheet";
 import { openRazorpay } from "../components/proposal/razorpayCheckout";
 import { formatMoney, paymentErrorMessage } from "../components/proposal/money";
+import { themeColors } from "../themes";
 
 // Public client proposal: /p/:token (no login). Branded as the AGENCY — the
 // platform's own name never appears here. `?preview=1` is the agent's own
 // preview: it isn't counted as a client view and can't respond.
 
-const INK = "#181c22";
+const INK = themeColors.brand;
 
 // One GET per token per page load (StrictMode double-mount would otherwise
 // count two client views).
@@ -125,11 +126,11 @@ const Message = ({ icon, title, body, action }) => {
       <meta name="robots" content="noindex, nofollow" />
     </Helmet>
     <div className="w-full max-w-sm rounded-[24px] bg-white border border-black/5 shadow-sm p-7 text-center">
-      <span className="mx-auto grid place-items-center w-12 h-12 rounded-full bg-[#f1f2f3] text-[#181c22]/60">
+      <span className="mx-auto grid place-items-center w-12 h-12 rounded-full bg-[#f1f2f3] text-ink/60">
         <Icon className="w-6 h-6" />
       </span>
-      <h1 className="mt-4 text-lg font-semibold text-[#181c22]">{title}</h1>
-      <p className="mt-1.5 text-sm text-[#181c22]/60">{body}</p>
+      <h1 className="mt-4 text-lg font-semibold text-ink">{title}</h1>
+      <p className="mt-1.5 text-sm text-ink/60">{body}</p>
       {action}
     </div>
   </div>
@@ -213,7 +214,7 @@ export default function Proposal() {
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="mt-5 h-11 px-6 rounded-full bg-[#181c22] text-white text-sm font-semibold"
+            className="mt-5 h-11 px-6 rounded-full bg-brand text-white text-sm font-semibold"
           >
             Try again
           </button>
@@ -332,7 +333,7 @@ export default function Proposal() {
         href={contacts[0].href}
         target={contacts[0].external ? "_blank" : undefined}
         rel={contacts[0].external ? "noopener noreferrer" : undefined}
-        className="flex items-center gap-1.5 h-10 px-3 rounded-full border border-black/10 bg-white text-xs font-semibold text-[#181c22] hover:bg-black/[0.03]"
+        className="flex items-center gap-1.5 h-10 px-3 rounded-full border border-black/10 bg-white text-xs font-semibold text-ink hover:bg-black/[0.03]"
         aria-label="Talk to us"
       >
         <MessageCircle className="w-4 h-4" />
@@ -343,7 +344,7 @@ export default function Proposal() {
         type="button"
         onClick={() => setTalkOpen((v) => !v)}
         aria-expanded={talkOpen}
-        className="flex items-center gap-1.5 h-10 px-3 rounded-full border border-black/10 bg-white text-xs font-semibold text-[#181c22] hover:bg-black/[0.03]"
+        className="flex items-center gap-1.5 h-10 px-3 rounded-full border border-black/10 bg-white text-xs font-semibold text-ink hover:bg-black/[0.03]"
         aria-label="Talk to us"
       >
         <MessageCircle className="w-4 h-4" />
@@ -356,7 +357,7 @@ export default function Proposal() {
       type="button"
       onClick={downloadPdf}
       disabled={downloading}
-      className="flex items-center gap-1.5 h-10 px-3 rounded-full border border-black/10 bg-white text-xs font-semibold text-[#181c22] hover:bg-black/[0.03] disabled:opacity-60"
+      className="flex items-center gap-1.5 h-10 px-3 rounded-full border border-black/10 bg-white text-xs font-semibold text-ink hover:bg-black/[0.03] disabled:opacity-60"
       aria-label="Download PDF"
     >
       {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
@@ -374,7 +375,7 @@ export default function Proposal() {
   const disabledTitle = preview ? "Preview only — your client responds here" : undefined;
 
   return (
-    <div className="min-h-[100dvh] bg-[#eef0f1] text-[#181c22]">
+    <div className="min-h-[100dvh] bg-[#eef0f1] text-ink">
       <Helmet>
         <title>{`${title} · ${agencyName}`}</title>
         <meta name="robots" content="noindex, nofollow" />
@@ -382,7 +383,7 @@ export default function Proposal() {
       </Helmet>
 
       {preview && (
-        <div className="bg-[#181c22] text-white text-center text-xs font-medium px-4 py-2">
+        <div className="bg-brand text-white text-center text-xs font-medium px-4 py-2">
           Preview — this is what your client sees. Responses are disabled here.
         </div>
       )}
@@ -403,13 +404,13 @@ export default function Proposal() {
           <div className="min-w-0">
             <div className="text-[15px] font-semibold truncate">{agencyName}</div>
             {settings.website && (
-              <div className="text-xs text-[#181c22]/50 truncate">{settings.website}</div>
+              <div className="text-xs text-ink/50 truncate">{settings.website}</div>
             )}
           </div>
           {settings.contact_phone && (
             <a
               href={`tel:${String(settings.contact_phone).replace(/[^\d+]/g, "")}`}
-              className="ml-auto hidden sm:flex items-center gap-1.5 text-sm font-medium text-[#181c22]/70 hover:text-[#181c22]"
+              className="ml-auto hidden sm:flex items-center gap-1.5 text-sm font-medium text-ink/70 hover:text-ink"
             >
               <Phone className="w-4 h-4" /> {settings.contact_phone}
             </a>
@@ -424,7 +425,7 @@ export default function Proposal() {
         </div>
         <h1 className="mt-1 text-xl sm:text-2xl font-semibold tracking-tight">{title}</h1>
         {trip.client_name && (
-          <p className="mt-0.5 text-sm text-[#181c22]/55">
+          <p className="mt-0.5 text-sm text-ink/55">
             Prepared for {trip.client_name} · {trip.trip_id}
           </p>
         )}
@@ -481,9 +482,9 @@ export default function Proposal() {
                     target={c.external ? "_blank" : undefined}
                     rel={c.external ? "noopener noreferrer" : undefined}
                     onClick={() => setTalkOpen(false)}
-                    className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-[#181c22] hover:bg-black/[0.03]"
+                    className="flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-ink hover:bg-black/[0.03]"
                   >
-                    <Icon className="w-4 h-4 text-[#181c22]/60" /> {c.label}
+                    <Icon className="w-4 h-4 text-ink/60" /> {c.label}
                   </a>
                 );
               })}
@@ -494,7 +495,7 @@ export default function Proposal() {
           <div className="flex items-center justify-between gap-3 sm:flex-1 min-w-0">
             <div className="min-w-0">
               {statusLine && (
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-[#181c22]/70">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-ink/70">
                   <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: brand }} />
                   <span className="truncate">{statusLine}</span>
                 </div>
@@ -503,7 +504,7 @@ export default function Proposal() {
                 <div className="text-lg sm:text-xl font-bold tracking-tight leading-tight">
                   {price}{" "}
                   {mapped.includeGST && (
-                    <span className="text-xs font-medium text-[#181c22]/55">incl. GST</span>
+                    <span className="text-xs font-medium text-ink/55">incl. GST</span>
                   )}
                 </div>
               ) : (
@@ -525,7 +526,7 @@ export default function Proposal() {
               onClick={() => setSheet("changes")}
               disabled={preview}
               title={disabledTitle}
-              className="flex-1 sm:flex-none h-11 px-5 rounded-full border border-black/15 bg-white text-sm font-semibold text-[#181c22] hover:bg-black/[0.03] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              className="flex-1 sm:flex-none h-11 px-5 rounded-full border border-black/15 bg-white text-sm font-semibold text-ink hover:bg-black/[0.03] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
             >
               <PencilLine className="w-4 h-4" />
               {responded === "changes_requested" ? "More changes" : "Request changes"}

@@ -53,14 +53,14 @@ export default function SalesPipeline({ token }) {
   return (
     <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden mb-12">
       <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
-        <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">Sales Pipeline</h3>
+        <h3 className="text-sm font-bold text-ink uppercase tracking-widest">Sales Pipeline</h3>
         <span className="text-[10px] font-bold text-[#8a93a2] uppercase tracking-widest">Last 90 days & upcoming</span>
       </div>
 
       <div className="grid grid-cols-4 sm:grid-cols-7 gap-px bg-black/5">
         {STAGES.map(([key, label]) => (
           <div key={key} className="bg-white px-3 py-4 text-center">
-            <div className={`text-2xl font-light ${key === "changes_requested" && data.counts[key] ? "text-amber-600" : "text-[#181c22]"}`}>
+            <div className={`text-2xl font-light ${key === "changes_requested" && data.counts[key] ? "text-amber-600" : "text-ink"}`}>
               {data.counts?.[key] || 0}
             </div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-[#8a93a2] mt-1">{label}</div>
@@ -77,7 +77,7 @@ export default function SalesPipeline({ token }) {
             return (
               <div key={`${t.trip_id}-${t.key}`} className="px-6 py-3 flex items-center gap-3">
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold text-[#181c22] truncate">
+                  <div className="text-sm font-semibold text-ink truncate">
                     {t.client_name || "Client"} · <span className="font-normal text-[#5b6472]">{t.trip_title}</span>
                   </div>
                   <div className="text-xs text-[#5b6472] truncate">
@@ -98,7 +98,7 @@ export default function SalesPipeline({ token }) {
                 )}
                 <Link
                   to={`/trip-builder/${t.trip_id}`}
-                  className="p-2 rounded-xl text-[#181c22]/50 hover:text-[#181c22] hover:bg-black/[0.03]"
+                  className="p-2 rounded-xl text-ink/50 hover:text-ink hover:bg-black/[0.03]"
                   title="Open trip"
                 >
                   <ArrowRight className="w-4 h-4" />

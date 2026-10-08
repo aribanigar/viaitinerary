@@ -452,7 +452,7 @@ const AgencySettings = () => {
                       name="agencyName"
                       value={formData.agencyName}
                       onChange={handleInputChange}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                     />
                   </div>
 
@@ -472,7 +472,7 @@ const AgencySettings = () => {
                           setFormData({ ...formData, phone })
                         }
                         className="w-full"
-                        inputClassName="!w-full !bg-slate-50 !border-slate-100 !rounded-xl !px-4 !py-6 !text-slate-900 !text-sm !font-bold !focus:ring-2 !focus:ring-[#e7f63c]/20 !focus:border-[#e7f63c] !outline-none !transition-all"
+                        inputClassName="!w-full !bg-slate-50 !border-slate-100 !rounded-xl !px-4 !py-6 !text-slate-900 !text-sm !font-bold !focus:ring-2 !focus:ring-accent/20 !focus:border-accent !outline-none !transition-all"
                       />
                     </div>
                   </div>
@@ -488,7 +488,7 @@ const AgencySettings = () => {
                       value={formData.website}
                       onChange={handleInputChange}
                       placeholder="e.g. www.travellagency.com"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                     />
                   </div>
 
@@ -504,7 +504,7 @@ const AgencySettings = () => {
                       onChange={handleInputChange}
                       placeholder="e.g. 2nd Floor, Main Street, Your City, Country"
                       rows={2}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300 resize-y"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300 resize-y"
                     />
                   </div>
 
@@ -520,7 +520,7 @@ const AgencySettings = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="e.g. contact@agency.com"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                     />
                   </div>
 
@@ -539,7 +539,7 @@ const AgencySettings = () => {
                           setFormData({ ...formData, whatsapp: phone })
                         }
                         className="w-full"
-                        inputClassName="!w-full !bg-slate-50 !border-slate-100 !rounded-xl !px-4 !py-6 !text-slate-900 !text-sm !font-bold !focus:ring-2 !focus:ring-[#e7f63c]/20 !focus:border-[#e7f63c] !outline-none !transition-all"
+                        inputClassName="!w-full !bg-slate-50 !border-slate-100 !rounded-xl !px-4 !py-6 !text-slate-900 !text-sm !font-bold !focus:ring-2 !focus:ring-accent/20 !focus:border-accent !outline-none !transition-all"
                       />
                     </div>
                   </div>
@@ -553,7 +553,7 @@ const AgencySettings = () => {
                       name="currency"
                       value={formData.currency || "INR (₹)"}
                       onChange={handleInputChange}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all cursor-pointer"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all cursor-pointer"
                     >
                       {(CURRENCY_OPTIONS.includes(formData.currency)
                         ? CURRENCY_OPTIONS
@@ -594,7 +594,7 @@ const AgencySettings = () => {
                     value={formData.googleMapsApiKey || ""}
                     onChange={handleInputChange}
                     placeholder="Paste your own Google Maps / Places API key"
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                   />
                   <p className="text-[11px] text-slate-400 ml-1 leading-relaxed">
                     Powers Hotel Name autocomplete and the location map on
@@ -672,7 +672,7 @@ const AgencySettings = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Razorpay Key ID</label>
-                    <input type="text" name="razorpayKeyId" value={formData.razorpayKeyId || ""} onChange={handleInputChange} placeholder="rzp_live_…" autoComplete="off" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                    <input type="text" name="razorpayKeyId" value={formData.razorpayKeyId || ""} onChange={handleInputChange} placeholder="rzp_live_…" autoComplete="off" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
@@ -685,7 +685,7 @@ const AgencySettings = () => {
                       onChange={handleInputChange}
                       placeholder={formData.hasRazorpaySecret ? "Leave blank to keep the saved secret" : "Paste the key secret"}
                       autoComplete="new-password"
-                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
+                      className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300"
                     />
                   </div>
                 </div>
@@ -717,15 +717,15 @@ const AgencySettings = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">UPI ID</label>
-                    <input type="text" name="upiId" value={formData.upiId || ""} onChange={handleInputChange} placeholder="agency@okhdfcbank" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                    <input type="text" name="upiId" value={formData.upiId || ""} onChange={handleInputChange} placeholder="agency@okhdfcbank" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Default advance %</label>
-                    <input type="number" min="0" max="100" name="advancePercentage" value={formData.advancePercentage ?? ""} onChange={handleInputChange} placeholder="30" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                    <input type="number" min="0" max="100" name="advancePercentage" value={formData.advancePercentage ?? ""} onChange={handleInputChange} placeholder="30" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Balance due (days before travel)</label>
-                    <input type="number" min="0" name="balanceDueDays" value={formData.balanceDueDays ?? ""} onChange={handleInputChange} placeholder="15" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                    <input type="number" min="0" name="balanceDueDays" value={formData.balanceDueDays ?? ""} onChange={handleInputChange} placeholder="15" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
                   </div>
                 </div>
                 <button
@@ -766,11 +766,11 @@ const AgencySettings = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nudge after (hours)</label>
-                    <input type="number" min="1" name="followUpAfterHours" value={formData.followUpAfterHours ?? ""} onChange={handleInputChange} placeholder="24" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                    <input type="number" min="1" name="followUpAfterHours" value={formData.followUpAfterHours ?? ""} onChange={handleInputChange} placeholder="24" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Max nudges per proposal</label>
-                    <input type="number" min="0" name="maxFollowUps" value={formData.maxFollowUps ?? ""} onChange={handleInputChange} placeholder="2" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                    <input type="number" min="0" name="maxFollowUps" value={formData.maxFollowUps ?? ""} onChange={handleInputChange} placeholder="2" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
                   </div>
                 </div>
                 <button
@@ -785,7 +785,7 @@ const AgencySettings = () => {
                 </button>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Remind every (days)</label>
-                  <input type="number" min="1" name="paymentReminderAfterDays" value={formData.paymentReminderAfterDays ?? ""} onChange={handleInputChange} placeholder="2" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                  <input type="number" min="1" name="paymentReminderAfterDays" value={formData.paymentReminderAfterDays ?? ""} onChange={handleInputChange} placeholder="2" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
                 </div>
               </div>
 
@@ -852,7 +852,7 @@ const AgencySettings = () => {
                 </button>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Review link (optional)</label>
-                  <input type="url" name="reviewUrl" value={formData.reviewUrl ?? ""} onChange={handleInputChange} placeholder="https://g.page/r/your-google-review-link" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c] outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
+                  <input type="url" name="reviewUrl" value={formData.reviewUrl ?? ""} onChange={handleInputChange} placeholder="https://g.page/r/your-google-review-link" className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-slate-900 text-sm font-bold focus:ring-2 focus:ring-accent/20 focus:border-accent outline-none transition-all placeholder:font-medium placeholder:text-slate-300" />
                 </div>
               </div>
 
@@ -1016,7 +1016,7 @@ const AgencySettings = () => {
         <button
           onClick={handleSave}
           disabled={loading || saving}
-          className="w-full md:w-auto flex items-center justify-center gap-2 bg-[#e7f63c] text-[#181c22] px-6 py-3 rounded-xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-accent text-ink px-6 py-3 rounded-xl font-bold shadow-lg shadow-accent/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <>

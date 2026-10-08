@@ -114,15 +114,15 @@ const Destinations = () => {
       value: destinations.length.toString(),
       change: "In your catalog",
       icon: MapPin,
-      bgColor: "bg-[#e7f63c]",
-      iconColor: "text-[#181c22]",
+      bgColor: "bg-accent",
+      iconColor: "text-ink",
     },
     {
       label: "Total Activities",
       value: totalActivities.toString(),
       change: "Across all destinations",
       icon: ListChecks,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
     },
     {
@@ -130,7 +130,7 @@ const Destinations = () => {
       value: withPhotoCount.toString(),
       change: "Ready to showcase",
       icon: ImageIcon,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
     },
     {
@@ -138,7 +138,7 @@ const Destinations = () => {
       value: (destinations.length - withPhotoCount).toString(),
       change: "Could use a photo",
       icon: ImageOff,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
     },
   ];
@@ -174,7 +174,7 @@ const Destinations = () => {
             <button
               onClick={handleFillPhotos}
               disabled={fillingPhotos}
-              className="flex items-center gap-2 bg-white border border-black/10 text-[#181c22] px-5 py-3 rounded-2xl font-bold hover:bg-black/[0.03] transition-all text-sm w-fit disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-white border border-black/10 text-ink px-5 py-3 rounded-2xl font-bold hover:bg-black/[0.03] transition-all text-sm w-fit disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {fillingPhotos ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -188,7 +188,7 @@ const Destinations = () => {
           )}
           <button
             onClick={() => navigate("/destinations/add")}
-            className="flex items-center gap-2 bg-[#e7f63c] text-[#181c22] px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit"
+            className="flex items-center gap-2 bg-accent text-ink px-6 py-3 rounded-2xl font-bold shadow-lg shadow-accent/40 hover:bg-accent-hover transition-all text-sm w-fit"
           >
             <Plus className="w-4 h-4" />
             Add New Destination
@@ -209,10 +209,10 @@ const Destinations = () => {
               >
                 <stat.icon className={`w-4 h-4 ${stat.iconColor}`} />
               </span>
-              <span className="text-xs font-bold text-[#181c22] whitespace-nowrap">
+              <span className="text-xs font-bold text-ink whitespace-nowrap">
                 {stat.label}
               </span>
-              <span className="grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#f3f3f4] font-black text-[#181c22] text-[11px]">
+              <span className="grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#f3f3f4] font-black text-ink text-[11px]">
                 {stat.value}
               </span>
             </div>
@@ -222,7 +222,7 @@ const Destinations = () => {
 
       <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
-          <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
+          <h3 className="text-sm font-bold text-ink uppercase tracking-widest">
             All Destinations
           </h3>
           <span className="text-[10px] font-bold text-[#8a93a2] uppercase tracking-widest">
@@ -235,7 +235,7 @@ const Destinations = () => {
             <input
               type="text"
               placeholder="Search by name..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

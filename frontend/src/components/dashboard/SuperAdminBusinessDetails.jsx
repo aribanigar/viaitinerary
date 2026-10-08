@@ -42,6 +42,7 @@ import {
   PieChart,
   Pie,
 } from "recharts";
+import { themeColors } from "../../themes";
 
 const fmtINR = (amount) => {
   const n = parseFloat(amount) || 0;
@@ -338,10 +339,10 @@ const SuperAdminBusinessDetails = () => {
                     <linearGradient id="colorTrips" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor="#181c22"
+                        stopColor={themeColors.brand}
                         stopOpacity={0.15}
                       />
-                      <stop offset="95%" stopColor="#181c22" stopOpacity={0} />
+                      <stop offset="95%" stopColor={themeColors.brand} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -371,7 +372,7 @@ const SuperAdminBusinessDetails = () => {
                   <Area
                     type="monotone"
                     dataKey="trips"
-                    stroke="#181c22"
+                    stroke={themeColors.brand}
                     strokeWidth={3}
                     fill="url(#colorTrips)"
                     name="Itineraries Created"
@@ -394,7 +395,7 @@ const SuperAdminBusinessDetails = () => {
           <div className="space-y-8">
             {/* Business Card */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="h-20 bg-linear-to-r from-[#e7f63c] to-[#d4e42e] relative">
+              <div className="h-20 bg-linear-to-r from-accent to-accent-hover relative">
                 <div className="absolute -bottom-6 left-6">
                   <div className="w-16 h-16 rounded-2xl bg-white border-4 border-white shadow-md flex items-center justify-center text-indigo-600">
                     <Building className="w-8 h-8" />

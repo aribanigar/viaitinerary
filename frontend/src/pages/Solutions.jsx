@@ -57,7 +57,6 @@ const Solutions = () => (
     description="How ViaItinerary's travel CRM and itinerary builder works for DMCs, tour operators, travel agencies and multi-agent sales teams."
     path="/solutions"
     crumb="Solutions"
-    eyebrow="Solutions"
     heading="Built for every kind of travel business"
     intro="The same core platform, set up around how your business quotes, books and collects payments."
   >
@@ -79,7 +78,7 @@ const Solutions = () => (
               <ul className="mt-5 space-y-2.5">
                 {s.points.map((p) => (
                   <li key={p} className="flex gap-2.5 text-[15px]">
-                    <span className="mt-0.5 w-5 h-5 rounded-full bg-[#e7f63c] flex items-center justify-center shrink-0">
+                    <span className="mt-0.5 w-5 h-5 rounded-full bg-accent flex items-center justify-center shrink-0">
                       <Check className="w-3 h-3" />
                     </span>
                     {p}

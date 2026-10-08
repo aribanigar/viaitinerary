@@ -532,7 +532,7 @@ const AccommodationForm = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                <Hotel className="w-4 h-4 text-[#181c22]" />
+                <Hotel className="w-4 h-4 text-ink" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                   Property Details
                 </h3>
@@ -744,7 +744,7 @@ const AccommodationForm = () => {
                     <Star
                       className={`w-5 h-5 transition-colors ${
                         Number(formData.category) >= n
-                          ? "fill-[#e7f63c] text-[#181c22]"
+                          ? "fill-accent text-ink"
                           : "fill-transparent text-slate-300"
                       }`}
                       strokeWidth={1.5}
@@ -763,7 +763,7 @@ const AccommodationForm = () => {
 
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                <Phone className="w-4 h-4 text-[#181c22]" />
+                <Phone className="w-4 h-4 text-ink" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                   Availability &amp; Contact
                 </h3>
@@ -842,7 +842,7 @@ const AccommodationForm = () => {
                     onChange={(phone) =>
                       setFormData((prev) => ({ ...prev, phone }))
                     }
-                    inputClassName="!w-full !pr-4 !py-3.5 !bg-slate-50 !border-none !rounded-xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-[#e7f63c]/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium"
+                    inputClassName="!w-full !pr-4 !py-3.5 !bg-slate-50 !border-none !rounded-xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-accent/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium"
                     containerClassName="!border-none"
                     buttonClassName="!bg-transparent !border-none !rounded-l-xl !pl-4 !mr-[-48px] !z-10"
                   />
@@ -854,7 +854,7 @@ const AccommodationForm = () => {
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                  <BedDouble className="w-4 h-4 text-[#181c22]" />
+                  <BedDouble className="w-4 h-4 text-ink" />
                   <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                     Room &amp; Meal Pricing
                   </h3>
@@ -1073,7 +1073,7 @@ const AccommodationForm = () => {
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="space-y-3 w-full">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                <TrendingUp className="w-4 h-4 text-[#181c22]" />
+                <TrendingUp className="w-4 h-4 text-ink" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                   Market Reference Prices
                 </h3>
@@ -1155,7 +1155,7 @@ const AccommodationForm = () => {
                                     onClick={() =>
                                       addB2BRatePrice(price, `${room.category} (${room.meal})`)
                                     }
-                                    className="text-[10px] font-black uppercase tracking-wider bg-[#e7f63c] text-[#181c22] px-2 py-1 rounded-md hover:bg-[#d4e42e]"
+                                    className="text-[10px] font-black uppercase tracking-wider bg-accent text-ink px-2 py-1 rounded-md hover:bg-accent-hover"
                                   >
                                     Use
                                   </button>
@@ -1195,16 +1195,16 @@ const AccommodationForm = () => {
               )}
 
               {marketAverage != null && (
-                <div className="flex items-center justify-between px-3 py-2.5 bg-[#181c22] rounded-lg">
+                <div className="flex items-center justify-between px-3 py-2.5 bg-brand rounded-lg">
                   <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-[#e7f63c]" />
+                    <Sparkles className="w-3.5 h-3.5 text-accent" />
                     Suggested price: ₹{marketAverage.toLocaleString("en-IN")} (avg of{" "}
                     {marketPrices.length})
                   </span>
                   <button
                     type="button"
                     onClick={applySuggestedPrice}
-                    className="text-[10px] font-black uppercase tracking-wider bg-[#e7f63c] text-[#181c22] px-2.5 py-1.5 rounded-md hover:bg-[#d4e42e]"
+                    className="text-[10px] font-black uppercase tracking-wider bg-accent text-ink px-2.5 py-1.5 rounded-md hover:bg-accent-hover"
                   >
                     Use this price
                   </button>
@@ -1244,7 +1244,7 @@ const AccommodationForm = () => {
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="space-y-3 w-full">
               <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                <Wallet className="w-4 h-4 text-[#181c22]" />
+                <Wallet className="w-4 h-4 text-ink" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                   Supplier Payment Terms
                 </h3>
@@ -1319,7 +1319,7 @@ const AccommodationForm = () => {
 
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
               <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100">
-                <ImageIcon className="w-4 h-4 text-[#181c22]" />
+                <ImageIcon className="w-4 h-4 text-ink" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                   Photo Reference
                 </h3>
@@ -1355,7 +1355,7 @@ const AccommodationForm = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:w-auto bg-[#e7f63c] text-[#181c22] px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-[#e7f63c]/40 active:scale-[0.98] transition-all"
+                className="w-full sm:w-auto bg-accent text-ink px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-accent/40 active:scale-[0.98] transition-all"
               >
                 {submitting ? "Saving..." : "Save Accommodation"}
               </button>

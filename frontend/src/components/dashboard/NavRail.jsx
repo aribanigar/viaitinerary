@@ -35,8 +35,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import InstallAppButton from "../common/InstallAppButton";
+import { themeColors } from "../../themes";
 
-const INK = "#181c22";
+const INK = themeColors.brand;
 const PIN_KEY = "nav_rail_pinned";
 
 // Full navigation tree — the single source of truth for desktop nav, covering
@@ -141,7 +142,7 @@ const NAV_TREE = [
 
 const Mark = ({ className = "" }) => (
   <span
-    className={`grid place-items-center rounded-full bg-[#181c22] ${className}`}
+    className={`grid place-items-center rounded-full bg-brand ${className}`}
   >
     <Aperture className="w-[60%] h-[60%] text-white" strokeWidth={2.2} />
   </span>
@@ -167,8 +168,8 @@ function Row({ icon: Icon, label, to, active, expanded, onNavigate }) {
         expanded ? "gap-3 px-[18px] w-full" : "w-11 mx-auto justify-center"
       } ${
         active
-          ? "bg-[#181c22] text-white shadow-md"
-          : "text-[#181c22]/55 hover:text-[#181c22] hover:bg-black/5"
+          ? "bg-brand text-white shadow-md"
+          : "text-ink/55 hover:text-ink hover:bg-black/5"
       }`}
       title={expanded ? undefined : label}
     >
@@ -189,7 +190,7 @@ function Row({ icon: Icon, label, to, active, expanded, onNavigate }) {
 
 function GroupHeader({ label }) {
   return (
-    <div className="flex items-center h-7 px-[18px] mt-3 mb-0.5 text-[#181c22]/35">
+    <div className="flex items-center h-7 px-[18px] mt-3 mb-0.5 text-ink/35">
       <motion.span
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -253,7 +254,7 @@ const NavRail = () => {
             animate={{ opacity: 1 }}
             onClick={() => setPinned((p) => !p)}
             title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
-            className="grid place-items-center w-8 h-8 rounded-full text-[#181c22]/40 hover:text-[#181c22] hover:bg-black/5 transition-colors"
+            className="grid place-items-center w-8 h-8 rounded-full text-ink/40 hover:text-ink hover:bg-black/5 transition-colors"
           >
             {pinned ? (
               <ChevronsLeft className="w-4 h-4" />
@@ -309,13 +310,13 @@ const NavRail = () => {
           variant={expanded ? "pill" : "icon"}
           className={
             expanded
-              ? "!w-full !justify-center !bg-white !text-[#181c22] !border !border-black/10 hover:!bg-black/5"
-              : "!w-11 !h-11 !rounded-2xl hover:!text-[#181c22]"
+              ? "!w-full !justify-center !bg-white !text-ink !border !border-black/10 hover:!bg-black/5"
+              : "!w-11 !h-11 !rounded-2xl hover:!text-ink"
           }
         />
         <Link
           to="/notifications"
-          className={`relative flex items-center gap-3 h-11 rounded-2xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm hover:text-[#181c22] transition-colors ${expanded ? "px-[18px]" : "justify-center"}`}
+          className={`relative flex items-center gap-3 h-11 rounded-2xl bg-white border border-black/5 text-ink/60 shadow-sm hover:text-ink transition-colors ${expanded ? "px-[18px]" : "justify-center"}`}
         >
           <Bell className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
           {expanded && (
@@ -329,7 +330,7 @@ const NavRail = () => {
           onClick={() => navigate("/profile")}
           className={`w-full flex items-center gap-3 rounded-2xl transition-colors hover:bg-black/5 ${expanded ? "p-2" : "justify-center py-1"}`}
         >
-          <div className="w-9 h-9 shrink-0 rounded-2xl bg-[#e7f63c] text-[#181c22] grid place-items-center font-bold text-xs border border-black/5 shadow-sm">
+          <div className="w-9 h-9 shrink-0 rounded-2xl bg-accent text-ink grid place-items-center font-bold text-xs border border-black/5 shadow-sm">
             {initials}
           </div>
           {expanded && (
@@ -339,7 +340,7 @@ const NavRail = () => {
               transition={{ duration: 0.16, delay: 0.04 }}
               className="min-w-0 text-left"
             >
-              <p className="text-[12px] font-bold text-[#181c22] truncate leading-tight">
+              <p className="text-[12px] font-bold text-ink truncate leading-tight">
                 {user?.name || "User"}
               </p>
               <p className="text-[10px] text-[#9aa3b2] truncate leading-tight">

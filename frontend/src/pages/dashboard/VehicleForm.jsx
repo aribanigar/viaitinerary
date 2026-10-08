@@ -303,7 +303,7 @@ const VehicleForm = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Car className="w-4 h-4 text-[#181c22]" />
+              <Car className="w-4 h-4 text-ink" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                 Vehicle Details
               </h3>
@@ -446,7 +446,7 @@ const VehicleForm = () => {
                       }
                       className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-colors ${
                         formData.is_ac === opt.value
-                          ? "bg-[#181c22] text-white"
+                          ? "bg-brand text-white"
                           : "text-slate-500"
                       }`}
                     >
@@ -460,7 +460,7 @@ const VehicleForm = () => {
 
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <MapPin className="w-4 h-4 text-[#181c22]" />
+              <MapPin className="w-4 h-4 text-ink" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                 Base Location
               </h3>
@@ -572,7 +572,7 @@ const VehicleForm = () => {
 
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <CheckCircle2 className="w-4 h-4 text-[#181c22]" />
+              <CheckCircle2 className="w-4 h-4 text-ink" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                 Availability &amp; Contact
               </h3>
@@ -651,7 +651,7 @@ const VehicleForm = () => {
                     forceDialCode
                     value={formData.phone}
                     onChange={(phone) => setFormData((prev) => ({ ...prev, phone }))}
-                    inputClassName="!w-full !pr-4 !py-3.5 !bg-slate-50 !border-none !rounded-xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-[#e7f63c]/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium"
+                    inputClassName="!w-full !pr-4 !py-3.5 !bg-slate-50 !border-none !rounded-xl !text-sm !font-bold !text-slate-900 !focus:ring-2 !focus:ring-accent/20 !transition-all !placeholder:text-slate-300 !placeholder:font-medium"
                     containerClassName="!border-none"
                     buttonClassName="!bg-transparent !border-none !rounded-l-xl !pl-4 !mr-[-48px] !z-10"
                   />
@@ -662,7 +662,7 @@ const VehicleForm = () => {
 
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <IndianRupee className="w-4 h-4 text-[#181c22]" />
+              <IndianRupee className="w-4 h-4 text-ink" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                 Rate &amp; Charges
               </h3>
@@ -815,7 +815,7 @@ const VehicleForm = () => {
 
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Sparkles className="w-4 h-4 text-[#181c22]" />
+              <Sparkles className="w-4 h-4 text-ink" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                 Features
               </h3>
@@ -830,7 +830,7 @@ const VehicleForm = () => {
                     onClick={() => toggleFeature(feature)}
                     className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
                       active
-                        ? "bg-[#181c22] text-white"
+                        ? "bg-brand text-white"
                         : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                     }`}
                   >
@@ -865,7 +865,7 @@ const VehicleForm = () => {
 
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <StickyNote className="w-4 h-4 text-[#181c22]" />
+              <StickyNote className="w-4 h-4 text-ink" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                 Notes
               </h3>
@@ -882,7 +882,7 @@ const VehicleForm = () => {
 
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
             <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100">
-              <ImageIcon className="w-4 h-4 text-[#181c22]" />
+              <ImageIcon className="w-4 h-4 text-ink" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                 Photo Reference
               </h3>
@@ -914,7 +914,7 @@ const VehicleForm = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full sm:w-auto bg-[#e7f63c] text-[#181c22] px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-[#e7f63c]/40 active:scale-[0.98] transition-all"
+              className="w-full sm:w-auto bg-accent text-ink px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-accent/40 active:scale-[0.98] transition-all"
             >
               {submitting ? "Saving..." : "Save Vehicle"}
             </button>

@@ -116,8 +116,8 @@ const Sidebar = ({ isOpen, onClose }) => {
             onClick={onClose}
             className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
               isActive("/dashboard")
-                ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
             }`}
           >
             <LayoutDashboard className="w-5 h-5" />
@@ -137,8 +137,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/businesses")
-                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                    : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                    ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                    : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                 }`}
               >
                 <Building className="w-5 h-5" />
@@ -150,8 +150,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/public-leads")
-                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                    : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                    ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                    : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                 }`}
               >
                 <Inbox className="w-5 h-5" />
@@ -163,8 +163,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/demo-requests")
-                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                    : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                    ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                    : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                 }`}
               >
                 <CalendarCheck className="w-5 h-5" />
@@ -176,8 +176,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/admin/showcase")
-                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                    : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                    ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                    : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                 }`}
               >
                 <ImageIcon className="w-5 h-5" />
@@ -189,8 +189,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/admin/trusted-companies")
-                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                    : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                    ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                    : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                 }`}
               >
                 <ShieldCheck className="w-5 h-5" />
@@ -203,8 +203,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                   onClick={() => setIsBlogSubmenuOpen(!isBlogSubmenuOpen)}
                   className={`w-full flex items-center justify-between gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                     location.pathname.startsWith("/admin/blog")
-                      ? "bg-black/[0.03] text-[#181c22] font-bold"
-                      : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                      ? "bg-black/[0.03] text-ink font-bold"
+                      : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -225,8 +225,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/admin/blog/posts")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <FileText className="w-5 h-5" />
@@ -237,8 +237,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/admin/blog/categories")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <Tag className="w-5 h-5" />
@@ -253,8 +253,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/admin/plans")
-                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                    : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                    ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                    : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                 }`}
               >
                 <Zap className="w-5 h-5" />
@@ -270,8 +270,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/trip-builder")
-                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                    : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                    ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                    : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                 }`}
               >
                 <Plus className="w-5 h-5" />
@@ -283,8 +283,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                 onClick={onClose}
                 className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                   isActive("/assistant")
-                    ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                    : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                    ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                    : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                 }`}
               >
                 <Sparkles className="w-5 h-5" />
@@ -302,8 +302,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                     isActive("/integrations") ||
                     isActive("/team") ||
                     isActive("/team-report")
-                      ? "bg-black/[0.03] text-[#181c22] font-bold"
-                      : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                      ? "bg-black/[0.03] text-ink font-bold"
+                      : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -324,8 +324,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/my-trips")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <FileText className="w-5 h-5" />
@@ -337,8 +337,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/operations")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <CalendarClock className="w-5 h-5" />
@@ -350,8 +350,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/packages") || isActive("/package-builder")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <Package className="w-5 h-5" />
@@ -365,8 +365,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/lead-inquiries") ||
                           isActive("/integrations")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <Inbox className="w-5 h-5" />
@@ -380,8 +380,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/team")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <Users className="w-5 h-5" />
@@ -395,8 +395,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/team-report")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <BarChart3 className="w-5 h-5" />
@@ -418,8 +418,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                     isActive("/destinations") ||
                     isActive("/complementary-services") ||
                     isActive("/policies")
-                      ? "bg-black/[0.03] text-[#181c22] font-bold"
-                      : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                      ? "bg-black/[0.03] text-ink font-bold"
+                      : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -440,8 +440,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/accommodation")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <Hotel className="w-5 h-5" />
@@ -453,8 +453,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/transportation")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <Car className="w-5 h-5" />
@@ -466,8 +466,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/destinations")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <MapPin className="w-5 h-5" />
@@ -479,8 +479,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/complementary-services")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <Gift className="w-5 h-5" />
@@ -492,8 +492,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                         isActive("/activities")
-                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                          ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                       }`}
                     >
                       <Ticket className="w-5 h-5" />
@@ -506,8 +506,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/policies")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <ShieldCheck className="w-5 h-5" />
@@ -529,8 +529,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                       isActive("/ledger") ||
                       isActive("/payment-details") ||
                       isActive("/subscription")
-                        ? "bg-black/[0.03] text-[#181c22] font-bold"
-                        : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                        ? "bg-black/[0.03] text-ink font-bold"
+                        : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -551,8 +551,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/accounting")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <FileText className="w-5 h-5" />
@@ -564,8 +564,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/accounting-summary")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <BarChart3 className="w-5 h-5" />
@@ -577,8 +577,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/ledger")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <BookOpen className="w-5 h-5" />
@@ -590,8 +590,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/payment-details")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <CreditCard className="w-5 h-5" />
@@ -603,8 +603,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/subscription")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <Zap className="w-5 h-5" />
@@ -623,8 +623,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                     }
                     className={`w-full flex items-center justify-between gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                       isActive("/settings") || isActive("/typography")
-                        ? "bg-black/[0.03] text-[#181c22] font-bold"
-                        : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                        ? "bg-black/[0.03] text-ink font-bold"
+                        : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -645,8 +645,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           location.pathname === "/settings"
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <SettingsIcon className="w-5 h-5" />
@@ -658,8 +658,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/typography")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <Type className="w-5 h-5" />
@@ -671,8 +671,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                         onClick={onClose}
                         className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
                           isActive("/settings/email-connect")
-                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
-                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                            ? "bg-brand text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-ink font-medium text-[#5b6472]"
                         }`}
                       >
                         <KeyRound className="w-5 h-5" />
@@ -692,7 +692,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             onClick={onClose}
             className="bg-black/[0.03] rounded-2xl p-4 flex items-center gap-3 border border-black/5 hover:bg-black/[0.06] transition-colors cursor-pointer"
           >
-            <div className="w-10 h-10 rounded-full bg-[#e7f63c] flex items-center justify-center text-[#181c22] font-bold text-xs ring-4 ring-black/5 shadow-inner shrink-0 overflow-hidden">
+            <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-ink font-bold text-xs ring-4 ring-black/5 shadow-inner shrink-0 overflow-hidden">
               {user?.profile_picture ? (
                 <img
                   src={`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/storage/${user.profile_picture}`}
@@ -704,7 +704,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               )}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-bold text-[#181c22] leading-none truncate">
+              <p className="text-sm font-bold text-ink leading-none truncate">
                 {user?.name || "User"}
               </p>
               <p className="text-[10px] text-[#9aa3b2] mt-1 font-medium truncate">

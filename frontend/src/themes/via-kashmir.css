@@ -1,0 +1,125 @@
+/* ── ACTIVE THEME: "Alpine Editorial" — Via Kashmir Theme Factory
+   (forest green + mint, Manrope headlines / Inter body).
+   The previous look is kept in ./editorial.css — see its header to switch.
+   Colour values here must match src/themes/index.js (JS-side copies for
+   charts, maps and inline styles). ── */
+
+/* Role tokens the components use (bg-brand, text-ink, bg-accent …). */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* No serif in this system: editorial serif headlines become Manrope. */
+  --font-serif: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand: #00361a;
+  --color-ink: #191c1d;
+
+  /* Highlight for primary actions, active nav, focus rings and chart fills
+     (was lime). Always pairs with dark text. */
+  --color-accent: #b8f0c5;
+  --color-accent-hover: #9dd3aa;
+  --color-accent-soft: #e6f6ea;
+  --color-on-accent: #00210e;
+}
+
+/* ── Via Kashmir core palette (Material-style roles) ── */
+@theme {
+  --color-primary: #00361a;
+  --color-primary-container: #1a4d2e;
+  --color-primary-fixed: #b8f0c5;
+  --color-primary-fixed-dim: #9dd3aa;
+  --color-on-primary: #ffffff;
+  --color-on-primary-container: #88bd95;
+  --color-on-primary-fixed: #00210e;
+  --color-on-primary-fixed-variant: #1d5031;
+  --color-secondary: #13677b;
+  --color-secondary-container: #a1e7ff;
+  --color-secondary-fixed: #b2ebff;
+  --color-secondary-fixed-dim: #8bd1e8;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #18697e;
+  --color-on-secondary-fixed: #001f27;
+  --color-on-secondary-fixed-variant: #004e5f;
+  --color-tertiary: #4a2400;
+  --color-tertiary-container: #6b3600;
+  --color-tertiary-fixed: #ffdcc4;
+  --color-tertiary-fixed-dim: #ffb780;
+  --color-on-tertiary: #ffffff;
+  --color-on-tertiary-container: #f09f5e;
+  --color-on-tertiary-fixed: #2f1400;
+  --color-on-tertiary-fixed-variant: #6f3800;
+  --color-surface: #f8f9fa;
+  --color-surface-dim: #d9dadb;
+  --color-surface-bright: #f8f9fa;
+  --color-surface-variant: #e1e3e4;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f4f5;
+  --color-surface-container: #edeeef;
+  --color-surface-container-high: #e7e8e9;
+  --color-surface-container-highest: #e1e3e4;
+  --color-surface-tint: #366847;
+  --color-on-surface: #191c1d;
+  --color-on-surface-variant: #414942;
+  --color-on-background: #191c1d;
+  --color-outline: #717971;
+  --color-outline-variant: #c1c9bf;
+  --color-inverse-primary: #9dd3aa;
+  --color-inverse-surface: #2e3132;
+  --color-inverse-on-surface: #f0f1f2;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-error-container: #93000a;
+  --color-background: #f8f9fa;
+}
+
+/* ── Legacy accent scales remapped onto the brand: blue/indigo → forest
+   green, sky/cyan → glacier teal (secondary), so older utility classes
+   inherit the theme without touching every component. ── */
+@theme {
+  --color-blue-50: #eef7f0;
+  --color-blue-100: #dcefe0;
+  --color-blue-200: #b8f0c5;
+  --color-blue-300: #9dd3aa;
+  --color-blue-400: #6fae80;
+  --color-blue-500: #366847;
+  --color-blue-600: #1a4d2e;
+  --color-blue-700: #00361a;
+  --color-blue-800: #002813;
+  --color-blue-900: #00210e;
+  --color-blue-950: #00140a;
+
+  --color-indigo-50: #eef7f0;
+  --color-indigo-100: #dcefe0;
+  --color-indigo-200: #b8f0c5;
+  --color-indigo-300: #9dd3aa;
+  --color-indigo-400: #6fae80;
+  --color-indigo-500: #366847;
+  --color-indigo-600: #1a4d2e;
+  --color-indigo-700: #00361a;
+  --color-indigo-800: #002813;
+  --color-indigo-900: #00210e;
+  --color-indigo-950: #00140a;
+
+  --color-sky-50: #ecf8fb;
+  --color-sky-100: #d3f1fa;
+  --color-sky-200: #b2ebff;
+  --color-sky-300: #8bd1e8;
+  --color-sky-400: #4fa6bd;
+  --color-sky-500: #2a8499;
+  --color-sky-600: #13677b;
+  --color-sky-700: #004e5f;
+  --color-sky-800: #003845;
+  --color-sky-900: #001f27;
+
+  --color-cyan-50: #ecf8fb;
+  --color-cyan-100: #d3f1fa;
+  --color-cyan-200: #b2ebff;
+  --color-cyan-300: #8bd1e8;
+  --color-cyan-400: #4fa6bd;
+  --color-cyan-500: #2a8499;
+  --color-cyan-600: #13677b;
+  --color-cyan-700: #004e5f;
+  --color-cyan-800: #003845;
+  --color-cyan-900: #001f27;
+}

@@ -335,7 +335,7 @@ const LeadInquiryForm = () => {
                       autoComplete="name"
                       className={`w-full px-4 py-3 border ${
                         errors.clientName ? "border-red-500" : "border-gray-300"
-                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e7f63c] transition-all`}
+                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition-all`}
                       placeholder="John Doe"
                     />
                     {errors.clientName && (
@@ -359,7 +359,7 @@ const LeadInquiryForm = () => {
                         errors.clientEmail
                           ? "border-red-500"
                           : "border-gray-300"
-                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e7f63c] transition-all`}
+                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition-all`}
                       placeholder="john@example.com"
                     />
                     {errors.clientEmail && (
@@ -402,7 +402,7 @@ const LeadInquiryForm = () => {
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="bg-[#e7f63c] text-[#181c22] px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all flex items-center gap-2"
+                      className="bg-accent text-ink px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all flex items-center gap-2"
                     >
                       Next →
                     </button>
@@ -431,7 +431,7 @@ const LeadInquiryForm = () => {
                         errors.destination
                           ? "border-red-500"
                           : "border-gray-300"
-                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e7f63c] transition-all`}
+                      } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition-all`}
                       placeholder="e.g., Paris, Tokyo, Bali"
                     />
                     {errors.destination && (
@@ -484,7 +484,7 @@ const LeadInquiryForm = () => {
                         max="365"
                         className={`w-full px-4 py-3 border ${
                           errors.duration ? "border-red-500" : "border-gray-300"
-                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e7f63c] transition-all`}
+                        } rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition-all`}
                         placeholder="e.g., 5"
                       />
                       {errors.duration && (
@@ -648,7 +648,7 @@ const LeadInquiryForm = () => {
                     <button
                       type="button"
                       onClick={handleNext}
-                      className="bg-[#e7f63c] text-[#181c22] px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all flex items-center gap-2"
+                      className="bg-accent text-ink px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all flex items-center gap-2"
                     >
                       Next →
                     </button>
@@ -675,7 +675,7 @@ const LeadInquiryForm = () => {
                         value={formData.approximateBudget}
                         onChange={handleChange}
                         min="0"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e7f63c] transition-all"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition-all"
                         placeholder="50000"
                       />
                     </div>
@@ -691,7 +691,7 @@ const LeadInquiryForm = () => {
                       value={formData.specialRequests}
                       onChange={handleChange}
                       rows={5}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e7f63c] transition-all resize-none"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent transition-all resize-none"
                       placeholder="Any specific requirements, activities you'd like to include, dietary restrictions, etc."
                     />
                   </div>
@@ -707,7 +707,7 @@ const LeadInquiryForm = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="bg-[#e7f63c] text-[#181c22] px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
+                      className="bg-accent text-ink px-8 py-3 rounded-full font-bold hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
                     >
                       {loading ? (
                         <>

@@ -37,7 +37,7 @@ const Fact = ({ icon: Icon, label, value }) => (
       <Icon className="w-3.5 h-3.5" />
       <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
     </div>
-    <p className="text-lg font-bold text-[#181c22]">{value}</p>
+    <p className="text-lg font-bold text-ink">{value}</p>
   </div>
 );
 
@@ -164,7 +164,7 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
     <div className="rounded-[24px] bg-white border border-black/5 shadow-sm h-full flex flex-col overflow-y-auto p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-[26px] leading-[1.1] font-light tracking-tight text-[#181c22] truncate">
+          <h2 className="text-[26px] leading-[1.1] font-light tracking-tight text-ink truncate">
             {live.name}
           </h2>
           <div className="flex items-center gap-1.5 text-[#8a93a2] text-sm font-medium mt-1.5">
@@ -179,14 +179,14 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
         </div>
         <button
           onClick={onClose}
-          className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-[#181c22]/60 shadow-sm hover:text-[#181c22] transition-colors shrink-0"
+          className="grid place-items-center w-9 h-9 rounded-xl bg-white border border-black/5 text-ink/60 shadow-sm hover:text-ink transition-colors shrink-0"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
       <div className="flex items-center justify-between mt-3">
-        <span className="text-xs font-bold text-[#181c22] capitalize">
+        <span className="text-xs font-bold text-ink capitalize">
           {(live.vehicle_type || "Vehicle").replace(/_/g, " ")}
           {live.is_ac != null && <span className="text-[#9aa3b2]"> · {live.is_ac ? "AC" : "Non-AC"}</span>}
         </span>
@@ -231,10 +231,10 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
           Rate &amp; Charges
         </h3>
         <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f7f7f8] mb-2">
-          <span className="text-xs font-bold text-[#181c22] flex items-center gap-1.5">
+          <span className="text-xs font-bold text-ink flex items-center gap-1.5">
             <IndianRupee className="w-3.5 h-3.5" /> {rateTypeLabel(live.rate_type)}
           </span>
-          <span className="text-xs font-bold text-[#181c22]">
+          <span className="text-xs font-bold text-ink">
             ₹{Number(live.price || 0).toLocaleString("en-IN")}
           </span>
         </div>
@@ -271,7 +271,7 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
             {live.features.map((f, i) => (
               <span
                 key={i}
-                className="px-2.5 py-1 rounded-full bg-[#181c22] text-white text-[10px] font-bold"
+                className="px-2.5 py-1 rounded-full bg-brand text-white text-[10px] font-bold"
               >
                 {f}
               </span>
@@ -301,7 +301,7 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
                     <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   )}
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-[#181c22] truncate">
+                    <p className="text-xs font-bold text-ink truncate">
                       {b.start_date} → {b.end_date}
                     </p>
                     <p className="text-[10px] text-[#9aa3b2] font-medium capitalize">
@@ -328,7 +328,7 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
             <select
               value={blackoutDraft.type}
               onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, type: e.target.value }))}
-              className="px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-[#181c22] appearance-none"
+              className="px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink appearance-none"
             >
               <option value="blackout">Blackout (warn)</option>
               <option value="stop_sale">Stop Sale (block)</option>
@@ -337,13 +337,13 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
               type="date"
               value={blackoutDraft.start_date}
               onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, start_date: e.target.value }))}
-              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-[#181c22]"
+              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
             />
             <input
               type="date"
               value={blackoutDraft.end_date}
               onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, end_date: e.target.value }))}
-              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-[#181c22]"
+              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -352,12 +352,12 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
               value={blackoutDraft.note}
               onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, note: e.target.value }))}
               placeholder="Note (optional, e.g. Maintenance)"
-              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-[#181c22]"
+              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
             />
             <button
               onClick={addBlackout}
               disabled={savingBlackout}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#181c22] text-white rounded-lg text-[11px] font-bold disabled:opacity-60"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-brand text-white rounded-lg text-[11px] font-bold disabled:opacity-60"
             >
               <Plus className="w-3 h-3" /> Add
             </button>
@@ -380,7 +380,7 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
       <button
         onClick={handleRequest}
         disabled={requesting}
-        className="w-full mt-4 flex items-center justify-center gap-2 bg-[#181c22] text-white py-3 rounded-2xl font-bold text-sm hover:bg-black transition-colors disabled:opacity-60"
+        className="w-full mt-4 flex items-center justify-center gap-2 bg-brand text-white py-3 rounded-2xl font-bold text-sm hover:bg-black transition-colors disabled:opacity-60"
       >
         {requesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         Request Vehicle Availability
@@ -441,7 +441,7 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
                 className="block px-3 py-2.5 rounded-xl bg-[#f7f7f8] hover:bg-[#f0f0f1] transition-colors no-underline"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-[#181c22] truncate">
+                  <span className="text-xs font-bold text-ink truncate">
                     {t.trip_title || "Unnamed Trip"}
                   </span>
                   <span className="text-[10px] font-bold text-[#9aa3b2] shrink-0">
@@ -462,7 +462,7 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
 
       <Link
         to={`/transportation/edit/${vehicle.id}`}
-        className="mt-6 w-full flex items-center justify-center gap-2 border border-black/10 text-[#181c22] py-3 rounded-2xl font-bold text-sm hover:bg-[#f7f7f8] transition-colors no-underline"
+        className="mt-6 w-full flex items-center justify-center gap-2 border border-black/10 text-ink py-3 rounded-2xl font-bold text-sm hover:bg-[#f7f7f8] transition-colors no-underline"
       >
         <Pencil className="w-3.5 h-3.5" /> Edit Vehicle
       </Link>

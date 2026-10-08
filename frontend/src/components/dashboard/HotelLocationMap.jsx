@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { Map as MapIcon } from "lucide-react";
 import { useGoogleMapsScript } from "../../hooks/useGoogleMapsScript";
 import { useAgencyMapsKey } from "../../hooks/useAgencyMapsKey";
+import { themeColors } from "../../themes";
 
 // Desaturated grey theme so the embedded map matches the app's monochrome
 // palette instead of Google's default blue/green styling.
@@ -49,9 +50,9 @@ const HotelLocationMap = ({ latitude, longitude, name, location }) => {
       icon: {
         path: window.google.maps.SymbolPath.CIRCLE,
         scale: 9,
-        fillColor: "#e7f63c",
+        fillColor: themeColors.accent,
         fillOpacity: 1,
-        strokeColor: "#181c22",
+        strokeColor: themeColors.brand,
         strokeWeight: 2,
       },
     });
@@ -65,10 +66,10 @@ const HotelLocationMap = ({ latitude, longitude, name, location }) => {
     <div className="relative rounded-[24px] bg-[#f3f3f4] border border-black/5 p-5 overflow-hidden">
       <div className="flex items-center gap-3">
         <div className="grid place-items-center w-10 h-10 rounded-xl bg-white border border-black/5 shadow-sm shrink-0">
-          <MapIcon className="w-4 h-4 text-[#181c22]/60" />
+          <MapIcon className="w-4 h-4 text-ink/60" />
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-bold text-[#181c22] truncate">
+          <p className="text-xs font-bold text-ink truncate">
             {location || "No location set"}
           </p>
           <p className="text-[10px] text-[#9aa3b2] font-medium">

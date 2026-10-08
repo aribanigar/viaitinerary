@@ -48,7 +48,7 @@ const StarRow = ({ count }) => {
   return (
     <div className="flex items-center gap-0.5">
       {Array.from({ length: n }, (_, i) => (
-        <Star key={i} className="w-3.5 h-3.5 fill-[#e7f63c] text-[#181c22]" strokeWidth={1.5} />
+        <Star key={i} className="w-3.5 h-3.5 fill-accent text-ink" strokeWidth={1.5} />
       ))}
     </div>
   );
@@ -226,8 +226,8 @@ const Accommodation = () => {
       value: accommodations.length.toString(),
       change: "In your catalog",
       icon: Hotel,
-      bgColor: "bg-[#e7f63c]",
-      iconColor: "text-[#181c22]",
+      bgColor: "bg-accent",
+      iconColor: "text-ink",
       onClick: () => setFilters(EMPTY_FILTERS),
     },
     {
@@ -235,7 +235,7 @@ const Accommodation = () => {
       value: availableCount.toString(),
       change: "Ready to book",
       icon: CheckCircle2,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
       onClick: () => setFilters({ ...EMPTY_FILTERS, availability: "available" }),
     },
@@ -244,7 +244,7 @@ const Accommodation = () => {
       value: (accommodations.length - availableCount).toString(),
       change: "Currently on hold",
       icon: XCircle,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
       onClick: () => setFilters({ ...EMPTY_FILTERS, availability: "unavailable" }),
     },
@@ -256,7 +256,7 @@ const Accommodation = () => {
           ? `Avg. from ₹${avgStartingPrice.toLocaleString("en-IN")}`
           : "Add pricing to see averages",
       icon: Globe2,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
       onClick: null,
     },
@@ -296,7 +296,7 @@ const Accommodation = () => {
           onClick={handleImportB2B}
           disabled={importing}
           title="Sync approved, in-tariff hotels from the Via Kashmir B2B rate portal"
-          className={`flex items-center gap-2 bg-white border border-black/5 text-[#181c22] rounded-2xl font-bold shadow-sm hover:bg-slate-50 transition-all text-sm w-fit disabled:opacity-60 ${
+          className={`flex items-center gap-2 bg-white border border-black/5 text-ink rounded-2xl font-bold shadow-sm hover:bg-slate-50 transition-all text-sm w-fit disabled:opacity-60 ${
             panelOpen ? "px-4 py-2" : "px-6 py-3"
           }`}
         >
@@ -309,7 +309,7 @@ const Accommodation = () => {
         </button>
         <button
           onClick={() => navigate("/accommodation/calendar")}
-          className={`flex items-center gap-2 bg-white border border-black/5 text-[#181c22] rounded-2xl font-bold shadow-sm hover:bg-slate-50 transition-all text-sm w-fit ${
+          className={`flex items-center gap-2 bg-white border border-black/5 text-ink rounded-2xl font-bold shadow-sm hover:bg-slate-50 transition-all text-sm w-fit ${
             panelOpen ? "px-4 py-2" : "px-6 py-3"
           }`}
         >
@@ -318,7 +318,7 @@ const Accommodation = () => {
         </button>
         <button
           onClick={() => navigate("/accommodation/add")}
-          className={`flex items-center gap-2 bg-[#e7f63c] text-[#181c22] rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit ${
+          className={`flex items-center gap-2 bg-accent text-ink rounded-2xl font-bold shadow-lg shadow-accent/40 hover:bg-accent-hover transition-all text-sm w-fit ${
             panelOpen ? "px-4 py-2" : "px-6 py-3"
           }`}
         >
@@ -352,12 +352,12 @@ const Accommodation = () => {
                   <stat.icon className={`${panelOpen ? "w-3 h-3" : "w-4 h-4"} ${stat.iconColor}`} />
                 </span>
                 {!panelOpen && (
-                  <span className="text-xs font-bold text-[#181c22] whitespace-nowrap">
+                  <span className="text-xs font-bold text-ink whitespace-nowrap">
                     {stat.label}
                   </span>
                 )}
                 <span
-                  className={`grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#f3f3f4] font-black text-[#181c22] ${
+                  className={`grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#f3f3f4] font-black text-ink ${
                     panelOpen ? "text-[10px]" : "text-[11px]"
                   }`}
                 >
@@ -372,7 +372,7 @@ const Accommodation = () => {
       <div className="flex flex-col lg:flex-row gap-6 items-start">
       <div className="min-w-0 w-full lg:flex-1 bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
-          <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
+          <h3 className="text-sm font-bold text-ink uppercase tracking-widest">
             All Accommodations
           </h3>
           <span className="text-[10px] font-bold text-[#8a93a2] uppercase tracking-widest">
@@ -386,7 +386,7 @@ const Accommodation = () => {
               <input
                 type="text"
                 placeholder="Search by name or city..."
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -395,14 +395,14 @@ const Accommodation = () => {
               onClick={() => setFiltersOpen((v) => !v)}
               className={`relative flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors shrink-0 ${
                 filtersOpen || activeFilterCount
-                  ? "bg-[#181c22] text-white"
+                  ? "bg-brand text-white"
                   : "bg-slate-50 text-slate-600 hover:bg-slate-100"
               }`}
             >
               <SlidersHorizontal className="w-4 h-4" />
               Filters
               {activeFilterCount > 0 && (
-                <span className="grid place-items-center w-5 h-5 rounded-full bg-[#e7f63c] text-[#181c22] text-[10px] font-black">
+                <span className="grid place-items-center w-5 h-5 rounded-full bg-accent text-ink text-[10px] font-black">
                   {activeFilterCount}
                 </span>
               )}

@@ -46,7 +46,7 @@ const Hero = () => {
           >
             Powering the World’s
             <br className="hidden md:block" />
-            <span className="font-serif italic font-normal text-[#faa81e]">
+            <span className="text-[#faa81e]">
               Best Travel Businesses
             </span>
           </motion.h1>

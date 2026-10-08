@@ -61,7 +61,7 @@ const TierCard = ({ tier, onChoose, choosing }) => {
   const c = tier.costBreakdown;
   const accentByKey = {
     budget: "border-slate-200",
-    recommended: "border-[#e7f63c] ring-2 ring-[#e7f63c]/40",
+    recommended: "border-accent ring-2 ring-accent/40",
     premium: "border-purple-200",
   };
   return (
@@ -173,7 +173,7 @@ const TierCard = ({ tier, onChoose, choosing }) => {
       <button
         onClick={() => onChoose(tier.key)}
         disabled={choosing}
-        className="mt-auto w-full flex items-center justify-center gap-2 bg-[#181c22] text-white py-3 rounded-2xl font-bold text-sm hover:bg-black transition-colors disabled:opacity-60"
+        className="mt-auto w-full flex items-center justify-center gap-2 bg-brand text-white py-3 rounded-2xl font-bold text-sm hover:bg-black transition-colors disabled:opacity-60"
       >
         {choosing ? (
           <Loader2 className="w-4 h-4 animate-spin" />
@@ -312,7 +312,7 @@ const GenerateItinerary = () => {
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
         <div>
           <h2 className="font-bold text-lg flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#e7f63c]" /> Generate Itinerary
+            <Sparkles className="w-5 h-5 text-accent" /> Generate Itinerary
           </h2>
           <p className="text-xs text-slate-400 font-medium mt-1">
             Automatically pick hotels, a cab, and activities from your own
@@ -330,7 +330,7 @@ const GenerateItinerary = () => {
       <form onSubmit={handleGenerate} className="space-y-6">
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <MapPin className="w-4 h-4 text-[#181c22]" />
+            <MapPin className="w-4 h-4 text-ink" />
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
               Trip Basics
             </h3>
@@ -402,7 +402,7 @@ const GenerateItinerary = () => {
 
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <IndianRupee className="w-4 h-4 text-[#181c22]" />
+            <IndianRupee className="w-4 h-4 text-ink" />
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
               Budget &amp; Profit
             </h3>
@@ -443,7 +443,7 @@ const GenerateItinerary = () => {
                       onClick={() => setField("profitType", opt.value)}
                       className={`flex items-center justify-center gap-1 w-11 py-2.5 rounded-xl text-xs font-bold transition-colors ${
                         form.profitType === opt.value
-                          ? "bg-[#181c22] text-white"
+                          ? "bg-brand text-white"
                           : "text-slate-500"
                       }`}
                     >
@@ -484,7 +484,7 @@ const GenerateItinerary = () => {
         <button
           type="submit"
           disabled={generating}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#e7f63c] text-[#181c22] px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-[#e7f63c]/40 active:scale-[0.98] transition-all disabled:opacity-60"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-accent text-ink px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-accent/40 active:scale-[0.98] transition-all disabled:opacity-60"
         >
           {generating ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -568,7 +568,7 @@ const GenerateItinerary = () => {
                 <button
                   type="submit"
                   disabled={committing}
-                  className="flex-1 bg-[#e7f63c] text-[#181c22] py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 bg-accent text-ink py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {committing ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

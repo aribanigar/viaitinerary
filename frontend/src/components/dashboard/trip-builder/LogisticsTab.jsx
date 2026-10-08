@@ -55,10 +55,10 @@ const LogisticsTab = ({
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
       <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-[#f3f3f4] text-[#181c22] rounded-lg flex items-center justify-center border border-black/5">
+          <div className="w-10 h-10 bg-[#f3f3f4] text-ink rounded-lg flex items-center justify-center border border-black/5">
             <MapPin className="w-5 h-5" />
           </div>
-          <h3 className="text-xs font-semibold text-[#181c22] uppercase tracking-[0.2em]">
+          <h3 className="text-xs font-semibold text-ink uppercase tracking-[0.2em]">
             Accommodation
           </h3>
         </div>
@@ -136,14 +136,14 @@ const LogisticsTab = ({
                         return (
                           <span
                             key={stayIdx}
-                            className="text-[10px] font-semibold text-[#181c22] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter"
+                            className="text-[10px] font-semibold text-ink bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter"
                           >
                             {label}
                           </span>
                         );
                       })}
                   </div>
-                  <h4 className="text-lg font-semibold text-[#181c22] border-none outline-none focus:ring-0 bg-transparent flex items-center gap-2">
+                  <h4 className="text-lg font-semibold text-ink border-none outline-none focus:ring-0 bg-transparent flex items-center gap-2">
                     {hotel.name}
                     {hotel.cancelledAt && (
                       <span className="text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
@@ -174,13 +174,13 @@ const LogisticsTab = ({
                       {hotel.city}
                     </span>
                     <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
-                    <div className="bg-white border border-black/5 px-3 py-1 rounded-md text-[#181c22] text-[10px] font-semibold uppercase tracking-wider shadow-sm">
+                    <div className="bg-white border border-black/5 px-3 py-1 rounded-md text-ink text-[10px] font-semibold uppercase tracking-wider shadow-sm">
                       {hotel.category}
                     </div>
                     {hotel.roomType && (
                       <>
                         <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
-                        <div className="bg-[#f3f3f4] border border-black/5 px-3 py-1 rounded-md text-[#181c22] text-[10px] font-semibold uppercase tracking-wider shadow-sm">
+                        <div className="bg-[#f3f3f4] border border-black/5 px-3 py-1 rounded-md text-ink text-[10px] font-semibold uppercase tracking-wider shadow-sm">
                           {hotel.roomType}
                         </div>
                       </>
@@ -240,7 +240,7 @@ const LogisticsTab = ({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => openEditHotelModal(hotel)}
-                    className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#181c22] active:bg-[#f3f3f4] active:text-[#181c22] rounded-xl transition-all"
+                    className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-ink active:bg-[#f3f3f4] active:text-ink rounded-xl transition-all"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
@@ -300,7 +300,7 @@ const LogisticsTab = ({
               setEditingHotelId(null);
               setIsHotelModalOpen(true);
             }}
-            className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-[#181c22] hover:border-[#e2eea0] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
+            className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-ink hover:border-[#e2eea0] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
           >
             <Plus className="w-4 h-4" />
             Add Hotel
@@ -310,10 +310,10 @@ const LogisticsTab = ({
 
       <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-[#f3f3f4] text-[#181c22] rounded-lg flex items-center justify-center border border-black/5">
+          <div className="w-10 h-10 bg-[#f3f3f4] text-ink rounded-lg flex items-center justify-center border border-black/5">
             <Briefcase className="w-5 h-5" />
           </div>
-          <h3 className="text-xs font-semibold text-[#181c22] uppercase tracking-[0.2em]">
+          <h3 className="text-xs font-semibold text-ink uppercase tracking-[0.2em]">
             Transportation
           </h3>
         </div>
@@ -344,20 +344,20 @@ const LogisticsTab = ({
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="text-[10px] font-semibold text-[#181c22] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                      <span className="text-[10px] font-semibold text-ink bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
                         {dayNumber}
                         {dateSuffix(dayNumber)}
                       </span>
                       <span className="text-[9px] font-semibold bg-[#eef0f1] text-[#5b6472] px-2 py-0.5 rounded uppercase tracking-tighter">
                         {item.tripType || "Transfer"}
                       </span>
-                      <h4 className="text-sm font-semibold text-[#181c22]">
+                      <h4 className="text-sm font-semibold text-ink">
                         {item.route}
                       </h4>
                       {item.destination && (
                         <>
                           <span className="w-1 h-1 rounded-full bg-[#d4d8dd]"></span>
-                          <span className="text-[10px] font-semibold text-[#181c22] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                          <span className="text-[10px] font-semibold text-ink bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
                             {item.destination}
                           </span>
                         </>
@@ -393,7 +393,7 @@ const LogisticsTab = ({
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => openEditTransportModal(item)}
-                        className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#181c22] active:bg-[#f3f3f4] active:text-[#181c22] rounded-xl transition-all"
+                        className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-ink active:bg-[#f3f3f4] active:text-ink rounded-xl transition-all"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
@@ -421,7 +421,7 @@ const LogisticsTab = ({
               setEditingTransportId(null);
               setIsTransportModalOpen(true);
             }}
-            className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-[#181c22] hover:border-[#e2eea0] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
+            className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-ink hover:border-[#e2eea0] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
           >
             <Plus className="w-4 h-4" />
             Add Transport
@@ -431,11 +431,11 @@ const LogisticsTab = ({
 
       <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-[#f3f3f4] text-[#181c22] rounded-lg flex items-center justify-center border border-black/5">
+          <div className="w-10 h-10 bg-[#f3f3f4] text-ink rounded-lg flex items-center justify-center border border-black/5">
             <Ticket className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-xs font-semibold text-[#181c22] uppercase tracking-[0.2em]">
+            <h3 className="text-xs font-semibold text-ink uppercase tracking-[0.2em]">
               Activities
               <span className="ml-2 align-middle text-[9px] font-bold uppercase tracking-wider text-[#9aa3b2] bg-[#f3f3f4] px-2 py-0.5 rounded-full">
                 Optional
@@ -464,14 +464,14 @@ const LogisticsTab = ({
                   <div>
                     <div className="flex flex-wrap items-center gap-2 mb-2">
                       {item.dayNumber && (
-                        <span className="text-[10px] font-semibold text-[#181c22] bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
+                        <span className="text-[10px] font-semibold text-ink bg-[#f3f3f4] px-2 py-0.5 rounded-full uppercase tracking-tighter">
                           Day {item.dayNumber}
                           {date &&
                             ` · ${new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
                         </span>
                       )}
                     </div>
-                    <h4 className="text-lg font-semibold text-[#181c22] flex items-center gap-2 flex-wrap">
+                    <h4 className="text-lg font-semibold text-ink flex items-center gap-2 flex-wrap">
                       {item.name}
                       {item.markupPercentage !== "" && item.markupPercentage != null && (
                         <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
@@ -490,7 +490,7 @@ const LogisticsTab = ({
                       )}
                       {catalog?.category && (
                         <>
-                          <div className="bg-white border border-black/5 px-3 py-1 rounded-md text-[#181c22] text-[10px] font-semibold uppercase tracking-wider shadow-sm">
+                          <div className="bg-white border border-black/5 px-3 py-1 rounded-md text-ink text-[10px] font-semibold uppercase tracking-wider shadow-sm">
                             {catalog.category}
                           </div>
                           <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
@@ -498,7 +498,7 @@ const LogisticsTab = ({
                       )}
                       {item.rateOption && (
                         <>
-                          <div className="bg-[#f3f3f4] border border-black/5 px-3 py-1 rounded-md text-[#181c22] text-[10px] font-semibold uppercase tracking-wider shadow-sm">
+                          <div className="bg-[#f3f3f4] border border-black/5 px-3 py-1 rounded-md text-ink text-[10px] font-semibold uppercase tracking-wider shadow-sm">
                             {item.rateOption}
                           </div>
                           <span className="w-1 h-1 rounded-full bg-[#e6e8eb]"></span>
@@ -538,7 +538,7 @@ const LogisticsTab = ({
                     </div>
                     <button
                       onClick={() => openEditActivityModal(item)}
-                      className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-[#181c22] active:bg-[#f3f3f4] active:text-[#181c22] rounded-xl transition-all"
+                      className="w-10 h-10 flex items-center justify-center text-[#9aa3b2] hover:bg-[#f3f3f4] hover:text-ink active:bg-[#f3f3f4] active:text-ink rounded-xl transition-all"
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
@@ -573,7 +573,7 @@ const LogisticsTab = ({
 
           <button
             onClick={openNewActivityModal}
-            className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-[#181c22] hover:border-[#e2eea0] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
+            className="w-full border-2 border-dashed border-black/10 rounded-xl py-5 flex items-center justify-center gap-2 text-[#9aa3b2] hover:text-ink hover:border-[#e2eea0] hover:bg-[#f3f3f4]/10 transition-all font-bold text-xs"
           >
             <Plus className="w-4 h-4" />
             Add Activity

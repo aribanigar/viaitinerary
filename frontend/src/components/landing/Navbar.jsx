@@ -6,8 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 // Text wordmark. The PNG logos in assets/ carry the ViaKashmir mark, which is a
 // different brand, so the public site uses this instead.
 export const Wordmark = ({ className = "" }) => (
-  <span className={`text-[19px] font-bold tracking-tight text-[#181c22] ${className}`}>
-    Via<span className="font-serif italic font-normal">Itinerary</span>
+  <span className={`text-[19px] font-display font-extrabold tracking-[-0.03em] text-ink ${className}`}>
+    ViaItinerary
   </span>
 );
 
@@ -24,7 +24,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const isAuthenticated = Boolean(token && user);
 
-  const linkClass = "text-[14px] font-medium text-[#4c4546] hover:text-[#181c22] transition-colors";
+  const linkClass = "text-[14px] font-medium text-[#4c4546] hover:text-ink transition-colors";
 
   return (
     <header className="fixed top-0 inset-x-0 z-40 bg-white/90 backdrop-blur-md border-b border-black/[0.06]">
@@ -69,7 +69,7 @@ const Navbar = () => {
 
         <button
           onClick={() => setIsOpen((v) => !v)}
-          className="md:hidden -mr-2 p-2 rounded-lg text-[#181c22] hover:bg-black/5"
+          className="md:hidden -mr-2 p-2 rounded-lg text-ink hover:bg-black/5"
           aria-label={isOpen ? "Close menu" : "Open menu"}
           aria-expanded={isOpen}
         >
@@ -85,7 +85,7 @@ const Navbar = () => {
                 key={link.name}
                 href={link.to}
                 onClick={() => setIsOpen(false)}
-                className="py-3 text-[15px] font-medium text-[#181c22] border-b border-black/[0.05]"
+                className="py-3 text-[15px] font-medium text-ink border-b border-black/[0.05]"
               >
                 {link.name}
               </a>

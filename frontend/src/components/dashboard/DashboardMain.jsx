@@ -131,8 +131,8 @@ const DashboardMain = () => {
       value: `INR ₹${totalRevenue.toLocaleString()}`,
       change: `${totalTrips} total items`,
       icon: IndianRupee,
-      bgColor: "bg-[#e7f63c]",
-      iconColor: "text-[#181c22]",
+      bgColor: "bg-accent",
+      iconColor: "text-ink",
       changeColor: "text-[#9aa3b2]",
       link: "/dashboard/trips?filter=revenue",
     },
@@ -141,7 +141,7 @@ const DashboardMain = () => {
       value: totalTrips.toString(),
       change: `${totalTrips} itineraries created`,
       icon: Briefcase,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
       changeColor: "text-[#9aa3b2]",
       link: "/dashboard/trips?filter=total",
@@ -151,7 +151,7 @@ const DashboardMain = () => {
       value: confirmedTrips.toString(),
       change: "Ready to go",
       icon: CheckCircle2,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
       changeColor: "text-[#9aa3b2]",
       link: "/dashboard/trips?filter=confirmed",
@@ -161,7 +161,7 @@ const DashboardMain = () => {
       value: completedTrips.toString(),
       change: "Successfully finalized",
       icon: CheckCircle2,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
       changeColor: "text-[#9aa3b2]",
       link: "/dashboard/trips?filter=completed",
@@ -187,7 +187,7 @@ const DashboardMain = () => {
       actions={
         <Link
           to="/trip-builder"
-          className="px-4 py-2 rounded-full text-xs font-semibold bg-[#e7f63c] text-[#181c22] hover:bg-[#d4e42e] transition-colors flex items-center gap-1.5 shadow-sm shadow-[#e7f63c]/40"
+          className="px-4 py-2 rounded-full text-xs font-semibold bg-accent text-ink hover:bg-accent-hover transition-colors flex items-center gap-1.5 shadow-sm shadow-accent/40"
         >
           <Plus className="w-3.5 h-3.5" /> Create a Trip
         </Link>
@@ -196,7 +196,7 @@ const DashboardMain = () => {
       <div className="h-full overflow-y-auto p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-[#181c22] leading-tight">
+            <h1 className="text-3xl font-bold text-ink leading-tight">
               {getGreeting()}, {user?.name || "there"}
             </h1>
             <p className="text-[#8a93a2] font-medium mt-1">Where to next?</p>
@@ -204,7 +204,7 @@ const DashboardMain = () => {
 
           {quickAccess.length > 0 && (
             <div className="mb-10">
-              <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest mb-4">
+              <h3 className="text-sm font-bold text-ink uppercase tracking-widest mb-4">
                 Quick Access
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -214,10 +214,10 @@ const DashboardMain = () => {
                     to={item.to}
                     className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 no-underline group flex flex-col items-center text-center gap-2"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-[#f3f3f4] group-hover:bg-[#e7f63c] flex items-center justify-center transition-colors">
-                      <item.icon className="w-5 h-5 text-[#181c22]" />
+                    <div className="w-10 h-10 rounded-xl bg-[#f3f3f4] group-hover:bg-accent flex items-center justify-center transition-colors">
+                      <item.icon className="w-5 h-5 text-ink" />
                     </div>
-                    <span className="text-[11px] font-semibold text-[#181c22]/80 leading-tight">
+                    <span className="text-[11px] font-semibold text-ink/80 leading-tight">
                       {item.label}
                     </span>
                   </Link>
@@ -245,9 +245,9 @@ const DashboardMain = () => {
                   <h3 className="text-[#8a93a2] text-[10px] font-bold uppercase tracking-widest">
                     {stat.label}
                   </h3>
-                  <ArrowRight className="w-3 h-3 text-[#cdd2da] group-hover:text-[#181c22] group-hover:translate-x-0.5 transition-all ml-auto" />
+                  <ArrowRight className="w-3 h-3 text-[#cdd2da] group-hover:text-ink group-hover:translate-x-0.5 transition-all ml-auto" />
                 </div>
-                <p className="text-3xl md:text-4xl font-light text-[#181c22] mb-2">
+                <p className="text-3xl md:text-4xl font-light text-ink mb-2">
                   {stat.value}
                 </p>
                 <p className={`text-[10px] font-bold ${stat.changeColor}`}>
@@ -262,7 +262,7 @@ const DashboardMain = () => {
           {/* Today's Trips Card */}
           <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
-              <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
+              <h3 className="text-sm font-bold text-ink uppercase tracking-widest">
                 Ongoing Trips
               </h3>
               <Link
@@ -305,7 +305,7 @@ const DashboardMain = () => {
                             )}
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-[#181c22] mb-0.5">
+                            <h4 className="text-sm font-bold text-ink mb-0.5">
                               {trip.trip_title ||
                                 trip.tripTitle ||
                                 "Unnamed Trip"}
@@ -319,7 +319,7 @@ const DashboardMain = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-bold text-[#181c22] mb-0.5 uppercase">
+                          <p className="text-sm font-bold text-ink mb-0.5 uppercase">
                             {trip.currency?.split(" ")[0] || "INR"}{" "}
                             {parseFloat(trip.cost || 0).toLocaleString()}
                           </p>
@@ -341,7 +341,7 @@ const DashboardMain = () => {
           {/* Upcoming Trips Card */}
           <div className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden mt-8">
             <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
-              <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
+              <h3 className="text-sm font-bold text-ink uppercase tracking-widest">
                 Upcoming Trips (Next 7 Days)
               </h3>
               <Link
@@ -391,7 +391,7 @@ const DashboardMain = () => {
                             )}
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-[#181c22] mb-0.5">
+                            <h4 className="text-sm font-bold text-ink mb-0.5">
                               {trip.trip_title ||
                                 trip.tripTitle ||
                                 "Unnamed Trip"}
@@ -412,7 +412,7 @@ const DashboardMain = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-bold text-[#181c22] mb-0.5 uppercase">
+                          <p className="text-sm font-bold text-ink mb-0.5 uppercase">
                             {trip.currency?.split(" ")[0] || "INR"}{" "}
                             {parseFloat(trip.cost || 0).toLocaleString()}
                           </p>

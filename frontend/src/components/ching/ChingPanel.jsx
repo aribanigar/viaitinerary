@@ -16,13 +16,14 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
+import { themeColors } from "../../themes";
 
 // Ching's panel — purely presentational; ChingWidget owns speech and the live
 // session. Kept deliberately small (≤ ~42% of a phone screen, no backdrop) so
 // the Trip Builder form and preview filling up behind it stay visible.
 
-const INK = "#181c22";
-const LIME = "#e7f63c";
+const INK = themeColors.brand;
+const LIME = themeColors.accent;
 
 const EDIT_EXAMPLES =
   "“make Gulmarg 2 nights”, “add Shikara ride on day 2”, “give me 20% margin”, “email it to me”";
@@ -52,7 +53,7 @@ const Unrecognized = ({ items }) =>
   items?.length ? (
     <ul className="space-y-0.5">
       {items.map((u, i) => (
-        <li key={i} className="text-[11px] text-[#181c22]/50 break-words">
+        <li key={i} className="text-[11px] text-ink/50 break-words">
           Didn't understand: “{u}”
         </li>
       ))}
@@ -73,8 +74,8 @@ const Warnings = ({ items }) =>
 const ChangeList = ({ items }) => (
   <ul className="space-y-1.5">
     {items.map((c, i) => (
-      <li key={i} className="flex gap-2 text-[13px] leading-snug text-[#181c22]">
-        <span className="grid place-items-center w-4 h-4 mt-0.5 shrink-0 rounded-full bg-[#e7f63c]">
+      <li key={i} className="flex gap-2 text-[13px] leading-snug text-ink">
+        <span className="grid place-items-center w-4 h-4 mt-0.5 shrink-0 rounded-full bg-accent">
           <Check className="w-2.5 h-2.5" strokeWidth={3} />
         </span>
         <span className="min-w-0 break-words">{c}</span>
@@ -92,12 +93,12 @@ function MicButton({ listening, disabled, onClick, supported }) {
       aria-label={listening ? "Stop listening" : "Start listening"}
       className={`relative grid place-items-center w-14 h-14 shrink-0 rounded-full transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
         listening
-          ? "bg-[#e7f63c] text-[#181c22]"
-          : "bg-[#181c22] text-white hover:scale-105 active:scale-95"
+          ? "bg-accent text-ink"
+          : "bg-brand text-white hover:scale-105 active:scale-95"
       } shadow-[0_12px_30px_-12px_rgba(16,24,42,0.65)]`}
     >
       {listening && (
-        <span className="absolute inset-0 rounded-full bg-[#e7f63c] opacity-40 animate-ping" />
+        <span className="absolute inset-0 rounded-full bg-accent opacity-40 animate-ping" />
       )}
       {supported ? (
         <Mic className="relative w-6 h-6" strokeWidth={2} />
@@ -129,7 +130,7 @@ function Pending({ items, onOpenTab }) {
               className={`px-2 py-1 rounded-full text-[11px] font-medium border ${
                 i.level === "required"
                   ? "bg-white border-amber-300 text-amber-900"
-                  : "bg-white/60 border-black/10 text-[#181c22]/60"
+                  : "bg-white/60 border-black/10 text-ink/60"
               }`}
             >
               {i.label}
@@ -147,7 +148,7 @@ const MEAL_SHORT = { room_only: "Room only", breakfast_only: "Breakfast", breakf
 const AVAIL_STYLE = {
   available: ["text-emerald-700", "Available"],
   blackout: ["text-amber-700", "Blackout — confirm"],
-  unchecked: ["text-[#181c22]/45", "Dates not checked"],
+  unchecked: ["text-ink/45", "Dates not checked"],
 };
 function HotelResults({ hotels, onUse, running }) {
   if (!hotels?.results?.length) return null;
@@ -157,12 +158,12 @@ function HotelResults({ hotels, onUse, running }) {
         const [cls, label] = AVAIL_STYLE[r.availability?.status] || AVAIL_STYLE.unchecked;
         return (
           <li key={r.id} className="flex items-center gap-2 rounded-xl border border-black/[0.07] bg-white px-2.5 py-1.5">
-            <span className="text-[11px] font-bold text-[#181c22]/40 w-3 shrink-0">{i + 1}</span>
+            <span className="text-[11px] font-bold text-ink/40 w-3 shrink-0">{i + 1}</span>
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-semibold truncate" title={r.name}>
-                {r.name} {r.stars ? <span className="text-[#181c22]/45 font-medium">{r.stars}★</span> : null}
+                {r.name} {r.stars ? <span className="text-ink/45 font-medium">{r.stars}★</span> : null}
               </span>
-              <span className="block text-[11px] text-[#181c22]/60 truncate">
+              <span className="block text-[11px] text-ink/60 truncate">
                 ₹{Number(r.rate_per_night || 0).toLocaleString("en-IN")}/night · {r.room_type}
                 {r.meal_plan ? ` · ${MEAL_SHORT[r.meal_plan] || r.meal_plan}` : ""} · <span className={cls}>{label}</span>
               </span>
@@ -209,7 +210,7 @@ function LiveBlock({ live, onOpenTab }) {
           : "Filling…";
   return (
     <div className="rounded-2xl border border-black/[0.07] bg-[#fafafa] p-3 space-y-2" aria-live="polite">
-      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#181c22]/55">
+      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/55">
         <Loader2 className="w-3 h-3 animate-spin" />
         <span className="flex-1">{label}</span>
         {live.changes.length > 0 && <span>{live.changes.length}</span>}
@@ -218,7 +219,7 @@ function LiveBlock({ live, onOpenTab }) {
         <ChangeList items={live.changes} />
       ) : (
         live.phase === "listening" && (
-          <p className="text-xs text-[#181c22]/45">Changes appear here — and in the form — as you speak.</p>
+          <p className="text-xs text-ink/45">Changes appear here — and in the form — as you speak.</p>
         )
       )}
       <Warnings items={live.warnings} />
@@ -247,18 +248,18 @@ function DraftCard({ tripDraft, running, onConfirm, onEdit, onCancel }) {
   const when = [value("Dates"), value("Duration")?.replace(/\s/g, "")].filter(Boolean).join(" | ");
   return (
     <div className="rounded-2xl border border-black/[0.08] bg-white p-3 space-y-2.5" aria-live="polite">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#181c22]/50">Trip draft · not saved yet</div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/50">Trip draft · not saved yet</div>
       <div>
         <div className="text-[14px] font-semibold leading-snug break-words">{header}</div>
-        {when && <div className="text-[13px] text-[#181c22]/70">{when}</div>}
-        {value("Destination") && <div className="text-[12px] text-[#181c22]/55">{value("Destination")}</div>}
+        {when && <div className="text-[13px] text-ink/70">{when}</div>}
+        {value("Destination") && <div className="text-[12px] text-ink/55">{value("Destination")}</div>}
       </div>
       {draft.stays.length > 0 && (
         <ul className="rounded-xl bg-[#f7f7f8] divide-y divide-black/5">
           {draft.stays.map((g, i) => (
             <li key={i} className="flex items-baseline gap-2 px-2.5 py-1.5 text-[13px]">
               <span className="font-semibold shrink-0">{g.city} – {g.nights}N</span>
-              <span className="flex-1 min-w-0 truncate text-[#181c22]/65" title={g.hotel}>
+              <span className="flex-1 min-w-0 truncate text-ink/65" title={g.hotel}>
                 {g.hotel || "no hotel"}
               </span>
               {(g.suggested || g.picked) && (
@@ -271,7 +272,7 @@ function DraftCard({ tripDraft, running, onConfirm, onEdit, onCancel }) {
         </ul>
       )}
       {(value("Vehicle") || value("Meals")) && (
-        <div className="text-[12px] text-[#181c22]/65 break-words">{[value("Vehicle"), value("Meals")].filter(Boolean).join(" · ")}</div>
+        <div className="text-[12px] text-ink/65 break-words">{[value("Vehicle"), value("Meals")].filter(Boolean).join(" · ")}</div>
       )}
       <ul className="space-y-1">
         {problems.map((c, i) => {
@@ -290,7 +291,7 @@ function DraftCard({ tripDraft, running, onConfirm, onEdit, onCancel }) {
         </li>
         {showOk &&
           passed.map((c, i) => (
-            <li key={`ok${i}`} className="pl-5 text-[11px] text-[#181c22]/55">
+            <li key={`ok${i}`} className="pl-5 text-[11px] text-ink/55">
               {c.text}
             </li>
           ))}
@@ -310,7 +311,7 @@ function DraftCard({ tripDraft, running, onConfirm, onEdit, onCancel }) {
           type="button"
           onClick={onEdit}
           disabled={running}
-          className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold border border-black/10 text-[#181c22] hover:bg-black/[0.03]"
+          className="flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold border border-black/10 text-ink hover:bg-black/[0.03]"
         >
           <Pencil className="w-3.5 h-3.5" /> Edit
         </button>
@@ -323,7 +324,7 @@ function DraftCard({ tripDraft, running, onConfirm, onEdit, onCancel }) {
           <X className="w-3.5 h-3.5" /> Cancel
         </button>
       </div>
-      <p className="text-[11px] text-[#181c22]/45">
+      <p className="text-[11px] text-ink/45">
         {draft.ok ? "Say “confirm” to build it — or say a change, like “make Gulmarg 2 nights”." : "Say or type the fix — the draft updates, then confirm."}
       </p>
     </div>
@@ -336,9 +337,9 @@ function ResultPill({ outcome, canUndo, onUndo, onExpand, onClose, speech }) {
   return (
     <div
       role="status"
-      className="fixed z-[90] left-4 right-4 sm:left-auto sm:right-4 lg:right-6 bottom-[calc(env(safe-area-inset-bottom)+68px)] sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:max-w-[400px] flex items-center gap-1.5 rounded-full bg-[#181c22] text-white pl-2 pr-1.5 py-1.5 shadow-[0_16px_40px_-14px_rgba(16,24,42,0.7)]"
+      className="fixed z-[90] left-4 right-4 sm:left-auto sm:right-4 lg:right-6 bottom-[calc(env(safe-area-inset-bottom)+68px)] sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:max-w-[400px] flex items-center gap-1.5 rounded-full bg-brand text-white pl-2 pr-1.5 py-1.5 shadow-[0_16px_40px_-14px_rgba(16,24,42,0.7)]"
     >
-      <span className="grid place-items-center w-7 h-7 shrink-0 rounded-full bg-[#e7f63c] text-[#181c22]">
+      <span className="grid place-items-center w-7 h-7 shrink-0 rounded-full bg-accent text-ink">
         <Check className="w-4 h-4" strokeWidth={3} />
       </span>
       <button
@@ -362,7 +363,7 @@ function ResultPill({ outcome, canUndo, onUndo, onExpand, onClose, speech }) {
         <button
           type="button"
           onClick={speech.startCommand}
-          className="grid place-items-center w-8 h-8 shrink-0 rounded-full bg-[#e7f63c] text-[#181c22]"
+          className="grid place-items-center w-8 h-8 shrink-0 rounded-full bg-accent text-ink"
           aria-label="Speak again"
           title="Speak again (Alt+C)"
         >
@@ -476,7 +477,7 @@ export default function ChingPanel({
     <div
       role="dialog"
       aria-label="Ching voice trip builder"
-      className={`fixed z-[90] inset-x-0 bottom-0 ${tall ? "max-h-[82dvh]" : "max-h-[42dvh]"} sm:inset-x-auto sm:right-4 lg:right-6 sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:w-[400px] sm:max-h-[calc(100dvh-180px)] ${tall ? "lg:max-h-[min(760px,calc(100dvh-116px))]" : "lg:max-h-[min(560px,calc(100dvh-116px))]"} flex flex-col bg-white text-[#181c22] rounded-t-[24px] sm:rounded-[24px] border border-black/5 shadow-[0_-10px_50px_-20px_rgba(16,24,42,0.45)] sm:shadow-[0_24px_70px_-24px_rgba(16,24,42,0.55)] overflow-hidden`}
+      className={`fixed z-[90] inset-x-0 bottom-0 ${tall ? "max-h-[82dvh]" : "max-h-[42dvh]"} sm:inset-x-auto sm:right-4 lg:right-6 sm:bottom-[calc(env(safe-area-inset-bottom)+136px)] lg:bottom-[92px] sm:w-[400px] sm:max-h-[calc(100dvh-180px)] ${tall ? "lg:max-h-[min(760px,calc(100dvh-116px))]" : "lg:max-h-[min(560px,calc(100dvh-116px))]"} flex flex-col bg-white text-ink rounded-t-[24px] sm:rounded-[24px] border border-black/5 shadow-[0_-10px_50px_-20px_rgba(16,24,42,0.45)] sm:shadow-[0_24px_70px_-24px_rgba(16,24,42,0.55)] overflow-hidden`}
     >
       {/* Header */}
       <div className="flex items-center gap-2 px-3.5 pt-2.5 pb-2 border-b border-black/5 shrink-0">
@@ -485,7 +486,7 @@ export default function ChingPanel({
         </span>
         <div className="min-w-0 flex-1">
           <div className="text-[14px] font-semibold tracking-tight leading-tight">Ching</div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45 leading-tight truncate">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink/45 leading-tight truncate">
             {subtitle}
           </div>
         </div>
@@ -495,11 +496,11 @@ export default function ChingPanel({
           aria-pressed={voiceOn}
           title={voiceOn ? "Ching talks back — tap to mute" : "Ching is muted — tap to hear replies"}
           className={`grid place-items-center w-8 h-8 rounded-full border border-black/10 shrink-0 hover:bg-black/[0.03] ${
-            speaking ? "bg-[#e7f63c]" : "bg-white"
+            speaking ? "bg-accent" : "bg-white"
           }`}
           aria-label={voiceOn ? "Mute Ching's voice" : "Turn on Ching's voice"}
         >
-          {voiceOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-[#181c22]/45" />}
+          {voiceOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-ink/45" />}
         </button>
         {langs.length > 1 && onChangeLang && (
           <button
@@ -532,12 +533,12 @@ export default function ChingPanel({
           <span className="text-[11px] font-semibold whitespace-nowrap">Hello Ching</span>
           <span
             className={`relative w-9 h-6 rounded-full transition-colors ${
-              handsFree ? (wakeBlocked ? "bg-amber-400" : "bg-[#181c22]") : "bg-black/15"
+              handsFree ? (wakeBlocked ? "bg-amber-400" : "bg-brand") : "bg-black/15"
             }`}
           >
             <span
               className={`absolute top-1 w-4 h-4 rounded-full transition-all ${
-                handsFree ? "left-4 bg-[#e7f63c]" : "left-1 bg-white"
+                handsFree ? "left-4 bg-accent" : "left-1 bg-white"
               }`}
             />
           </span>
@@ -545,7 +546,7 @@ export default function ChingPanel({
         <button
           type="button"
           onClick={onClose}
-          className="grid place-items-center w-8 h-8 rounded-full text-[#181c22]/55 hover:bg-black/[0.05] shrink-0"
+          className="grid place-items-center w-8 h-8 rounded-full text-ink/55 hover:bg-black/[0.05] shrink-0"
           aria-label="Close Ching"
         >
           <X className="w-4 h-4" />
@@ -562,14 +563,14 @@ export default function ChingPanel({
             onClick={speech.toggleCommand}
           />
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#181c22]/45">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink/45">
               {statusLabel}
             </div>
             <p className="mt-1 text-[14px] leading-snug break-words" aria-live="polite">
               {listening && interim ? (
-                <span className="text-[#181c22]">{interim}</span>
+                <span className="text-ink">{interim}</span>
               ) : (
-                <span className="text-[#181c22]/40">
+                <span className="text-ink/40">
                   {listening ? "Go ahead — I'm listening…" : live ? "" : hint}
                 </span>
               )}
@@ -593,7 +594,7 @@ export default function ChingPanel({
         {outcome && !tripDraft && !live && !listening && !running && (
           <div className="rounded-2xl border border-black/[0.07] bg-[#fafafa] p-3 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="grid place-items-center w-[18px] h-[18px] shrink-0 rounded-full bg-[#e7f63c]">
+              <span className="grid place-items-center w-[18px] h-[18px] shrink-0 rounded-full bg-accent">
                 <Check className="w-3 h-3" strokeWidth={3} />
               </span>
               <span className="flex-1 min-w-0 text-[13px] font-semibold truncate">{outcome.title}</span>
@@ -648,7 +649,7 @@ export default function ChingPanel({
                     onDismissNotice?.();
                     onConfirm(false);
                   }}
-                  className="rounded-full px-4 py-1.5 text-xs font-bold border border-black/10 text-[#181c22]"
+                  className="rounded-full px-4 py-1.5 text-xs font-bold border border-black/10 text-ink"
                 >
                   No
                 </button>
@@ -663,7 +664,7 @@ export default function ChingPanel({
             className={`rounded-2xl border p-3 text-xs ${
               notice.kind === "error"
                 ? "border-[#ff5a4d]/30 bg-[#fff4f3] text-[#b42318]"
-                : "border-black/10 bg-white text-[#181c22]"
+                : "border-black/10 bg-white text-ink"
             }`}
           >
             <div className="flex items-start gap-2">
@@ -685,18 +686,18 @@ export default function ChingPanel({
                 {notice.unrecognized?.length ? (
                   <Unrecognized items={notice.unrecognized} />
                 ) : (
-                  <p className="text-[#181c22]/55 break-words">Heard: “{notice.text}”</p>
+                  <p className="text-ink/55 break-words">Heard: “{notice.text}”</p>
                 )}
                 {notice.kind === "unknown" &&
                   (notice.editing ? (
-                    <p className="text-[#181c22]/70">Try: {EDIT_EXAMPLES}.</p>
+                    <p className="text-ink/70">Try: {EDIT_EXAMPLES}.</p>
                   ) : (
-                    <p className="text-[#181c22]/70">
+                    <p className="text-ink/70">
                       Try something like:{" "}
                       <button
                         type="button"
                         onClick={() => setDraft(example)}
-                        className="text-left font-medium text-[#181c22] underline decoration-[#e7f63c] decoration-2 underline-offset-2"
+                        className="text-left font-medium text-ink underline decoration-accent decoration-2 underline-offset-2"
                       >
                         “{example}”
                       </button>
@@ -712,7 +713,7 @@ export default function ChingPanel({
       <div className="shrink-0 border-t border-black/5 bg-white px-3.5 pt-2 pb-[calc(env(safe-area-inset-bottom)+8px)]">
         <form
           onSubmit={submitDraft}
-          className="flex items-center gap-2 rounded-full border border-black/10 bg-white pl-4 pr-1.5 py-1 focus-within:border-[#181c22]"
+          className="flex items-center gap-2 rounded-full border border-black/10 bg-white pl-4 pr-1.5 py-1 focus-within:border-brand"
         >
           <input
             value={draft}
@@ -721,12 +722,12 @@ export default function ChingPanel({
             autoFocus={!supported}
             disabled={running}
             enterKeyHint="send"
-            className="flex-1 min-w-0 bg-transparent outline-none text-[16px] sm:text-sm text-[#181c22] placeholder:text-[#181c22]/40"
+            className="flex-1 min-w-0 bg-transparent outline-none text-[16px] sm:text-sm text-ink placeholder:text-ink/40"
           />
           <button
             type="submit"
             disabled={!draft.trim() || running}
-            className="grid place-items-center w-9 h-9 rounded-full bg-[#181c22] text-white shrink-0 disabled:opacity-30"
+            className="grid place-items-center w-9 h-9 rounded-full bg-brand text-white shrink-0 disabled:opacity-30"
             aria-label="Send"
           >
             <SendHorizontal className="w-4 h-4" />

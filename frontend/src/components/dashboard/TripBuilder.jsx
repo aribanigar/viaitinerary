@@ -1994,8 +1994,8 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
               onClick={() => openTab(tab)}
               className={`group flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-full border text-xs font-medium whitespace-nowrap cursor-pointer transition-colors ${
                 active
-                  ? "bg-[#181c22] text-white border-transparent"
-                  : "bg-white text-[#181c22]/70 border-black/10 hover:text-[#181c22]"
+                  ? "bg-brand text-white border-transparent"
+                  : "bg-white text-ink/70 border-black/10 hover:text-ink"
               }`}
             >
               <span className="max-w-[130px] truncate">{tab.title}</span>
@@ -2015,7 +2015,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         onClick={handleNewTrip}
         disabled={busy}
         title="New trip"
-        className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-full text-xs font-semibold text-[#181c22] hover:bg-black/[0.05] transition-colors disabled:opacity-40"
+        className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-full text-xs font-semibold text-ink hover:bg-black/[0.05] transition-colors disabled:opacity-40"
       >
         <Plus className="w-3.5 h-3.5" /> New
       </button>
@@ -2026,12 +2026,12 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     <span className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-[#9aa3b2] mr-1">
       {autoState === "saving" ? (
         <>
-          <span className="w-2 h-2 rounded-full bg-[#e7f63c] animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
           Saving…
         </>
       ) : autoState === "saved" ? (
         <>
-          <span className="w-2 h-2 rounded-full bg-[#e7f63c]" />
+          <span className="w-2 h-2 rounded-full bg-accent" />
           Saved
         </>
       ) : (
@@ -2048,7 +2048,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       <div className="relative">
         <button
           onClick={() => toggleMenu("history")}
-          className="flex items-center gap-2 text-sm font-medium text-[#181c22]/50 hover:text-[#181c22] transition-colors"
+          className="flex items-center gap-2 text-sm font-medium text-ink/50 hover:text-ink transition-colors"
         >
           <Clock className="w-4 h-4" /> <span className="hidden sm:inline">History</span>
         </button>
@@ -2059,7 +2059,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
               onClick={() => setOpenMenu(null)}
             />
             <div className="absolute left-0 top-full mt-3 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
-              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45 border-b border-black/5">
+              <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/45 border-b border-black/5">
                 Recent trips
               </div>
               <div className="max-h-80 overflow-y-auto py-1">
@@ -2081,7 +2081,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                         }}
                         className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors"
                       >
-                        <div className="text-sm font-medium text-[#181c22] truncate">
+                        <div className="text-sm font-medium text-ink truncate">
                           {t.trip_title || t.tripTitle || "Untitled Trip"}
                         </div>
                         <div className="text-xs text-[#9aa3b2] truncate">
@@ -2111,7 +2111,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
             onChange={(e) =>
               setTripInfo((prev) => ({ ...prev, locked: e.target.checked }))
             }
-            className="accent-[#e7f63c] w-3.5 h-3.5"
+            className="accent-accent w-3.5 h-3.5"
           />
           Locked
         </label>
@@ -2134,7 +2134,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
             <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden py-1">
-              <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45">
+              <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/45">
                 Still to fill
               </div>
               {pendingItems.map((item) => (
@@ -2147,7 +2147,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                   className="w-full text-left px-4 py-2 hover:bg-black/[0.03] transition-colors flex items-center gap-2.5"
                 >
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.level === "required" ? "bg-amber-500" : "bg-black/20"}`} />
-                  <span className="flex-1 text-sm text-[#181c22]">{item.label}</span>
+                  <span className="flex-1 text-sm text-ink">{item.label}</span>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-[#9aa3b2]">{item.tab}</span>
                 </button>
               ))}
@@ -2159,7 +2159,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       {urlTripId && (
         <button
           onClick={openAmendments}
-          className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5"
+          className="px-4 py-2 rounded-full text-xs font-semibold text-ink border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5"
         >
           <HistoryIcon className="w-3.5 h-3.5" /> Amendments
         </button>
@@ -2168,11 +2168,11 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         <button
           onClick={() => toggleMenu("export")}
           disabled={loading || saving || exporting}
-          className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-full text-xs font-semibold text-ink border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {exporting ? (
             <>
-              <Loader size="sm" text="" inline color="text-[#181c22]" />
+              <Loader size="sm" text="" inline color="text-ink" />
               <span>Exporting…</span>
             </>
           ) : (
@@ -2190,16 +2190,16 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                   setOpenMenu(null);
                   handleExport();
                 }}
-                className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-[#181c22]"
+                className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-ink"
               >
-                <Download className="w-4 h-4 text-[#181c22]/60" /> Itinerary PDF
+                <Download className="w-4 h-4 text-ink/60" /> Itinerary PDF
               </button>
               {!isPackageMode && (
                 <button
                   onClick={() => handleExportExcel().catch(() => {})}
-                  className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-[#181c22]"
+                  className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-ink"
                 >
-                  <Download className="w-4 h-4 text-[#181c22]/60" /> Excel quotation
+                  <Download className="w-4 h-4 text-ink/60" /> Excel quotation
                 </button>
               )}
             </div>
@@ -2210,11 +2210,11 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         <button
           onClick={handleShareWhatsApp}
           disabled={loading || saving || exporting || sharing}
-          className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 rounded-full text-xs font-semibold text-ink border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {sharing ? (
             <>
-              <Loader size="sm" text="" inline color="text-[#181c22]" />
+              <Loader size="sm" text="" inline color="text-ink" />
               <span>Sharing…</span>
             </>
           ) : (
@@ -2228,11 +2228,11 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
           <button
             onClick={() => toggleMenu("send")}
             disabled={loading || saving || exporting || sharing}
-            className="px-4 py-2 rounded-full text-xs font-semibold text-[#181c22] border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 rounded-full text-xs font-semibold text-ink border border-black/10 bg-white hover:bg-black/[0.03] transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {sharing ? (
               <>
-                <Loader size="sm" text="" inline color="text-[#181c22]" />
+                <Loader size="sm" text="" inline color="text-ink" />
                 <span>Sending…</span>
               </>
             ) : (
@@ -2245,7 +2245,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
             <>
               <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
               <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden py-1">
-                <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45">
+                <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/45">
                   Client approval link
                 </div>
                 {[
@@ -2259,15 +2259,15 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                     onClick={() => handleShareProposal(key)}
                     className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-start gap-3"
                   >
-                    {React.createElement(icon, { className: "w-4 h-4 mt-0.5 text-[#181c22]/60" })}
+                    {React.createElement(icon, { className: "w-4 h-4 mt-0.5 text-ink/60" })}
                     <span>
-                      <span className="block text-sm font-medium text-[#181c22]">{label}</span>
+                      <span className="block text-sm font-medium text-ink">{label}</span>
                       {hint && <span className="block text-xs text-[#9aa3b2] truncate max-w-[13rem]">{hint}</span>}
                     </span>
                   </button>
                 ))}
                 <div className="border-t border-black/5 my-1" />
-                <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45">
+                <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/45">
                   Payment &amp; reminders
                 </div>
                 {[
@@ -2289,9 +2289,9 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                   <button
                     key={key}
                     onClick={run}
-                    className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-[#181c22]"
+                    className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-ink"
                   >
-                    {React.createElement(icon, { className: "w-4 h-4 text-[#181c22]/60" })}
+                    {React.createElement(icon, { className: "w-4 h-4 text-ink/60" })}
                     {label}
                   </button>
                 ))}
@@ -2301,9 +2301,9 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                     setOpenMenu(null);
                     handleShareWhatsApp();
                   }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-[#181c22]"
+                  className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-ink"
                 >
-                  <Download className="w-4 h-4 text-[#181c22]/60" /> Share the PDF
+                  <Download className="w-4 h-4 text-ink/60" /> Share the PDF
                 </button>
               </div>
             </>
@@ -2313,11 +2313,11 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       <button
         onClick={handleSaveTrip}
         disabled={loading || saving || exporting}
-        className="px-4 py-2 rounded-full text-xs font-semibold bg-[#e7f63c] text-[#181c22] hover:bg-[#d4e42e] transition-colors flex items-center gap-1.5 shadow-sm shadow-[#e7f63c]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 rounded-full text-xs font-semibold bg-accent text-ink hover:bg-accent-hover transition-colors flex items-center gap-1.5 shadow-sm shadow-accent/40 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {saving ? (
           <>
-            <Loader size="sm" text="" inline color="text-[#181c22]" />
+            <Loader size="sm" text="" inline color="text-ink" />
             <span>Saving…</span>
           </>
         ) : (
@@ -2350,15 +2350,15 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                       title={tab}
                       className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-2xl border text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                         activeTab === tab
-                          ? "border-[#181c22] bg-[#181c22] text-white shadow-sm"
-                          : "border-black/10 text-[#181c22]/55 hover:text-[#181c22] hover:border-black/20 bg-white"
+                          ? "border-brand bg-brand text-white shadow-sm"
+                          : "border-black/10 text-ink/55 hover:text-ink hover:border-black/20 bg-white"
                       }`}
                     >
                       <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.8} />
                       <span className="whitespace-nowrap">{tab}</span>
                       {pendingCounts[tab] > 0 && (
                         <span
-                          className="min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-[10px] font-bold text-[#181c22] grid place-items-center"
+                          className="min-w-[18px] h-[18px] px-1 rounded-full bg-amber-400 text-[10px] font-bold text-ink grid place-items-center"
                           title={`${pendingCounts[tab]} pending in ${tab}`}
                         >
                           {pendingCounts[tab]}
@@ -2370,7 +2370,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                     <button
                       onClick={() => toggleMenu("templates")}
                       title="Load from package template"
-                      className="inline-flex items-center gap-2 h-10 px-3.5 rounded-2xl border border-black/10 text-sm font-semibold text-[#181c22]/55 hover:text-[#181c22] hover:border-black/20 bg-white transition-colors"
+                      className="inline-flex items-center gap-2 h-10 px-3.5 rounded-2xl border border-black/10 text-sm font-semibold text-ink/55 hover:text-ink hover:border-black/20 bg-white transition-colors"
                     >
                       <PackageIcon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.8} />
                       <span className="whitespace-nowrap">Template</span>
@@ -2382,7 +2382,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                           onClick={() => setOpenMenu(null)}
                         />
                         <div className="absolute left-0 top-full mt-3 w-72 max-w-[calc(100vw-2rem)] bg-white rounded-2xl border border-black/5 shadow-xl z-50 overflow-hidden">
-                          <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45 border-b border-black/5">
+                          <div className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/45 border-b border-black/5">
                             Load from template
                           </div>
                           <div className="max-h-80 overflow-y-auto py-1">
@@ -2401,7 +2401,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                                   onClick={() => applyTemplate(pkg)}
                                   className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors"
                                 >
-                                  <div className="text-sm font-medium text-[#181c22] truncate">
+                                  <div className="text-sm font-medium text-ink truncate">
                                     {pkg.trip_title || "Untitled Package"}
                                   </div>
                                   <div className="text-xs text-[#9aa3b2] truncate">
@@ -2561,8 +2561,8 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
               )}
 
               {/* Live Preview Badge */}
-              <div className="absolute bottom-10 right-10 flex items-center gap-2 bg-[#1a1c1c]/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-50">
-                <div className="w-2 h-2 rounded-full bg-[#e7f63c]"></div>
+              <div className="absolute bottom-10 right-10 flex items-center gap-2 bg-brand/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-50">
+                <div className="w-2 h-2 rounded-full bg-accent"></div>
                 <span className="text-[10px] font-black text-white uppercase tracking-widest">
                   Live Preview
                 </span>
@@ -2669,7 +2669,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                 revisions.map((rev) => (
                   <div key={rev.id} className="border border-black/5 rounded-xl p-4 bg-[#f9f9f9]/60">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-black text-[#181c22]">
+                      <span className="text-sm font-black text-ink">
                         Version {rev.version_number}
                       </span>
                       <span className="text-[10px] font-bold text-[#9aa3b2] uppercase tracking-wider">

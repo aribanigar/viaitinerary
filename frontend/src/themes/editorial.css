@@ -1,0 +1,128 @@
+/* ── BACKUP THEME: "Minimalist Editorial" (graphite + lime, Urbanist / Noto Serif).
+   This was the site's look until 2026-10-08. To switch back:
+     1. src/index.css      → @import "./themes/editorial.css";
+     2. src/themes/index.js → ACTIVE_THEME = "editorial"
+     3. index.html         → restore the Urbanist + Noto Serif Google Fonts link
+        (it's in a comment there). ── */
+
+/* Role tokens the components use (bg-brand, text-ink, bg-accent …). */
+@theme {
+  --font-display: "Urbanist", "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --color-brand: #181c22;
+  --color-ink: #181c22;
+}
+
+/* ── Brand: "Minimalist Editorial" — exact tokens from the provided design ── */
+@theme {
+  --font-sans: "Urbanist", "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Serif", ui-serif, Georgia, serif;
+
+  --color-inverse-primary: #c6c6c6;
+  --color-surface-bright: #f9f9f9;
+  --color-on-secondary: #ffffff;
+  --color-on-primary-container: #848484;
+  --color-error: #ba1a1a;
+  --color-on-primary-fixed: #1b1b1b;
+  --color-tertiary: #000000;
+  --color-on-surface: #1a1c1c;
+  --color-on-secondary-fixed-variant: #464747;
+  --color-on-error-container: #93000a;
+  --color-on-secondary-container: #646464;
+  --color-surface-container: #eeeeee;
+  --color-primary-fixed: #e2e2e2;
+  --color-on-tertiary-container: #838484;
+  --color-surface: #f9f9f9;
+  --color-secondary-fixed-dim: #c7c6c6;
+  --color-secondary-fixed: #e3e2e2;
+  --color-error-container: #ffdad6;
+  --color-on-tertiary: #ffffff;
+  --color-outline-variant: #cfc4c5;
+  --color-on-surface-variant: #4c4546;
+  --color-secondary-container: #e3e2e2;
+  --color-surface-container-high: #e8e8e8;
+  --color-surface-dim: #dadada;
+  --color-surface-variant: #e2e2e2;
+  --color-on-tertiary-fixed: #1a1c1c;
+  --color-surface-tint: #5e5e5e;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-tertiary-fixed-variant: #454747;
+  --color-on-error: #ffffff;
+  --color-surface-container-low: #f3f3f4;
+  --color-secondary: #5e5e5e;
+  --color-tertiary-container: #1a1c1c;
+  --color-primary: #000000;
+  --color-on-primary: #ffffff;
+  --color-on-background: #1a1c1c;
+  --color-outline: #7e7576;
+  --color-surface-container-highest: #e2e2e2;
+  --color-background: #f9f9f9;
+  --color-inverse-surface: #2f3131;
+  --color-primary-fixed-dim: #c6c6c6;
+  --color-on-primary-fixed-variant: #474747;
+  --color-on-secondary-fixed: #1b1c1c;
+  --color-tertiary-fixed: #e2e2e2;
+  --color-tertiary-fixed-dim: #c6c6c7;
+  --color-primary-container: #1b1b1b;
+  --color-inverse-on-surface: #f0f1f1;
+}
+
+/* ── Brand remap: neutralize the legacy blue/indigo accent scales onto a
+   monochrome graphite ramp so the whole app inherits the "Minimalist
+   Editorial" look without touching every utility class. ── */
+@theme {
+  --color-blue-50: #f3f3f4;
+  --color-blue-100: #e8e8e8;
+  --color-blue-200: #d4d4d4;
+  --color-blue-300: #b0b0b0;
+  --color-blue-400: #8a8a8a;
+  --color-blue-500: #5e5e5e;
+  --color-blue-600: #1b1b1b;
+  --color-blue-700: #111111;
+  --color-blue-800: #0a0a0a;
+  --color-blue-900: #050505;
+  --color-blue-950: #000000;
+
+  --color-indigo-50: #f3f3f4;
+  --color-indigo-100: #e8e8e8;
+  --color-indigo-200: #d4d4d4;
+  --color-indigo-300: #b0b0b0;
+  --color-indigo-400: #8a8a8a;
+  --color-indigo-500: #5e5e5e;
+  --color-indigo-600: #1b1b1b;
+  --color-indigo-700: #111111;
+  --color-indigo-800: #0a0a0a;
+  --color-indigo-900: #050505;
+  --color-indigo-950: #000000;
+
+  --color-sky-50: #f3f3f4;
+  --color-sky-100: #e8e8e8;
+  --color-sky-200: #d4d4d4;
+  --color-sky-300: #b0b0b0;
+  --color-sky-400: #8a8a8a;
+  --color-sky-500: #5e5e5e;
+  --color-sky-600: #1b1b1b;
+  --color-sky-700: #111111;
+  --color-sky-800: #0a0a0a;
+  --color-sky-900: #050505;
+
+  --color-cyan-50: #f3f3f4;
+  --color-cyan-100: #e8e8e8;
+  --color-cyan-200: #d4d4d4;
+  --color-cyan-300: #b0b0b0;
+  --color-cyan-400: #8a8a8a;
+  --color-cyan-500: #5e5e5e;
+  --color-cyan-600: #1b1b1b;
+  --color-cyan-700: #111111;
+  --color-cyan-800: #0a0a0a;
+  --color-cyan-900: #050505;
+}
+
+/* ── Lime accent (from the AI-assistant reference): vivid chartreuse used
+   for primary actions, active nav, focus rings and chart fills. Always
+   pairs with near-black text/icons for contrast. ── */
+@theme {
+  --color-accent: #e7f63c;
+  --color-accent-hover: #d4e42e;
+  --color-accent-soft: #f7fbc8;
+  --color-on-accent: #181c22;
+}

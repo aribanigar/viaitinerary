@@ -146,9 +146,9 @@ export default function TripBookings({ token, tripId, refreshKey }) {
     return (
       <div key={key} className="py-3">
         <div className="flex flex-wrap items-center gap-2">
-          {b.kind === "hotel" ? <BedDouble className="w-4 h-4 text-[#181c22]/40" /> : <Car className="w-4 h-4 text-[#181c22]/40" />}
+          {b.kind === "hotel" ? <BedDouble className="w-4 h-4 text-ink/40" /> : <Car className="w-4 h-4 text-ink/40" />}
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-semibold text-[#181c22] truncate">{b.name}</div>
+            <div className="text-sm font-semibold text-ink truncate">{b.name}</div>
             <div className="text-xs text-[#5b6472] truncate">
               {b.kind === "hotel" ? `${b.city || ""} · ${short(b.check_in)} – ${short(b.check_out)}` : `${b.days.length} day${b.days.length === 1 ? "" : "s"} from ${short(b.days[0]?.date)}`}
               {b.reference ? ` · ref ${b.reference}` : ""}
@@ -181,7 +181,7 @@ export default function TripBookings({ token, tripId, refreshKey }) {
           <div className="mt-1.5 ml-6 text-xs text-[#5b6472] flex flex-wrap items-center gap-2">
             {firstDriver ? (
               <span>
-                Driver: <b className="text-[#181c22]">{firstDriver.driver_name}</b> {firstDriver.driver_phone} {firstDriver.vehicle_number}
+                Driver: <b className="text-ink">{firstDriver.driver_name}</b> {firstDriver.driver_phone} {firstDriver.vehicle_number}
               </span>
             ) : (
               <span className="text-amber-700 font-semibold">No driver assigned</span>
@@ -231,7 +231,7 @@ export default function TripBookings({ token, tripId, refreshKey }) {
                 className="rounded-lg border border-black/10 px-2.5 py-1.5 text-sm"
               />
             ))}
-            <button type="button" onClick={() => saveDriver(b)} disabled={busy === `driver-${b.id}`} className="rounded-lg bg-[#181c22] text-white text-sm font-semibold px-3 py-1.5 disabled:opacity-50">
+            <button type="button" onClick={() => saveDriver(b)} disabled={busy === `driver-${b.id}`} className="rounded-lg bg-brand text-white text-sm font-semibold px-3 py-1.5 disabled:opacity-50">
               Save
             </button>
           </div>
@@ -243,8 +243,8 @@ export default function TripBookings({ token, tripId, refreshKey }) {
   return (
     <section className="bg-white border border-black/5 rounded-2xl p-5 sm:p-6 shadow-sm">
       <div className="flex flex-wrap items-center gap-2 mb-2">
-        <MailCheck className="w-4 h-4 text-[#181c22]/60" />
-        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-[#181c22]">Bookings & vouchers</h3>
+        <MailCheck className="w-4 h-4 text-ink/60" />
+        <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-ink">Bookings & vouchers</h3>
         <span className="text-xs text-[#8a93a2]">
           {confirmed}/{all.length} confirmed
         </span>
@@ -255,7 +255,7 @@ export default function TripBookings({ token, tripId, refreshKey }) {
           type="button"
           onClick={requestAll}
           disabled={busy === "all" || confirmed === all.length}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#181c22] text-white text-xs font-semibold disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand text-white text-xs font-semibold disabled:opacity-40"
         >
           <Send className="w-3.5 h-3.5" /> {busy === "all" ? "Sending…" : "Request all confirmations"}
         </button>
