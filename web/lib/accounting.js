@@ -36,6 +36,8 @@ function nightsBetween(checkIn, checkOut) {
 }
 
 function accommodationCost(acc) {
+  // A cancelled stay only owes the hotel its cancellation charge.
+  if (acc.cancelledAt) return Math.max(0, num(acc.cancellationCharge));
   const nights = nightsBetween(acc.checkIn, acc.checkOut);
   let rooms = num(acc.rooms) || 1;
   if (rooms <= 0) rooms = 1;
@@ -44,14 +46,17 @@ function accommodationCost(acc) {
 
   const bedPrices = Array.isArray(acc.bedPrices) ? acc.bedPrices : [];
   const cnbPrice = resolveBedPrice(bedPrices, ["cnb"]);
-  const extra512Price = resolveBedPrice(bedPrices, ["5-12", "5 to 12"]);
-  const extraAbove12Price = resolveBedPrice(bedPrices, ["above 12", "12+"]);
+  // The Trip Builder saves these as "5_to_12" / "above_12" / "extra_adult".
+  const extra512Price = resolveBedPrice(bedPrices, ["5_to_12", "5-12", "5 to 12"]);
+  const extraAbove12Price = resolveBedPrice(bedPrices, ["above_12", "above 12", "12+"]);
+  const extraAdultPrice = resolveBedPrice(bedPrices, ["extra_adult", "extra adult"]);
 
   const cnbCost = cnbPrice * num(acc.cnbCount) * nights;
   const extra512Cost = extra512Price * num(acc.extraBeds5To12Count) * nights;
   const extraAbove12Cost = extraAbove12Price * num(acc.extraBedsAbove12Count) * nights;
+  const extraAdultCost = extraAdultPrice * num(acc.extraAdultCount) * nights;
 
-  return Math.max(0, roomSubtotal + cnbCost + extra512Cost + extraAbove12Cost);
+  return Math.max(0, roomSubtotal + cnbCost + extra512Cost + extraAbove12Cost + extraAdultCost);
 }
 
 function transportationCost(trans) {

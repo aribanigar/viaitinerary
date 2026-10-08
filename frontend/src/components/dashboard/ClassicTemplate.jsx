@@ -1,6 +1,6 @@
 import { activityPages } from "../../utils/activityRows";
 import React from "react";
-import { hotelOptionsOf, hotelOptionsKey } from "../../utils/hotelOptions";
+import { hotelOptionsOf, hotelOptionsKey, supplementLabel } from "../../utils/hotelOptions";
 
 const WhatsAppIcon = ({ size = 16, className = "" }) => (
   <svg
@@ -1056,6 +1056,9 @@ const ClassicTemplate = ({
                               >
                                 <b style={{ color: primaryColor }}>OR</b> {opt.name}
                                 {opt.room_type ? ` (${opt.room_type})` : ""}
+                                {supplementLabel(opt.supplement, tripInfo.currency)
+                                  ? ` · ${supplementLabel(opt.supplement, tripInfo.currency)}`
+                                  : ""}
                               </div>
                             ))}
                           </td>
@@ -1280,11 +1283,26 @@ const ClassicTemplate = ({
                                       OR CHOOSE AN OPTIONAL HOTEL
                                     </div>
                                     {hotelOptionsOf(hotel).map((opt, optIdx) => (
-                                      <div key={optIdx} style={{ marginTop: "2px" }}>
-                                        <b style={{ color: primaryColor }}>OR</b>{" "}
+                                      <div
+                                        key={optIdx}
+                                        style={{ marginTop: "4px", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}
+                                      >
+                                        <b style={{ color: primaryColor }}>OR</b>
+                                        {opt.photo && (
+                                          <img
+                                            src={formatImageUrl(opt.photo)}
+                                            alt={opt.name}
+                                            style={{ width: "44px", height: "32px", borderRadius: "5px", objectFit: "cover" }}
+                                          />
+                                        )}
                                         <b>{opt.name}</b>
                                         {opt.category ? ` · ${opt.category}` : ""}
                                         {opt.room_type ? ` · ${opt.room_type}` : ""}
+                                        {supplementLabel(opt.supplement, tripInfo.currency) && (
+                                          <b style={{ color: secondaryColor }}>
+                                            {` · ${supplementLabel(opt.supplement, tripInfo.currency)}`}
+                                          </b>
+                                        )}
                                       </div>
                                     ))}
                                   </div>

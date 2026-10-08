@@ -318,7 +318,7 @@ export default function Proposal() {
     setDownloading(true);
     try {
       const { exportPreviewToPdf } = await import("../utils/exportPdf");
-      await exportPreviewToPdf(`${trip.trip_id || "Trip"}_Itinerary.pdf`);
+      await exportPreviewToPdf(`${trip.trip_id || "Trip"}_Itinerary.pdf`, { proposalToken: token });
     } catch {
       toast.error("Couldn't create the PDF. Please try again.");
     } finally {

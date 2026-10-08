@@ -80,6 +80,7 @@ import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
 import { buildTripDraft } from "../../utils/ching/tripDraft";
 import { planLive, isBlankTrip } from "../../utils/ching/liveFill";
 import { tripChecklist, pendingByTab } from "../../utils/tripChecklist";
+import { optionSupplement } from "../../utils/hotelOptions";
 import {
   DRAFT_KEY,
   useTripBuilderData,
@@ -260,15 +261,26 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         (hotel) => String(hotel.id) === String(hotelId),
       );
       const hotelData = item.hotel || hotelMatch;
+      const photoOf = (h) => h?.image_url || h?.image_path || null;
+
+      // Optional hotels picked from the catalog show its current photo.
+      const alternateOptions = (item.alternateOptions || []).map((opt) => {
+        if (opt.photo) return opt;
+        const altHotel = masterHotels.find((h) => String(h.id) === String(opt.hotel_id));
+        return photoOf(altHotel) ? { ...opt, photo: photoOf(altHotel) } : opt;
+      });
 
       if (!hotelData) {
-        return item;
+        return { ...item, alternateOptions };
       }
 
       return {
         ...item,
         name: hotelData.name ?? item.name,
         city: hotelData.city ?? item.city,
+        // A stay picked before its hotel had a photo picks the photo up later.
+        photo: item.photo || photoOf(hotelMatch) || photoOf(item.hotel),
+        alternateOptions,
       };
     });
   }, [accommodations, masterHotels]);
@@ -748,11 +760,10 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     // A cancelled stay shouldn't count toward the live trip total.
     if (item.cancelled || item.cancelledAt) return 0;
 
-    // "Similar Options": when alternate hotels are attached to this slot,
-    // the client-facing price is the highest of all options shown — protects
-    // margin regardless of which one the client ends up picking.
-    const altPrices = (item.alternateOptions || []).map((o) => parseFloat(o.price || 0));
-    const basePrice = Math.max(parseFloat(item.pricePerRoom || 0), ...altPrices, 0);
+    // The quote prices the main hotel only. Optional hotels are offered to
+    // the client as a priced upgrade/saving on top (see withOptionSupplements),
+    // so the client pays for exactly the hotel they choose.
+    const basePrice = parseFloat(item.pricePerRoom || 0);
     const rooms = parseInt(item.rooms || 1);
     const cnbCount = parseInt(item.cnbCount || 0);
     const extraBeds5To12Count = parseInt(item.extraBeds5To12Count || 0);
@@ -891,6 +902,20 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     0,
   );
   const totalOtherCostMarkedUp = totalOtherCost * (1 + (profitMarginPercentage || 0) / 100);
+
+  // Each optional hotel's client-facing price difference for its stay, with
+  // the same margin and GST as the quote. Shown on the itinerary and stored on
+  // save so the proposal link and PDFs show the same figure.
+  const withOptionSupplements = (item) => ({
+    ...item,
+    alternateOptions: (item.alternateOptions || []).map((opt) => ({
+      ...opt,
+      supplement: optionSupplement(item, opt, {
+        markupPct: effectiveMarkup(item),
+        gstPct: includeGST ? gstPercentage : 0,
+      }),
+    })),
+  });
 
   const netCostMarkedUp =
     totalHotelCostMarkedUp + totalVehicleCostMarkedUp + totalActivityCostMarkedUp + totalOtherCostMarkedUp;
@@ -1099,7 +1124,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       cancelled_at: item.cancelled ? item.cancelledAt || new Date().toISOString() : null,
       cancellation_charge: item.cancellationCharge === "" ? null : item.cancellationCharge,
       cancellation_note: item.cancellationNote ?? null,
-      alternate_options: item.alternateOptions ?? [],
+      alternate_options: withOptionSupplements(item).alternateOptions,
       markup_percentage: item.markupPercentage === "" ? null : item.markupPercentage,
     }));
 
@@ -2522,7 +2547,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                       key={`${tripInfo.template}-${tripInfo.cost}-${includeGST ? 1 : 0}-${gstPercentage}-${profitMarginPercentage}-${accommodations.length}-${transportation.length}-${tripActivities.length}-${otherCosts.length}`}
                       tripInfo={tripInfo}
                       itinerary={itinerary}
-                      accommodations={resolvedAccommodations}
+                      accommodations={resolvedAccommodations.map(withOptionSupplements)}
                       transportation={transportation}
                       tripActivities={tripActivities}
                       agencySettings={agencySettings}

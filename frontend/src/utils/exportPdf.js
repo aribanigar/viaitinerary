@@ -31,11 +31,74 @@ function waitForImages(node) {
   );
 }
 
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
+
+const isExternal = (url) => {
+  try {
+    const u = new URL(url, window.location.href);
+    return /^https?:$/.test(u.protocol) && u.origin !== window.location.origin;
+  } catch {
+    return false;
+  }
+};
+
+const blobToDataUrl = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+// The canvas can only capture a cross-origin photo when its host sends CORS
+// headers; anything else (most hotel photo hosts) came out blank in the PDF.
+// Swap every external photo in the clone — <img> and CSS background — for a
+// data URL fetched through our same-origin /image-proxy. A photo that still
+// can't be fetched is left as-is (worst case: blank, as before).
+async function inlineExternalImages(node, proposalToken) {
+  const cache = new Map();
+  const toDataUrl = (url) => {
+    if (!cache.has(url)) {
+      const qs = new URLSearchParams({ url });
+      if (proposalToken) qs.set("p", proposalToken);
+      cache.set(
+        url,
+        fetch(`${API_BASE}/image-proxy?${qs}`, { credentials: "include" })
+          .then((r) => (r.ok ? r.blob() : null))
+          .then((b) => (b ? blobToDataUrl(b) : null))
+          .catch(() => null),
+      );
+    }
+    return cache.get(url);
+  };
+
+  const jobs = [];
+  node.querySelectorAll("img").forEach((img) => {
+    const src = img.getAttribute("src");
+    if (!src || !isExternal(src)) return;
+    jobs.push(
+      toDataUrl(new URL(src, window.location.href).href).then((data) => {
+        if (data) img.src = data;
+      }),
+    );
+  });
+  node.querySelectorAll("[style*='url(']").forEach((el) => {
+    const match = el.style.backgroundImage.match(/url\(["']?(.*?)["']?\)/);
+    if (!match || !isExternal(match[1])) return;
+    jobs.push(
+      toDataUrl(new URL(match[1], window.location.href).href).then((data) => {
+        if (data) el.style.backgroundImage = `url("${data}")`;
+      }),
+    );
+  });
+  await Promise.all(jobs);
+}
+
 /**
  * Rasterize the on-screen itinerary preview into a jsPDF document. Shared by
  * both the direct-download and share (Blob) export paths below.
  */
-async function buildPreviewPdf() {
+async function buildPreviewPdf({ proposalToken } = {}) {
   // the preview renders either the Modern or Classic template wrapper
   const source = document.querySelector(
     ".trip-preview-wrapper, .classic-template-wrapper",
@@ -68,6 +131,7 @@ async function buildPreviewPdf() {
         new Promise((r) => setTimeout(r, 6000)),
       ]).catch(() => {});
     }
+    await inlineExternalImages(clone, proposalToken);
     await waitForImages(clone);
     await new Promise((r) => setTimeout(r, 250));
 
@@ -104,9 +168,11 @@ async function buildPreviewPdf() {
 /**
  * Export the on-screen itinerary preview to a downloadable PDF.
  * @param {string} filename  e.g. "TRP123_Itinerary.pdf"
+ * @param {{ proposalToken?: string }} [options]  pass the proposal token on
+ *   the public client page (no login) so its photos can be fetched
  */
-export async function exportPreviewToPdf(filename = "Itinerary.pdf") {
-  const pdf = await buildPreviewPdf();
+export async function exportPreviewToPdf(filename = "Itinerary.pdf", options) {
+  const pdf = await buildPreviewPdf(options);
   pdf.save(filename);
 }
 

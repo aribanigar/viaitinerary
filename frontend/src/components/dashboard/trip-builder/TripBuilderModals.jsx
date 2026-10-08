@@ -14,7 +14,8 @@ import {
   normalizeRoomTypeValue,
   hotelCategoryLabel,
   hotelRoomTypes,
-  findRoomTypeSection,
+  rateSectionFor,
+  bedPricesFromSection,
 } from "../../../utils/hotelRates";
 
 // "4", "4 Star", 4 → 4; unrated → 0.
@@ -121,6 +122,29 @@ export const HotelModal = ({
   const checkInWarn = hotelForm.checkIn && blackoutWarnDates.includes(hotelForm.checkIn);
   const checkOutWarn = hotelForm.checkOut && blackoutWarnDates.includes(hotelForm.checkOut);
 
+  // Re-price the stay and its catalog-linked optional hotels from their rate
+  // sheets after the date or meal plan changes. Hand-typed prices (no
+  // catalog hotel, or no matching rate row) are left alone.
+  const repriceForm = (form) => {
+    let next = form;
+    const primary = masterHotels.find((h) => h.id === form.hotelId);
+    if (primary) {
+      const roomTypes = hotelRoomTypes(primary);
+      const roomType = roomTypes.includes(form.roomType) ? form.roomType : roomTypes[0];
+      const section = roomType ? rateSectionFor(primary, roomType, form.checkIn, form.mealPlan) : {};
+      if (section.price) {
+        next = { ...next, pricePerRoom: section.price, bedPrices: bedPricesFromSection(section) };
+      }
+    }
+    const alternateOptions = (form.alternateOptions || []).map((opt) => {
+      const altHotel = masterHotels.find((h) => String(h.id) === String(opt.hotel_id));
+      if (!altHotel || !opt.room_type) return opt;
+      const section = rateSectionFor(altHotel, opt.room_type, form.checkIn, form.mealPlan);
+      return section.price ? { ...opt, price: section.price } : opt;
+    });
+    return { ...next, alternateOptions };
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -211,10 +235,11 @@ export const HotelModal = ({
                     ? hotelForm.roomType
                     : availableRoomTypes[0] || "";
 
-                  const section = findRoomTypeSection(
+                  const section = rateSectionFor(
                     selectedHotel,
                     initialRoomType,
                     hotelForm.checkIn,
+                    hotelForm.mealPlan,
                   );
 
                   const initialPrice = section.price || 0;
@@ -269,10 +294,11 @@ export const HotelModal = ({
                     (h) => h.id === hotelForm.hotelId,
                   );
                   if (selectedHotel) {
-                    const section = findRoomTypeSection(
+                    const section = rateSectionFor(
                       selectedHotel,
                       newRoomType,
                       hotelForm.checkIn,
+                      hotelForm.mealPlan,
                     );
 
                     updatedPrice = section.price || 0;
@@ -507,7 +533,9 @@ export const HotelModal = ({
             className="w-full bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-3 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all appearance-none cursor-pointer"
             value={hotelForm.mealPlan}
             onChange={(e) =>
-              setHotelForm({ ...hotelForm, mealPlan: e.target.value })
+              // The meal plan changes the rate (room only vs. breakfast +
+              // dinner are different rows on the rate sheet).
+              setHotelForm(repriceForm({ ...hotelForm, mealPlan: e.target.value }))
             }
           >
             <option value="">Select Plan</option>
@@ -528,24 +556,9 @@ export const HotelModal = ({
             <DatePicker
               value={hotelForm.checkIn}
               onChange={(dateString) => {
-                // Re-resolve the room-type price against the new date so
-                // season-based rate sheets (valid_from/valid_to) apply.
-                if (selectedHotel && resolvedRoomType) {
-                  const section = findRoomTypeSection(selectedHotel, resolvedRoomType, dateString);
-                  setHotelForm({
-                    ...hotelForm,
-                    checkIn: dateString,
-                    pricePerRoom: section.price || hotelForm.pricePerRoom,
-                    bedPrices: [
-                      { category: "cnb", price: section.cnb || 0 },
-                      { category: "5_to_12", price: section.upto_5 || 0 },
-                      { category: "above_12", price: section.above_12 || 0 },
-                      { category: "extra_adult", price: section.extra_adult || 0 },
-                    ].filter((bp) => bp.price > 0),
-                  });
-                } else {
-                  setHotelForm({ ...hotelForm, checkIn: dateString });
-                }
+                // Re-resolve prices against the new date so season-based
+                // rate sheets (valid_from/valid_to) apply — optional hotels too.
+                setHotelForm(repriceForm({ ...hotelForm, checkIn: dateString }));
               }}
               className="w-full"
               options={{
@@ -646,9 +659,9 @@ export const HotelModal = ({
           </div>
           <p className="text-[10px] text-[#181c22]/40 font-medium mb-2">
             Give the client a choice for these nights in {hotelForm.city || "this city"} —
-            "{hotelForm.name || "Hotel A"}" or an optional hotel. Options appear on the
-            itinerary as "OR" choices; the price used is the highest of all options, so
-            margin is protected either way.
+            "{hotelForm.name || "Hotel A"}" or an optional hotel. The quote is priced
+            on the main hotel; each option shows the client its price difference for
+            the stay (with your margin and GST), so they pay only for what they choose.
           </p>
           {(hotelForm.alternateOptions || []).map((opt, idx) => {
             const updateAlt = (patch) => {
@@ -690,7 +703,7 @@ export const HotelModal = ({
                       const roomType = roomTypes.includes(hotelForm.roomType)
                         ? hotelForm.roomType
                         : roomTypes[0] || "";
-                      const section = findRoomTypeSection(picked, roomType, hotelForm.checkIn);
+                      const section = rateSectionFor(picked, roomType, hotelForm.checkIn, hotelForm.mealPlan);
                       updateAlt({
                         hotel_id: picked.id,
                         name: picked.name,
@@ -719,25 +732,37 @@ export const HotelModal = ({
                     placeholder="Hotel name"
                     className="sm:col-span-2 bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
                   />
-                  <input
-                    type="text"
-                    list={`alt-room-types-${idx}`}
-                    value={opt.room_type || ""}
-                    onChange={(e) => {
-                      const roomType = e.target.value;
-                      const section = altHotel && altRoomTypes.includes(roomType)
-                        ? findRoomTypeSection(altHotel, roomType, hotelForm.checkIn)
-                        : null;
-                      updateAlt(section?.price ? { room_type: roomType, price: section.price } : { room_type: roomType });
-                    }}
-                    placeholder="Room type"
-                    className="bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
-                  />
-                  <datalist id={`alt-room-types-${idx}`}>
-                    {altRoomTypes.map((rt) => (
-                      <option key={rt} value={rt} />
-                    ))}
-                  </datalist>
+                  {altRoomTypes.length > 0 ? (
+                    <select
+                      value={altRoomTypes.includes(opt.room_type) ? opt.room_type : ""}
+                      onChange={(e) => {
+                        const roomType = e.target.value;
+                        const section = rateSectionFor(altHotel, roomType, hotelForm.checkIn, hotelForm.mealPlan);
+                        updateAlt({
+                          room_type: roomType,
+                          ...(section.price ? { price: section.price } : {}),
+                        });
+                      }}
+                      className="bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22] appearance-none cursor-pointer"
+                    >
+                      {!altRoomTypes.includes(opt.room_type) && (
+                        <option value="">Room type</option>
+                      )}
+                      {altRoomTypes.map((rt) => (
+                        <option key={rt} value={rt}>
+                          {formatRoomTypeLabel(rt)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={opt.room_type || ""}
+                      onChange={(e) => updateAlt({ room_type: e.target.value })}
+                      placeholder="Room type"
+                      className="bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
+                    />
+                  )}
                   <input
                     type="number"
                     value={opt.price ?? ""}

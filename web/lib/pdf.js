@@ -78,6 +78,13 @@ const num = (n) => Number(n || 0).toLocaleString("en-IN");
 const money = (n, cur) => `${curCode(cur)} ${num(n)}`;
 const MEAL = { room_only: "Room only (EP)", breakfast_only: "Breakfast (CP)", breakfast_dinner: "Breakfast & dinner (MAP)", all_meals: "All meals (AP)", ep: "Room only (EP)", cp: "Breakfast (CP)", map: "Breakfast & dinner (MAP)", ap: "All meals (AP)" };
 const mealLabel = (v) => MEAL[String(v || "").toLowerCase()] || txt(v);
+// Optional hotel's stored client-facing price difference for its stay.
+const supplementText = (n, cur) => {
+  if (n == null || n === "" || Number.isNaN(Number(n))) return "";
+  const v = Math.round(Number(n));
+  if (v === 0) return "Same price";
+  return v > 0 ? `+${money(v, cur)} for this stay` : `${money(-v, cur)} less for this stay`;
+};
 
 // ModernTemplate palette (matches ModernTemplate.jsx CSS variables).
 const ORANGE = "#FAA61A"; // --primary-orange
@@ -404,11 +411,21 @@ function ItineraryDoc({ trip, settings }) {
                         h(Text, { style: { ...s.bold, color: green, fontSize: 8, letterSpacing: 1, marginBottom: 3 } }, "OR CHOOSE AN OPTIONAL HOTEL"),
                         ...options.map((o, j) =>
                           h(
-                            Text,
-                            { key: j, style: { fontSize: 10, color: "#444", marginTop: 2 } },
-                            h(Text, { style: { ...s.bold, color: brand } }, "OR  "),
-                            h(Text, { style: { ...s.bold, color: green } }, txt(o.name)),
-                            [txt(o.category), txt(o.room_type)].filter(Boolean).map((x) => `  ·  ${x}`).join(""),
+                            View,
+                            { key: j, style: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 } },
+                            isImg(o.photo)
+                              ? h(Image, { src: pdfImg(o.photo), style: { width: 40, height: 28, borderRadius: 4, objectFit: "cover" } })
+                              : null,
+                            h(
+                              Text,
+                              { style: { fontSize: 10, color: "#444" } },
+                              h(Text, { style: { ...s.bold, color: brand } }, "OR  "),
+                              h(Text, { style: { ...s.bold, color: green } }, txt(o.name)),
+                              [txt(o.category), txt(o.room_type)].filter(Boolean).map((x) => `  ·  ${x}`).join(""),
+                              supplementText(o.supplement, trip.currency)
+                                ? h(Text, { style: { ...s.bold, color: green } }, `  ·  ${supplementText(o.supplement, trip.currency)}`)
+                                : null,
+                            ),
                           ),
                         ),
                       ),

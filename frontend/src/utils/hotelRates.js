@@ -82,3 +82,20 @@ export const bedPricesFromSection = (section = {}) =>
     { category: "above_12", price: section.above_12 || 0 },
     { category: "extra_adult", price: section.extra_adult || 0 },
   ].filter((bp) => bp.price > 0);
+
+/** "Breakfast + Dinner" (builder label) or "breakfast_dinner" → "breakfast_dinner"; unknown → "". */
+export const mealPlanKey = (value) =>
+  MEAL_PLAN_LABEL[value]
+    ? value
+    : Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === value) || "";
+
+/**
+ * The rate-sheet row the Trip Builder prices a stay from: the chosen meal
+ * plan's row when the sheet has one, otherwise any row for the room type
+ * (sheets that only carry one meal plan, or none, keep pricing as before).
+ */
+export const rateSectionFor = (hotel, roomTypeValue, dateStr, mealPlan) => {
+  const key = mealPlanKey(mealPlan);
+  const section = key ? findRateSection(hotel, roomTypeValue, dateStr, key) : {};
+  return section.price ? section : findRoomTypeSection(hotel, roomTypeValue, dateStr);
+};

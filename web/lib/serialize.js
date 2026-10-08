@@ -52,8 +52,10 @@ export function serializeAccommodation(a) {
     bed_prices: a.bedPrices ?? [],
     check_in: dateOnly(a.checkIn),
     check_out: dateOnly(a.checkOut),
-    image_path: a.imagePath,
-    image_url: a.imagePath,
+    // No photo snapshotted on the stay (picked before the hotel had one) →
+    // the hotel's current catalog photo.
+    image_path: a.imagePath || a.hotel?.imagePath || null,
+    image_url: a.imagePath || a.hotel?.imagePath || null,
     cancelled_at: iso(a.cancelledAt),
     cancellation_charge: num(a.cancellationCharge),
     cancellation_note: a.cancellationNote ?? null,
