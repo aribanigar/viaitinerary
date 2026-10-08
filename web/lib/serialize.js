@@ -151,6 +151,7 @@ export function serializeTrip(trip) {
     include_gst: trip.includeGst,
     use_flight: trip.useFlight,
     tagline: trip.tagline,
+    hotel_package_names: trip.hotelPackageNames ?? [],
     inclusions: trip.inclusions ?? [],
     exclusions: trip.exclusions ?? [],
     other_costs: trip.otherCosts ?? [],

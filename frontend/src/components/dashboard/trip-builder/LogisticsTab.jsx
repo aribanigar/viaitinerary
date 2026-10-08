@@ -1,5 +1,6 @@
 import React from "react";
 import { dateForDay } from "../../../utils/activityRates";
+import { packageNamesOf, packageTotalLabel } from "../../../utils/hotelOptions";
 import { Briefcase, Hotel, MapPin, Pencil, Plus, Trash2, Layers, Ticket } from "lucide-react";
 
 const parseAccommodationDate = (dateValue) => {
@@ -31,6 +32,8 @@ const parseAccommodationDate = (dateValue) => {
 const LogisticsTab = ({
   groupedAccommodations,
   tripInfo,
+  hotelPackageData,
+  renamePackage,
   formatAgeGroupLabel,
   openEditHotelModal,
   removeAccommodation,
@@ -166,7 +169,11 @@ const LogisticsTab = ({
                   </h4>
                   {hotel.alternateOptions?.length > 0 && (
                     <p className="text-xs font-semibold text-blue-600 mt-0.5">
-                      or {hotel.alternateOptions.map((o) => o.name).filter(Boolean).join(" / ")}
+                      or{" "}
+                      {hotel.alternateOptions
+                        .filter((o) => o.name)
+                        .map((o) => `${o.name} (${packageNamesOf(tripInfo.hotelPackageNames)[parseInt(o.package, 10) || 0]})`)
+                        .join(" / ")}
                     </p>
                   )}
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
@@ -305,6 +312,51 @@ const LogisticsTab = ({
             <Plus className="w-4 h-4" />
             Add Hotel
           </button>
+
+          {renamePackage && (
+            <div className="mt-6 rounded-xl border border-black/5 bg-[#f8f8f9] p-5">
+              <div className="flex items-center gap-2 mb-1">
+                <Layers className="w-4 h-4 text-[#181c22]" />
+                <h4 className="text-[11px] font-semibold text-[#181c22] uppercase tracking-[0.15em]">
+                  Hotel Packages
+                </h4>
+              </div>
+              <p className="text-[10px] text-[#181c22]/45 font-medium mb-3">
+                Tag hotel choices with a package when adding a hotel. When two or more
+                packages are used, the client gets a package table with these totals.
+              </p>
+              <div className="space-y-2">
+                {packageNamesOf(tripInfo.hotelPackageNames).map((name, i) => {
+                  const pkg = hotelPackageData?.packages.find((p) => p.index === i);
+                  return (
+                    <div key={i} className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={(tripInfo.hotelPackageNames || [])[i] ?? ""}
+                        placeholder={name}
+                        onChange={(e) => renamePackage(i, e.target.value)}
+                        className="flex-1 bg-white border border-black/10 rounded-lg py-2 px-3 text-xs font-bold text-[#181c22]"
+                      />
+                      <span className="w-28 text-right text-xs font-bold text-[#181c22]">
+                        {pkg ? packageTotalLabel(pkg.total, tripInfo.currency) : (
+                          <span className="text-[#9aa3b2] font-semibold">{i === 0 ? "Quoted price" : "Not used"}</span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  renamePackage(packageNamesOf(tripInfo.hotelPackageNames).length, "")
+                }
+                className="mt-3 flex items-center gap-1 text-[11px] font-bold text-blue-600"
+              >
+                <Plus className="w-3 h-3" /> Add Package
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

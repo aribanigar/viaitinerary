@@ -134,6 +134,7 @@ export function mapSavedTrip(
     status: savedTrip.status,
     template: savedTrip.template || "ModernTemplate",
     useFlight: savedTrip.use_flight ?? false,
+    hotelPackageNames: savedTrip.hotel_package_names || [],
     tagline:
       savedTrip.tagline ||
       initData.settings?.tagline ||

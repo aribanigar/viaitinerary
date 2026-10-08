@@ -59,6 +59,7 @@ export async function POST(request, { params }) {
         includeGst: original.includeGst,
         useFlight: original.useFlight,
         tagline: original.tagline,
+        hotelPackageNames: original.hotelPackageNames ?? undefined,
         inclusions: original.inclusions ?? [],
         exclusions: original.exclusions ?? [],
         otherCosts: original.otherCosts ?? [],

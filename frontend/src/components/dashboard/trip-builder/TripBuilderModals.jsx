@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Minus, Plus, AlertTriangle, Ban, X, Trash2, Layers } from "lucide-react";
 import Modal from "../../common/Modal";
+import { packageNamesOf } from "../../../utils/hotelOptions";
 import DatePicker from "../../common/DatePicker";
 import { getHotelBlackouts } from "../../../api/hotels";
 import { getActivityBlackouts } from "../../../api/activities";
@@ -639,7 +640,7 @@ export const HotelModal = ({
         <div className="pt-2 border-t border-black/5">
           <div className="flex items-center justify-between mb-2">
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-[#181c22]/70 uppercase tracking-[0.12em]">
-              <Layers className="w-3.5 h-3.5" /> Optional Hotels
+              <Layers className="w-3.5 h-3.5" /> Other Hotels &amp; Packages
             </label>
             <button
               type="button"
@@ -648,20 +649,21 @@ export const HotelModal = ({
                   ...hotelForm,
                   alternateOptions: [
                     ...(hotelForm.alternateOptions || []),
-                    { hotel_id: null, name: "", category: "", room_type: "", price: "", photo: "" },
+                    { hotel_id: null, name: "", category: "", room_type: "", price: "", photo: "", package: 0 },
                   ],
                 })
               }
               className="flex items-center gap-1 text-[11px] font-bold text-blue-600"
             >
-              <Plus className="w-3 h-3" /> Add Optional Hotel
+              <Plus className="w-3 h-3" /> Add Hotel Choice
             </button>
           </div>
           <p className="text-[10px] text-[#181c22]/40 font-medium mb-2">
-            Give the client a choice for these nights in {hotelForm.city || "this city"} —
-            "{hotelForm.name || "Hotel A"}" or an optional hotel. The quote is priced
-            on the main hotel; each option shows the client its price difference for
-            the stay (with your margin and GST), so they pay only for what they choose.
+            The main hotel above is the first {packageNamesOf(tripInfo.hotelPackageNames)[0]} hotel
+            and sets the quoted price. Add more hotels and pick their package: a
+            package's first hotel sets that package's price, and any other hotel in
+            the same package is shown to the client as "+₹ difference". The client
+            sees a package table with a total for each package.
           </p>
           {(hotelForm.alternateOptions || []).map((opt, idx) => {
             const updateAlt = (patch) => {
@@ -675,9 +677,20 @@ export const HotelModal = ({
             return (
               <div key={idx} className="mb-3 p-3 rounded-xl bg-[#f8f8f9] border border-black/5 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-600">
-                    Option {String.fromCharCode(66 + idx)}
-                  </span>
+                  <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-blue-600">
+                    Package
+                    <select
+                      value={parseInt(opt.package, 10) || 0}
+                      onChange={(e) => updateAlt({ package: parseInt(e.target.value, 10) || 0 })}
+                      className="bg-white border border-black/10 rounded-md py-1 px-2 text-[11px] font-bold text-[#181c22] normal-case tracking-normal cursor-pointer"
+                    >
+                      {packageNamesOf(tripInfo.hotelPackageNames).map((name, i) => (
+                        <option key={i} value={i}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button
                     type="button"
                     onClick={() => {

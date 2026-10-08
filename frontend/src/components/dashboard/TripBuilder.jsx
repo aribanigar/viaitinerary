@@ -80,7 +80,7 @@ import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
 import { buildTripDraft } from "../../utils/ching/tripDraft";
 import { planLive, isBlankTrip } from "../../utils/ching/liveFill";
 import { tripChecklist, pendingByTab } from "../../utils/tripChecklist";
-import { optionSupplement } from "../../utils/hotelOptions";
+import { optionSupplement, hotelPackages } from "../../utils/hotelOptions";
 import {
   DRAFT_KEY,
   useTripBuilderData,
@@ -178,6 +178,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     status: "pending",
     template: "ModernTemplate", // Default template
     useFlight: false,
+    hotelPackageNames: [],
     transportDetails: [],
   });
   const [includeGST, setIncludeGST] = useState(true);
@@ -910,18 +911,35 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     ...item,
     alternateOptions: (item.alternateOptions || []).map((opt) => ({
       ...opt,
+      package: parseInt(opt.package, 10) || 0,
       supplement: optionSupplement(item, opt, {
         markupPct: effectiveMarkup(item),
         gstPct: includeGST ? gstPercentage : 0,
       }),
     })),
   });
+  const previewAccommodations = resolvedAccommodations.map(withOptionSupplements);
 
   const netCostMarkedUp =
     totalHotelCostMarkedUp + totalVehicleCostMarkedUp + totalActivityCostMarkedUp + totalOtherCostMarkedUp;
   const gstAmountValue = includeGST ? netCostMarkedUp * (gstPercentage / 100) : 0;
   const costWithGst = netCostMarkedUp + gstAmountValue;
   const calculatedTotalCost = costWithGst;
+
+  // Standard / Deluxe / Luxury totals for the Logistics tab's package box —
+  // from the trip price the client sees, exactly as the itinerary shows them.
+  const hotelPackageData = hotelPackages(previewAccommodations, {
+    basePrice: tripInfo.cost,
+    names: tripInfo.hotelPackageNames,
+  });
+  const renamePackage = (index, name) => {
+    setTripInfo((prev) => {
+      const names = [...(prev.hotelPackageNames || [])];
+      while (names.length < index) names.push("");
+      names[index] = name;
+      return { ...prev, hotelPackageNames: names };
+    });
+  };
 
   useEffect(() => {
     // Don't touch the trip's saved cost until the agent has actually edited
@@ -1907,6 +1925,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       status: "Draft",
       template: "ModernTemplate",
       useFlight: false,
+      hotelPackageNames: [],
       transportDetails: [],
     });
 
@@ -2487,6 +2506,8 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                       <LogisticsTab
                         groupedAccommodations={groupedAccommodations}
                         tripInfo={tripInfo}
+                        hotelPackageData={hotelPackageData}
+                        renamePackage={renamePackage}
                         formatAgeGroupLabel={formatAgeGroupLabel}
                         openEditHotelModal={openEditHotelModal}
                         removeAccommodation={removeAccommodation}
@@ -2547,7 +2568,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                       key={`${tripInfo.template}-${tripInfo.cost}-${includeGST ? 1 : 0}-${gstPercentage}-${profitMarginPercentage}-${accommodations.length}-${transportation.length}-${tripActivities.length}-${otherCosts.length}`}
                       tripInfo={tripInfo}
                       itinerary={itinerary}
-                      accommodations={resolvedAccommodations.map(withOptionSupplements)}
+                      accommodations={previewAccommodations}
                       transportation={transportation}
                       tripActivities={tripActivities}
                       agencySettings={agencySettings}
