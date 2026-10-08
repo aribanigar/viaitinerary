@@ -64,7 +64,9 @@ export function mapB2BHotel(hotel) {
     city: hotel.locationLabel || null,
     state: STATE_BY_LOCATION[hotel.location] || DEFAULT_STATE,
     country: "India",
-    category: hotel.stars ? String(hotel.stars) : null,
+    // Unrated in the feed → leave the field out, so a re-sync never wipes a
+    // star rating the agency set by hand.
+    ...(hotel.stars ? { category: String(hotel.stars) } : {}),
     email: hotel.email || null,
     phone: hotel.whatsapp || hotel.phone || null,
     isAvailable: true,
