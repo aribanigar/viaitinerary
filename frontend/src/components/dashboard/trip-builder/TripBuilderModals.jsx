@@ -659,9 +659,9 @@ export const HotelModal = ({
           </div>
           <p className="text-[10px] text-[#181c22]/40 font-medium mb-2">
             Give the client a choice for these nights in {hotelForm.city || "this city"} —
-            "{hotelForm.name || "Hotel A"}" or an optional hotel. Options appear on the
-            itinerary as "OR" choices; the price used is the highest of all options, so
-            margin is protected either way.
+            "{hotelForm.name || "Hotel A"}" or an optional hotel. The quote is priced
+            on the main hotel; each option shows the client its price difference for
+            the stay (with your margin and GST), so they pay only for what they choose.
           </p>
           {(hotelForm.alternateOptions || []).map((opt, idx) => {
             const updateAlt = (patch) => {

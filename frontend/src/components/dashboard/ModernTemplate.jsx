@@ -2,7 +2,7 @@ import { activityPages } from "../../utils/activityRows";
 import React from "react";
 import { Star } from "lucide-react";
 import ClassicTemplate from "./ClassicTemplate";
-import { hotelOptionsOf, hotelOptionsKey, starsLabel } from "../../utils/hotelOptions";
+import { hotelOptionsOf, hotelOptionsKey, starsLabel, supplementLabel } from "../../utils/hotelOptions";
 
 const WhatsAppIcon = ({ size = 16, className = "" }) => (
   <svg
@@ -323,6 +323,7 @@ const ModernTemplate = ({
         .hotel-option-or { background: var(--primary-orange); color: white; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
         .hotel-option-stars { color: var(--primary-orange); font-size: 12px; }
         .hotel-option-meta { color: #666; font-size: 11px; }
+        .hotel-option-price { color: var(--dark-green); font-size: 11px; font-weight: 800; background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 10px; }
         .hotel-option-thumb { width: 48px; height: 34px; border-radius: 6px; object-fit: cover; }
 
         .day-header { display: flex; align-items: center; padding: 30px 60px; gap: 20px; }
@@ -933,6 +934,11 @@ const ModernTemplate = ({
                                 {opt.room_type && (
                                   <span className="hotel-option-meta">
                                     {opt.room_type}
+                                  </span>
+                                )}
+                                {supplementLabel(opt.supplement, tripInfo.currency) && (
+                                  <span className="hotel-option-price">
+                                    {supplementLabel(opt.supplement, tripInfo.currency)}
                                   </span>
                                 )}
                               </div>

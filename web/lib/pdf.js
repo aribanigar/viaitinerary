@@ -78,6 +78,13 @@ const num = (n) => Number(n || 0).toLocaleString("en-IN");
 const money = (n, cur) => `${curCode(cur)} ${num(n)}`;
 const MEAL = { room_only: "Room only (EP)", breakfast_only: "Breakfast (CP)", breakfast_dinner: "Breakfast & dinner (MAP)", all_meals: "All meals (AP)", ep: "Room only (EP)", cp: "Breakfast (CP)", map: "Breakfast & dinner (MAP)", ap: "All meals (AP)" };
 const mealLabel = (v) => MEAL[String(v || "").toLowerCase()] || txt(v);
+// Optional hotel's stored client-facing price difference for its stay.
+const supplementText = (n, cur) => {
+  if (n == null || n === "" || Number.isNaN(Number(n))) return "";
+  const v = Math.round(Number(n));
+  if (v === 0) return "Same price";
+  return v > 0 ? `+${money(v, cur)} for this stay` : `${money(-v, cur)} less for this stay`;
+};
 
 // ModernTemplate palette (matches ModernTemplate.jsx CSS variables).
 const ORANGE = "#FAA61A"; // --primary-orange
@@ -415,6 +422,9 @@ function ItineraryDoc({ trip, settings }) {
                               h(Text, { style: { ...s.bold, color: brand } }, "OR  "),
                               h(Text, { style: { ...s.bold, color: green } }, txt(o.name)),
                               [txt(o.category), txt(o.room_type)].filter(Boolean).map((x) => `  ·  ${x}`).join(""),
+                              supplementText(o.supplement, trip.currency)
+                                ? h(Text, { style: { ...s.bold, color: green } }, `  ·  ${supplementText(o.supplement, trip.currency)}`)
+                                : null,
                             ),
                           ),
                         ),

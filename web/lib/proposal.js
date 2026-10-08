@@ -87,7 +87,18 @@ export function publicTrip(trip) {
         room_type: a.roomType,
         check_in: dateOnly(a.checkIn),
         check_out: dateOnly(a.checkOut),
-        image_url: a.imagePath,
+        image_url: a.imagePath || a.hotel?.imagePath || null,
+        // Optional hotels the client may pick instead — never the net rate,
+        // only the client-facing price difference stored by the builder.
+        alternate_options: (Array.isArray(a.alternateOptions) ? a.alternateOptions : [])
+          .filter((o) => String(o?.name || "").trim())
+          .map((o) => ({
+            name: o.name,
+            category: o.category || "",
+            room_type: o.room_type || "",
+            photo: o.photo || "",
+            supplement: o.supplement ?? null,
+          })),
       })),
     transportations: (trip.transportations || []).map((t) => ({
       id: t.id,

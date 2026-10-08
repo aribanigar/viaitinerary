@@ -1,6 +1,6 @@
 import { activityPages } from "../../utils/activityRows";
 import React from "react";
-import { hotelOptionsOf, hotelOptionsKey } from "../../utils/hotelOptions";
+import { hotelOptionsOf, hotelOptionsKey, supplementLabel } from "../../utils/hotelOptions";
 
 const WhatsAppIcon = ({ size = 16, className = "" }) => (
   <svg
@@ -1056,6 +1056,9 @@ const ClassicTemplate = ({
                               >
                                 <b style={{ color: primaryColor }}>OR</b> {opt.name}
                                 {opt.room_type ? ` (${opt.room_type})` : ""}
+                                {supplementLabel(opt.supplement, tripInfo.currency)
+                                  ? ` · ${supplementLabel(opt.supplement, tripInfo.currency)}`
+                                  : ""}
                               </div>
                             ))}
                           </td>
@@ -1295,6 +1298,11 @@ const ClassicTemplate = ({
                                         <b>{opt.name}</b>
                                         {opt.category ? ` · ${opt.category}` : ""}
                                         {opt.room_type ? ` · ${opt.room_type}` : ""}
+                                        {supplementLabel(opt.supplement, tripInfo.currency) && (
+                                          <b style={{ color: secondaryColor }}>
+                                            {` · ${supplementLabel(opt.supplement, tripInfo.currency)}`}
+                                          </b>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
