@@ -544,16 +544,23 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   const handleAddHotel = () => {
     if (hotelForm.name && hotelForm.city) {
       setPricingTouched(true);
+      // Blank optional-hotel rows would print as an empty "OR" choice.
+      const savedHotel = {
+        ...hotelForm,
+        alternateOptions: (hotelForm.alternateOptions || []).filter((o) =>
+          String(o.name || "").trim(),
+        ),
+      };
       if (editingHotelId) {
         setAccommodations(
           accommodations.map((h) =>
-            h.id === editingHotelId ? { ...hotelForm, id: editingHotelId } : h,
+            h.id === editingHotelId ? { ...savedHotel, id: editingHotelId } : h,
           ),
         );
       } else {
         setAccommodations([
           ...accommodations,
-          { ...hotelForm, id: Date.now() },
+          { ...savedHotel, id: Date.now() },
         ]);
       }
 

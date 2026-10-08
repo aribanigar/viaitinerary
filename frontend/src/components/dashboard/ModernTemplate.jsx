@@ -2,6 +2,7 @@ import { activityPages } from "../../utils/activityRows";
 import React from "react";
 import { Star } from "lucide-react";
 import ClassicTemplate from "./ClassicTemplate";
+import { hotelOptionsOf, hotelOptionsKey, starsLabel } from "../../utils/hotelOptions";
 
 const WhatsAppIcon = ({ size = 16, className = "" }) => (
   <svg
@@ -316,6 +317,12 @@ const ModernTemplate = ({
         .hotel-img { width: 280px; height: 180px; border-radius: 15px; background-size: cover; background-position: center; }
         .night-badge { background: var(--dark-green); color: white; padding: 5px 12px; border-radius: 5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; }
         .stars { color: var(--primary-orange); margin: 10px 0; display: flex; gap: 2px; }
+        .hotel-options { margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(0,0,0,0.15); }
+        .hotel-options-title { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: var(--dark-green); margin-bottom: 6px; }
+        .hotel-option-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 4px; flex-wrap: wrap; }
+        .hotel-option-or { background: var(--primary-orange); color: white; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+        .hotel-option-stars { color: var(--primary-orange); font-size: 12px; }
+        .hotel-option-meta { color: #666; font-size: 11px; }
 
         .day-header { display: flex; align-items: center; padding: 30px 60px; gap: 20px; }
         .day-badge { background: var(--dark-green); color: var(--primary-orange); width: 80px; height: 80px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; }
@@ -625,7 +632,8 @@ const ModernTemplate = ({
                 g.name === hotel.name &&
                 g.city === hotel.city &&
                 g.category === hotel.category &&
-                g.roomType === hotel.roomType,
+                g.roomType === hotel.roomType &&
+                hotelOptionsKey(g) === hotelOptionsKey(hotel),
             );
 
             if (existing) {
@@ -682,10 +690,29 @@ const ModernTemplate = ({
                 },
               ];
 
+        // A page fits three plain hotel cards; optional hotels make a card
+        // taller, so such cards take more of the page.
+        const cardWeight = (hotel) => {
+          const n = hotelOptionsOf(hotel).length;
+          return n ? 1.25 + 0.15 * n : 1;
+        };
         const hotelChunks = [];
-        for (let i = 0; i < accommodationList.length; i += hotelsPerPage) {
-          hotelChunks.push(accommodationList.slice(i, i + hotelsPerPage));
-        }
+        let page = [];
+        let used = 0;
+        accommodationList.forEach((hotel) => {
+          const w = cardWeight(hotel);
+          if (page.length && used + w > hotelsPerPage) {
+            hotelChunks.push(page);
+            page = [];
+            used = 0;
+          }
+          page.push(hotel);
+          used += w;
+        });
+        if (page.length) hotelChunks.push(page);
+        const chunkStarts = hotelChunks.map((_, i) =>
+          hotelChunks.slice(0, i).reduce((n, c) => n + c.length, 0),
+        );
 
         return hotelChunks.map((chunk, pageIndex) => (
           <div className="page" key={`hotel-page-${pageIndex}`}>
@@ -720,7 +747,8 @@ const ModernTemplate = ({
             </div>
 
             {chunk.map((hotel, index) => {
-              const actualIndex = pageIndex * hotelsPerPage + index;
+              const actualIndex = chunkStarts[pageIndex] + index;
+              const hotelOptions = hotelOptionsOf(hotel);
               const totalExtraBeds = getTotalExtraBeds(hotel);
 
               const getOrdinal = (n) => {
@@ -880,6 +908,29 @@ const ModernTemplate = ({
                             <b>{hotel.mealPlan || "—"}</b>
                           </div>
                         </div>
+                        {hotelOptions.length > 0 && (
+                          <div className="hotel-options">
+                            <div className="hotel-options-title">
+                              OR CHOOSE AN OPTIONAL HOTEL
+                            </div>
+                            {hotelOptions.map((opt, optIdx) => (
+                              <div className="hotel-option-row" key={optIdx}>
+                                <span className="hotel-option-or">OR</span>
+                                <b>{opt.name}</b>
+                                {starsLabel(opt.category) && (
+                                  <span className="hotel-option-stars">
+                                    {starsLabel(opt.category)}
+                                  </span>
+                                )}
+                                {opt.room_type && (
+                                  <span className="hotel-option-meta">
+                                    {opt.room_type}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </>
                     )}
                   </div>

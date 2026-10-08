@@ -393,6 +393,27 @@ function ItineraryDoc({ trip, settings }) {
                     h(View, {}, h(Text, { style: { color: "#888", fontSize: 8, letterSpacing: 1 } }, "ROOMS"), h(Text, { style: { ...s.bold, color: green, fontSize: 12 } }, txt(a.rooms) || "1")),
                     h(View, {}, h(Text, { style: { color: "#888", fontSize: 8, letterSpacing: 1 } }, "MEAL PLAN"), h(Text, { style: { ...s.bold, color: green, fontSize: 12 } }, mealLabel(a.mealPlan) || "—")),
                   ),
+                  // Optional hotels the client can pick instead ("Hotel A or Hotel B").
+                  ...(() => {
+                    const options = arr(a.alternateOptions).filter((o) => txt(o?.name));
+                    if (!options.length) return [];
+                    return [
+                      h(
+                        View,
+                        { key: "options", style: { marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#dddddd", borderTopStyle: "dashed" } },
+                        h(Text, { style: { ...s.bold, color: green, fontSize: 8, letterSpacing: 1, marginBottom: 3 } }, "OR CHOOSE AN OPTIONAL HOTEL"),
+                        ...options.map((o, j) =>
+                          h(
+                            Text,
+                            { key: j, style: { fontSize: 10, color: "#444", marginTop: 2 } },
+                            h(Text, { style: { ...s.bold, color: brand } }, "OR  "),
+                            h(Text, { style: { ...s.bold, color: green } }, txt(o.name)),
+                            [txt(o.category), txt(o.room_type)].filter(Boolean).map((x) => `  ·  ${x}`).join(""),
+                          ),
+                        ),
+                      ),
+                    ];
+                  })(),
                 ),
                 isImg(a.imagePath || a.hotel?.imagePath)
                   ? h(Image, { src: pdfImg(a.imagePath || a.hotel?.imagePath), style: { width: 175, height: 115, borderRadius: 15, objectFit: "cover" } })

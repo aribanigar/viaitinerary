@@ -1,5 +1,6 @@
 import { activityPages } from "../../utils/activityRows";
 import React from "react";
+import { hotelOptionsOf, hotelOptionsKey } from "../../utils/hotelOptions";
 
 const WhatsAppIcon = ({ size = 16, className = "" }) => (
   <svg
@@ -964,7 +965,8 @@ const ClassicTemplate = ({
                 g.name === hotel.name &&
                 g.city === hotel.city &&
                 g.category === hotel.category &&
-                g.roomType === hotel.roomType,
+                g.roomType === hotel.roomType &&
+                hotelOptionsKey(g) === hotelOptionsKey(hotel),
             );
 
             if (existing) {
@@ -988,16 +990,26 @@ const ClassicTemplate = ({
           });
         }
 
+        // Optional hotels make a card taller, so such cards take more of
+        // the page than a plain one.
+        const cardWeight = (hotel) => {
+          const n = hotelOptionsOf(hotel).length;
+          return n ? 1.25 + 0.15 * n : 1;
+        };
         const hotelChunks = [];
-        for (
-          let i = 0;
-          i < groupedAccommodationList.length;
-          i += hotelsPerPage
-        ) {
-          hotelChunks.push(
-            groupedAccommodationList.slice(i, i + hotelsPerPage),
-          );
-        }
+        let page = [];
+        let used = 0;
+        groupedAccommodationList.forEach((hotel) => {
+          const w = cardWeight(hotel);
+          if (page.length && used + w > hotelsPerPage) {
+            hotelChunks.push(page);
+            page = [];
+            used = 0;
+          }
+          page.push(hotel);
+          used += w;
+        });
+        if (page.length) hotelChunks.push(page);
 
         return (
           <>
@@ -1035,7 +1047,18 @@ const ClassicTemplate = ({
                       {groupedAccommodationList.map((hotel, index) => (
                         <tr key={index}>
                           <td>{hotel.city || "-"}</td>
-                          <td>{hotel.name || "-"}</td>
+                          <td>
+                            {hotel.name || "-"}
+                            {hotelOptionsOf(hotel).map((opt, optIdx) => (
+                              <div
+                                key={optIdx}
+                                style={{ fontSize: "11px", color: "#666", marginTop: "2px" }}
+                              >
+                                <b style={{ color: primaryColor }}>OR</b> {opt.name}
+                                {opt.room_type ? ` (${opt.room_type})` : ""}
+                              </div>
+                            ))}
+                          </td>
                           <td>{hotel.roomType || "-"}</td>
                           <td>{hotel.rooms || "-"}</td>
                           <td>{getTotalExtraBeds(hotel) || "-"}</td>
@@ -1235,6 +1258,37 @@ const ClassicTemplate = ({
                                     </span>
                                   )}
                                 </div>
+                                {hotelOptionsOf(hotel).length > 0 && (
+                                  <div
+                                    style={{
+                                      marginTop: "10px",
+                                      paddingTop: "8px",
+                                      borderTop: "1px dashed #ddd",
+                                      fontSize: "13px",
+                                      color: "#444",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontSize: "10px",
+                                        fontWeight: "800",
+                                        letterSpacing: "1px",
+                                        color: secondaryColor,
+                                        marginBottom: "4px",
+                                      }}
+                                    >
+                                      OR CHOOSE AN OPTIONAL HOTEL
+                                    </div>
+                                    {hotelOptionsOf(hotel).map((opt, optIdx) => (
+                                      <div key={optIdx} style={{ marginTop: "2px" }}>
+                                        <b style={{ color: primaryColor }}>OR</b>{" "}
+                                        <b>{opt.name}</b>
+                                        {opt.category ? ` · ${opt.category}` : ""}
+                                        {opt.room_type ? ` · ${opt.room_type}` : ""}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
