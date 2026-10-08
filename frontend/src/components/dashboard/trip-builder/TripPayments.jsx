@@ -24,7 +24,7 @@ const KIND = { advance: "Advance", balance: "Balance", full: "Full payment" };
 const Tile = ({ label, value, hint }) => (
   <div className="bg-[#f3f3f4]/50 rounded-xl p-4 border border-black/5">
     <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest block mb-1.5">{label}</span>
-    <div className="text-lg font-semibold text-[#181c22]">{value}</div>
+    <div className="text-lg font-semibold text-ink">{value}</div>
     {hint && <div className="text-[11px] text-[#9aa3b2] mt-0.5">{hint}</div>}
   </div>
 );
@@ -88,16 +88,16 @@ export default function TripPayments({ token, tripId }) {
     <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
       <div className="flex items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#f3f3f4] text-[#181c22] rounded-lg flex items-center justify-center border border-black/5">
+          <div className="w-10 h-10 bg-[#f3f3f4] text-ink rounded-lg flex items-center justify-center border border-black/5">
             <Wallet className="w-5 h-5" />
           </div>
-          <h3 className="text-xs font-semibold text-[#181c22] uppercase tracking-[0.2em]">Client Payments</h3>
+          <h3 className="text-xs font-semibold text-ink uppercase tracking-[0.2em]">Client Payments</h3>
         </div>
         <button
           type="button"
           onClick={load}
           disabled={loading}
-          className="p-2 rounded-lg text-[#181c22]/50 hover:text-[#181c22] hover:bg-black/[0.03] disabled:opacity-40"
+          className="p-2 rounded-lg text-ink/50 hover:text-ink hover:bg-black/[0.03] disabled:opacity-40"
           title="Refresh"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -117,7 +117,7 @@ export default function TripPayments({ token, tripId }) {
 
           <div className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5">
+              <label className="block text-[11px] font-semibold text-ink/45 uppercase tracking-[0.12em] mb-1.5">
                 Advance for this trip (₹)
               </label>
               <input
@@ -126,14 +126,14 @@ export default function TripPayments({ token, tripId }) {
                 value={advance}
                 onChange={(e) => setAdvance(e.target.value)}
                 placeholder={`Default: ${money(s.advance, sym)}`}
-                className="w-48 bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20"
+                className="w-48 bg-[#f3f3f4] border border-black/5 rounded-xl py-2.5 px-4 text-sm font-bold text-ink focus:outline-none focus:ring-2 focus:ring-accent/20"
               />
             </div>
             <button
               type="button"
               onClick={saveAdvance}
               disabled={busy === "advance"}
-              className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#181c22] text-white hover:bg-black disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-brand text-white hover:bg-black disabled:opacity-50"
             >
               Save advance
             </button>
@@ -143,7 +143,7 @@ export default function TripPayments({ token, tripId }) {
           </div>
 
           <div>
-            <div className="text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-2">Payments</div>
+            <div className="text-[11px] font-semibold text-ink/45 uppercase tracking-[0.12em] mb-2">Payments</div>
             {data.payments.length === 0 ? (
               <div className="text-sm text-[#9aa3b2]">No client payments yet.</div>
             ) : (
@@ -153,7 +153,7 @@ export default function TripPayments({ token, tripId }) {
                   return (
                     <li key={p.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                       <div className="min-w-0 flex-1">
-                        <div className="text-sm font-semibold text-[#181c22]">
+                        <div className="text-sm font-semibold text-ink">
                           {money(p.amount, sym)} · {KIND[p.kind] || p.kind}
                         </div>
                         <div className="text-xs text-[#9aa3b2] truncate">
@@ -170,7 +170,7 @@ export default function TripPayments({ token, tripId }) {
                             type="button"
                             onClick={() => decide(p, "verify")}
                             disabled={busy === p.id}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#e7f63c] text-[#181c22] hover:bg-[#d4e42e] flex items-center gap-1 disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-accent text-ink hover:bg-accent-hover flex items-center gap-1 disabled:opacity-50"
                           >
                             <Check className="w-3.5 h-3.5" /> Verify
                           </button>
@@ -178,7 +178,7 @@ export default function TripPayments({ token, tripId }) {
                             type="button"
                             onClick={() => decide(p, "reject")}
                             disabled={busy === p.id}
-                            className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-black/10 text-[#181c22] hover:bg-black/[0.03] flex items-center gap-1 disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-black/10 text-ink hover:bg-black/[0.03] flex items-center gap-1 disabled:opacity-50"
                           >
                             <X className="w-3.5 h-3.5" /> Reject
                           </button>

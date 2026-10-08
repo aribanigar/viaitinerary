@@ -22,8 +22,8 @@ const claimDetail = (c) =>
 const Row = ({ label, value, note, strong = false }) => (
   <div className="flex items-baseline justify-between gap-3 py-2">
     <div className="min-w-0">
-      <div className={`text-sm ${strong ? "font-semibold" : "text-[#181c22]/70"}`}>{label}</div>
-      {note && <div className="text-xs text-[#181c22]/50">{note}</div>}
+      <div className={`text-sm ${strong ? "font-semibold" : "text-ink/70"}`}>{label}</div>
+      {note && <div className="text-xs text-ink/50">{note}</div>}
     </div>
     <div className={`text-sm tabular-nums shrink-0 ${strong ? "font-bold" : "font-semibold"}`}>{value}</div>
   </div>
@@ -73,7 +73,7 @@ export default function PaymentSection({
         <div className="mt-4 h-2 rounded-full bg-black/[0.06] overflow-hidden" aria-hidden>
           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: brand }} />
         </div>
-        <div className="mt-1.5 text-xs text-[#181c22]/55">
+        <div className="mt-1.5 text-xs text-ink/55">
           {money(paid)} of {money(total)} paid
         </div>
 
@@ -115,7 +115,7 @@ export default function PaymentSection({
 
         {history.length > 0 && (
           <div className="mt-4">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#181c22]/45">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink/45">
               Payments received
             </div>
             <ul className="mt-1.5 divide-y divide-black/5">
@@ -123,7 +123,7 @@ export default function PaymentSection({
                 <li key={i} className="flex items-center justify-between gap-3 py-2 text-sm">
                   <div className="min-w-0">
                     <div className="font-medium">{KIND_LABEL[h.kind] || "Payment"}</div>
-                    <div className="text-xs text-[#181c22]/50">
+                    <div className="text-xs text-ink/50">
                       {[fmtDate(h.paid_at), METHOD_LABEL[h.method] || h.method].filter(Boolean).join(" · ")}
                     </div>
                   </div>
@@ -137,7 +137,7 @@ export default function PaymentSection({
         {!paidInFull && next && (
           <div className="mt-5">
             {preview ? (
-              <p className="rounded-2xl bg-[#f4f5f6] px-3 py-2.5 text-xs text-[#181c22]/60">
+              <p className="rounded-2xl bg-[#f4f5f6] px-3 py-2.5 text-xs text-ink/60">
                 Preview — your client pays here. Payments are disabled in preview.
               </p>
             ) : canPay ? (
@@ -165,14 +165,14 @@ export default function PaymentSection({
                 )}
               </div>
             ) : !hasMethod ? (
-              <p className="text-sm text-[#181c22]/60">
+              <p className="text-sm text-ink/60">
                 {agencyName} will share the payment details with you.
               </p>
             ) : (
-              <p className="text-sm text-[#181c22]/60">Approve the trip to pay the advance and confirm your booking.</p>
+              <p className="text-sm text-ink/60">Approve the trip to pay the advance and confirm your booking.</p>
             )}
             {canPay && !preview && (
-              <p className="mt-2 text-xs text-[#181c22]/45 text-center sm:text-left">
+              <p className="mt-2 text-xs text-ink/45 text-center sm:text-left">
                 {methods.razorpay ? "Secure online payment — UPI, cards, net banking." : "Pay by UPI or bank transfer."}
               </p>
             )}
@@ -183,7 +183,7 @@ export default function PaymentSection({
           <button
             type="button"
             onClick={onRequestChanges}
-            className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[#181c22]/55 hover:text-[#181c22]"
+            className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-ink/55 hover:text-ink"
           >
             <PencilLine className="w-3.5 h-3.5" /> Need changes to the trip? Tell {agencyName}
           </button>

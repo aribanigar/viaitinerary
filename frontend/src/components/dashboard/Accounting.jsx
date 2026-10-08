@@ -708,14 +708,14 @@ const Accounting = () => {
                       value={templates[field.key] || ""}
                       onChange={(e) => setField(field.key, e.target.value)}
                       placeholder={field.placeholder}
-                      className="w-full min-h-36 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c]"
+                      className="w-full min-h-36 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                     />
                   ) : (
                     <input
                       value={templates[field.key] || ""}
                       onChange={(e) => setField(field.key, e.target.value)}
                       placeholder={field.placeholder}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c]"
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
                     />
                   )}
 
@@ -738,7 +738,7 @@ const Accounting = () => {
                   <button
                     onClick={saveTemplates}
                     disabled={saving}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-[#e7f63c] text-[#181c22] rounded-xl font-bold text-sm hover:bg-[#d4e42e] disabled:opacity-60"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-ink rounded-xl font-bold text-sm hover:bg-accent-hover disabled:opacity-60"
                   >
                     {saving ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -941,7 +941,7 @@ const Accounting = () => {
                   amount: e.target.value,
                 }))
               }
-              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
+              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all"
               placeholder="0.00"
             />
           </div>
@@ -990,7 +990,7 @@ const Accounting = () => {
                   method: e.target.value,
                 }))
               }
-              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
+              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all"
             >
               <option value="cash">Cash</option>
               <option value="bank_transfer">Bank Transfer</option>
@@ -1014,7 +1014,7 @@ const Accounting = () => {
                 }))
               }
               rows={3}
-              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-slate-300 shadow-sm"
+              className="mt-1 w-full px-3.5 py-2.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-slate-300 shadow-sm"
               placeholder="Description for this receipt..."
             />
           </div>

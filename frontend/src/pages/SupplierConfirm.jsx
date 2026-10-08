@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { CheckCircle2, Loader2, XCircle, Link2Off, Phone, Mail, Car, BedDouble } from "lucide-react";
 import { fetchSupplierBooking, respondSupplierBooking } from "../api/operations";
+import { themeColors } from "../themes";
 
 // Public supplier page: /s/:token (no login). A hotel or cab supplier opens
 // the link from the agency's request email / WhatsApp, sees the booking (no
@@ -30,7 +31,7 @@ function Row({ label, value }) {
   return (
     <div className="flex gap-3 py-2 border-b border-black/5 last:border-0 text-sm">
       <div className="w-32 shrink-0 text-[#6b7280]">{label}</div>
-      <div className="font-semibold text-[#181c22] min-w-0 break-words">{value}</div>
+      <div className="font-semibold text-ink min-w-0 break-words">{value}</div>
     </div>
   );
 }
@@ -40,7 +41,7 @@ const Field = ({ label, ...props }) => (
     <span className="block text-xs font-semibold text-[#6b7280] mb-1">{label}</span>
     <input
       {...props}
-      className="w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-[15px] text-[#181c22] focus:outline-none focus:ring-2 focus:ring-black/10"
+      className="w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-[15px] text-ink focus:outline-none focus:ring-2 focus:ring-black/10"
     />
   </label>
 );
@@ -97,7 +98,7 @@ export default function SupplierConfirm() {
       <div className="min-h-[100dvh] bg-[#eef0f1] grid place-items-center px-4">
         <div className="w-full max-w-sm rounded-[24px] bg-white border border-black/5 shadow-sm p-7 text-center">
           <Link2Off className="w-8 h-8 mx-auto text-[#9aa3b2]" />
-          <h1 className="mt-3 text-lg font-bold text-[#181c22]">Link not available</h1>
+          <h1 className="mt-3 text-lg font-bold text-ink">Link not available</h1>
           <p className="mt-1 text-sm text-[#5b6472]">{error} Please contact the travel agency that sent it.</p>
         </div>
       </div>
@@ -106,12 +107,12 @@ export default function SupplierConfirm() {
   if (!booking) {
     return (
       <div className="min-h-[100dvh] bg-[#eef0f1] grid place-items-center">
-        <Loader2 className="w-6 h-6 animate-spin text-[#181c22]/40" />
+        <Loader2 className="w-6 h-6 animate-spin text-ink/40" />
       </div>
     );
   }
 
-  const brand = booking.agency?.brand_color || "#181c22";
+  const brand = booking.agency?.brand_color || themeColors.brand;
   const isHotel = booking.kind === "hotel";
   const done = booking.status === "confirmed" || booking.status === "declined";
 
@@ -131,7 +132,7 @@ export default function SupplierConfirm() {
             </div>
           )}
           <div className="min-w-0">
-            <div className="font-bold text-[#181c22] truncate">{booking.agency?.name}</div>
+            <div className="font-bold text-ink truncate">{booking.agency?.name}</div>
             <div className="text-xs text-[#6b7280]">Booking request · {booking.trip_id}</div>
           </div>
         </div>
@@ -164,7 +165,7 @@ export default function SupplierConfirm() {
             {isHotel ? <BedDouble className="w-4 h-4" /> : <Car className="w-4 h-4" />}
             {isHotel ? "Room booking" : "Cab booking"}
           </div>
-          <h1 className="mt-1 text-xl font-bold text-[#181c22]">{isHotel ? booking.hotel : booking.vehicle}</h1>
+          <h1 className="mt-1 text-xl font-bold text-ink">{isHotel ? booking.hotel : booking.vehicle}</h1>
           <div className="mt-3">
             <Row label="Guest" value={booking.guest_name} />
             <Row label="Guests" value={booking.guests} />
@@ -190,7 +191,7 @@ export default function SupplierConfirm() {
               {booking.days.map((d, i) => (
                 <div key={`${d.date}-${i}`} className="px-3 py-2 text-sm flex gap-3">
                   <span className="w-28 shrink-0 text-[#6b7280]">{fmt(d.date)}</span>
-                  <span className="font-medium text-[#181c22]">{d.route}</span>
+                  <span className="font-medium text-ink">{d.route}</span>
                 </div>
               ))}
             </div>
@@ -211,7 +212,7 @@ export default function SupplierConfirm() {
                   >
                     Yes, confirm
                   </button>
-                  <button type="button" onClick={() => setMode("decline")} className="rounded-xl py-3 font-bold bg-[#f3f3f4] text-[#181c22]">
+                  <button type="button" onClick={() => setMode("decline")} className="rounded-xl py-3 font-bold bg-[#f3f3f4] text-ink">
                     Can't do it
                   </button>
                 </div>
@@ -286,12 +287,12 @@ export default function SupplierConfirm() {
           <section className="text-sm text-[#5b6472] flex flex-wrap gap-x-5 gap-y-2 px-1">
             <span>Questions? Contact {booking.agency.name}:</span>
             {booking.agency.phone && (
-              <a href={`tel:${booking.agency.phone}`} className="inline-flex items-center gap-1 font-semibold text-[#181c22]">
+              <a href={`tel:${booking.agency.phone}`} className="inline-flex items-center gap-1 font-semibold text-ink">
                 <Phone className="w-4 h-4" /> {booking.agency.phone}
               </a>
             )}
             {booking.agency.email && (
-              <a href={`mailto:${booking.agency.email}`} className="inline-flex items-center gap-1 font-semibold text-[#181c22]">
+              <a href={`mailto:${booking.agency.email}`} className="inline-flex items-center gap-1 font-semibold text-ink">
                 <Mail className="w-4 h-4" /> {booking.agency.email}
               </a>
             )}

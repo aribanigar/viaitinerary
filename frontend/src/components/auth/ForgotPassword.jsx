@@ -40,7 +40,7 @@ const ForgotPassword = () => {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 p-8">
           <div className="mb-6 text-center">
-            <h2 className="text-3xl font-bold text-[#1a1c1c]">
+            <h2 className="text-3xl font-bold text-ink">
               Forgot password?
             </h2>
             <p className="text-slate-500 mt-2">
@@ -57,7 +57,7 @@ const ForgotPassword = () => {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
+              <label className="block text-sm font-semibold text-ink mb-1.5">
                 Email Address
               </label>
               <div className="relative">
@@ -69,7 +69,7 @@ const ForgotPassword = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px]"
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/5 focus:border-brand transition-all text-[15px]"
                   required
                 />
               </div>
@@ -78,7 +78,7 @@ const ForgotPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#e7f63c] text-[#181c22] py-3.5 rounded-xl text-[15px] font-bold hover:opacity-90 transition-all shadow-lg shadow-slate-200 disabled:opacity-70 flex items-center justify-center gap-2 group mt-2"
+              className="w-full bg-accent text-ink py-3.5 rounded-xl text-[15px] font-bold hover:opacity-90 transition-all shadow-lg shadow-slate-200 disabled:opacity-70 flex items-center justify-center gap-2 group mt-2"
             >
               {loading ? (
                 <>
@@ -97,7 +97,7 @@ const ForgotPassword = () => {
           <div className="mt-8 pt-6 border-t border-slate-100 text-center">
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 text-slate-500 hover:text-[#1a1c1c] font-medium transition-colors text-[15px]"
+              className="inline-flex items-center gap-2 text-slate-500 hover:text-ink font-medium transition-colors text-[15px]"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Login

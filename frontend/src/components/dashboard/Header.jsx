@@ -37,11 +37,11 @@ const Header = ({ onMenuClick }) => {
           <input
             type="text"
             placeholder="Search trips, clients..."
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all font-medium"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all font-medium"
           />
         </div>
       </div>
-      <div className="flex items-center gap-2 md:gap-4 text-[#1a1c1c]">
+      <div className="flex items-center gap-2 md:gap-4 text-ink">
         <div className="flex items-center gap-3 mr-2 md:mr-4 hidden xs:flex">
           <div className="text-right">
             <p className="text-sm font-semibold truncate max-w-[100px] md:max-w-none">

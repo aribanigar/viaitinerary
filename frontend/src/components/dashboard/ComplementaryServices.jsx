@@ -159,7 +159,7 @@ const ComplementaryServices = () => {
             setFormData(EMPTY_FORM);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 bg-[#e7f63c] text-[#181c22] px-6 py-3 rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit"
+          className="flex items-center gap-2 bg-accent text-ink px-6 py-3 rounded-2xl font-bold shadow-lg shadow-accent/40 hover:bg-accent-hover transition-all text-sm w-fit"
         >
           <Plus className="w-4 h-4" />
           Add New Service
@@ -173,7 +173,7 @@ const ComplementaryServices = () => {
             <input
               type="text"
               placeholder="Search services..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-accent/20 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -288,7 +288,7 @@ const ComplementaryServices = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-slate-300"
+                className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-slate-300"
                 placeholder="e.g. Airport Transfer, Welcome Drink"
                 required
               />

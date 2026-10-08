@@ -17,10 +17,10 @@ const PricingTab = ({
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
       <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-[#f3f3f4] text-[#181c22] rounded-lg flex items-center justify-center border border-black/5">
+          <div className="w-10 h-10 bg-[#f3f3f4] text-ink rounded-lg flex items-center justify-center border border-black/5">
             <IndianRupee className="w-5 h-5" />
           </div>
-          <h3 className="text-xs font-semibold text-[#181c22] uppercase tracking-[0.2em]">
+          <h3 className="text-xs font-semibold text-ink uppercase tracking-[0.2em]">
             Cost Calculation
           </h3>
         </div>
@@ -31,7 +31,7 @@ const PricingTab = ({
               <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest block mb-2">
                 Accommodation Total
               </span>
-              <div className="text-xl font-semibold text-[#181c22]">
+              <div className="text-xl font-semibold text-ink">
                 ₹ {totalHotelCost.toLocaleString()}
               </div>
             </div>
@@ -39,7 +39,7 @@ const PricingTab = ({
               <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest block mb-2">
                 Transportation Total
               </span>
-              <div className="text-xl font-semibold text-[#181c22]">
+              <div className="text-xl font-semibold text-ink">
                 ₹ {totalVehicleCost.toLocaleString()}
               </div>
             </div>
@@ -47,7 +47,7 @@ const PricingTab = ({
               <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest block mb-2">
                 Activities Total
               </span>
-              <div className="text-xl font-semibold text-[#181c22]">
+              <div className="text-xl font-semibold text-ink">
                 ₹ {(totalActivityCost || 0).toLocaleString()}
               </div>
             </div>
@@ -56,10 +56,10 @@ const PricingTab = ({
           <div className="bg-white border border-black/10 rounded-xl p-8 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#f3f3f4] text-[#181c22] rounded-lg flex items-center justify-center border border-black/5">
+                <div className="w-10 h-10 bg-[#f3f3f4] text-ink rounded-lg flex items-center justify-center border border-black/5">
                   <Plus className="w-5 h-5" />
                 </div>
-                <h3 className="text-xs font-semibold text-[#181c22] uppercase tracking-[0.2em]">
+                <h3 className="text-xs font-semibold text-ink uppercase tracking-[0.2em]">
                   Other Costs
                 </h3>
               </div>
@@ -70,7 +70,7 @@ const PricingTab = ({
                     { id: Date.now(), name: "", price: 0 },
                   ])
                 }
-                className="p-1.5 text-[#181c22] hover:bg-[#f3f3f4] rounded-md transition-all"
+                className="p-1.5 text-ink hover:bg-[#f3f3f4] rounded-md transition-all"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -93,7 +93,7 @@ const PricingTab = ({
                           ),
                         )
                       }
-                      className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-4 text-xs font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
+                      className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-4 text-xs font-bold text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
                     />
                   </div>
                   <div className="w-32">
@@ -110,7 +110,7 @@ const PricingTab = ({
                           ),
                         )
                       }
-                      className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-4 text-xs font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
+                      className="w-full bg-[#f3f3f4] border border-black/5 rounded-lg py-2 px-4 text-xs font-bold text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
                     />
                   </div>
                   <button
@@ -134,7 +134,7 @@ const PricingTab = ({
           <div className="p-6 bg-[#f3f3f4]/30 rounded-xl border border-black/5/50 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
+                <label className="block text-[11px] font-semibold text-ink/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
                   GST Percentage (%)
                 </label>
                 <div className="relative">
@@ -147,12 +147,12 @@ const PricingTab = ({
                     onChange={(e) =>
                       setGstPercentage(parseFloat(e.target.value) || 0)
                     }
-                    className="w-full bg-white border border-black/10 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
+                    className="w-full bg-white border border-black/10 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
+                <label className="block text-[11px] font-semibold text-ink/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
                   Profit Margin (%)
                 </label>
                 <div className="relative">
@@ -165,7 +165,7 @@ const PricingTab = ({
                     onChange={(e) =>
                       setProfitMarginPercentage(parseFloat(e.target.value) || 0)
                     }
-                    className="w-full bg-white border border-black/10 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all"
+                    className="w-full bg-white border border-black/10 rounded-lg py-2.5 pl-10 pr-4 text-sm font-bold text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all"
                   />
                 </div>
               </div>
@@ -176,7 +176,7 @@ const PricingTab = ({
                 <span className="text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-[0.2em] block mb-1">
                   Final Estimated Cost
                 </span>
-                <div className="text-3xl font-semibold text-[#181c22]">
+                <div className="text-3xl font-semibold text-ink">
                   ₹ {Math.round(calculatedTotalCost).toLocaleString()}
                 </div>
               </div>

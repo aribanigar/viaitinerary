@@ -20,13 +20,13 @@ const CopyRow = ({ label, value }) =>
   value ? (
     <div className="flex items-center justify-between gap-3 py-2">
       <div className="min-w-0">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#181c22]/45">{label}</div>
-        <div className="text-sm font-semibold text-[#181c22] break-all">{value}</div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/45">{label}</div>
+        <div className="text-sm font-semibold text-ink break-all">{value}</div>
       </div>
       <button
         type="button"
         onClick={() => copy(value, label)}
-        className="grid place-items-center w-9 h-9 shrink-0 rounded-full border border-black/10 text-[#181c22]/60 hover:bg-black/[0.04]"
+        className="grid place-items-center w-9 h-9 shrink-0 rounded-full border border-black/10 text-ink/60 hover:bg-black/[0.04]"
         aria-label={`Copy ${label}`}
       >
         <Copy className="w-4 h-4" />
@@ -101,11 +101,11 @@ export default function PaySheet({
   };
 
   const field =
-    "w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-[16px] sm:text-sm text-[#181c22] outline-none focus:border-[#181c22] placeholder:text-[#181c22]/35";
+    "w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-[16px] sm:text-sm text-ink outline-none focus:border-brand placeholder:text-ink/35";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-[#181c22]/40 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-brand/40 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
       <div
         role="dialog"
         aria-modal="true"
@@ -116,7 +116,7 @@ export default function PaySheet({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 grid place-items-center w-9 h-9 rounded-full text-[#181c22]/55 hover:bg-black/[0.05]"
+          className="absolute top-3 right-3 grid place-items-center w-9 h-9 rounded-full text-ink/55 hover:bg-black/[0.05]"
           aria-label="Close"
         >
           <X className="w-4 h-4" />
@@ -125,8 +125,8 @@ export default function PaySheet({
         {done ? (
           <div className="px-6 pt-8 pb-7 text-center">
             <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: brand }} strokeWidth={1.8} />
-            <h2 className="mt-3 text-lg font-semibold text-[#181c22]">Thanks!</h2>
-            <p className="mt-1.5 text-sm text-[#181c22]/65">
+            <h2 className="mt-3 text-lg font-semibold text-ink">Thanks!</h2>
+            <p className="mt-1.5 text-sm text-ink/65">
               We're confirming your payment of {formatMoney(amt, sym)}. {agencyName} will let you know once it's received.
             </p>
             <button
@@ -144,15 +144,15 @@ export default function PaySheet({
               <div className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: brand }}>
                 {KIND_LABEL[kind] || "Payment"}
               </div>
-              <h2 className="text-2xl font-bold tracking-tight text-[#181c22]">{formatMoney(amt, sym)}</h2>
-              <p className="mt-0.5 text-sm text-[#181c22]/60">
+              <h2 className="text-2xl font-bold tracking-tight text-ink">{formatMoney(amt, sym)}</h2>
+              <p className="mt-0.5 text-sm text-ink/60">
                 Pay {agencyName} by {upi && hasBank ? "UPI or bank transfer" : upi ? "UPI" : "bank transfer"}, then tell us below.
               </p>
             </div>
 
             {upi && (
               <div className="rounded-2xl border border-black/[0.07] p-4">
-                <div className="text-sm font-semibold text-[#181c22]">UPI</div>
+                <div className="text-sm font-semibold text-ink">UPI</div>
                 <a
                   href={upiLink}
                   className="sm:hidden mt-3 w-full h-12 rounded-full text-sm font-semibold flex items-center justify-center gap-2"
@@ -163,7 +163,7 @@ export default function PaySheet({
                 {qr && (
                   <div className="hidden sm:flex mt-3 items-center gap-4">
                     <img src={qr} alt="UPI payment QR code" className="w-36 h-36 rounded-xl border border-black/5" />
-                    <p className="text-xs text-[#181c22]/60">
+                    <p className="text-xs text-ink/60">
                       Scan with any UPI app (GPay, PhonePe, Paytm, BHIM). The amount is filled in for you.
                     </p>
                   </div>
@@ -174,7 +174,7 @@ export default function PaySheet({
 
             {hasBank && (
               <div className="rounded-2xl border border-black/[0.07] px-4 py-3">
-                <div className="text-sm font-semibold text-[#181c22] mb-1">Bank transfer</div>
+                <div className="text-sm font-semibold text-ink mb-1">Bank transfer</div>
                 <div className="divide-y divide-black/5">
                   <CopyRow label="Amount" value={String(amt)} />
                   <CopyRow label="Beneficiary" value={bank.beneficiary_name} />
@@ -189,13 +189,13 @@ export default function PaySheet({
               <button
                 type="button"
                 onClick={() => setClaiming(true)}
-                className="w-full h-12 rounded-full bg-[#181c22] text-white text-sm font-semibold"
+                className="w-full h-12 rounded-full bg-brand text-white text-sm font-semibold"
               >
                 I've paid
               </button>
             ) : (
               <form onSubmit={submit} className="space-y-3">
-                <div className="text-sm font-semibold text-[#181c22]">Tell us about your payment</div>
+                <div className="text-sm font-semibold text-ink">Tell us about your payment</div>
                 {upi && hasBank && (
                   <div className="flex gap-2">
                     {[
@@ -208,7 +208,7 @@ export default function PaySheet({
                         onClick={() => setMethod(value)}
                         aria-pressed={method === value}
                         className={`flex-1 h-10 rounded-full border text-xs font-semibold ${
-                          method === value ? "border-[#181c22] bg-[#181c22] text-white" : "border-black/10 bg-white text-[#181c22]"
+                          method === value ? "border-brand bg-brand text-white" : "border-black/10 bg-white text-ink"
                         }`}
                       >
                         {label}
@@ -217,7 +217,7 @@ export default function PaySheet({
                   </div>
                 )}
                 <div>
-                  <label htmlFor="pay-ref" className="block mb-1.5 text-xs font-semibold text-[#181c22]/60">
+                  <label htmlFor="pay-ref" className="block mb-1.5 text-xs font-semibold text-ink/60">
                     {method === "upi" ? "UPI reference / UTR number" : "Transaction reference / UTR"}
                   </label>
                   <input
@@ -232,7 +232,7 @@ export default function PaySheet({
                   />
                 </div>
                 <div>
-                  <label htmlFor="pay-name" className="block mb-1.5 text-xs font-semibold text-[#181c22]/60">
+                  <label htmlFor="pay-name" className="block mb-1.5 text-xs font-semibold text-ink/60">
                     Paid by
                   </label>
                   <input
@@ -245,7 +245,7 @@ export default function PaySheet({
                   />
                 </div>
                 <div>
-                  <label htmlFor="pay-note" className="block mb-1.5 text-xs font-semibold text-[#181c22]/60">
+                  <label htmlFor="pay-note" className="block mb-1.5 text-xs font-semibold text-ink/60">
                     Note (optional)
                   </label>
                   <textarea

@@ -189,7 +189,7 @@ const DestinationForm = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <MapPin className="w-4 h-4 text-[#181c22]" />
+              <MapPin className="w-4 h-4 text-ink" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                 Destination Details
               </h3>
@@ -217,7 +217,7 @@ const DestinationForm = () => {
               <label className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-slate-600 mb-2 px-1">
                 <ListChecks className="w-3.5 h-3.5" /> Activities
               </label>
-              <div className="bg-slate-50 rounded-2xl p-4 min-h-[120px] focus-within:ring-2 focus-within:ring-[#e7f63c]/20 focus-within:bg-white transition-all">
+              <div className="bg-slate-50 rounded-2xl p-4 min-h-[120px] focus-within:ring-2 focus-within:ring-accent/20 focus-within:bg-white transition-all">
                 <textarea
                   name="activities"
                   value={formData.activities}
@@ -237,7 +237,7 @@ const DestinationForm = () => {
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-[#181c22]" />
+                <ImageIcon className="w-4 h-4 text-ink" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">
                   Photo
                 </h3>
@@ -254,7 +254,7 @@ const DestinationForm = () => {
                   alt="Selected"
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#181c22]/80 text-white text-[10px] font-bold">
+                <div className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand/80 text-white text-[10px] font-bold">
                   <CheckCircle2 className="w-3 h-3" /> Selected
                 </div>
               </div>
@@ -290,7 +290,7 @@ const DestinationForm = () => {
                       title={photo.tags}
                       className={`relative aspect-square rounded-xl overflow-hidden bg-slate-100 transition-all ${
                         selected
-                          ? "ring-2 ring-[#e7f63c] ring-offset-2"
+                          ? "ring-2 ring-accent ring-offset-2"
                           : "hover:opacity-80"
                       }`}
                     >
@@ -301,8 +301,8 @@ const DestinationForm = () => {
                         loading="lazy"
                       />
                       {selected && (
-                        <div className="absolute inset-0 bg-[#181c22]/30 flex items-center justify-center">
-                          <CheckCircle2 className="w-5 h-5 text-[#e7f63c]" />
+                        <div className="absolute inset-0 bg-brand/30 flex items-center justify-center">
+                          <CheckCircle2 className="w-5 h-5 text-accent" />
                         </div>
                       )}
                     </button>
@@ -324,7 +324,7 @@ const DestinationForm = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full sm:w-auto bg-[#e7f63c] text-[#181c22] px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-[#e7f63c]/40 active:scale-[0.98] transition-all"
+              className="w-full sm:w-auto bg-accent text-ink px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-accent/40 active:scale-[0.98] transition-all"
             >
               {submitting ? "Saving..." : "Save Destination"}
             </button>

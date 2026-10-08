@@ -26,7 +26,6 @@ const AboutUs = () => (
     path="/about-us"
     crumb="About us"
     pageType="AboutPage"
-    eyebrow="About us"
     heading="We build the software we wanted when we were quoting trips on WhatsApp"
     intro="ViaItinerary is a travel CRM and itinerary builder for travel agencies, tour operators and DMCs. It brings leads, quotes, bookings and payments into one system."
   >

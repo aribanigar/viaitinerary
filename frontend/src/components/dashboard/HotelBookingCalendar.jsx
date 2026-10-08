@@ -76,7 +76,7 @@ const HotelBookingCalendar = () => {
       >
         <Link
           to="/accommodation"
-          className="text-sm font-bold text-[#181c22]/60 hover:text-[#181c22] no-underline"
+          className="text-sm font-bold text-ink/60 hover:text-ink no-underline"
         >
           Back to Accommodation
         </Link>
@@ -90,7 +90,7 @@ const HotelBookingCalendar = () => {
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">
+          <h3 className="text-sm font-bold text-ink uppercase tracking-widest">
             {cursor.toLocaleDateString("en-IN", { month: "long", year: "numeric" })}
           </h3>
           <button
@@ -127,7 +127,7 @@ const HotelBookingCalendar = () => {
                   <div
                     key={i}
                     className={`min-h-[110px] rounded-xl border p-2 ${
-                      isToday ? "border-[#e7f63c] bg-[#e7f63c]/5" : "border-black/5 bg-[#f7f7f8]"
+                      isToday ? "border-accent bg-accent/5" : "border-black/5 bg-[#f7f7f8]"
                     }`}
                   >
                     <div className="text-[11px] font-bold text-[#8a93a2] mb-1.5">{day.getDate()}</div>

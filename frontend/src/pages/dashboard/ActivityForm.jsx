@@ -74,7 +74,7 @@ const Section = ({ icon: Icon, title, action, children }) => (
   <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
       <div className="flex items-center gap-2">
-        {React.createElement(Icon, { className: "w-4 h-4 text-[#181c22]" })}
+        {React.createElement(Icon, { className: "w-4 h-4 text-ink" })}
         <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">{title}</h3>
       </div>
       {action}
@@ -435,7 +435,7 @@ const ActivityForm = () => {
 
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6">
             <div className="flex items-center gap-2 pb-3 mb-4 border-b border-slate-100">
-              <ImageIcon className="w-4 h-4 text-[#181c22]" />
+              <ImageIcon className="w-4 h-4 text-ink" />
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-700">Photo Reference</h3>
             </div>
             <div className="relative w-full h-32 md:h-20 rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 overflow-hidden">
@@ -456,7 +456,7 @@ const ActivityForm = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full sm:w-auto bg-[#e7f63c] text-[#181c22] px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-[#e7f63c]/40 active:scale-[0.98] transition-all"
+              className="w-full sm:w-auto bg-accent text-ink px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-accent/40 active:scale-[0.98] transition-all"
             >
               {submitting ? "Saving..." : "Save Activity"}
             </button>

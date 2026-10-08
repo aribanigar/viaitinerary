@@ -25,10 +25,9 @@ const Section = ({ id, className = "", children }) => (
   </section>
 );
 
-const SectionHead = ({ eyebrow, title, text, center = false }) => (
+const SectionHead = ({ title, text, center = false }) => (
   <div className={`max-w-2xl ${center ? "mx-auto text-center" : ""}`}>
-    <p className="eyebrow">{eyebrow}</p>
-    <h2 className="mt-3 text-[28px] md:text-[34px] leading-[1.15] font-semibold tracking-tight text-[#181c22]">
+    <h2 className="text-[28px] md:text-[34px] leading-[1.15] font-extrabold tracking-[-0.03em] text-ink">
       {title}
     </h2>
     {text && <p className="mt-3 text-[16px] leading-relaxed text-[#5e5e5e]">{text}</p>}
@@ -45,15 +44,15 @@ const Frame = ({ label, children }) => (
       <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
       <span className="ml-3 text-[11px] text-[#7e7576]">{label}</span>
     </div>
-    <div className="p-4 sm:p-5 text-[13px] text-[#181c22]">{children}</div>
+    <div className="p-4 sm:p-5 text-[13px] text-ink">{children}</div>
   </div>
 );
 
 const Pill = ({ children, tone = "gray" }) => {
   const tones = {
     gray: "bg-black/[0.05] text-[#4c4546]",
-    lime: "bg-[#e7f63c] text-[#181c22]",
-    dark: "bg-[#181c22] text-white",
+    lime: "bg-accent text-ink",
+    dark: "bg-brand text-white",
   };
   return <span className={`inline-block px-2 py-0.5 rounded-md text-[11px] font-semibold ${tones[tone]}`}>{children}</span>;
 };
@@ -130,14 +129,14 @@ const PackagesPreview = () => (
           <div className="font-medium leading-snug">{n}</div>
           <div className="mt-2 flex justify-between text-[12px] text-[#7e7576]">
             <span>{d}</span>
-            <span className="text-[#181c22] font-semibold">{p}</span>
+            <span className="text-ink font-semibold">{p}</span>
           </div>
         </div>
       ))}
     </div>
-    <div className="mt-3 flex items-center justify-between p-2.5 rounded-lg bg-[#181c22] text-white">
+    <div className="mt-3 flex items-center justify-between p-2.5 rounded-lg bg-brand text-white">
       <span className="text-[12px]">Quote PDF ready for Rahul Mehta</span>
-      <span className="text-[11px] font-semibold text-[#e7f63c]">Send</span>
+      <span className="text-[11px] font-semibold text-accent">Send</span>
     </div>
   </Frame>
 );
@@ -165,7 +164,7 @@ const InventoryPreview = () => (
       {Array.from({ length: 14 }).map((_, i) => (
         <div
           key={i}
-          className={`h-6 rounded ${[2, 3, 4, 9, 10].includes(i) ? "bg-[#181c22]" : i === 6 ? "bg-[#e7f63c]" : "bg-black/[0.05]"}`}
+          className={`h-6 rounded ${[2, 3, 4, 9, 10].includes(i) ? "bg-brand" : i === 6 ? "bg-accent" : "bg-black/[0.05]"}`}
         />
       ))}
     </div>
@@ -179,7 +178,7 @@ const PaymentsPreview = () => (
       <Pill tone="lime">Part paid</Pill>
     </div>
     <div className="mt-3 h-2 rounded-full bg-black/[0.06] overflow-hidden">
-      <div className="h-full w-[60%] bg-[#181c22]" />
+      <div className="h-full w-[60%] bg-brand" />
     </div>
     <div className="mt-2 flex justify-between text-[12px] text-[#7e7576]">
       <span>Received &#8377;35,000</span>
@@ -222,7 +221,7 @@ const ReportsPreview = () => (
       <div key={n} className="flex items-center gap-3 py-1.5">
         <span className="w-14 text-[12px] text-[#5e5e5e]">{n}</span>
         <div className="flex-1 h-2 rounded-full bg-black/[0.06] overflow-hidden">
-          <div className="h-full bg-[#181c22]" style={{ width: `${w}%` }} />
+          <div className="h-full bg-brand" style={{ width: `${w}%` }} />
         </div>
         <span className="w-8 text-right text-[12px] font-semibold">{w}%</span>
       </div>
@@ -245,47 +244,42 @@ const Hero = () => (
   <section className="px-4 sm:px-6 pt-28 md:pt-32 pb-14 md:pb-20">
     <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-14 items-center">
       <div>
-        <p className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-3 py-1 text-[12px] font-medium text-[#4c4546]">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#b5c400]" />
-          Travel CRM for agencies, tour operators and DMCs
-        </p>
-        <h1 className="mt-5 text-[36px] sm:text-[44px] lg:text-[52px] leading-[1.06] font-semibold tracking-tight text-[#181c22]">
-          Manage leads, itineraries and payments{" "}
-          <span className="font-serif italic font-normal">in one place</span>
+        <h1 className="text-[36px] sm:text-[44px] lg:text-[52px] leading-[1.06] font-extrabold tracking-[-0.03em] text-ink">
+          Quote faster. Book more trips. Get paid on time.
         </h1>
         <p className="mt-5 text-[17px] leading-relaxed text-[#5e5e5e] max-w-xl">
-          ViaItinerary is the travel CRM and itinerary builder that takes an enquiry from first message to
-          confirmed, paid booking. Quote faster from your own hotel and transport rates, and never lose a
-          follow-up again.
+          Your leads, itineraries, quotes and payments, all in one place. Build a priced trip in minutes from
+          your own hotel and cab rates, send a branded PDF and collect the advance. No spreadsheets, no missed
+          follow-ups.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link to="/signup" className="btn-primary !h-11 !px-5">
-            Start free trial <ArrowRight className="w-4 h-4" />
+            Start Free Trial <ArrowRight className="w-4 h-4" />
           </Link>
           <Link to="/schedule-demo" className="btn-secondary !h-11 !px-5">
-            Book a 30 min demo
+            Book a Free Demo
           </Link>
         </div>
         <a
           href="#voice"
-          className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-[#e7f63c] pl-1.5 pr-4 py-1.5 text-[13px] font-medium text-[#181c22] hover:bg-[#d4e42e] transition-colors"
+          className="mt-6 inline-flex items-center gap-2.5 rounded-full bg-accent pl-1.5 pr-4 py-1.5 text-[13px] font-medium text-ink hover:bg-accent-hover transition-colors"
         >
-          <span className="w-6 h-6 rounded-full bg-[#181c22] flex items-center justify-center">
-            <Mic className="w-3.5 h-3.5 text-[#e7f63c]" />
+          <span className="w-6 h-6 rounded-full bg-brand flex items-center justify-center">
+            <Mic className="w-3.5 h-3.5 text-accent" />
           </span>
-          New: say the trip out loud and it fills itself in
+          Newly launched: say the trip, it builds itself
           <ArrowRight className="w-3.5 h-3.5" />
         </a>
         <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-[#5e5e5e]">
-          {["Free trial to start", "Works on phone and desktop", "Your branding on every PDF"].map((t) => (
+          {["Free trial to start", "Works on phone & desktop", "Your logo on every PDF"].map((t) => (
             <li key={t} className="inline-flex items-center gap-1.5">
-              <Check className="w-4 h-4 text-[#181c22]" /> {t}
+              <Check className="w-4 h-4 text-ink" /> {t}
             </li>
           ))}
         </ul>
       </div>
       <div className="relative isolate">
-        <div className="absolute -inset-4 rounded-[28px] bg-[#f7fbc8] -z-10 hidden sm:block" aria-hidden="true" />
+        <div className="absolute -inset-4 rounded-[28px] bg-accent-soft -z-10 hidden sm:block" aria-hidden="true" />
         <ItineraryPreview />
       </div>
     </div>
@@ -300,9 +294,8 @@ const ModuleTabs = () => {
   return (
     <Section id="features" className="bg-white border-y border-black/[0.06]">
       <SectionHead
-        eyebrow="The platform"
-        title="Everything a travel business runs on, in one software"
-        text="Six connected modules replace the spreadsheets, WhatsApp threads and Word files your team juggles today."
+        title="Everything you need to sell more trips"
+        text="Say goodbye to spreadsheets, scattered WhatsApp chats and Word files. Six tools, one login."
       />
 
       <div role="tablist" aria-label="Modules" className="mt-10 flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -317,7 +310,7 @@ const ModuleTabs = () => {
               onClick={() => setActive(m.key)}
               className={`shrink-0 inline-flex items-center gap-2 h-10 px-4 rounded-full text-[14px] font-medium border transition-colors ${
                 on
-                  ? "bg-[#181c22] text-white border-[#181c22]"
+                  ? "bg-brand text-white border-brand"
                   : "bg-white text-[#4c4546] border-black/[0.1] hover:border-black/30"
               }`}
             >
@@ -330,12 +323,12 @@ const ModuleTabs = () => {
 
       <div role="tabpanel" className="mt-8 grid lg:grid-cols-2 gap-10 items-center">
         <div>
-          <h3 className="text-[22px] font-semibold tracking-tight text-[#181c22]">{mod.title}</h3>
+          <h3 className="text-[22px] font-semibold tracking-tight text-ink">{mod.title}</h3>
           <p className="mt-3 text-[16px] leading-relaxed text-[#5e5e5e]">{mod.summary}</p>
           <ul className="mt-5 space-y-2.5">
             {mod.points.map((p) => (
-              <li key={p} className="flex gap-2.5 text-[15px] text-[#181c22]">
-                <span className="mt-0.5 w-5 h-5 rounded-full bg-[#e7f63c] flex items-center justify-center shrink-0">
+              <li key={p} className="flex gap-2.5 text-[15px] text-ink">
+                <span className="mt-0.5 w-5 h-5 rounded-full bg-accent flex items-center justify-center shrink-0">
                   <Check className="w-3 h-3" />
                 </span>
                 {p}
@@ -399,12 +392,12 @@ const VoiceDemo = () => {
   const listening = step <= last;
 
   return (
-    <div aria-hidden="true" className="rounded-2xl bg-white text-[#181c22] overflow-hidden shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]">
+    <div aria-hidden="true" className="rounded-2xl bg-white text-ink overflow-hidden shadow-[0_24px_60px_-24px_rgba(0,0,0,0.6)]">
       <div className="px-4 py-3 flex items-center justify-between border-b border-black/[0.06] bg-[#fafafa]">
         <div className="flex items-center gap-2.5">
-          <span className="relative w-8 h-8 rounded-full bg-[#181c22] flex items-center justify-center">
-            {listening && <span className="absolute inset-0 rounded-full bg-[#e7f63c]/50 animate-ping" />}
-            <Mic className="relative w-4 h-4 text-[#e7f63c]" />
+          <span className="relative w-8 h-8 rounded-full bg-brand flex items-center justify-center">
+            {listening && <span className="absolute inset-0 rounded-full bg-accent/50 animate-ping" />}
+            <Mic className="relative w-4 h-4 text-accent" />
           </span>
           <div>
             <div className="text-[13px] font-semibold leading-tight">Ching</div>
@@ -419,7 +412,7 @@ const VoiceDemo = () => {
           <span className="text-[#7e7576]">Say &ldquo;Hello Ching&rdquo;...</span>
         ) : (
           spoken.map((c) => (
-            <span key={c.text} className={c.field ? "rounded-sm bg-[#e7f63c]/70" : ""}>
+            <span key={c.text} className={c.field ? "rounded-sm bg-accent/70" : ""}>
               {c.text}
             </span>
           ))
@@ -442,9 +435,9 @@ const VoiceDemo = () => {
       </div>
 
       <div className={`px-4 pb-4 transition-opacity duration-500 ${done ? "opacity-100" : "opacity-0"}`}>
-        <div className="flex items-center justify-between rounded-full bg-[#181c22] text-white pl-4 pr-1.5 py-1.5 text-[12px]">
+        <div className="flex items-center justify-between rounded-full bg-brand text-white pl-4 pr-1.5 py-1.5 text-[12px]">
           <span>Filled the trip</span>
-          <span className="rounded-full bg-[#e7f63c] text-[#181c22] font-semibold px-3 py-1">Undo</span>
+          <span className="rounded-full bg-accent text-ink font-semibold px-3 py-1">Undo</span>
         </div>
       </div>
     </div>
@@ -454,19 +447,18 @@ const VoiceDemo = () => {
 const VOICE_ICONS = [Mic, Pencil, FileText, Hand];
 
 const VoiceSection = () => (
-  <section id="voice" className="px-4 sm:px-6 py-16 md:py-20 scroll-mt-16 bg-[#181c22] text-white">
+  <section id="voice" className="px-4 sm:px-6 py-16 md:py-20 scroll-mt-16 bg-brand text-white">
     <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_1fr] gap-12 lg:gap-14 items-center">
       <div>
-        <p className="eyebrow !text-[#e7f63c]">Voice trip builder</p>
-        <h2 className="mt-3 text-[30px] md:text-[40px] leading-[1.1] font-semibold tracking-tight">
-          Say the trip. <span className="font-serif italic font-normal">Ching builds it.</span>
+        <h2 className="text-[30px] md:text-[40px] leading-[1.1] font-extrabold tracking-[-0.03em]">
+          Say the trip. Ching builds it.
         </h2>
         <p className="mt-4 text-[17px] leading-relaxed text-white/70 max-w-xl">
-          Stop clicking through forms while a client waits on the phone. Describe the trip out loud and the Trip
-          Builder fills itself in as you speak, priced from your own hotel and cab rates.
+          Client on the phone? Just speak the trip and watch it fill in, priced from your own hotel and cab
+          rates. No forms, no waiting.
         </p>
 
-        <blockquote className="mt-6 border-l-2 border-[#e7f63c] pl-4 text-[15px] leading-relaxed text-white/85 max-w-xl">
+        <blockquote className="mt-6 border-l-2 border-accent pl-4 text-[15px] leading-relaxed text-white/85 max-w-xl">
           &ldquo;{VOICE.example}&rdquo;
         </blockquote>
 
@@ -476,7 +468,7 @@ const VoiceSection = () => (
             return (
               <li key={c.title} className="flex gap-3">
                 <span className="mt-0.5 w-8 h-8 rounded-lg bg-white/[0.07] flex items-center justify-center shrink-0">
-                  <Icon className="w-4 h-4 text-[#e7f63c]" />
+                  <Icon className="w-4 h-4 text-accent" />
                 </span>
                 <div>
                   <h3 className="text-[15px] font-semibold">{c.title}</h3>
@@ -488,8 +480,8 @@ const VoiceSection = () => (
         </ul>
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
-          <Link to="/signup" className="btn-primary !bg-[#e7f63c] !text-[#181c22] hover:!bg-[#d4e42e] !h-11 !px-5">
-            Start free trial <ArrowRight className="w-4 h-4" />
+          <Link to="/signup" className="btn-primary !bg-accent !text-ink hover:!bg-accent-hover !h-11 !px-5">
+            Try It Free <ArrowRight className="w-4 h-4" />
           </Link>
           <p className="text-[13px] text-white/50 max-w-xs">
             Works in English (India) in browsers with speech recognition, like Chrome and Edge. You can always type the same request.
@@ -505,14 +497,13 @@ const VoiceSection = () => (
 const Workflow = () => (
   <Section>
     <SectionHead
-      eyebrow="How it works"
-      title="From enquiry to paid booking in four steps"
+      title="Enquiry to paid booking in 4 easy steps"
     />
     <ol className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {STEPS.map((s, i) => (
         <li key={s.title} className="p-5 rounded-2xl bg-white border border-black/[0.07]">
           <span className="text-[12px] font-semibold text-[#7e7576]">0{i + 1}</span>
-          <h3 className="mt-2 text-[17px] font-semibold text-[#181c22]">{s.title}</h3>
+          <h3 className="mt-2 text-[17px] font-semibold text-ink">{s.title}</h3>
           <p className="mt-1.5 text-[14px] leading-relaxed text-[#5e5e5e]">{s.text}</p>
         </li>
       ))}
@@ -523,17 +514,16 @@ const Workflow = () => (
 const FeatureGrid = () => (
   <Section className="bg-white border-y border-black/[0.06]">
     <SectionHead
-      eyebrow="All features"
-      title="Built for the way travel companies actually work"
+      title="Packed with everything your agency needs"
     />
     <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-5 gap-x-8 gap-y-10">
       {FEATURE_GROUPS.map((g) => (
         <div key={g.title}>
-          <h3 className="text-[15px] font-semibold text-[#181c22] pb-3 border-b border-black/[0.08]">{g.title}</h3>
+          <h3 className="text-[15px] font-semibold text-ink pb-3 border-b border-black/[0.08]">{g.title}</h3>
           <ul className="mt-3 space-y-2">
             {g.items.map((it) => (
               <li key={it} className="flex gap-2 text-[14px] text-[#4c4546]">
-                <Check className="w-4 h-4 mt-0.5 text-[#181c22] shrink-0" />
+                <Check className="w-4 h-4 mt-0.5 text-ink shrink-0" />
                 {it}
               </li>
             ))}
@@ -548,19 +538,18 @@ const Audiences = () => (
   <Section>
     <div className="grid lg:grid-cols-[1fr_1.4fr] gap-10">
       <SectionHead
-        eyebrow="Who it is for"
-        title="One system, shaped around your business"
-        text="Whether you run inbound tours, sell packages or manage a sales floor, ViaItinerary fits how you already quote and book."
+        title="Made for your kind of travel business"
+        text="DMC, tour operator, agency or a busy sales team: ViaItinerary fits the way you already quote and book."
       />
       <div className="grid sm:grid-cols-2 gap-4">
         {AUDIENCES.map((a) => (
           <div key={a.title} className="p-5 rounded-2xl bg-white border border-black/[0.07]">
-            <h3 className="text-[16px] font-semibold text-[#181c22]">{a.title}</h3>
+            <h3 className="text-[16px] font-semibold text-ink">{a.title}</h3>
             <p className="mt-1.5 text-[14px] leading-relaxed text-[#5e5e5e]">{a.text}</p>
           </div>
         ))}
-        <Link to="/solutions" className="sm:col-span-2 inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#181c22] hover:underline underline-offset-4">
-          See solutions by business type <ArrowRight className="w-4 h-4" />
+        <Link to="/solutions" className="sm:col-span-2 inline-flex items-center gap-1.5 text-[14px] font-semibold text-ink hover:underline underline-offset-4">
+          Find the right fit for you <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
     </div>
@@ -570,9 +559,8 @@ const Audiences = () => (
 const TRUST_ICONS = [Users, ShieldCheck, Headphones];
 
 const Trust = () => (
-  <Section className="bg-[#181c22] text-white">
-    <p className="eyebrow !text-white/60">Why agencies trust us</p>
-    <h2 className="mt-3 text-[28px] md:text-[34px] leading-[1.15] font-semibold tracking-tight max-w-2xl">
+  <Section className="bg-brand text-white">
+    <h2 className="text-[28px] md:text-[34px] leading-[1.15] font-extrabold tracking-[-0.03em] max-w-2xl">
       Made by travel people, for travel people
     </h2>
     <div className="mt-10 grid md:grid-cols-3 gap-4">
@@ -580,7 +568,7 @@ const Trust = () => (
         const Icon = TRUST_ICONS[i];
         return (
           <div key={t.title} className="p-6 rounded-2xl bg-white/[0.04] border border-white/10">
-            <Icon className="w-5 h-5 text-[#e7f63c]" />
+            <Icon className="w-5 h-5 text-accent" />
             <h3 className="mt-4 text-[17px] font-semibold">{t.title}</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-white/70">{t.text}</p>
           </div>
@@ -594,14 +582,13 @@ const Faq = () => (
   <Section id="faq">
     <div className="grid lg:grid-cols-[1fr_1.6fr] gap-10">
       <SectionHead
-        eyebrow="FAQ"
-        title="Questions agencies ask us"
-        text="Still unsure? Message us on WhatsApp and talk to the team."
+        title="Got questions? We've got answers."
+        text="Still unsure? Chat with us on WhatsApp and talk to the team that builds it."
       />
       <div className="divide-y divide-black/[0.08] border-y border-black/[0.08]">
         {FAQS.map((f) => (
           <details key={f.q} className="group py-4">
-            <summary className="flex items-center justify-between gap-4 cursor-pointer list-none text-[16px] font-semibold text-[#181c22] [&::-webkit-details-marker]:hidden">
+            <summary className="flex items-center justify-between gap-4 cursor-pointer list-none text-[16px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
               {f.q}
               <ChevronDown className="w-4 h-4 shrink-0 text-[#7e7576] transition-transform group-open:rotate-180" />
             </summary>
@@ -615,21 +602,21 @@ const Faq = () => (
 
 export const CtaBand = () => (
   <section className="px-4 sm:px-6 pb-16 md:pb-20">
-    <div className="max-w-6xl mx-auto rounded-3xl bg-[#e7f63c] px-6 py-12 md:px-12 md:py-14 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+    <div className="max-w-6xl mx-auto rounded-3xl bg-accent px-6 py-12 md:px-12 md:py-14 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
       <div>
-        <h2 className="text-[26px] md:text-[32px] font-semibold tracking-tight text-[#181c22] leading-tight">
-          See ViaItinerary with your own trips
+        <h2 className="text-[26px] md:text-[32px] font-extrabold tracking-[-0.03em] text-ink leading-tight">
+          Ready to sell more trips?
         </h2>
-        <p className="mt-2 text-[16px] text-[#181c22]/75">
-          Start a free trial, or book a 30 minute walkthrough with our team.
+        <p className="mt-2 text-[16px] text-ink/75">
+          Start your free trial today, or book a 30-minute demo with your own trips.
         </p>
       </div>
       <div className="flex flex-wrap gap-3">
         <Link to="/signup" className="btn-primary !h-11 !px-5">
-          Start free trial <ArrowRight className="w-4 h-4" />
+          Start Free Trial <ArrowRight className="w-4 h-4" />
         </Link>
         <Link to="/schedule-demo" className="btn-secondary !h-11 !px-5 !border-black/20">
-          Book a demo
+          Book a Free Demo
         </Link>
       </div>
     </div>
@@ -637,7 +624,7 @@ export const CtaBand = () => (
 );
 
 const BrandLanding = () => (
-  <div className="bg-[#f9f9f9] text-[#181c22] font-sans antialiased">
+  <div className="bg-[#f9f9f9] text-ink font-sans antialiased">
     <Seo
       title="ViaItinerary: Travel CRM, Itinerary Builder & Lead Management Software"
       description="Travel CRM and itinerary builder for travel agencies, tour operators and DMCs. Manage leads, build priced itineraries by voice or form, send branded quotes and track payments in one place."

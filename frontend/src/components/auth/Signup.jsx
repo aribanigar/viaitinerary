@@ -121,7 +121,7 @@ const Signup = () => {
       <div className="w-full max-w-lg">
         <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 p-8">
           <div className="mb-6 text-center">
-            <h2 className="text-3xl font-bold text-[#1a1c1c]">
+            <h2 className="text-3xl font-bold text-ink">
               Create Account
             </h2>
             <p className="text-slate-500 mt-2">
@@ -143,7 +143,7 @@ const Signup = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
+                <label className="block text-sm font-semibold text-ink mb-1.5">
                   Full Name
                 </label>
                 <div className="relative">
@@ -156,7 +156,7 @@ const Signup = () => {
                     id="name"
                     autoComplete="name"
                     placeholder="John Doe"
-                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px]"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/5 focus:border-brand transition-all text-[15px]"
                     required
                     onChange={handleChange}
                   />
@@ -164,7 +164,7 @@ const Signup = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
+                <label className="block text-sm font-semibold text-ink mb-1.5">
                   Phone Number
                 </label>
                 <div className="relative phone-input-container">
@@ -185,7 +185,7 @@ const Signup = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
+              <label className="block text-sm font-semibold text-ink mb-1.5">
                 Email Address
               </label>
               <div className="flex gap-2">
@@ -199,7 +199,7 @@ const Signup = () => {
                     id="email"
                     autoComplete="email"
                     placeholder="name@company.com"
-                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px]"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/5 focus:border-brand transition-all text-[15px]"
                     required
                     onChange={handleChange}
                   />
@@ -208,7 +208,7 @@ const Signup = () => {
                   type="button"
                   onClick={handleSendOtp}
                   disabled={otpLoading || !formData.email || resendTimer > 0}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-[#1a1c1c] text-sm font-bold rounded-xl transition-all disabled:opacity-50 whitespace-nowrap min-w-[120px]"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-ink text-sm font-bold rounded-xl transition-all disabled:opacity-50 whitespace-nowrap min-w-[120px]"
                 >
                   {otpLoading
                     ? "Sending..."
@@ -223,7 +223,7 @@ const Signup = () => {
 
             {otpSent && (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
+                <label className="block text-sm font-semibold text-ink mb-1.5">
                   Verification Code (OTP)
                 </label>
                 <div className="relative">
@@ -236,7 +236,7 @@ const Signup = () => {
                     id="otp"
                     placeholder="6-digit code"
                     maxLength="6"
-                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px]"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/5 focus:border-brand transition-all text-[15px]"
                     required
                     onChange={handleChange}
                   />
@@ -246,7 +246,7 @@ const Signup = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
+                <label className="block text-sm font-semibold text-ink mb-1.5">
                   Password
                 </label>
                 <div className="relative">
@@ -259,7 +259,7 @@ const Signup = () => {
                     id="password"
                     autoComplete="new-password"
                     placeholder="••••••••"
-                    className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px]"
+                    className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/5 focus:border-brand transition-all text-[15px]"
                     required
                     onChange={handleChange}
                   />
@@ -278,7 +278,7 @@ const Signup = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-[#1a1c1c] mb-1.5">
+                <label className="block text-sm font-semibold text-ink mb-1.5">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -291,7 +291,7 @@ const Signup = () => {
                     id="password_confirmation"
                     autoComplete="new-password"
                     placeholder="••••••••"
-                    className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1a1c1c]/5 focus:border-[#1a1c1c] transition-all text-[15px]"
+                    className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand/5 focus:border-brand transition-all text-[15px]"
                     required
                     onChange={handleChange}
                   />
@@ -318,7 +318,7 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#e7f63c] text-[#181c22] py-3.5 rounded-xl text-[15px] font-bold hover:opacity-90 transition-all shadow-lg shadow-slate-200 disabled:opacity-70 flex items-center justify-center gap-2 group mt-4"
+              className="w-full bg-accent text-ink py-3.5 rounded-xl text-[15px] font-bold hover:opacity-90 transition-all shadow-lg shadow-slate-200 disabled:opacity-70 flex items-center justify-center gap-2 group mt-4"
             >
               {loading ? (
                 <>
@@ -339,7 +339,7 @@ const Signup = () => {
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="font-bold text-[#1a1c1c] hover:underline underline-offset-4"
+                className="font-bold text-ink hover:underline underline-offset-4"
               >
                 Login
               </Link>

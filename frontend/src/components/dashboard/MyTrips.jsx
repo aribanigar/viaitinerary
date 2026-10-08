@@ -354,7 +354,7 @@ const MyTrips = () => {
                 toast.error("Upgrade required to create more trips");
               }
             }}
-            className={`${subscription?.can_create_trip ? "bg-white border border-black/10 text-[#181c22] hover:bg-slate-50" : "bg-slate-400 text-white cursor-not-allowed"} px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-sm transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
+            className={`${subscription?.can_create_trip ? "bg-white border border-black/10 text-ink hover:bg-slate-50" : "bg-slate-400 text-white cursor-not-allowed"} px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-sm transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
           >
             <Sparkles className="w-5 h-5" />
             GENERATE ITINERARY
@@ -367,7 +367,7 @@ const MyTrips = () => {
                 toast.error("Upgrade required to create more trips");
               }
             }}
-            className={`${subscription?.can_create_trip ? "bg-[#e7f63c] text-[#181c22] hover:bg-[#d4e42e]" : "bg-slate-400 text-white cursor-not-allowed"} px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-xl transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
+            className={`${subscription?.can_create_trip ? "bg-accent text-ink hover:bg-accent-hover" : "bg-slate-400 text-white cursor-not-allowed"} px-8 py-4 rounded-2xl flex items-center gap-3 font-bold text-[13px] shadow-xl transition-all hover:scale-105 no-underline w-full md:w-auto justify-center md:justify-start`}
           >
             <Plus className="w-5 h-5" />
             CREATE NEW TRIP
@@ -405,7 +405,7 @@ const MyTrips = () => {
             <input
               type="text"
               placeholder="Search by title, client or duration..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
+              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -431,7 +431,7 @@ const MyTrips = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c]"
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-accent/20 focus:border-accent"
                 >
                   <option value="">All Statuses</option>
                   <option value="pending">Pending</option>
@@ -447,7 +447,7 @@ const MyTrips = () => {
                 <select
                   value={createdByFilter}
                   onChange={(e) => setCreatedByFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-[#e7f63c]/20 focus:border-[#e7f63c]"
+                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-accent/20 focus:border-accent"
                 >
                   <option value="">All Creators</option>
                   {[
@@ -536,7 +536,7 @@ const MyTrips = () => {
                             e.target.value,
                           )
                         }
-                        className="px-2 py-1 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md uppercase tracking-wider border-none focus:ring-2 focus:ring-[#e7f63c]/20 cursor-pointer"
+                        className="px-2 py-1 bg-slate-100 text-slate-600 text-[9px] font-bold rounded-md uppercase tracking-wider border-none focus:ring-2 focus:ring-accent/20 cursor-pointer"
                       >
                         <option value="pending">Pending</option>
                         <option value="rejected">Rejected</option>

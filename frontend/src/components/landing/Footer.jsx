@@ -54,12 +54,12 @@ const Footer = () => (
           </p>
           <ul className="mt-5 space-y-2 text-sm text-[#4c4546]">
             <li>
-              <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex items-center gap-2 hover:text-[#181c22]">
+              <a href={`mailto:${CONTACT_EMAIL}`} className="inline-flex items-center gap-2 hover:text-ink">
                 <Mail className="w-4 h-4" /> {CONTACT_EMAIL}
               </a>
             </li>
             <li>
-              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-[#181c22]">
+              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-ink">
                 <MessageCircle className="w-4 h-4" /> {CONTACT_PHONE}
               </a>
             </li>
@@ -68,16 +68,16 @@ const Footer = () => (
 
         {COLUMNS.map((col) => (
           <div key={col.title}>
-            <h2 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#181c22]">{col.title}</h2>
+            <h2 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-ink">{col.title}</h2>
             <ul className="mt-4 space-y-2.5">
               {col.links.map((link) => (
                 <li key={link.name}>
                   {link.to.includes("#") ? (
-                    <a href={link.to} className="text-sm text-[#5e5e5e] hover:text-[#181c22]">
+                    <a href={link.to} className="text-sm text-[#5e5e5e] hover:text-ink">
                       {link.name}
                     </a>
                   ) : (
-                    <Link to={link.to} className="text-sm text-[#5e5e5e] hover:text-[#181c22]">
+                    <Link to={link.to} className="text-sm text-[#5e5e5e] hover:text-ink">
                       {link.name}
                     </Link>
                   )}
@@ -96,7 +96,7 @@ const Footer = () => (
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Instagram"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#5e5e5e] hover:text-[#181c22] hover:bg-black/5"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[#5e5e5e] hover:text-ink hover:bg-black/5"
           >
             <Instagram className="w-4 h-4" />
           </a>
@@ -105,7 +105,7 @@ const Footer = () => (
             target="_blank"
             rel="noopener noreferrer"
             aria-label="YouTube"
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#5e5e5e] hover:text-[#181c22] hover:bg-black/5"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[#5e5e5e] hover:text-ink hover:bg-black/5"
           >
             <Youtube className="w-4 h-4" />
           </a>

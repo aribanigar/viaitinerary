@@ -26,6 +26,7 @@ import AssistantFrame from "../../components/dashboard/AssistantFrame";
 import TripBuilder from "../../components/dashboard/TripBuilder";
 import { useChingEditor } from "../../utils/ching/editorBridge";
 import { useChingBus, clearChingHistory, setChingUnderstanding } from "../../utils/ching/chingBus";
+import { themeColors } from "../../themes";
 
 // The AI Trip Assistant: Ching's own workspace. Same design as before (world
 // map card, greeting, waveform + mic, message box, destination card), now live:
@@ -33,8 +34,8 @@ import { useChingBus, clearChingHistory, setChingUnderstanding } from "../../uti
 // real Trip Builder underneath, filling in as the agent speaks.
 const world = worldRaw;
 
-const LIME = "#e7f63c";
-const INK = "#181c22";
+const LIME = themeColors.accent;
+const INK = themeColors.brand;
 
 // The builder's tabs, in the order a trip is built.
 const TABS = [
@@ -70,8 +71,8 @@ const ToolIcon = ({ icon, active, label, onClick }) => (
     aria-label={label}
     className={`grid place-items-center w-11 h-11 rounded-2xl border transition-colors ${
       active
-        ? "border-[#181c22] text-[#181c22] bg-white shadow-sm"
-        : "border-[#e6e6e6] text-[#181c22]/50 hover:text-[#181c22] hover:border-[#d0d0d0] bg-white"
+        ? "border-brand text-ink bg-white shadow-sm"
+        : "border-[#e6e6e6] text-ink/50 hover:text-ink hover:border-[#d0d0d0] bg-white"
     }`}
   >
     {React.createElement(icon, { className: "w-[18px] h-[18px]", strokeWidth: 1.8 })}
@@ -107,7 +108,7 @@ const Waveform = ({ listening, interim }) => {
           />
         ))}
       </div>
-      <div className="absolute left-1/2 -translate-x-1/2 max-w-[90%] px-4 py-1.5 rounded-full bg-white/90 backdrop-blur border border-black/5 text-xs font-medium text-[#181c22] shadow-sm truncate">
+      <div className="absolute left-1/2 -translate-x-1/2 max-w-[90%] px-4 py-1.5 rounded-full bg-white/90 backdrop-blur border border-black/5 text-xs font-medium text-ink shadow-sm truncate">
         {chip}
       </div>
     </div>
@@ -185,14 +186,14 @@ const Understanding = ({ understanding, draft, listening, interim, onExample }) 
   if (empty && !listening) {
     return (
       <div className="rounded-[18px] bg-[#f7f7f8] border border-black/5 p-3">
-        <div className="text-[11px] font-semibold text-[#181c22]/50 mb-2">Try saying</div>
+        <div className="text-[11px] font-semibold text-ink/50 mb-2">Try saying</div>
         <div className="flex flex-wrap gap-1.5">
           {EXAMPLES.map((e) => (
             <button
               key={e}
               type="button"
               onClick={() => onExample(e)}
-              className="text-left text-[12px] leading-snug px-3 py-1.5 rounded-full bg-white border border-black/10 hover:border-[#181c22] transition-colors"
+              className="text-left text-[12px] leading-snug px-3 py-1.5 rounded-full bg-white border border-black/10 hover:border-brand transition-colors"
             >
               {e}
             </button>
@@ -204,21 +205,21 @@ const Understanding = ({ understanding, draft, listening, interim, onExample }) 
   return (
     <div className="rounded-[18px] bg-[#f7f7f8] border border-black/5 p-3 space-y-3 max-h-[300px] overflow-y-auto" aria-live="polite">
       {listening && (
-        <div className="flex items-center gap-2 text-[12px] text-[#181c22]/70">
+        <div className="flex items-center gap-2 text-[12px] text-ink/70">
           <span className="block w-2 h-2 rounded-full animate-pulse" style={{ background: LIME, boxShadow: `0 0 0 3px ${LIME}55` }} />
           <span className="truncate">{interim || "Listening…"}</span>
         </div>
       )}
       {heard.length > 0 && (
-        <Section icon={Check} title={u.phase === "done" ? "Done" : "Picking up"} tone="text-[#181c22]">
+        <Section icon={Check} title={u.phase === "done" ? "Done" : "Picking up"} tone="text-ink">
           {heard.map((line, i) => (
             <li key={i} className="flex items-start gap-2 text-[12.5px] leading-snug">
-              <span className="mt-[5px] block w-1.5 h-1.5 rounded-full bg-[#181c22] shrink-0" />
+              <span className="mt-[5px] block w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
               <span className="min-w-0">
                 {line}
                 <span
                   className={`ml-1.5 align-middle inline-block px-1.5 py-[1px] rounded-full text-[9.5px] font-bold uppercase tracking-wide ${
-                    pickedByChing(line) ? "bg-[#e7f63c] text-[#181c22]" : "bg-white border border-black/10 text-[#181c22]/50"
+                    pickedByChing(line) ? "bg-accent text-ink" : "bg-white border border-black/10 text-ink/50"
                   }`}
                   title={pickedByChing(line) ? "Nobody said this — Ching chose it. Change it if it's not right." : "From what you said"}
                 >
@@ -232,7 +233,7 @@ const Understanding = ({ understanding, draft, listening, interim, onExample }) 
       {questions.length > 0 && (
         <Section icon={HelpCircle} title="Needs you" tone="text-amber-700">
           {questions.map((q, i) => (
-            <li key={i} className="text-[12.5px] leading-snug text-[#181c22] bg-amber-50 border border-amber-200/70 rounded-xl px-2.5 py-1.5">
+            <li key={i} className="text-[12.5px] leading-snug text-ink bg-amber-50 border border-amber-200/70 rounded-xl px-2.5 py-1.5">
               {q}
             </li>
           ))}
@@ -241,18 +242,18 @@ const Understanding = ({ understanding, draft, listening, interim, onExample }) 
       {missed.length > 0 && (
         <Section icon={EarOff} title="Didn't catch" tone="text-rose-700">
           {missed.map((m, i) => (
-            <li key={i} className="text-[12.5px] leading-snug text-[#181c22]/80">
-              “{m}” <span className="text-[#181c22]/45">— say it another way, e.g. “make Gulmarg 2 nights”</span>
+            <li key={i} className="text-[12.5px] leading-snug text-ink/80">
+              “{m}” <span className="text-ink/45">— say it another way, e.g. “make Gulmarg 2 nights”</span>
             </li>
           ))}
         </Section>
       )}
       {pending.length > 0 && (
-        <Section icon={CircleDashed} title="Still missing" tone="text-[#181c22]/50">
+        <Section icon={CircleDashed} title="Still missing" tone="text-ink/50">
           {pending.map((p) => (
-            <li key={p.key} className="text-[12.5px] leading-snug text-[#181c22]/75">
+            <li key={p.key} className="text-[12.5px] leading-snug text-ink/75">
               {p.label}
-              {SAY[p.key] && <span className="text-[#181c22]/45"> — say “{SAY[p.key]}”</span>}
+              {SAY[p.key] && <span className="text-ink/45"> — say “{SAY[p.key]}”</span>}
             </li>
           ))}
         </Section>
@@ -363,10 +364,10 @@ const AIAssistant = () => {
       title={ti.tripTitle || "AI Trip Assistant"}
       nav={
         <>
-          <button type="button" onClick={newChat} className="flex items-center gap-2 text-sm font-medium text-[#181c22] hover:opacity-70 transition-opacity">
+          <button type="button" onClick={newChat} className="flex items-center gap-2 text-sm font-medium text-ink hover:opacity-70 transition-opacity">
             <Plus className="w-4 h-4" /> New Trip
           </button>
-          <span className="flex items-center gap-2 text-sm font-medium text-[#181c22]/50">
+          <span className="flex items-center gap-2 text-sm font-medium text-ink/50">
             <Clock className="w-4 h-4" /> {bus.history.length} messages
           </span>
         </>
@@ -380,13 +381,13 @@ const AIAssistant = () => {
               {TABS.map((t) => (
                 <ToolIcon key={t.tab} icon={t.icon} label={t.tab} active={shownTab === t.tab} onClick={() => openTab(t.tab)} />
               ))}
-              <span className="ml-auto text-[11px] font-medium text-[#181c22]/45 hidden sm:block">Conversation</span>
+              <span className="ml-auto text-[11px] font-medium text-ink/45 hidden sm:block">Conversation</span>
             </div>
 
             {/* thread */}
             <div ref={threadRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
               <div className="flex items-start gap-3">
-                <span className="grid place-items-center w-9 h-9 rounded-full bg-[#181c22] text-[#e7f63c] shrink-0" style={{ boxShadow: `0 0 0 3px ${LIME}` }}>
+                <span className="grid place-items-center w-9 h-9 rounded-full bg-brand text-accent shrink-0" style={{ boxShadow: `0 0 0 3px ${LIME}` }}>
                   <Sparkles className="w-4 h-4" />
                 </span>
                 <p className="text-[15px] leading-snug pt-1.5">
@@ -396,14 +397,14 @@ const AIAssistant = () => {
               {bus.history.map((h, i) =>
                 h.role === "you" ? (
                   <div key={i} className="flex justify-end">
-                    <p className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-br-md bg-[#181c22] text-white text-[13.5px] leading-snug">{h.text}</p>
+                    <p className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-br-md bg-brand text-white text-[13.5px] leading-snug">{h.text}</p>
                   </div>
                 ) : (
                   <div key={i} className="flex items-start gap-3">
-                    <span className="grid place-items-center w-7 h-7 rounded-full bg-[#181c22] text-[#e7f63c] shrink-0">
+                    <span className="grid place-items-center w-7 h-7 rounded-full bg-brand text-accent shrink-0">
                       <Sparkles className="w-3.5 h-3.5" />
                     </span>
-                    <p className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-tl-md bg-[#f3f3f4] text-[#181c22] text-[13.5px] leading-snug">{h.text}</p>
+                    <p className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-tl-md bg-[#f3f3f4] text-ink text-[13.5px] leading-snug">{h.text}</p>
                   </div>
                 ),
               )}
@@ -423,29 +424,29 @@ const AIAssistant = () => {
                   <Waveform listening interim={bus.interim} />
                 </div>
               )}
-              <form onSubmit={send} className="flex items-center gap-2 bg-white rounded-full border border-black/10 pl-2 pr-2 py-2 shadow-sm focus-within:border-[#181c22] transition-colors">
+              <form onSubmit={send} className="flex items-center gap-2 bg-white rounded-full border border-black/10 pl-2 pr-2 py-2 shadow-sm focus-within:border-brand transition-colors">
                 <button
                   type="button"
                   onClick={talk}
                   aria-label="Talk to Ching"
                   className={`relative grid place-items-center w-10 h-10 rounded-full shrink-0 transition-colors ${
-                    bus.listening ? "bg-[#e7f63c] text-[#181c22]" : "bg-[#f3f3f4] text-[#181c22] hover:bg-[#e7f63c]"
+                    bus.listening ? "bg-accent text-ink" : "bg-[#f3f3f4] text-ink hover:bg-accent"
                   }`}
                 >
-                  {bus.listening && <span className="absolute inset-0 rounded-full bg-[#e7f63c] opacity-40 animate-ping" />}
+                  {bus.listening && <span className="absolute inset-0 rounded-full bg-accent opacity-40 animate-ping" />}
                   <Mic className="relative w-[18px] h-[18px]" />
                 </button>
                 <input
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  className="flex-1 min-w-0 bg-transparent outline-none text-sm text-[#181c22] placeholder:text-[#181c22]/40"
+                  className="flex-1 min-w-0 bg-transparent outline-none text-sm text-ink placeholder:text-ink/40"
                   placeholder="Type or tap the mic — e.g. family of four for Atif Aslam from 10 Nov…"
                 />
                 <button
                   type="submit"
                   disabled={!message.trim()}
                   aria-label="Send to Ching"
-                  className="grid place-items-center w-10 h-10 rounded-full bg-[#181c22] text-white shrink-0 hover:bg-black transition-colors disabled:opacity-40"
+                  className="grid place-items-center w-10 h-10 rounded-full bg-brand text-white shrink-0 hover:bg-black transition-colors disabled:opacity-40"
                 >
                   <SendHorizontal className="w-4 h-4" />
                 </button>
@@ -462,7 +463,7 @@ const AIAssistant = () => {
                   type="button"
                   onClick={() => setPreview(t)}
                   className={`px-3 py-1.5 rounded-full text-[12.5px] font-medium transition-colors ${
-                    preview === t ? "bg-[#181c22] text-white" : "text-[#181c22]/55 hover:text-[#181c22]"
+                    preview === t ? "bg-brand text-white" : "text-ink/55 hover:text-ink"
                   }`}
                 >
                   {t}
@@ -485,7 +486,7 @@ const AIAssistant = () => {
                       </>
                     )}
                   </h2>
-                  <p className="text-[13px] leading-relaxed text-[#181c22]/70 mt-3">
+                  <p className="text-[13px] leading-relaxed text-ink/70 mt-3">
                     {ti.clientName
                       ? `${ti.adults || 0} adult${Number(ti.adults) === 1 ? "" : "s"}${Number(ti.kids5to12) ? ` + ${ti.kids5to12} child${Number(ti.kids5to12) === 1 ? "" : "ren"}` : ""}${Number(ti.kidsUpto5) ? ` + ${ti.kidsUpto5} under 5` : ""}${ti.startDate && nights ? ` · ${shortDate(ti.startDate)}, ${nights}N/${nights + 1}D` : ""}`
                       : "Nothing yet — say or type the trip on the left."}
@@ -498,11 +499,11 @@ const AIAssistant = () => {
                       <div className="absolute inset-x-0 bottom-2 flex flex-wrap items-center justify-center gap-1.5 px-2">
                         {route.map((r, i) => (
                           <React.Fragment key={`${r.city}${i}`}>
-                            {i > 0 && <span className="w-5 border-t border-dashed border-[#181c22]" />}
+                            {i > 0 && <span className="w-5 border-t border-dashed border-brand" />}
                             <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur border border-black/5 text-[11px] font-semibold shadow-sm">
                               <span className="block w-2.5 h-2.5 rounded-full" style={{ background: i === 0 ? LIME : INK }} />
                               {r.city}
-                              {r.nights > 0 && <span className="text-[#181c22]/50">{r.nights}N</span>}
+                              {r.nights > 0 && <span className="text-ink/50">{r.nights}N</span>}
                             </span>
                           </React.Fragment>
                         ))}
@@ -521,14 +522,14 @@ const AIAssistant = () => {
                           <button type="button" onClick={() => st.key !== "PDF" && openTab(st.key)} className="w-full flex items-center gap-3 text-left">
                             <span
                               className={`grid place-items-center w-7 h-7 rounded-full shrink-0 text-[11px] font-bold ${
-                                st.done ? "bg-[#181c22] text-[#e7f63c]" : active ? "bg-[#e7f63c] text-[#181c22]" : "bg-white text-[#181c22]/50 border border-black/10"
+                                st.done ? "bg-brand text-accent" : active ? "bg-accent text-ink" : "bg-white text-ink/50 border border-black/10"
                               }`}
                             >
                               {active && !st.done ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : st.done ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : st.key === "PDF" ? <FileText className="w-3.5 h-3.5" /> : i + 1}
                             </span>
                             <span className="min-w-0">
                               <span className="block text-[13px] font-semibold">{st.label}</span>
-                              <span className="block text-[11px] text-[#181c22]/55 truncate">{st.detail}</span>
+                              <span className="block text-[11px] text-ink/55 truncate">{st.detail}</span>
                             </span>
                           </button>
                         </li>
@@ -541,7 +542,7 @@ const AIAssistant = () => {
                     </span>
                     <span className="ml-auto text-lg font-semibold tracking-tight">{progress.pct}%</span>
                     {draftKey || tripId ? (
-                      <button type="button" onClick={newChat} title="Start a new trip" className="grid place-items-center w-7 h-7 rounded-lg bg-white border border-black/10 text-[#181c22]/50">
+                      <button type="button" onClick={newChat} title="Start a new trip" className="grid place-items-center w-7 h-7 rounded-lg bg-white border border-black/10 text-ink/50">
                         <X className="w-3.5 h-3.5" />
                       </button>
                     ) : null}
@@ -560,9 +561,9 @@ const AIAssistant = () => {
                         <li key={d.id || i} className="rounded-[16px] border border-black/5 bg-[#f7f7f8] px-4 py-3">
                           <div className="flex items-baseline gap-2">
                             <span className="text-[13.5px] font-semibold">{d.title || `Day ${i + 1}`}</span>
-                            <span className="ml-auto text-[11px] text-[#181c22]/45 shrink-0">{date}</span>
+                            <span className="ml-auto text-[11px] text-ink/45 shrink-0">{date}</span>
                           </div>
-                          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-[#181c22]/60">
+                          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-ink/60">
                             {(d.location || d.destination) && (
                               <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{d.location || d.destination}</span>
                             )}
@@ -571,29 +572,29 @@ const AIAssistant = () => {
                             )}
                           </div>
                           {list(d.activities).length > 0 && (
-                            <p className="mt-1 text-[11.5px] text-[#181c22]/50 line-clamp-2">{list(d.activities).join(" · ")}</p>
+                            <p className="mt-1 text-[11.5px] text-ink/50 line-clamp-2">{list(d.activities).join(" · ")}</p>
                           )}
                         </li>
                       );
                     })}
                   </ol>
                 ) : (
-                  <p className="text-[13px] text-[#181c22]/45">The day-wise plan appears here as soon as Ching knows the nights and places.</p>
+                  <p className="text-[13px] text-ink/45">The day-wise plan appears here as soon as Ching knows the nights and places.</p>
                 ))}
 
               {preview === "Hotels & cabs" && (
                 <div className="space-y-5">
                   <div>
-                    <h3 className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#181c22]/50 mb-2">Hotels</h3>
+                    <h3 className="text-[12px] font-bold uppercase tracking-[0.12em] text-ink/50 mb-2">Hotels</h3>
                     {stays.length ? (
                       <ul className="space-y-2">
                         {stays.map((a) => (
                           <li key={a.id} className="rounded-[16px] border border-black/5 bg-[#f7f7f8] px-4 py-3">
                             <div className="flex items-baseline gap-2">
                               <span className="text-[13.5px] font-semibold">{a.name || "Hotel to pick"}</span>
-                              <span className="ml-auto text-[11px] text-[#181c22]/45 shrink-0">{nightsOf(a)}N</span>
+                              <span className="ml-auto text-[11px] text-ink/45 shrink-0">{nightsOf(a)}N</span>
                             </div>
-                            <div className="mt-0.5 text-[11.5px] text-[#181c22]/60">
+                            <div className="mt-0.5 text-[11.5px] text-ink/60">
                               {a.city} · {a.category || "—"} · {a.roomType || "room"} · {shortDate(a.checkIn)} → {shortDate(a.checkOut)}
                               {Number(a.pricePerRoom) > 0 ? ` · ${money(a.pricePerRoom)}/night` : ""}
                             </div>
@@ -601,23 +602,23 @@ const AIAssistant = () => {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-[13px] text-[#181c22]/45">No hotels yet.</p>
+                      <p className="text-[13px] text-ink/45">No hotels yet.</p>
                     )}
                   </div>
                   <div>
-                    <h3 className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#181c22]/50 mb-2">Cabs</h3>
+                    <h3 className="text-[12px] font-bold uppercase tracking-[0.12em] text-ink/50 mb-2">Cabs</h3>
                     {cabs.length ? (
                       <ul className="space-y-1.5">
                         {cabs.map((c) => (
                           <li key={c.id} className="flex items-baseline gap-2 text-[12.5px]">
-                            <span className="text-[#181c22]/45 w-[70px] shrink-0">{shortDate(c.date)}</span>
+                            <span className="text-ink/45 w-[70px] shrink-0">{shortDate(c.date)}</span>
                             <span className="font-medium">{c.vehicleType || "Cab"}</span>
-                            <span className="text-[#181c22]/60 truncate">{c.route || c.tripType}</span>
+                            <span className="text-ink/60 truncate">{c.route || c.tripType}</span>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-[13px] text-[#181c22]/45">No cabs yet.</p>
+                      <p className="text-[13px] text-ink/45">No cabs yet.</p>
                     )}
                   </div>
                 </div>
@@ -631,7 +632,7 @@ const AIAssistant = () => {
           <div className="flex items-center gap-2 mb-3">
             <span className="block w-2 h-2 rounded-full" style={{ background: LIME, boxShadow: `0 0 0 4px ${LIME}44` }} />
             <h3 className="text-lg font-medium">Live trip builder</h3>
-            <span className="text-[12px] text-[#181c22]/50">fills in as you speak — check it, then Confirm &amp; Build in Ching</span>
+            <span className="text-[12px] text-ink/50">fills in as you speak — check it, then Confirm &amp; Build in Ching</span>
           </div>
           <div className="h-[86vh] min-h-[620px]">
             <TripBuilder key={tripId || draftKey || "assistant"} embedded embeddedTripId={tripId} />

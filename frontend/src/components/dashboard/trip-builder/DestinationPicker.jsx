@@ -77,7 +77,7 @@ const DestinationPicker = ({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-2 bg-[#f3f3f4] border border-black/10 rounded-lg py-2 px-3 text-[13px] font-bold text-[#3a4250] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/10 transition-all cursor-pointer hover:border-black/15 text-left"
+        className="w-full flex items-center justify-between gap-2 bg-[#f3f3f4] border border-black/10 rounded-lg py-2 px-3 text-[13px] font-bold text-[#3a4250] focus:outline-none focus:ring-2 focus:ring-accent/10 transition-all cursor-pointer hover:border-black/15 text-left"
       >
         <span className={selected ? "" : "text-[#9aa3b2] font-medium"}>
           {selected ? selected.name : placeholder}
@@ -96,7 +96,7 @@ const DestinationPicker = ({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search destinations or state…"
-                className="w-full bg-[#f3f3f4] rounded-lg py-1.5 pl-8 pr-3 text-xs font-semibold text-[#181c22] focus:outline-none"
+                className="w-full bg-[#f3f3f4] rounded-lg py-1.5 pl-8 pr-3 text-xs font-semibold text-ink focus:outline-none"
               />
             </div>
           </div>
@@ -104,7 +104,7 @@ const DestinationPicker = ({
             {destinations.length === 0 && (
               <div className="px-3 py-3 text-[11px] text-[#9aa3b2]">
                 No destinations loaded.{" "}
-                <a href="/destinations" className="font-bold text-[#181c22] underline">
+                <a href="/destinations" className="font-bold text-ink underline">
                   Add destinations
                 </a>{" "}
                 or refresh the page.
@@ -127,7 +127,7 @@ const DestinationPicker = ({
                     onClick={() => handlePick(dest)}
                     className={`w-full text-left px-3 py-1.5 text-[13px] font-semibold transition-colors ${
                       String(dest.id) === String(value)
-                        ? "bg-[#181c22] text-white"
+                        ? "bg-brand text-white"
                         : "text-[#3a4250] hover:bg-black/[0.04]"
                     }`}
                   >

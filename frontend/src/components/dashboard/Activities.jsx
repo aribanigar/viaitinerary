@@ -161,15 +161,15 @@ const Activities = () => {
   }, [activities]);
 
   const stats = [
-    { label: "Total Activities", value: activities.length, change: "In your catalog", icon: Ticket, bgColor: "bg-[#e7f63c]", iconColor: "text-[#181c22]", onClick: () => setFilters(EMPTY_FILTERS) },
-    { label: "Available Now", value: availableCount, change: "Ready to book", icon: CheckCircle2, bgColor: "bg-[#181c22]", iconColor: "text-white", onClick: () => setFilters({ ...EMPTY_FILTERS, availability: "available" }) },
-    { label: "Unavailable", value: activities.length - availableCount, change: "Currently on hold", icon: XCircle, bgColor: "bg-[#181c22]", iconColor: "text-white", onClick: () => setFilters({ ...EMPTY_FILTERS, availability: "unavailable" }) },
+    { label: "Total Activities", value: activities.length, change: "In your catalog", icon: Ticket, bgColor: "bg-accent", iconColor: "text-ink", onClick: () => setFilters(EMPTY_FILTERS) },
+    { label: "Available Now", value: availableCount, change: "Ready to book", icon: CheckCircle2, bgColor: "bg-brand", iconColor: "text-white", onClick: () => setFilters({ ...EMPTY_FILTERS, availability: "available" }) },
+    { label: "Unavailable", value: activities.length - availableCount, change: "Currently on hold", icon: XCircle, bgColor: "bg-brand", iconColor: "text-white", onClick: () => setFilters({ ...EMPTY_FILTERS, availability: "unavailable" }) },
     {
       label: "Destinations Covered",
       value: destinationOptions.length,
       change: avgPrice != null ? `Avg. from ₹${avgPrice.toLocaleString("en-IN")}` : "Add pricing to see averages",
       icon: MapIcon,
-      bgColor: "bg-[#181c22]",
+      bgColor: "bg-brand",
       iconColor: "text-white",
       onClick: null,
     },
@@ -202,7 +202,7 @@ const Activities = () => {
       <PageHeader title="Activities" description="Manage your activities, experiences and their rates." compact={panelOpen}>
         <button
           onClick={() => navigate("/activities/add")}
-          className={`flex items-center gap-2 bg-[#e7f63c] text-[#181c22] rounded-2xl font-bold shadow-lg shadow-[#e7f63c]/40 hover:bg-[#d4e42e] transition-all text-sm w-fit ${
+          className={`flex items-center gap-2 bg-accent text-ink rounded-2xl font-bold shadow-lg shadow-accent/40 hover:bg-accent-hover transition-all text-sm w-fit ${
             panelOpen ? "px-4 py-2" : "px-6 py-3"
           }`}
         >
@@ -227,8 +227,8 @@ const Activities = () => {
                 <span className={`grid place-items-center rounded-xl shrink-0 transition-all duration-300 ${stat.bgColor} ${panelOpen ? "w-6 h-6" : "w-8 h-8"}`}>
                   {React.createElement(stat.icon, { className: `${panelOpen ? "w-3 h-3" : "w-4 h-4"} ${stat.iconColor}` })}
                 </span>
-                {!panelOpen && <span className="text-xs font-bold text-[#181c22] whitespace-nowrap">{stat.label}</span>}
-                <span className={`grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#f3f3f4] font-black text-[#181c22] ${panelOpen ? "text-[10px]" : "text-[11px]"}`}>
+                {!panelOpen && <span className="text-xs font-bold text-ink whitespace-nowrap">{stat.label}</span>}
+                <span className={`grid place-items-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#f3f3f4] font-black text-ink ${panelOpen ? "text-[10px]" : "text-[11px]"}`}>
                   {stat.value}
                 </span>
               </Tag>
@@ -240,7 +240,7 @@ const Activities = () => {
       <div className="flex flex-col lg:flex-row gap-6 items-start">
         <div className="min-w-0 w-full lg:flex-1 bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-black/5 flex flex-wrap gap-2 justify-between items-center bg-[#f3f3f4]/60">
-            <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest">All Activities</h3>
+            <h3 className="text-sm font-bold text-ink uppercase tracking-widest">All Activities</h3>
             <span className="text-[10px] font-bold text-[#8a93a2] uppercase tracking-widest">
               {filtered.length} of {activities.length}
             </span>
@@ -252,7 +252,7 @@ const Activities = () => {
                 <input
                   type="text"
                   placeholder="Search by name, city or supplier..."
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
+                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-slate-300 placeholder:font-medium"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -260,13 +260,13 @@ const Activities = () => {
               <button
                 onClick={() => setFiltersOpen((v) => !v)}
                 className={`relative flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold transition-colors shrink-0 ${
-                  filtersOpen || activeFilterCount ? "bg-[#181c22] text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+                  filtersOpen || activeFilterCount ? "bg-brand text-white" : "bg-slate-50 text-slate-600 hover:bg-slate-100"
                 }`}
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 Filters
                 {activeFilterCount > 0 && (
-                  <span className="grid place-items-center w-5 h-5 rounded-full bg-[#e7f63c] text-[#181c22] text-[10px] font-black">
+                  <span className="grid place-items-center w-5 h-5 rounded-full bg-accent text-ink text-[10px] font-black">
                     {activeFilterCount}
                   </span>
                 )}
@@ -368,7 +368,7 @@ const Activities = () => {
                   </td>
                   <td>
                     {a.category ? (
-                      <span className="px-2.5 py-1 rounded-full bg-[#f3f3f4] text-[#181c22] text-[10px] font-bold">{CATEGORY_LABEL[a.category] || a.category}</span>
+                      <span className="px-2.5 py-1 rounded-full bg-[#f3f3f4] text-ink text-[10px] font-bold">{CATEGORY_LABEL[a.category] || a.category}</span>
                     ) : (
                       <span className="text-slate-300 text-xs">—</span>
                     )}

@@ -36,7 +36,7 @@ const ItineraryTab = ({
         >
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1 border-b border-transparent focus-within:border-black/5 transition-colors mr-4">
-              <div className="w-8 h-8 bg-white shadow-sm border border-black/10 rounded-md flex items-center justify-center text-[#181c22] font-bold text-xs shrink-0">
+              <div className="w-8 h-8 bg-white shadow-sm border border-black/10 rounded-md flex items-center justify-center text-ink font-bold text-xs shrink-0">
                 {day.day}
               </div>
               <DestinationPicker
@@ -76,7 +76,7 @@ const ItineraryTab = ({
 
           <div className="px-6 pb-6 space-y-3">
             <div>
-              <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
+              <label className="block text-[11px] font-semibold text-ink/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
                 Route (e.g. City A to City B)
               </label>
               <input
@@ -91,12 +91,12 @@ const ItineraryTab = ({
                     setItinerary(newItinerary);
                   }
                 }}
-                className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
+                className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-semibold text-[#181c22]/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
+              <label className="block text-[11px] font-semibold text-ink/45 uppercase tracking-[0.12em] mb-1.5 ml-1">
                 Stay Location (e.g. Overnight stay in the city)
               </label>
               <input
@@ -111,11 +111,11 @@ const ItineraryTab = ({
                     setItinerary(newItinerary);
                   }
                 }}
-                className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-[#181c22] focus:outline-none focus:ring-2 focus:ring-[#e7f63c]/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
+                className="w-full bg-white border border-black/10 rounded-xl py-2.5 px-4 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-[#c9ced6] shadow-sm"
               />
             </div>
 
-            <div className="bg-white rounded-lg p-4 min-h-24 border border-black/10 transition-all duration-300 shadow-sm group/text focus-within:ring-2 focus-within:ring-[#e7f63c]/20 focus-within:border-[#e7f63c]/30">
+            <div className="bg-white rounded-lg p-4 min-h-24 border border-black/10 transition-all duration-300 shadow-sm group/text focus-within:ring-2 focus-within:ring-accent/20 focus-within:border-accent/30">
               <div className="flex justify-between items-center mb-2">
                 <label className="block text-[10px] font-semibold text-[#9aa3b2] uppercase tracking-widest">
                   Activities (one per line)

@@ -38,6 +38,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { themeColors } from "../../themes";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -68,17 +69,17 @@ const planLabels = {
 
 // ── Modern Chart Colors ──────────────────────────────────────────────────────
 const CHART_COLORS = {
-  blue: "#e7f63c",
+  blue: themeColors.accent,
   purple: "#a855f7",
   orange: "#f97316",
   emerald: "#10b981",
-  indigo: "#181c22",
+  indigo: themeColors.brand,
   pink: "#ec4899",
   yellow: "#eab308",
   teal: "#14b8a6",
 };
 
-const PLAN_COLORS = ["#181c22", "#0ea5e9", "#8b5cf6", "#10b981"];
+const PLAN_COLORS = [themeColors.brand, "#0ea5e9", "#8b5cf6", "#10b981"];
 
 // ── Custom Tooltip Components ────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }) => {
@@ -309,7 +310,7 @@ const SuperAdminDashboard = () => {
                   </h2>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#e7f63c]" />
+                      <span className="w-2 h-2 rounded-full bg-accent" />
                       <span className="text-[10px] font-bold text-slate-500 uppercase">
                         Agencies
                       </span>
@@ -335,12 +336,12 @@ const SuperAdminDashboard = () => {
                       >
                         <stop
                           offset="5%"
-                          stopColor="#181c22"
+                          stopColor={themeColors.brand}
                           stopOpacity={0.1}
                         />
                         <stop
                           offset="95%"
-                          stopColor="#181c22"
+                          stopColor={themeColors.brand}
                           stopOpacity={0}
                         />
                       </linearGradient>
@@ -366,7 +367,7 @@ const SuperAdminDashboard = () => {
                     <Area
                       type="monotone"
                       dataKey="admins"
-                      stroke="#e7f63c"
+                      stroke={themeColors.accent}
                       strokeWidth={2}
                       fillOpacity={0}
                       name="Agencies"
@@ -374,7 +375,7 @@ const SuperAdminDashboard = () => {
                     <Area
                       type="monotone"
                       dataKey="trips"
-                      stroke="#181c22"
+                      stroke={themeColors.brand}
                       strokeWidth={2}
                       fill="url(#colorGrowth)"
                       name="Trips"
