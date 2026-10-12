@@ -26,6 +26,7 @@ import {
   deleteActivityBlackout,
 } from "../../api/activities";
 import { useAuth } from "../../context/AuthContext";
+import DateInput from "../common/DateInput";
 
 const CATEGORY_LABEL = {
   sightseeing: "Sightseeing",
@@ -260,8 +261,8 @@ const ActivityDetailsPanel = ({ activity, onClose }) => {
               <option value="blackout">Blackout (warn)</option>
               <option value="stop_sale">Stop Sale (block)</option>
             </select>
-            <input type="date" value={draft.start_date} onChange={(e) => setDraft((p) => ({ ...p, start_date: e.target.value }))} className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink" />
-            <input type="date" value={draft.end_date} onChange={(e) => setDraft((p) => ({ ...p, end_date: e.target.value }))} className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink" />
+            <DateInput value={draft.start_date} onChange={(e) => setDraft((p) => ({ ...p, start_date: e.target.value }))} wrapClassName="flex-1 min-w-0" className="w-full px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink" />
+            <DateInput value={draft.end_date} onChange={(e) => setDraft((p) => ({ ...p, end_date: e.target.value }))} wrapClassName="flex-1 min-w-0" className="w-full px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink" />
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -269,7 +270,7 @@ const ActivityDetailsPanel = ({ activity, onClose }) => {
               value={draft.note}
               onChange={(e) => setDraft((p) => ({ ...p, note: e.target.value }))}
               placeholder="Note (optional)"
-              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
+              wrapClassName="flex-1 min-w-0" className="w-full px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
             />
             <button
               onClick={addBlackout}

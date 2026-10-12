@@ -23,6 +23,7 @@ import {
   Plus,
   ArrowRight,
 } from "lucide-react";
+import DateInput from "../../components/common/DateInput";
 
 const MEAL_PLANS = [
   { value: "", label: "Any meal plan" },
@@ -554,8 +555,7 @@ const GenerateItinerary = () => {
                 <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1.5 px-1">
                   Start Date (optional)
                 </label>
-                <input
-                  type="date"
+                <DateInput
                   value={confirmForm.startDate}
                   onChange={(e) =>
                     setConfirmForm((prev) => ({ ...prev, startDate: e.target.value }))

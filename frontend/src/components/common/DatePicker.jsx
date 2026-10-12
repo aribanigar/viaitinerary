@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useRef } from "react";
 import ReactDatePicker from "react-datepicker";
 import { format } from "date-fns";
 import { Calendar } from "lucide-react";
 import "react-datepicker/dist/react-datepicker.css";
+import "./datepicker.css";
 
 const DatePicker = ({
   value,
@@ -17,6 +18,7 @@ const DatePicker = ({
   maxDate,
   ...props
 }) => {
+  const pickerRef = useRef(null);
   const normalizeDateFormat = (formatValue) => {
     if (!formatValue) return enableTime ? "dd-MM-yyyy HH:mm" : "dd-MM-yyyy";
 
@@ -180,74 +182,49 @@ const DatePicker = ({
 
             return classNames.join(" ");
           }}
+          ref={pickerRef}
           {...props}
-        />
+        >
+          <div className="trip-date-footer">
+            {reservedDateSet.size > 0 && (
+              <span className="trip-date-legend">
+                <i style={{ background: "#2563eb" }} /> Booked
+              </span>
+            )}
+            {blackoutDateSet.size > 0 && (
+              <span className="trip-date-legend">
+                <i style={{ background: "#f59e0b" }} /> Blackout
+              </span>
+            )}
+            {startDate && endDate && (
+              <span className="trip-date-legend">
+                <i style={{ background: "var(--color-accent, #b8f0c5)" }} /> Trip dates
+              </span>
+            )}
+            {(() => {
+              const today = new Date();
+              const floor = minDateValue && new Date(minDateValue.getFullYear(), minDateValue.getMonth(), minDateValue.getDate());
+              const ceil = maxDateValue && new Date(maxDateValue.getFullYear(), maxDateValue.getMonth(), maxDateValue.getDate(), 23, 59);
+              if ((floor && today < floor) || (ceil && today > ceil)) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleChange(today);
+                    pickerRef.current?.setOpen?.(false);
+                  }}
+                >
+                  Today
+                </button>
+              );
+            })()}
+          </div>
+        </ReactDatePicker>
         <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-400 z-0">
           <Calendar size={16} />
         </div>
       </div>
 
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .trip-date-popper {
-          z-index: 9999;
-        }
-
-        .trip-date-popper .react-datepicker {
-          border: 1px solid #e2e8f0;
-          border-radius: 12px;
-          font-family: inherit;
-          box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
-        }
-
-        .trip-date-popper .react-datepicker__header {
-          background: #f8fafc;
-          border-bottom: 1px solid #e2e8f0;
-          border-top-left-radius: 12px;
-          border-top-right-radius: 12px;
-        }
-
-        .trip-date-popper .react-datepicker__day--selected,
-        .trip-date-popper .react-datepicker__day--keyboard-selected {
-          background-color: #2563eb;
-          color: #fff;
-          border-radius: 999px;
-        }
-
-        .trip-date-popper .react-datepicker__day.trip-range-middle {
-          background: #dbeafe;
-          color: #1e3a8a;
-          border-radius: 0;
-        }
-
-        .trip-date-popper .react-datepicker__day.trip-range-edge {
-          background: #2563eb;
-          color: #fff;
-          border-radius: 999px;
-        }
-
-        .trip-date-popper .react-datepicker__day.trip-reserved-day {
-          background: #dbeafe;
-          color: #1d4ed8;
-          border-radius: 999px;
-          font-weight: 700;
-        }
-
-        .trip-date-popper .react-datepicker__day.trip-blackout-day {
-          background: #fef3c7;
-          color: #b45309;
-          border-radius: 999px;
-          font-weight: 700;
-        }
-
-        .trip-date-popper .react-datepicker__day--excluded {
-          text-decoration: line-through;
-          color: #cbd5e1;
-        }
-      `,
-        }}
-      />
     </div>
   );
 };

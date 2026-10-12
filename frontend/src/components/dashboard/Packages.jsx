@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { fetchPackages, deletePackage, usePackage } from "../../api/packages";
 import Loader from "../common/Loader";
+import DateInput from "../common/DateInput";
 
 const Packages = () => {
   const { token } = useAuth();
@@ -172,8 +173,7 @@ const Packages = () => {
                 onChange={(e) => setClient({ ...client, client_phone: e.target.value })}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
               />
-              <input
-                type="date"
+              <DateInput
                 value={client.start_date}
                 onChange={(e) => setClient({ ...client, start_date: e.target.value })}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"

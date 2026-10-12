@@ -26,6 +26,7 @@ import {
   updateBooking,
 } from "../../api/operations";
 import SupplierChip from "../operations/SupplierChip";
+import DateInput from "../common/DateInput";
 
 // Daily Operations (Phase 3): who arrives / leaves / checks in on a day, every
 // cab with its driver, bookings still waiting for the supplier to confirm,
@@ -254,12 +255,11 @@ export default function Operations() {
               {dayLabel(d, today)}
             </button>
           ))}
-          <input
-            type="date"
+          <DateInput
             value={date}
             onChange={(e) => e.target.value && setDate(e.target.value)}
-            className="shrink-0 px-3 py-2 rounded-full border border-black/10 text-sm bg-white"
-            aria-label="Pick a date"
+            wrapClassName="shrink-0 w-40"
+            className="w-full px-3 py-2 rounded-full border border-black/10 text-sm bg-white"
           />
         </div>
 

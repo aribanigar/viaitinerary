@@ -30,6 +30,7 @@ import {
   deleteVehicleBlackout,
 } from "../../api/vehicles";
 import { useAuth } from "../../context/AuthContext";
+import DateInput from "../common/DateInput";
 
 const Fact = ({ icon: Icon, label, value }) => (
   <div className="bg-[#f7f7f8] rounded-2xl p-4">
@@ -333,17 +334,15 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
               <option value="blackout">Blackout (warn)</option>
               <option value="stop_sale">Stop Sale (block)</option>
             </select>
-            <input
-              type="date"
+            <DateInput
               value={blackoutDraft.start_date}
               onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, start_date: e.target.value }))}
-              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
+              wrapClassName="flex-1 min-w-0" className="w-full px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
             />
-            <input
-              type="date"
+            <DateInput
               value={blackoutDraft.end_date}
               onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, end_date: e.target.value }))}
-              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
+              wrapClassName="flex-1 min-w-0" className="w-full px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -352,7 +351,7 @@ const VehicleDetailsPanel = ({ vehicle, onClose }) => {
               value={blackoutDraft.note}
               onChange={(e) => setBlackoutDraft((prev) => ({ ...prev, note: e.target.value }))}
               placeholder="Note (optional, e.g. Maintenance)"
-              className="flex-1 px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
+              wrapClassName="flex-1 min-w-0" className="w-full px-2 py-1.5 bg-white rounded-lg text-[11px] font-bold text-ink"
             />
             <button
               onClick={addBlackout}

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
+import DateInput from "../common/DateInput";
 
 const SuperAdminPlans = () => {
   const { token } = useAuth();
@@ -943,8 +944,7 @@ const SuperAdminPlans = () => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-blue-600">
                       Offer Validity (Starts at)
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-accent/5 focus:border-accent transition-all text-sm font-bold text-slate-900"
                       value={formData.offer_starts_at}
                       onChange={(e) =>
@@ -959,8 +959,7 @@ const SuperAdminPlans = () => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-blue-600">
                       Offer Validity (Ends at)
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       className="w-full px-4 py-3 bg-white border border-blue-100 rounded-xl focus:outline-none focus:ring-4 focus:ring-accent/5 focus:border-accent transition-all text-sm font-bold text-slate-900"
                       value={formData.offer_expires_at}
                       onChange={(e) =>

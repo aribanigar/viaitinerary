@@ -21,6 +21,7 @@ import DashboardLayout from "../../components/dashboard/DashboardLayout";
 import { useAuth } from "../../context/AuthContext";
 import { fetchActivity, createActivity, updateActivity } from "../../api/activities";
 import { fetchDestinations } from "../../api/destinations";
+import DateInput from "../../components/common/DateInput";
 
 // Add / edit an activity — laid out like the Accommodation form: details,
 // location, supplier & availability, seasonal rates (B2B cost + selling price
@@ -403,12 +404,12 @@ const ActivityForm = () => {
                     </div>
                     <div>
                       <Label>Valid From</Label>
-                      <input type="date" value={s.valid_from || ""} onChange={(e) => updateSection(i, "valid_from", e.target.value)} className={inputCls} />
+                      <DateInput value={s.valid_from || ""} onChange={(e) => updateSection(i, "valid_from", e.target.value)} className={inputCls} />
                     </div>
                     <div className="flex items-end gap-2">
                       <div className="flex-1">
                         <Label>Valid To</Label>
-                        <input type="date" value={s.valid_to || ""} onChange={(e) => updateSection(i, "valid_to", e.target.value)} className={inputCls} />
+                        <DateInput value={s.valid_to || ""} onChange={(e) => updateSection(i, "valid_to", e.target.value)} className={inputCls} />
                       </div>
                       <button type="button" onClick={() => removeSection(i)} title="Remove" className="p-3 text-slate-300 hover:text-red-500">
                         <Trash2 className="w-4 h-4" />

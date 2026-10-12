@@ -1,0 +1,248 @@
+/* Calendar popup for the shared DatePicker (react-datepicker) — one look
+   everywhere: rounded day tiles, brand-coloured selection, a soft range,
+   a ring on today, and dots for days already booked / blacked out. */
+
+.trip-date-popper {
+  z-index: 9999;
+}
+
+.trip-date-popper .react-datepicker {
+  font-family: inherit;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  border-radius: 18px;
+  padding: 10px 10px 8px;
+  background: #fff;
+  box-shadow: 0 18px 40px -12px rgba(15, 23, 42, 0.22), 0 2px 6px rgba(15, 23, 42, 0.05);
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.trip-date-popper .react-datepicker__triangle {
+  display: none;
+}
+
+.trip-date-popper .react-datepicker__header {
+  background: transparent;
+  border-bottom: none;
+  padding: 6px 0 2px;
+}
+
+.trip-date-popper .react-datepicker__current-month,
+.trip-date-popper .react-datepicker-time__header {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--color-ink, #191c1d);
+  letter-spacing: 0.01em;
+  margin-bottom: 8px;
+}
+
+.trip-date-popper .react-datepicker__day-names {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.trip-date-popper .react-datepicker__day-name {
+  width: 36px;
+  margin: 2px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9aa3b2;
+}
+
+/* Month arrows: round buttons in the header corners. */
+.trip-date-popper .react-datepicker__navigation {
+  top: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+.trip-date-popper .react-datepicker__navigation--previous {
+  left: 12px;
+}
+.trip-date-popper .react-datepicker__navigation--next {
+  right: 12px;
+}
+.trip-date-popper .react-datepicker__navigation:hover {
+  background: #f3f3f4;
+}
+.trip-date-popper .react-datepicker__navigation-icon::before {
+  border-color: var(--color-ink, #191c1d);
+  border-width: 2px 2px 0 0;
+  width: 7px;
+  height: 7px;
+  top: 10px;
+}
+
+.trip-date-popper .react-datepicker__month {
+  margin: 2px 0 0;
+}
+
+.trip-date-popper .react-datepicker__week {
+  display: flex;
+}
+
+.trip-date-popper .react-datepicker__day {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  margin: 2px;
+  border-radius: 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-ink, #191c1d);
+  position: relative;
+  transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+}
+
+.trip-date-popper .react-datepicker__day:hover {
+  background: var(--color-accent-soft, #e6f6ea);
+  border-radius: 11px;
+}
+
+.trip-date-popper .react-datepicker__day--weekend {
+  color: #5b6472;
+}
+
+.trip-date-popper .react-datepicker__day--outside-month {
+  color: #c9ced6;
+}
+
+.trip-date-popper .react-datepicker__day--today {
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1.5px var(--color-brand, #00361a);
+}
+
+.trip-date-popper .react-datepicker__day--disabled,
+.trip-date-popper .react-datepicker__day--disabled:hover {
+  color: #d4d8dd;
+  background: transparent;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.trip-date-popper .react-datepicker__day--excluded {
+  text-decoration: line-through;
+}
+
+/* The trip / stay range. */
+.trip-date-popper .react-datepicker__day.trip-range-middle {
+  background: var(--color-accent-soft, #e6f6ea);
+  color: var(--color-brand, #00361a);
+  border-radius: 6px;
+}
+.trip-date-popper .react-datepicker__day.trip-range-edge {
+  background: var(--color-accent, #b8f0c5);
+  color: var(--color-on-accent, #00210e);
+  font-weight: 800;
+}
+
+/* Days that already have a booking (hotel nights / a cab) and blackouts:
+   a tint plus a dot under the number. */
+.trip-date-popper .react-datepicker__day.trip-reserved-day {
+  background: #eef4ff;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+.trip-date-popper .react-datepicker__day.trip-reserved-day::after,
+.trip-date-popper .react-datepicker__day.trip-blackout-day::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 999px;
+  background: #2563eb;
+}
+.trip-date-popper .react-datepicker__day.trip-blackout-day {
+  background: #fff7e6;
+  color: #b45309;
+  font-weight: 700;
+}
+.trip-date-popper .react-datepicker__day.trip-blackout-day::after {
+  background: #f59e0b;
+}
+
+/* The picked day wins over everything above. */
+.trip-date-popper .react-datepicker__day--selected,
+.trip-date-popper .react-datepicker__day--selected:hover,
+.trip-date-popper .react-datepicker__day--keyboard-selected {
+  background: var(--color-brand, #00361a) !important;
+  color: #fff !important;
+  font-weight: 800;
+  border-radius: 11px;
+  box-shadow: 0 6px 14px -6px rgba(0, 54, 26, 0.6);
+}
+.trip-date-popper .react-datepicker__day--keyboard-selected:not(.react-datepicker__day--selected) {
+  background: var(--color-accent-soft, #e6f6ea) !important;
+  color: var(--color-ink, #191c1d) !important;
+  box-shadow: none;
+}
+.trip-date-popper .react-datepicker__day--selected::after {
+  background: #fff !important;
+}
+
+/* Time column (pickers with a time). */
+.trip-date-popper .react-datepicker__time-container {
+  border-left: 1px solid rgba(15, 23, 42, 0.07);
+  margin-left: 6px;
+}
+.trip-date-popper .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  margin: 1px 6px;
+}
+.trip-date-popper .react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
+  background: var(--color-brand, #00361a);
+}
+
+/* Footer: "Today" shortcut + legend (react-datepicker's children box). */
+.trip-date-popper .react-datepicker__children-container {
+  /* width 0 + min-width 100%: spans the calendar without widening it */
+  width: 0;
+  min-width: 100%;
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0;
+  height: auto;
+}
+.trip-date-popper .trip-date-footer {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px 2px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #8a93a2;
+}
+.trip-date-popper .trip-date-footer button {
+  margin-left: auto;
+  font-weight: 800;
+  color: var(--color-brand, #00361a);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-accent-soft, #e6f6ea);
+}
+.trip-date-popper .trip-date-footer button:hover {
+  background: var(--color-accent, #b8f0c5);
+}
+.trip-date-popper .trip-date-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.trip-date-popper .trip-date-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  display: inline-block;
+}

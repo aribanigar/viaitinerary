@@ -29,6 +29,7 @@ import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import { useGoogleMapsScript } from "../../hooks/useGoogleMapsScript";
 import { useAgencyMapsKey } from "../../hooks/useAgencyMapsKey";
+import DateInput from "../../components/common/DateInput";
 
 const AccommodationForm = () => {
   const { token } = useAuth();
@@ -1043,8 +1044,7 @@ const AccommodationForm = () => {
                     <label className="block text-[8px] font-black uppercase tracking-widest text-slate-600 mb-1 px-1">
                       Season From (optional)
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       value={sec.valid_from || ""}
                       onChange={(e) =>
                         updateSection(idx, "valid_from", e.target.value)
@@ -1057,8 +1057,7 @@ const AccommodationForm = () => {
                     <label className="block text-[8px] font-black uppercase tracking-widest text-slate-600 mb-1 px-1">
                       Season To (optional)
                     </label>
-                    <input
-                      type="date"
+                    <DateInput
                       value={sec.valid_to || ""}
                       onChange={(e) =>
                         updateSection(idx, "valid_to", e.target.value)
