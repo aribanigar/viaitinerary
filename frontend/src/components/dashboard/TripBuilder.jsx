@@ -39,6 +39,8 @@ import {
   Mail,
   Eye,
   ChevronDown,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -85,6 +87,7 @@ import {
   DRAFT_KEY,
   useTripBuilderData,
 } from "./trip-builder/useTripBuilderData";
+import { useUndoHistory, useUndoShortcuts } from "./trip-builder/useUndoHistory";
 
 const TRIGGER_LABELS = {
   export: "PDF Export",
@@ -1618,6 +1621,56 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   // Live (real-time) voice session: { base } = the trip as it was when the
   // agent started speaking; every update re-plans base + all text so far.
   const chingLive = useRef(null);
+
+  // ── Undo / redo for every edit in the builder (manual or by voice).
+  const historySnapshot = useMemo(
+    () => ({
+      tripInfo,
+      itinerary,
+      accommodations,
+      transportation,
+      tripActivities,
+      inclusions,
+      exclusions,
+      otherCosts,
+      profitMarginPercentage,
+      gstPercentage,
+      includeGST,
+    }),
+    [tripInfo, itinerary, accommodations, transportation, tripActivities, inclusions, exclusions, otherCosts, profitMarginPercentage, gstPercentage, includeGST],
+  );
+  const pricingTouchedRef = useRef(pricingTouched);
+  pricingTouchedRef.current = pricingTouched;
+  // Once pricing is live the total is derived from the items, so a total
+  // that moves on its own (the pricing effect catching up) isn't a step.
+  const sameTripState = useCallback((a, b) => {
+    if (!pricingTouchedRef.current) return JSON.stringify(a) === JSON.stringify(b);
+    const strip = (x) => ({ ...x, tripInfo: { ...x.tripInfo, cost: undefined } });
+    return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
+  }, []);
+  const restoreTripState = useCallback((snap) => {
+    setTripInfo(snap.tripInfo);
+    setItinerary(snap.itinerary);
+    setAccommodations(snap.accommodations);
+    setTransportation(snap.transportation);
+    setTripActivities(snap.tripActivities);
+    setInclusions(snap.inclusions);
+    setExclusions(snap.exclusions);
+    setOtherCosts(snap.otherCosts);
+    setProfitMarginPercentage(snap.profitMarginPercentage);
+    setGstPercentage(snap.gstPercentage);
+    setIncludeGST(snap.includeGST);
+  }, []);
+  const chingLiveActive = useCallback(() => !!chingLive.current, []);
+  const history = useUndoHistory({
+    snapshot: historySnapshot,
+    ready: !loading && dataIsCurrent,
+    resetKey: currentTabId,
+    restore: restoreTripState,
+    paused: chingLiveActive,
+    same: sameTripState,
+  });
+  useUndoShortcuts({ undo: history.undo, redo: history.redo });
   useEffect(() => {
     if (loading || !dataIsCurrent) return undefined;
     chingUndo.current = []; // undo history belongs to the trip it was made on
@@ -2037,6 +2090,31 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-full text-xs font-semibold text-ink hover:bg-black/[0.05] transition-colors disabled:opacity-40"
       >
         <Plus className="w-3.5 h-3.5" /> New
+      </button>
+    </div>
+  );
+
+  const historyButtons = (
+    <div className="flex items-center rounded-full bg-white/70 border border-black/5 p-0.5">
+      <button
+        type="button"
+        onClick={history.undo}
+        disabled={!history.canUndo}
+        title="Undo (Ctrl+Z)"
+        aria-label="Undo"
+        className="p-1.5 rounded-full text-ink/70 hover:bg-black/[0.06] hover:text-ink transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+      >
+        <Undo2 className="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        onClick={history.redo}
+        disabled={!history.canRedo}
+        title="Redo (Ctrl+Shift+Z)"
+        aria-label="Redo"
+        className="p-1.5 rounded-full text-ink/70 hover:bg-black/[0.06] hover:text-ink transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+      >
+        <Redo2 className="w-4 h-4" />
       </button>
     </div>
   );
@@ -2599,6 +2677,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         // Inside the AI Assistant: just the builder, with its own actions bar.
         <div className="flex flex-col h-full min-h-0 bg-[#f3f3f4] rounded-[24px] border border-black/5 overflow-hidden">
           <div className="flex flex-wrap items-center justify-end gap-2 px-4 pt-3 shrink-0">
+            {historyButtons}
             {autoSaveChip}
             {builderActions}
           </div>
@@ -2610,6 +2689,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
           nav={builderNav}
           actions={
             <>
+              {historyButtons}
               {autoSaveChip}
               {builderActions}
             </>
