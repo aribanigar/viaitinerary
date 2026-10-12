@@ -4,6 +4,7 @@ import { userFromRequest } from "@/lib/auth";
 import { adminIdOf, teamIdOf } from "@/lib/scope";
 import { serializeTrip } from "@/lib/serialize";
 import { TRIP_INCLUDE } from "@/lib/trips";
+import { logLeadActivity } from "@/lib/leads";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,11 @@ export async function POST(request, { params }) {
     include: TRIP_INCLUDE,
   });
 
-  await prisma.leadInquiry.update({ where: { id: lead.id }, data: { status: "converted" } });
+  await prisma.leadInquiry.update({
+    where: { id: lead.id },
+    data: { status: "converted", convertedTripId: trip.tripId, nextFollowUpAt: null },
+  });
+  await logLeadActivity(lead, user.id, "converted", `Converted to trip ${trip.tripId}`, { trip_id: trip.tripId });
 
   return NextResponse.json(
     { message: "Inquiry converted to trip successfully.", trip_id: trip.tripId, trip: serializeTrip(trip) },

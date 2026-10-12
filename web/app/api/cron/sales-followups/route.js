@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { mailerForAdminId } from "@/lib/mailer";
 import { notify } from "@/lib/notify";
+import { remindLeadFollowUps } from "@/lib/leads";
 import {
   followUpSettings,
   proposalNeedsFollowUp,
@@ -21,7 +22,8 @@ const MAX_EMAILS_PER_AGENCY = 25; // per run — keeps one agency's backlog from
  * GET /api/cron/sales-followups — daily (web/vercel.json). For every agency:
  * nudge clients who haven't answered a proposal, remind clients with a payment
  * due, then leave one in-app digest of what needs attention. Agencies without
- * their own SMTP get the digest only. CRON_SECRET-protected like the B2B sync.
+ * their own SMTP get the digest only. Last, every agent gets one reminder of
+ * the lead follow-ups due today. CRON_SECRET-protected like the B2B sync.
  */
 export async function GET(request) {
   const secret = process.env.CRON_SECRET;
@@ -90,5 +92,12 @@ export async function GET(request) {
     summary.push({ adminId, followUps, reminders, failed, attention: attention.length, smtp: !!mailer });
   }
 
-  return NextResponse.json({ ranAt: now.toISOString(), agencies: summary.length, summary });
+  let leads = null;
+  try {
+    leads = await remindLeadFollowUps(now, notify);
+  } catch (err) {
+    console.error("lead follow-up reminders failed:", err.message);
+  }
+
+  return NextResponse.json({ ranAt: now.toISOString(), agencies: summary.length, summary, leads });
 }

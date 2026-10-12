@@ -661,14 +661,42 @@ model LeadInquiry {
   utmCampaign       String?   @map("utm_campaign")
   gclid             String?
   fbLeadId          String?   @map("fb_lead_id")
+  // Pipeline: where the lead came from, how warm it is, when to chase it next.
+  source             String?
+  priority           String?
+  nextFollowUpAt     DateTime? @map("next_follow_up_at")
+  lastContactedAt    DateTime? @map("last_contacted_at")
+  followUpRemindedAt DateTime? @map("follow_up_reminded_at")
+  lostReason         String?   @map("lost_reason")
+  convertedTripId    String?   @map("converted_trip_id")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
+  activities        LeadActivity[]
 
   @@index([userId])
   @@index([assignedTo])
   @@index([status])
   @@index([createdAt])
+  @@index([userId, nextFollowUpAt])
   @@map("trip_inquiries")
+}
+
+/// A lead's timeline: notes, calls, WhatsApp messages, emails, status and
+/// follow-up changes. `userId` is the tenant (adminIdOf), `authorId` who did it.
+model LeadActivity {
+  id        Int         @id @default(autoincrement())
+  leadId    Int         @map("lead_id")
+  userId    Int         @map("user_id")
+  authorId  Int?        @map("author_id")
+  type      String
+  body      String?
+  meta      Json?
+  createdAt DateTime    @default(now()) @map("created_at")
+  lead      LeadInquiry @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+  @@index([userId])
+  @@map("lead_activities")
 }
 
 model Plan {

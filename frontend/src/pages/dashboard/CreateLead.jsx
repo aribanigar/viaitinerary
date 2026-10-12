@@ -21,6 +21,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { createManualLeadInquiry } from "../../api/leadInquiries";
 import { toast } from "react-toastify";
+import { SOURCES, PRIORITIES, followUpPresets, toLocalInput } from "../../utils/leads";
 
 const CreateLead = () => {
   const { token } = useAuth();
@@ -39,15 +40,37 @@ const CreateLead = () => {
     approximate_budget: "",
     special_requests: "",
     status: "new",
+    source: "phone",
+    priority: "warm",
+    // A new lead is chased the same day unless the agent says otherwise.
+    next_follow_up_at: followUpPresets()[0].at,
+    notes: "",
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const digits = String(formData.client_phone || "").replace(/\D/g, "");
+    // The phone field always holds the dial code ("+91"): a number needs more.
+    if (!formData.client_email.trim() && digits.length < 8) {
+      toast.error("Add the client's phone number or email");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      await createManualLeadInquiry(token, formData);
-      toast.success("Lead created successfully");
-      navigate("/lead-inquiries");
+      const res = await createManualLeadInquiry(token, {
+        ...formData,
+        client_phone: digits.length >= 8 ? formData.client_phone : "",
+        next_follow_up_at: formData.next_follow_up_at ? new Date(formData.next_follow_up_at).toISOString() : null,
+      });
+      toast.success("Lead saved");
+      if (res?.duplicate) {
+        toast.warning(
+          `${res.duplicate.client_name} already has an open lead (${res.duplicate.inquiry_id}) — check it so the client isn't chased twice.`,
+          { autoClose: 8000 },
+        );
+      }
+      const id = res?.inquiry?.id;
+      navigate(id ? `/lead-inquiries?lead=${id}` : "/lead-inquiries");
     } catch (error) {
       console.error("Error creating manual lead:", error);
       toast.error(error.message || "Failed to create lead");
@@ -127,10 +150,10 @@ const CreateLead = () => {
                         required
                         value={formData.client_name}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
+                          setFormData((f) => ({
+                            ...f,
                             client_name: e.target.value,
-                          })
+                          }))
                         }
                         className={`${inputClasses} pl-11`}
                         placeholder="Enter client's full name"
@@ -139,18 +162,17 @@ const CreateLead = () => {
                   </div>
 
                   <div>
-                    <label className={labelClasses}>Email Address *</label>
+                    <label className={labelClasses}>Email Address</label>
                     <div className="relative">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                       <input
                         type="email"
-                        required
                         value={formData.client_email}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
+                          setFormData((f) => ({
+                            ...f,
                             client_email: e.target.value,
-                          })
+                          }))
                         }
                         className={`${inputClasses} pl-11`}
                         placeholder="john@example.com"
@@ -159,7 +181,7 @@ const CreateLead = () => {
                   </div>
 
                   <div>
-                    <label className={labelClasses}>Phone Number</label>
+                    <label className={labelClasses}>Phone / WhatsApp *</label>
                     <div className="phone-input-container">
                       <PhoneInput
                         defaultCountry="in"
@@ -167,10 +189,10 @@ const CreateLead = () => {
                         forceDialCode
                         value={formData.client_phone}
                         onChange={(phone) =>
-                          setFormData({
-                            ...formData,
+                          setFormData((f) => ({
+                            ...f,
                             client_phone: phone,
-                          })
+                          }))
                         }
                         inputClassName={inputClasses}
                         containerClassName="w-full"
@@ -193,18 +215,17 @@ const CreateLead = () => {
 
                 <div className="grid grid-cols-1 gap-6">
                   <div>
-                    <label className={labelClasses}>Destination *</label>
+                    <label className={labelClasses}>Destination</label>
                     <div className="relative">
                       <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                       <input
                         type="text"
-                        required
                         value={formData.destination}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
+                          setFormData((f) => ({
+                            ...f,
                             destination: e.target.value,
-                          })
+                          }))
                         }
                         className={`${inputClasses} pl-11`}
                         placeholder="e.g. Bali, Indonesia"
@@ -222,7 +243,7 @@ const CreateLead = () => {
                           min="1"
                           value={formData.adults}
                           onChange={(e) =>
-                            setFormData({ ...formData, adults: e.target.value })
+                            setFormData((f) => ({ ...f, adults: e.target.value }))
                           }
                           className={`${inputClasses} pl-11`}
                         />
@@ -237,10 +258,10 @@ const CreateLead = () => {
                           min="0"
                           value={formData.kids_cnb}
                           onChange={(e) =>
-                            setFormData({
-                              ...formData,
+                            setFormData((f) => ({
+                              ...f,
                               kids_cnb: e.target.value,
-                            })
+                            }))
                           }
                           className={`${inputClasses} pl-11`}
                         />
@@ -255,10 +276,10 @@ const CreateLead = () => {
                           min="0"
                           value={formData.kids_5_to_12}
                           onChange={(e) =>
-                            setFormData({
-                              ...formData,
+                            setFormData((f) => ({
+                              ...f,
                               kids_5_to_12: e.target.value,
-                            })
+                            }))
                           }
                           className={`${inputClasses} pl-11`}
                         />
@@ -272,10 +293,10 @@ const CreateLead = () => {
                       <DatePicker
                         value={formData.start_date}
                         onChange={(dateString) =>
-                          setFormData({
-                            ...formData,
+                          setFormData((f) => ({
+                            ...f,
                             start_date: dateString,
-                          })
+                          }))
                         }
                         placeholder="Select Start Date"
                         className="w-full"
@@ -294,10 +315,10 @@ const CreateLead = () => {
                           min="1"
                           value={formData.duration}
                           onChange={(e) =>
-                            setFormData({
-                              ...formData,
+                            setFormData((f) => ({
+                              ...f,
                               duration: e.target.value,
-                            })
+                            }))
                           }
                           className={`${inputClasses} pl-11`}
                           placeholder="e.g. 5"
@@ -323,6 +344,64 @@ const CreateLead = () => {
 
                 <div className="space-y-6">
                   <div>
+                    <label className={labelClasses}>Where did it come from?</label>
+                    <select
+                      value={formData.source}
+                      onChange={(e) => setFormData((f) => ({ ...f, source: e.target.value }))}
+                      className={inputClasses}
+                    >
+                      {SOURCES.map((s) => (
+                        <option key={s.key} value={s.key}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className={labelClasses}>Priority</label>
+                    <div className="flex gap-2">
+                      {PRIORITIES.map((p) => (
+                        <button
+                          key={p.key}
+                          type="button"
+                          onClick={() => setFormData((f) => ({ ...f, priority: p.key }))}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold border transition-all ${
+                            formData.priority === p.key ? p.tone : "bg-slate-50 border-transparent text-slate-500"
+                          }`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${p.dot}`} />
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={labelClasses}>First follow-up</label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {followUpPresets().map((p) => (
+                        <button
+                          key={p.key}
+                          type="button"
+                          onClick={() => setFormData((f) => ({ ...f, next_follow_up_at: p.at }))}
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-200 bg-white text-slate-600 hover:border-[#181c22]"
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="datetime-local"
+                      value={toLocalInput(formData.next_follow_up_at)}
+                      onChange={(e) =>
+                        setFormData((f) => ({ ...f, next_follow_up_at: e.target.value ? new Date(e.target.value) : null }))
+                      }
+                      className={inputClasses}
+                    />
+                  </div>
+
+                  <div>
                     <label className={labelClasses}>Budget Details</label>
                     <div className="relative">
                       <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
@@ -331,10 +410,10 @@ const CreateLead = () => {
                         min="0"
                         value={formData.approximate_budget}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
+                          setFormData((f) => ({
+                            ...f,
                             approximate_budget: e.target.value,
-                          })
+                          }))
                         }
                         className={`${inputClasses} pl-11`}
                         placeholder="Amount"
@@ -352,15 +431,26 @@ const CreateLead = () => {
                         rows={4}
                         value={formData.special_requests}
                         onChange={(e) =>
-                          setFormData({
-                            ...formData,
+                          setFormData((f) => ({
+                            ...f,
                             special_requests: e.target.value,
-                          })
+                          }))
                         }
                         className={`${inputClasses} pl-11 resize-none`}
                         placeholder="Describe client's requirements..."
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className={labelClasses}>Internal note</label>
+                    <textarea
+                      rows={2}
+                      value={formData.notes}
+                      onChange={(e) => setFormData((f) => ({ ...f, notes: e.target.value }))}
+                      className={`${inputClasses} resize-none`}
+                      placeholder="e.g. Honeymoon couple, decides by Friday"
+                    />
                   </div>
                 </div>
               </div>

@@ -42,6 +42,13 @@ export const getLeadInquiries = async (token, filters = {}) => {
     params.append("end_date", filters.end_date);
   }
 
+  for (const key of ["follow_up", "source", "priority", "sort"]) {
+    if (filters[key] && filters[key] !== "all") params.append(key, filters[key]);
+  }
+  if (filters.mine) params.append("mine", "1");
+  // The server counts "today" in the agent's own time zone.
+  params.append("tz", String(new Date().getTimezoneOffset()));
+
   if (filters.per_page) {
     params.append("per_page", filters.per_page);
   }
@@ -118,5 +125,24 @@ export const convertInquiryToTrip = async (token, id) => {
   return request(`/lead-inquiries/${id}/convert-to-trip`, {
     method: "POST",
     token,
+  });
+};
+
+/**
+ * One lead with its timeline
+ */
+export const getLeadInquiry = async (token, id) => {
+  return request(`/lead-inquiries/${id}`, { token });
+};
+
+/**
+ * Log a note / call / WhatsApp / email / meeting on a lead (optionally booking
+ * the next follow-up: `next_follow_up_at`, null closes it)
+ */
+export const logLeadActivity = async (token, id, data) => {
+  return request(`/lead-inquiries/${id}/activities`, {
+    method: "POST",
+    token,
+    body: JSON.stringify(data),
   });
 };

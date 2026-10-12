@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import {
   Bell,
@@ -46,6 +47,15 @@ const TRIP_NOTIFICATION_TYPES = [
   "supplier_confirmed",
   "supplier_declined",
 ];
+
+// Lead notifications open the lead (or today's follow-ups) on the Leads page.
+const leadLink = (data = {}) => {
+  if (data.type === "lead_follow_up") return "/lead-inquiries?follow_up=due";
+  if ((data.type === "new_lead" || data.type === "lead_assigned") && data.lead_inquiry_id) {
+    return `/lead-inquiries?lead=${data.lead_inquiry_id}`;
+  }
+  return null;
+};
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -260,7 +270,13 @@ const Notifications = () => {
                               notification.read_at ? "" : "text-blue-600"
                             }`}
                           >
-                            {notification.data.message}
+                            {leadLink(notification.data) ? (
+                              <Link to={leadLink(notification.data)} className="hover:underline">
+                                {notification.data.message}
+                              </Link>
+                            ) : (
+                              notification.data.message
+                            )}
                           </div>
                           <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                             {new Date(
