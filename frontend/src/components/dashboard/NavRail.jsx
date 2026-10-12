@@ -26,6 +26,7 @@ import {
   Bell,
   ChevronsRight,
   ChevronsLeft,
+  ChevronDown,
   Aperture,
   Building,
   CalendarCheck,
@@ -187,18 +188,30 @@ function Row({ icon: Icon, label, to, active, expanded, onNavigate }) {
   );
 }
 
-function GroupHeader({ label }) {
+// A section title that folds its pages away: only one section is open at a
+// time, so the ones below stay on screen instead of being pushed off it.
+function GroupHeader({ label, icon, open, active, onToggle }) {
+  const Icon = icon;
   return (
-    <div className="flex items-center h-7 px-[18px] mt-3 mb-0.5 text-[#181c22]/35">
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      className={`flex items-center gap-3 w-full h-10 px-[18px] rounded-2xl transition-colors whitespace-nowrap ${
+        active && !open ? "bg-black/5 text-[#181c22]" : "text-[#181c22]/55 hover:text-[#181c22] hover:bg-black/5"
+      }`}
+    >
+      <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
       <motion.span
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.16, delay: 0.04 }}
-        className="text-[10px] font-black uppercase tracking-[0.14em] whitespace-nowrap"
+        className="flex-1 text-left text-[13px] font-semibold"
       >
         {label}
       </motion.span>
-    </div>
+      <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
+    </button>
   );
 }
 
@@ -225,6 +238,14 @@ const NavRail = () => {
   const expanded = hovered || pinned;
   const isActive = (p) => p && (pathname === p || pathname.startsWith(`${p}/`));
   const tree = useRoleFilteredTree(user?.role);
+  const activeGroup = tree.find((item) => item.children?.some((c) => isActive(c.to)))?.label || null;
+  // The section holding the current page starts open; opening another closes it.
+  const [openGroup, setOpenGroup] = useState(activeGroup);
+  const [seenGroup, setSeenGroup] = useState(activeGroup);
+  if (activeGroup !== seenGroup) {
+    setSeenGroup(activeGroup);
+    if (activeGroup) setOpenGroup(activeGroup);
+  }
 
   const initials = (user?.name || "U")
     .split(" ")
@@ -269,17 +290,35 @@ const NavRail = () => {
           item.children ? (
             expanded ? (
               <div key={item.label}>
-                <GroupHeader label={item.label} />
-                {item.children.map((child) => (
-                  <Row
-                    key={child.to}
-                    icon={child.icon}
-                    label={child.label}
-                    to={child.to}
-                    active={isActive(child.to)}
-                    expanded={expanded}
-                  />
-                ))}
+                <GroupHeader
+                  label={item.label}
+                  icon={item.icon}
+                  open={openGroup === item.label}
+                  active={activeGroup === item.label}
+                  onToggle={() => setOpenGroup((g) => (g === item.label ? null : item.label))}
+                />
+                <AnimatePresence initial={false}>
+                  {openGroup === item.label && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className="overflow-hidden pl-3 space-y-0.5"
+                    >
+                      {item.children.map((child) => (
+                        <Row
+                          key={child.to}
+                          icon={child.icon}
+                          label={child.label}
+                          to={child.to}
+                          active={isActive(child.to)}
+                          expanded={expanded}
+                        />
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
               <Row
