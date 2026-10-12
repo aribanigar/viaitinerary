@@ -34,6 +34,30 @@ import Pagination from "../common/Pagination";
 import SubscriptionBanner from "../common/SubscriptionBanner";
 import Modal from "../common/Modal";
 import PageHeader from "../common/PageHeader";
+import { SortLabel, Checkbox, BulkActionBar } from "../common/tableTools";
+import { useSelection, deleteEach } from "../common/tableHooks";
+
+// Nights presets for the Duration filter.
+const NIGHT_RANGES = [
+  { value: "", label: "Any length" },
+  { value: "1-3", label: "1–3 nights" },
+  { value: "4-6", label: "4–6 nights" },
+  { value: "7-9", label: "7–9 nights" },
+  { value: "10-", label: "10+ nights" },
+];
+const EMPTY_LIST_FILTERS = { month: "", nights: "", priceMin: "", priceMax: "" };
+
+const money = (trip) => {
+  const n = Number(trip.cost);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return `${trip.currency_symbol || "₹"}${Math.round(n).toLocaleString("en-IN")}`;
+};
+const shortDate = (value) => {
+  const d = value ? new Date(value) : null;
+  return d && !Number.isNaN(d.getTime())
+    ? d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" })
+    : "—";
+};
 
 const parseTripStartDate = (value) => {
   if (!value) return null;
@@ -89,7 +113,20 @@ const MyTrips = () => {
     setStatusFilter(searchParams.get("status") || "");
   }, [searchParams]);
   const [createdByFilter, setCreatedByFilter] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
+  const [listFilters, setListFilters] = useState(EMPTY_LIST_FILTERS);
+  const setListFilter = (key, value) => setListFilters((prev) => ({ ...prev, [key]: value }));
+  const listFilterKey = JSON.stringify(listFilters);
+  // Column sort, done by the API across all pages: click → ascending, again →
+  // descending, a third time → back to newest first.
+  const [sort, setSort] = useState(null);
+  const toggleSort = (key) =>
+    setSort((prev) => {
+      if (!prev || prev.key !== key) return { key, dir: "asc" };
+      if (prev.dir === "asc") return { key, dir: "desc" };
+      return null;
+    });
+  const sortKey = sort ? `${sort.key}:${sort.dir}` : "";
   const [duplicatingId, setDuplicatingId] = useState(null);
   const [pageSize, setPageSize] = useState(25);
   const [pagination, setPagination] = useState({
@@ -120,6 +157,16 @@ const MyTrips = () => {
         ...(urlFilters.from ? { from: urlFilters.from } : {}),
         ...(urlFilters.to ? { to: urlFilters.to } : {}),
         ...(urlFilters.payment ? { payment: urlFilters.payment } : {}),
+        ...(listFilters.month ? { month: listFilters.month } : {}),
+        ...(listFilters.nights
+          ? (() => {
+              const [lo, hi] = listFilters.nights.split("-");
+              return { ...(lo ? { nights_min: lo } : {}), ...(hi ? { nights_max: hi } : {}) };
+            })()
+          : {}),
+        ...(listFilters.priceMin ? { price_min: listFilters.priceMin } : {}),
+        ...(listFilters.priceMax ? { price_max: listFilters.priceMax } : {}),
+        ...(sort ? { sort: sort.key, dir: sort.dir } : {}),
       });
       setTrips(resp.data);
       setPagination({
@@ -152,7 +199,7 @@ const MyTrips = () => {
       loadTrips(1);
       loadSubscription();
     }
-  }, [token, searchQuery, pageSize, statusFilter, urlFilterKey]);
+  }, [token, searchQuery, pageSize, statusFilter, urlFilterKey, listFilterKey, sortKey]);
 
   const handlePageSizeChange = (value) => {
     setPageSize(value);
@@ -164,6 +211,25 @@ const MyTrips = () => {
       (!statusFilter || t.status === statusFilter) &&
       (!createdByFilter || t.created_by === createdByFilter),
   );
+
+  const selection = useSelection(filteredTrips.map((t) => t.trip_id || t.tripId));
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const handleBulkDelete = async (ids) => {
+    setBulkDeleting(true);
+    const { ok, failed } = await deleteEach(ids, (id) => deleteTrip(token, id));
+    setBulkDeleting(false);
+    if (failed.length) {
+      toast.error(`${failed.length} of ${ids.length} trips couldn't be deleted${failed[0].error?.message ? `: ${failed[0].error.message}` : ""}`);
+    } else {
+      toast.success(`${ok.length} trip${ok.length === 1 ? "" : "s"} deleted`);
+    }
+    loadTrips(pagination.currentPage);
+    loadSubscription();
+  };
+  const listFilterCount =
+    Object.values(listFilters).filter(Boolean).length + (statusFilter ? 1 : 0) + (createdByFilter ? 1 : 0);
+  const pageIds = filteredTrips.map((t) => t.trip_id || t.tripId);
+  const allOnPage = pageIds.length > 0 && pageIds.every((id) => selection.has(id));
 
   const handleDelete = async (tripId) => {
     if (window.confirm("Are you sure you want to delete this trip?")) {
@@ -399,101 +465,152 @@ const MyTrips = () => {
       )}
 
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm">
-        <div className="p-6 border-b border-slate-50 flex items-center gap-3">
+        <div className="px-4 py-3 border-b border-slate-50 flex items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by title, client or duration..."
-              className="w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
+              placeholder="Search by trip ID, title, client, phone or destination..."
+              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-accent/20 transition-all placeholder:text-slate-300 placeholder:font-medium font-medium"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`p-3 rounded-2xl transition-all ${
+            className={`relative flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
               showFilters
-                ? "bg-blue-100 text-blue-600"
-                : "bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                ? "bg-brand text-white"
+                : "bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
             }`}
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="w-4 h-4" /> Filters
+            {listFilterCount > 0 && (
+              <span className="grid place-items-center w-5 h-5 rounded-full bg-accent text-ink text-[10px] font-black">
+                {listFilterCount}
+              </span>
+            )}
           </button>
         </div>
         {showFilters && (
-          <div className="px-6 pb-4">
-            <div className="flex gap-4 items-center">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Status
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-accent/20 focus:border-accent"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Created By
-                </label>
-                <select
-                  value={createdByFilter}
-                  onChange={(e) => setCreatedByFilter(e.target.value)}
-                  className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:ring-2 focus:ring-accent/20 focus:border-accent"
-                >
-                  <option value="">All Creators</option>
-                  {[
-                    ...new Set(trips.map((t) => t.created_by).filter(Boolean)),
-                  ].map((creator) => (
-                    <option key={creator} value={creator}>
-                      {creator}
-                    </option>
-                  ))}
-                </select>
+          <div className="px-4 py-3 border-b border-slate-50 flex flex-wrap items-end gap-3">
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Status</label>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 py-2 px-2.5 focus:ring-2 focus:ring-accent/20 min-w-[120px]">
+                <option value="">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Travel month</label>
+              <input
+                type="month"
+                value={listFilters.month}
+                onChange={(e) => setListFilter("month", e.target.value)}
+                className="bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 py-2 px-2.5 focus:ring-2 focus:ring-accent/20 min-w-[140px]"
+              />
+            </div>
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Duration</label>
+              <select value={listFilters.nights} onChange={(e) => setListFilter("nights", e.target.value)} className="bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 py-2 px-2.5 focus:ring-2 focus:ring-accent/20 min-w-[120px]">
+                {NIGHT_RANGES.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Price (₹)</label>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Min"
+                  value={listFilters.priceMin}
+                  onChange={(e) => setListFilter("priceMin", e.target.value)}
+                  className="bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 py-2 px-2.5 focus:ring-2 focus:ring-accent/20 w-24"
+                />
+                <span className="text-slate-300 text-xs">–</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Max"
+                  value={listFilters.priceMax}
+                  onChange={(e) => setListFilter("priceMax", e.target.value)}
+                  className="bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 py-2 px-2.5 focus:ring-2 focus:ring-accent/20 w-24"
+                />
               </div>
             </div>
+            <div>
+              <label className="block text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Created by</label>
+              <select value={createdByFilter} onChange={(e) => setCreatedByFilter(e.target.value)} className="bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 py-2 px-2.5 focus:ring-2 focus:ring-accent/20 min-w-[120px]">
+                <option value="">Anyone</option>
+                {[...new Set(trips.map((t) => t.created_by).filter(Boolean))].map((creator) => (
+                  <option key={creator} value={creator}>
+                    {creator}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {listFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setListFilters(EMPTY_LIST_FILTERS);
+                  setStatusFilter("");
+                  setCreatedByFilter("");
+                }}
+                className="text-xs font-bold text-slate-400 hover:text-red-500 py-2"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         )}
+
+        <BulkActionBar selection={selection} noun="trip" onDelete={handleBulkDelete} deleting={bulkDeleting} />
 
         <div className="overflow-visible">
           <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50/50 border-b border-slate-100">
               <tr>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                  Trip ID
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 w-10">
+                  <Checkbox
+                    label="Select all trips on this page"
+                    checked={allOnPage}
+                    indeterminate={pageIds.some((id) => selection.has(id))}
+                    onChange={() => selection.setMany(pageIds, !allOnPage)}
+                  />
                 </th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                  Trip Details
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">Trip ID</th>
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                  <SortLabel label="Trip / Client" sortKey="title" sort={sort} onSort={toggleSort} />
                 </th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                  Status
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                  <SortLabel label="Status" sortKey="status" sort={sort} onSort={toggleSort} />
                 </th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                  Duration
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">Duration</th>
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                  <SortLabel label="Travel date" sortKey="start" sort={sort} onSort={toggleSort} />
                 </th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                  Start Date
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">
+                  <SortLabel label="Price" sortKey="price" sort={sort} onSort={toggleSort} align="right" />
                 </th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400">
-                  Created By
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
+                  <SortLabel label="Created" sortKey="created" sort={sort} onSort={toggleSort} />
                 </th>
-                <th className="px-4 py-3 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">
-                  Actions
-                </th>
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">Created by</th>
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50 text-xs font-medium">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-4 py-16 text-center">
+                  <td colSpan="10" className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-16 h-16 rounded-[2rem] bg-slate-50 flex items-center justify-center">
                         <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -508,14 +625,21 @@ const MyTrips = () => {
                 filteredTrips.map((trip) => (
                   <tr
                     key={trip.trip_id || trip.tripId}
-                    className="hover:bg-slate-50/50 group transition-colors"
+                    className={`hover:bg-slate-50/50 group transition-colors ${selection.has(trip.trip_id || trip.tripId) ? "bg-slate-50" : ""}`}
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5 w-10">
+                      <Checkbox
+                        label="Select trip"
+                        checked={selection.has(trip.trip_id || trip.tripId)}
+                        onChange={() => selection.toggle(trip.trip_id || trip.tripId)}
+                      />
+                    </td>
+                    <td className="px-3 py-2.5">
                       <span className="text-xs font-bold text-slate-700 font-mono">
                         {trip.trip_id || trip.tripId || "-"}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5">
                       <div>
                         <div className="font-bold text-slate-900 capitalize">
                           {trip.trip_title || trip.tripTitle || "Untitled Trip"}
@@ -527,7 +651,7 @@ const MyTrips = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5">
                       <select
                         value={trip.status}
                         onChange={(e) =>
@@ -560,7 +684,7 @@ const MyTrips = () => {
                         </div>
                       ) : null}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <Clock className="w-3.5 h-3.5 text-blue-500" />
                         <span className="text-xs font-bold text-slate-700">
@@ -569,7 +693,7 @@ const MyTrips = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-3.5 h-3.5 text-emerald-500" />
                         <span className="text-xs font-bold text-slate-700">
@@ -582,12 +706,22 @@ const MyTrips = () => {
                         </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2.5 text-right whitespace-nowrap">
+                      {money(trip) ? (
+                        <span className="text-xs font-black text-slate-900">{money(trip)}</span>
+                      ) : (
+                        <span className="text-slate-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <span className="text-xs font-semibold text-slate-500">{shortDate(trip.created_at)}</span>
+                    </td>
+                    <td className="px-3 py-2.5">
                       <span className="text-xs font-bold text-slate-700">
                         {trip.created_by || "Unknown"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-3 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         <Link
                           to={`/trip-builder/${trip.trip_id || trip.tripId}`}
@@ -625,7 +759,7 @@ const MyTrips = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="px-4 py-16 text-center">
+                  <td colSpan="10" className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-20 h-20 rounded-[2.5rem] bg-slate-50 flex items-center justify-center text-slate-300">
                         <FileText className="w-10 h-10" />

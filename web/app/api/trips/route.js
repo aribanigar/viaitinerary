@@ -23,7 +23,25 @@ const rand = () => Math.random().toString(36).slice(2, 8);
 const LIST_COLUMNS = {
   id: true, userId: true, tripId: true, tripTitle: true, clientName: true, clientPhone: true, startDate: true,
   duration: true, cost: true, paidAmount: true, refundedAmount: true, currency: true, imagePath: true, status: true,
-  proposalResponse: true, proposalMessage: true, proposalViewedAt: true, updatedAt: true,
+  proposalResponse: true, proposalMessage: true, proposalViewedAt: true, updatedAt: true, createdAt: true,
+};
+
+// My Trips column sorting (?sort=…&dir=asc|desc). Nights is a text column, so
+// it isn't sortable in SQL; everything else is. Ties: newest first.
+const SORTS = {
+  created: "createdAt",
+  start: "startDate",
+  price: "cost",
+  client: "clientName",
+  title: "tripTitle",
+  status: "status",
+  updated: "updatedAt",
+};
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const num = (v) => {
+  if (v == null || String(v).trim() === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 };
 
 // GET /api/trips — paginated list scoped to the admin context.
@@ -51,12 +69,30 @@ export async function GET(request) {
   // Filters (My Trips and Ching's "find trips…"): status, travel dates, payment.
   const status = searchParams.get("status");
   if (status) where.status = status;
-  const from = searchParams.get("from");
-  const to = searchParams.get("to");
-  if (/^\d{4}-\d{2}-\d{2}$/.test(from || "") || /^\d{4}-\d{2}-\d{2}$/.test(to || "")) {
+  let from = searchParams.get("from");
+  let to = searchParams.get("to");
+  // month=YYYY-MM → trips travelling that month.
+  const month = /^(\d{4})-(\d{2})$/.exec(searchParams.get("month") || "");
+  if (month) {
+    const y = Number(month[1]);
+    const m = Number(month[2]);
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    from = `${month[1]}-${month[2]}-01`;
+    to = `${month[1]}-${month[2]}-${String(last).padStart(2, "0")}`;
+  }
+  if (DATE_RE.test(from || "") || DATE_RE.test(to || "")) {
     where.startDate = {
-      ...(from ? { gte: new Date(`${from}T00:00:00Z`) } : {}),
-      ...(to ? { lte: new Date(`${to}T23:59:59Z`) } : {}),
+      ...(DATE_RE.test(from || "") ? { gte: new Date(`${from}T00:00:00Z`) } : {}),
+      ...(DATE_RE.test(to || "") ? { lte: new Date(`${to}T23:59:59Z`) } : {}),
+    };
+  }
+  // Price (the trip's quoted total).
+  const priceMin = num(searchParams.get("price_min"));
+  const priceMax = num(searchParams.get("price_max"));
+  if (priceMin != null || priceMax != null) {
+    where.cost = {
+      ...(priceMin != null ? { gte: priceMin } : {}),
+      ...(priceMax != null ? { lte: priceMax } : {}),
     };
   }
   // payment=unpaid|paid compares two columns, which Prisma can't express in
@@ -64,7 +100,7 @@ export async function GET(request) {
   const payment = searchParams.get("payment");
   if (payment === "unpaid" || payment === "paid") {
     const rows = await prisma.trip.findMany({
-      where: { ...where, cost: { gt: 0 } },
+      where: { ...where, cost: { ...(where.cost || {}), gt: 0 } },
       select: { id: true, cost: true, paidAmount: true, refundedAmount: true },
       take: 2000,
     });
@@ -76,12 +112,41 @@ export async function GET(request) {
       .map((r) => r.id);
     where.id = { in: ids.length ? ids : [-1] };
   }
+  // Nights (duration is free text like "5" — compared as a number, ids
+  // resolved tenant-scoped and capped, like the payment filter above).
+  const nightsMin = num(searchParams.get("nights_min"));
+  const nightsMax = num(searchParams.get("nights_max"));
+  if (nightsMin != null || nightsMax != null) {
+    const rows = await prisma.trip.findMany({
+      where,
+      select: { id: true, duration: true },
+      take: 5000,
+    });
+    const ids = rows
+      .filter((r) => {
+        const n = parseInt(r.duration, 10);
+        if (!Number.isFinite(n)) return false;
+        return (nightsMin == null || n >= nightsMin) && (nightsMax == null || n <= nightsMax);
+      })
+      .map((r) => r.id);
+    where.id = { in: ids.length ? ids : [-1] };
+  }
+
+  const sortCol = SORTS[searchParams.get("sort")] || "createdAt";
+  const dir = searchParams.get("dir") === "asc" ? "asc" : "desc";
+  // Blank dates/prices/clients go last either way (nullable columns only —
+  // Prisma rejects `nulls` on required ones).
+  const NULLABLE = new Set(["startDate", "cost", "clientName"]);
+  const orderBy =
+    sortCol === "createdAt"
+      ? [{ createdAt: dir }]
+      : [{ [sortCol]: NULLABLE.has(sortCol) ? { sort: dir, nulls: "last" } : dir }, { createdAt: "desc" }];
 
   const [total, trips] = await Promise.all([
     prisma.trip.count({ where }),
     prisma.trip.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy,
       skip: (page - 1) * perPage,
       take: perPage,
       select: LIST_COLUMNS,
@@ -116,6 +181,7 @@ export async function GET(request) {
     proposal_message: t.proposalMessage ?? null,
     proposal_viewed_at: t.proposalViewedAt ? t.proposalViewedAt.toISOString() : null,
     updated_at: t.updatedAt,
+    created_at: t.createdAt,
     created_by: t.userId === user.id ? "You" : ownerName.get(t.userId) || "—",
   }));
 
