@@ -74,7 +74,7 @@ const Packages = () => {
           </div>
           <button
             onClick={() => navigate("/package-builder")}
-            className="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2"
+            className="bg-accent hover:bg-accent-hover text-[#181c22] px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2"
           >
             <Plus className="w-4 h-4" /> New Package
           </button>
@@ -120,7 +120,7 @@ const Packages = () => {
                   <div className="mt-auto pt-4 flex gap-1.5">
                     <button
                       onClick={() => setUseTarget(pkg)}
-                      className="flex-1 bg-accent hover:bg-accent-hover text-white py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
+                      className="flex-1 bg-accent hover:bg-accent-hover text-[#181c22] py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1"
                     >
                       <Play className="w-3.5 h-3.5" /> Use
                     </button>
@@ -181,7 +181,7 @@ const Packages = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-accent hover:bg-accent-hover text-white py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-accent hover:bg-accent-hover text-[#181c22] py-2.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 Create trip

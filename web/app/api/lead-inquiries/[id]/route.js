@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
-import { serializeLead, generateInquiryId, assignableMemberIds } from "@/lib/leads";
+import { serializeLead, generateInquiryId, assignableMemberIds, toInt, toAmount, toDate } from "@/lib/leads";
 import { notify } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
@@ -53,12 +53,12 @@ export async function POST(request, { params }) {
       clientEmail: body.clientEmail,
       clientPhone: body.clientPhone,
       destination: body.destination,
-      adults: body.adults ?? 1,
-      kidsCnb: body.kidsUpto5 ?? 0,
-      kids5to12: body.kids5to12 ?? 0,
-      startDate: new Date(body.startDate),
-      duration: String(body.duration),
-      approximateBudget: body.approximateBudget != null ? Number(body.approximateBudget) : null,
+      adults: toInt(body.adults, 1),
+      kidsCnb: toInt(body.kidsUpto5, 0),
+      kids5to12: toInt(body.kids5to12, 0),
+      startDate: toDate(body.startDate),
+      duration: body.duration != null && body.duration !== "" ? String(body.duration) : null,
+      approximateBudget: toAmount(body.approximateBudget),
       currency: body.currency ?? "INR (₹)",
       specialRequests: body.specialRequests ?? null,
       status: "new",

@@ -405,7 +405,7 @@ const Subscription = () => {
         {memberUserId && (
           <div className="mb-8 flex items-center justify-between bg-blue-50 border border-blue-100 p-6 rounded-xl">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-[#e7f63c] flex items-center justify-center text-white shadow-lg shadow-[#e7f63c]/40">
+              <div className="w-12 h-12 rounded-2xl bg-[#e7f63c] flex items-center justify-center text-[#181c22] shadow-lg shadow-[#e7f63c]/40">
                 <User className="w-6 h-6" />
               </div>
               <div>
@@ -478,7 +478,7 @@ const Subscription = () => {
             >
               {(plan.recommended || plan.badge_label) && (
                 <div className="absolute top-0 right-8 transform -translate-y-1/2">
-                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-[#e7f63c] text-white shadow-lg">
+                  <span className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest bg-[#e7f63c] text-[#181c22] shadow-lg">
                     {plan.badge_label || (plan.recommended ? "BEST VALUE" : "")}
                   </span>
                 </div>

@@ -138,7 +138,7 @@ const Profile = () => {
             {/* Profile Picture */}
             <div className="flex items-center gap-6">
               <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-[#e7f63c] flex items-center justify-center text-white font-bold text-2xl ring-4 ring-white shadow-lg">
+                <div className="w-24 h-24 rounded-full bg-[#e7f63c] flex items-center justify-center text-[#181c22] font-bold text-2xl ring-4 ring-white shadow-lg">
                   {preview ? (
                     <img
                       src={preview}

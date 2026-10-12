@@ -74,7 +74,7 @@ const EmbedSettings = () => {
               </code>
               <button
                 onClick={handleOpenPreview}
-                className="bg-[#e7f63c] text-white px-4 py-2 rounded-lg hover:bg-[#d4e42e] transition-all font-semibold text-sm flex items-center gap-2 whitespace-nowrap"
+                className="bg-[#e7f63c] text-[#181c22] px-4 py-2 rounded-lg hover:bg-[#d4e42e] transition-all font-semibold text-sm flex items-center gap-2 whitespace-nowrap"
               >
                 <Eye className="w-4 h-4" />
                 Preview
@@ -124,7 +124,7 @@ const EmbedSettings = () => {
           <h2 className="text-xl font-bold text-gray-800 mb-4">How to Embed</h2>
           <div className="space-y-4">
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-[#e7f63c] text-white rounded-full flex items-center justify-center font-bold">
+              <div className="flex-shrink-0 w-8 h-8 bg-[#e7f63c] text-[#181c22] rounded-full flex items-center justify-center font-bold">
                 1
               </div>
               <div>
@@ -139,7 +139,7 @@ const EmbedSettings = () => {
             </div>
 
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-[#e7f63c] text-white rounded-full flex items-center justify-center font-bold">
+              <div className="flex-shrink-0 w-8 h-8 bg-[#e7f63c] text-[#181c22] rounded-full flex items-center justify-center font-bold">
                 2
               </div>
               <div>
@@ -155,7 +155,7 @@ const EmbedSettings = () => {
             </div>
 
             <div className="flex gap-4">
-              <div className="flex-shrink-0 w-8 h-8 bg-[#e7f63c] text-white rounded-full flex items-center justify-center font-bold">
+              <div className="flex-shrink-0 w-8 h-8 bg-[#e7f63c] text-[#181c22] rounded-full flex items-center justify-center font-bold">
                 3
               </div>
               <div>

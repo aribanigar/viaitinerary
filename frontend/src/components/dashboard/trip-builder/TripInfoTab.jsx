@@ -929,7 +929,7 @@ const TripInfoTab = ({
                     <div className="flex gap-1 ml-2 shrink-0">
                       <button
                         onClick={() => saveInclusionEdit(index)}
-                        className="text-white bg-[#e7f63c] hover:bg-[#d4e42e] p-1 rounded-md transition-colors"
+                        className="text-[#181c22] bg-[#e7f63c] hover:bg-[#d4e42e] p-1 rounded-md transition-colors"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                       </button>
@@ -1056,7 +1056,7 @@ const TripInfoTab = ({
                     <div className="flex gap-1 ml-2 shrink-0">
                       <button
                         onClick={() => saveExclusionEdit(index)}
-                        className="text-white bg-[#e7f63c] hover:bg-[#d4e42e] p-1 rounded-md transition-colors"
+                        className="text-[#181c22] bg-[#e7f63c] hover:bg-[#d4e42e] p-1 rounded-md transition-colors"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
                       </button>

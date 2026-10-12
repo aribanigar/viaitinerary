@@ -57,7 +57,7 @@ const PolicyListItem = ({ value, onChange, placeholder, onRemove }) => {
           <button
             onClick={handleSave}
             title="Save Edit"
-            className="text-white bg-[#e7f63c] hover:bg-[#d4e42e] p-1.5 rounded-lg transition-colors shrink-0 shadow-sm"
+            className="text-[#181c22] bg-[#e7f63c] hover:bg-[#d4e42e] p-1.5 rounded-lg transition-colors shrink-0 shadow-sm"
           >
             <CheckCircle className="w-4 h-4" />
           </button>

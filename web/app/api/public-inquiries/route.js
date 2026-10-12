@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { generateInquiryId } from "@/lib/leads";
+import { generateInquiryId, toInt, toAmount, toDate } from "@/lib/leads";
 import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 import { notify } from "@/lib/notify";
 
@@ -32,12 +32,12 @@ export async function POST(request) {
       clientEmail: body.clientEmail ?? body.client_email ?? null,
       clientPhone: body.clientPhone ?? body.client_phone ?? null,
       destination: body.destination ?? null,
-      adults: body.adults ?? 1,
-      kidsCnb: body.kidsUpto5 ?? 0,
-      kids5to12: body.kids5to12 ?? 0,
-      startDate: body.startDate ? new Date(body.startDate) : null,
-      duration: body.duration != null ? String(body.duration) : null,
-      approximateBudget: body.approximateBudget != null ? Number(body.approximateBudget) : null,
+      adults: toInt(body.adults, 1),
+      kidsCnb: toInt(body.kidsUpto5, 0),
+      kids5to12: toInt(body.kids5to12, 0),
+      startDate: toDate(body.startDate),
+      duration: body.duration != null && body.duration !== "" ? String(body.duration) : null,
+      approximateBudget: toAmount(body.approximateBudget),
       currency: body.currency ?? null,
       specialRequests: body.specialRequests ?? null,
       status: "new",

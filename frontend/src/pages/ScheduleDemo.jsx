@@ -140,7 +140,7 @@ const ScheduleDemo = () => {
                 </p>
                 <Link
                   to="/"
-                  className="bg-[#e7f63c] hover:bg-[#d4e42e] text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/25"
+                  className="bg-[#e7f63c] hover:bg-[#d4e42e] text-[#181c22] px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/25"
                 >
                   Return to Home
                 </Link>
@@ -441,7 +441,7 @@ const ScheduleDemo = () => {
                     whileTap={{ scale: 0.99 }}
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-[#e7f63c] hover:bg-[#d4e42e] disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-black text-lg py-4.5 rounded-2xl flex items-center justify-center gap-3 transition-all mt-8 shadow-xl shadow-blue-600/25"
+                    className="w-full bg-[#e7f63c] hover:bg-[#d4e42e] disabled:bg-blue-400 disabled:cursor-not-allowed text-[#181c22] font-black text-lg py-4.5 rounded-2xl flex items-center justify-center gap-3 transition-all mt-8 shadow-xl shadow-blue-600/25"
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />

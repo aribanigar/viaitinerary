@@ -1,6 +1,28 @@
 const num = (d) => (d == null ? null : Number(d));
 const dateOnly = (d) => (d ? new Date(d).toISOString().slice(0, 10) : null);
 
+/**
+ * A whole number from a form value — inputs send what was typed as text
+ * ("03", "1", ""), and the lead's count columns are Int: text there made
+ * Prisma reject the whole lead ("Create Lead" failed).
+ */
+export function toInt(v, fallback = 0) {
+  const n = parseInt(String(v ?? "").trim(), 10);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+/** An amount, or null when nothing (or nothing numeric) was entered. */
+export function toAmount(v) {
+  if (v === "" || v == null) return null;
+  const n = Number(String(v).replace(/[,₹\s]/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+/** A date from "YYYY-MM-DD" (or anything Date parses), else null — never an Invalid Date. */
+export function toDate(v) {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export function generateInquiryId() {
   return `INQ${Math.floor(100000 + Math.random() * 900000)}`;
 }

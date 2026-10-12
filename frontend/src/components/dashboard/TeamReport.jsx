@@ -219,7 +219,7 @@ const TeamReport = () => {
                     >
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-[#e7f63c] flex items-center justify-center text-white font-black text-lg border-4 border-white shadow-sm shrink-0">
+                          <div className="w-12 h-12 rounded-2xl bg-[#e7f63c] flex items-center justify-center text-[#181c22] font-black text-lg border-4 border-white shadow-sm shrink-0">
                             {(member.user?.name || "U").charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -280,7 +280,7 @@ const TeamReport = () => {
                       <ChevronRight className="w-6 h-6 rotate-180" />
                     </button>
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-[1.5rem] bg-[#e7f63c] flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-blue-500/10">
+                      <div className="w-16 h-16 rounded-[1.5rem] bg-[#e7f63c] flex items-center justify-center text-[#181c22] font-black text-2xl shadow-xl shadow-blue-500/10">
                         {(() => {
                           const m = teamMembers.find(
                             (x) => x.id === parseInt(selectedMember),
