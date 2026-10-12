@@ -95,14 +95,9 @@ const TRIGGER_LABELS = {
   confirmation_email: "Confirmation Email",
 };
 
+// The tab strip shows only the trip being worked on — saved trips live in
+// Trips, so earlier ones aren't kept open (the old remembered list is dropped).
 const TABS_KEY = "builder_open_tabs";
-const readTabs = () => {
-  try {
-    return JSON.parse(localStorage.getItem(TABS_KEY)) || [];
-  } catch {
-    return [];
-  }
-};
 
 // embedded: rendered inside another page (the AI Assistant's live builder)
 // instead of as its own route — no page frame, the trip id comes from the host
@@ -1020,8 +1015,8 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     ]);
   };
 
-  // ── Open-trip tabs (assistant-style multi-tab workspace) ───────────────
-  const [tabs, setTabs] = useState(() => readTabs());
+  // ── The open trip's tab (just the current one) ────────────────────────
+  const [tabs, setTabs] = useState([]);
   const [autoState, setAutoState] = useState("idle"); // idle | saving | saved
   const [lastSavedAt, setLastSavedAt] = useState(null);
 
@@ -1034,11 +1029,11 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
 
   useEffect(() => {
     try {
-      localStorage.setItem(TABS_KEY, JSON.stringify(tabs));
+      localStorage.removeItem(TABS_KEY);
     } catch (e) {
       /* ignore */
     }
-  }, [tabs]);
+  }, []);
 
   // keep the current trip present in the tab strip with a fresh title.
   // Only trust the form-derived title once the loaded data belongs to this tab,
@@ -1046,7 +1041,8 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   const dataIsCurrent = loadedTabId === currentTabId;
   const isDraftTab = String(currentTabId).startsWith("draft:");
   useEffect(() => {
-    setTabs((prev) => {
+    setTabs((all) => {
+      const prev = all.filter((t) => t.id === currentTabId);
       const idx = prev.findIndex((t) => t.id === currentTabId);
       if (idx === -1) {
         const initial = dataIsCurrent
@@ -1054,8 +1050,9 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
           : isDraftTab
             ? defaultTabTitle
             : "Loading…";
-        return [...prev, { id: currentTabId, title: initial }];
+        return [{ id: currentTabId, title: initial }];
       }
+      if (prev.length !== all.length) return prev;
       if (!dataIsCurrent) return prev; // keep title until this tab's data settles
       if (prev[idx].title === currentTitle) return prev;
       const next = [...prev];

@@ -58,12 +58,14 @@ export function dayWiseCabs({ days, vehicle, dateOf, newId, quantity = 1, nightC
     // A day plan (dayPlan.js) carries its own route ("Srinagar → Sonamarg → Srinagar");
     // a day that is just its destination gets one worked out from the nights.
     const derived = !d.route && plainDestinationDay(d) ? routeForDay(days, i, nightCity || (() => '')) : null
-    const route = d.route || derived?.route || cabRouteOf(d.title)
+    // "Day trip to Sonamarg" while sleeping in Gulmarg → out and back.
+    const trip = !d.route && !derived && d.location ? stripDay(d.title).match(/^day\s+trip\s+to\s+(.+)$/i) : null
+    const route = d.route || derived?.route || (trip ? `${d.location} → ${trip[1]} → ${d.location}` : cabRouteOf(d.title))
     const priced = !perTrip || i === 0
     return {
       id: newId(),
       vehicleId: priced ? vehicle.id : null,
-      tripType: d.tripType || derived?.tripType || (/day trip|excursion/i.test(route) ? 'Day Trip' : /Sightseeing|leisure/i.test(route) ? 'Sightseeing' : 'Transfer'),
+      tripType: d.tripType || derived?.tripType || (trip ? 'Day Trip' : null) || (/day trip|excursion/i.test(route) ? 'Day Trip' : /Sightseeing|leisure/i.test(route) ? 'Sightseeing' : 'Transfer'),
       route,
       destination: d.location || '',
       date: dateOf(Number(d.day) || i + 1),
