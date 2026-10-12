@@ -136,8 +136,9 @@ const ScheduleDemo = lazy(() => import("./pages/ScheduleDemo"));
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import { NotificationProvider } from "./context/NotificationContext";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./utils/softToast";
 import { HelmetProvider } from "react-helmet-async";
 import Loader from "./components/common/Loader";
 
@@ -500,16 +501,21 @@ function App() {
               <PortalChing />
             </Router>
             <ToastContainer
-              position="top-right"
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop={false}
+              position="bottom-right"
+              autoClose={2600}
+              hideProgressBar
+              newestOnTop
+              limit={3}
               closeOnClick
+              closeButton={false}
               rtl={false}
-              pauseOnFocusLoss
+              pauseOnFocusLoss={false}
               draggable
               pauseOnHover
+              transition={Slide}
+              icon={false}
               theme="light"
+              className="soft-toasts"
             />
           </NotificationProvider>
         </SubscriptionProvider>
