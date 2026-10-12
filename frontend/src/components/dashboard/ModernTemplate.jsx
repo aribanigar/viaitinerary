@@ -1,4 +1,5 @@
-import { activityPages } from "../../utils/activityRows";
+import { activityRow } from "../../utils/activityRows";
+import FlowPages from "./FlowPages";
 import React from "react";
 import { Star } from "lucide-react";
 import ClassicTemplate from "./ClassicTemplate";
@@ -65,15 +66,6 @@ const ModernTemplate = ({
     return parsed ? parsed.getTime() : Number.POSITIVE_INFINITY;
   };
 
-  const toDateKey = (value) => {
-    const parsed = parseAccommodationDate(value);
-    if (!parsed) return null;
-    const y = parsed.getFullYear();
-    const m = String(parsed.getMonth() + 1).padStart(2, "0");
-    const d = String(parsed.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  };
-
   // Sort and group transportation
   const sortedTransportation = [...transportation].sort((a, b) => {
     const aTime = getDateSortValue(a.date);
@@ -81,11 +73,14 @@ const ModernTemplate = ({
     return aTime - bTime;
   });
 
-  const uniqueTransportDateKeys = [
-    ...new Set(
-      sortedTransportation.map((t) => toDateKey(t.date)).filter(Boolean),
-    ),
-  ].sort();
+  // "Nth Day" counted from the trip's start date, so it matches the Day-wise
+  // itinerary even when some days have no cab.
+  const transportDayNumber = (item, index) => {
+    const date = parseAccommodationDate(item.date);
+    const start = parseAccommodationDate(tripInfo.startDate);
+    if (!date || !start) return index + 1;
+    return Math.round((date - start) / 86400000) + 1;
+  };
 
   const getTotalExtraBeds = (hotel) => {
     const extraBeds5To12 = Number(
@@ -635,10 +630,11 @@ const ModernTemplate = ({
         </div>
       </div>
 
-      {/* PAGE 2: ACCOMMODATIONS */}
+      {/* PAGES 2+: ACCOMMODATIONS, HOTEL PACKAGES, TRANSPORTATIONS, ACTIVITIES —
+          laid out by their real heights (FlowPages): a section carries on
+          under the one before it while there is room, long ones break onto
+          the next page, nothing gets cut off. */}
       {(() => {
-        const hotelsPerPage = 3;
-
         // Group accommodations by Hotel Name, City, Category, and Room Type
         const groupedAccommodationList = [];
         if (accommodations && accommodations.length > 0) {
@@ -712,64 +708,7 @@ const ModernTemplate = ({
                 },
               ];
 
-        // A page fits three plain hotel cards; optional hotels make a card
-        // taller, so such cards take more of the page.
-        const cardWeight = (hotel) => {
-          const n = hotelOptionsOf(hotel).length;
-          return n ? 1.25 + 0.15 * n : 1;
-        };
-        const hotelChunks = [];
-        let page = [];
-        let used = 0;
-        accommodationList.forEach((hotel) => {
-          const w = cardWeight(hotel);
-          if (page.length && used + w > hotelsPerPage) {
-            hotelChunks.push(page);
-            page = [];
-            used = 0;
-          }
-          page.push(hotel);
-          used += w;
-        });
-        if (page.length) hotelChunks.push(page);
-        const chunkStarts = hotelChunks.map((_, i) =>
-          hotelChunks.slice(0, i).reduce((n, c) => n + c.length, 0),
-        );
-
-        return hotelChunks.map((chunk, pageIndex) => (
-          <div className="page" key={`hotel-page-${pageIndex}`}>
-            <div className="orange-header-label secondary">
-              <h1>
-                {tripInfo.duration || "0"} NIGHT{" "}
-                {parseInt(tripInfo.duration || 0) + 1} DAYS
-              </h1>
-              <p>
-                TRAVEL ITINERARY BY{" "}
-                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
-              </p>
-            </div>
-            <div className="brand-logo-right" style={{ top: "10px" }}>
-              {agencySettings.logo ? (
-                <img
-                  src={formatImageUrl(agencySettings.logo)}
-                  alt="Logo"
-                  className="header-logo"
-                />
-              ) : (
-                <>
-                  <h2>
-                    {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
-                  </h2>
-                  <span>TRAVEL SIMPLIFIED</span>
-                </>
-              )}
-            </div>
-            <div className="section-bar">
-              <h2>ACCOMMODATIONS</h2>
-            </div>
-
-            {chunk.map((hotel, index) => {
-              const actualIndex = chunkStarts[pageIndex] + index;
+        const hotelItems = accommodationList.map((hotel) => {
               const hotelOptions = hotelOptionsOf(hotel);
               const totalExtraBeds = getTotalExtraBeds(hotel);
 
@@ -854,7 +793,7 @@ const ModernTemplate = ({
               }
 
               return (
-                <div className="hotel-card" key={hotel.id || actualIndex}>
+                <div className="hotel-card">
                   <div className="hotel-info">
                     {hotel.id !== "booked-by-guest" && (
                       <>
@@ -1027,58 +966,35 @@ const ModernTemplate = ({
                   )}
                 </div>
               );
-            })}
+        });
 
-            <div style={{ flex: 1 }}></div>
-            <div className="footer-line"></div>
-            <div className="footer">
-              <span
-                style={{ display: "flex", alignItems: "center", gap: "4px" }}
-              >
-                <WhatsAppIcon size={14} /> WhatsApp
-              </span>
-              <span>{agencySettings.whatsapp}</span>
-              <span>{agencySettings.email}</span>
-              <span>{agencySettings.website}</span>
-            </div>
-          </div>
-        ));
-      })()}
-
-      {/* HOTEL PACKAGES: one total per package (Standard / Deluxe / …) */}
-      {packageData && (
-        <div className="page">
-          <div className="orange-header-label secondary">
-            <h1>
-              {tripInfo.duration || "0"} NIGHT{" "}
-              {parseInt(tripInfo.duration || 0) + 1} DAYS
-            </h1>
-            <p>
-              TRAVEL ITINERARY BY{" "}
-              {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
-            </p>
-          </div>
-          <div className="brand-logo-right" style={{ top: "10px" }}>
-            {agencySettings.logo ? (
-              <img
-                src={formatImageUrl(agencySettings.logo)}
-                alt="Logo"
-                className="header-logo"
-              />
-            ) : (
-              <>
-                <h2>
-                  {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
-                </h2>
-                <span>TRAVEL SIMPLIFIED</span>
-              </>
-            )}
-          </div>
+        const sectionBar = (title) => (
           <div className="section-bar">
-            <h2>CHOOSE YOUR HOTEL PACKAGE</h2>
+            <h2>{title}</h2>
           </div>
+        );
+        const tableHead = (cols) => (
+          <thead>
+            <tr>
+              {cols.map((c) => (
+                <th key={c}>{c}</th>
+              ))}
+            </tr>
+          </thead>
+        );
 
-          <table className="itinerary-table package-table">
+        const sections = [
+          {
+            key: "hotels",
+            bar: sectionBar("ACCOMMODATIONS"),
+            items: hotelItems.map((node, i) => ({ key: `h${i}`, node })),
+          },
+          packageData && {
+            key: "packages",
+            bar: sectionBar("CHOOSE YOUR HOTEL PACKAGE"),
+            table: {
+              className: "itinerary-table package-table",
+              head: (
             <thead>
               <tr>
                 <th>PACKAGE</th>
@@ -1090,9 +1006,12 @@ const ModernTemplate = ({
                 <th>TOTAL PRICE</th>
               </tr>
             </thead>
-            <tbody>
-              {packageData.packages.map((pkg) => (
-                <tr key={pkg.index}>
+              ),
+            },
+            items: packageData.packages.map((pkg) => ({
+              key: `p${pkg.index}`,
+              node: (
+                <tr>
                   <td>
                     <b>{pkg.name}</b>
                   </td>
@@ -1115,81 +1034,30 @@ const ModernTemplate = ({
                     </b>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+),
+            })),
+            after: (
           <p className="package-note">
             Total price for the whole trip {includeGST ? "including" : "excluding"} GST.
             Where a package lists more than one hotel, choose any one — the first hotel
             is included in the package price; others cost the amount shown.
           </p>
-
-          <div style={{ flex: 1 }}></div>
-          <div className="footer-line"></div>
-          <div className="footer">
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <WhatsAppIcon size={14} /> WhatsApp
-            </span>
-            <span>{agencySettings.whatsapp}</span>
-            <span>{agencySettings.email}</span>
-            <span>{agencySettings.website}</span>
-          </div>
-        </div>
-      )}
-
-      {/* PAGE 3: TRANSPORTATIONS */}
-      <div className="page">
-        <div className="orange-header-label secondary">
-          <h1>
-            {tripInfo.duration || "0"} NIGHT{" "}
-            {parseInt(tripInfo.duration || 0) + 1} DAYS
-          </h1>
-          <p>
-            TRAVEL ITINERARY BY{" "}
-            {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
-          </p>
-        </div>
-        <div className="brand-logo-right" style={{ top: "10px" }}>
-          {agencySettings.logo ? (
-            <img
-              src={formatImageUrl(agencySettings.logo)}
-              alt="Logo"
-              className="header-logo"
-            />
-          ) : (
-            <>
-              <h2>
-                {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
-              </h2>
-              <span>TRAVEL SIMPLIFIED</span>
-            </>
-          )}
-        </div>
-        <div className="section-bar">
-          <h2>TRANSPORTATIONS</h2>
-        </div>
-
-        {transportation.length > 0 ? (
-          <table className="itinerary-table">
-            <thead>
-              <tr>
-                <th>Day</th>
-                <th>Type</th>
-                <th>Service/Route</th>
-                <th>No. Vehicles</th>
-                <th>Vehicle</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedTransportation.map((item, index) => {
-                const transportDateKey = toDateKey(item.date);
+            ),
+          },
+          transportation.length > 0
+            ? {
+                key: "transport",
+                bar: sectionBar("TRANSPORTATIONS"),
+                table: {
+                  className: "itinerary-table",
+                  head: tableHead(["Day", "Type", "Service/Route", "No. Vehicles", "Vehicle"]),
+                },
+                items: sortedTransportation.map((item, index) => {
                 const parsedTransportDate = parseAccommodationDate(item.date);
-                const dayNumber = transportDateKey
-                  ? uniqueTransportDateKeys.indexOf(transportDateKey) + 1
-                  : index + 1;
+                const dayNumber = transportDayNumber(item, index);
 
                 return (
-                  <tr key={item.id || index}>
+                  <tr>
                     <td>
                       {dayNumber}
                       {dayNumber % 10 === 1 && dayNumber % 100 !== 11
@@ -1232,10 +1100,15 @@ const ModernTemplate = ({
                     <td>{item.vehicleType}</td>
                   </tr>
                 );
-              })}
-            </tbody>
-          </table>
-        ) : (
+                }).map((node, i) => ({ key: `t${i}`, node })),
+              }
+            : {
+                key: "transport",
+                bar: sectionBar("TRANSPORTATIONS"),
+                items: [
+                  {
+                    key: "t-empty",
+                    node: (
           <div style={{ padding: "60px", textAlign: "center", color: "#666" }}>
             <h3
               style={{ fontSize: "24px", fontWeight: "800", color: "#0D2D2D" }}
@@ -1246,66 +1119,21 @@ const ModernTemplate = ({
               No transportation details have been added to this quote.
             </p>
           </div>
-        )}
-
-        <div style={{ flex: 1 }}></div>
-        <div className="footer-line"></div>
-        <div className="footer">
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <WhatsAppIcon size={14} /> WhatsApp
-          </span>
-          <span>{agencySettings.whatsapp}</span>
-          <span>{agencySettings.email}</span>
-          <span>{agencySettings.website}</span>
-        </div>
-      </div>
-
-      {/* ACTIVITIES — optional: pages exist only when activities were added.
-          Same table shape as Transportations (no prices; the total covers them). */}
-      {activityPages(tripActivities).map((rows, pageIndex) => (
-        <div className="page" key={`activities-page-${pageIndex}`}>
-          <div className="orange-header-label secondary">
-            <h1>
-              {tripInfo.duration || "0"} NIGHT{" "}
-              {parseInt(tripInfo.duration || 0) + 1} DAYS
-            </h1>
-            <p>
-              TRAVEL ITINERARY BY{" "}
-              {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
-            </p>
-          </div>
-          <div className="brand-logo-right" style={{ top: "10px" }}>
-            {agencySettings.logo ? (
-              <img
-                src={formatImageUrl(agencySettings.logo)}
-                alt="Logo"
-                className="header-logo"
-              />
-            ) : (
-              <>
-                <h2>
-                  {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
-                </h2>
-                <span>TRAVEL SIMPLIFIED</span>
-              </>
-            )}
-          </div>
-          <div className="section-bar">
-            <h2>ACTIVITIES</h2>
-          </div>
-
-          <table className="itinerary-table">
-            <thead>
-              <tr>
-                <th>Day</th>
-                <th>Activity</th>
-                <th>Location</th>
-                <th>Tickets</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => (
-                <tr key={row.key || index}>
+                    ),
+                  },
+                ],
+              },
+          tripActivities && tripActivities.length > 0 && {
+            key: "activities",
+            bar: sectionBar("ACTIVITIES"),
+            table: {
+              className: "itinerary-table",
+              head: tableHead(["Day", "Activity", "Location", "Tickets"]),
+            },
+            items: tripActivities.map(activityRow).map((row, index) => ({
+              key: `a${row.key || index}`,
+              node: (
+                <tr>
                   <td>{row.day}</td>
                   <td>{row.name}</td>
                   <td>{row.location}</td>
@@ -1319,22 +1147,61 @@ const ModernTemplate = ({
                     {row.personsLabel}
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+),
+            })),
+          },
+        ].filter(Boolean);
 
-          <div style={{ flex: 1 }}></div>
-          <div className="footer-line"></div>
-          <div className="footer">
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-              <WhatsAppIcon size={14} /> WhatsApp
-            </span>
-            <span>{agencySettings.whatsapp}</span>
-            <span>{agencySettings.email}</span>
-            <span>{agencySettings.website}</span>
-          </div>
-        </div>
-      ))}
+        return (
+          <FlowPages
+            sections={sections}
+            pageClassName="page"
+            renderTop={() => (
+              <>
+                <div className="orange-header-label secondary">
+                  <h1>
+                    {tripInfo.duration || "0"} NIGHT{" "}
+                    {parseInt(tripInfo.duration || 0) + 1} DAYS
+                  </h1>
+                  <p>
+                    TRAVEL ITINERARY BY{" "}
+                    {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
+                  </p>
+                </div>
+                <div className="brand-logo-right" style={{ top: "10px" }}>
+                  {agencySettings.logo ? (
+                    <img
+                      src={formatImageUrl(agencySettings.logo)}
+                      alt="Logo"
+                      className="header-logo"
+                    />
+                  ) : (
+                    <>
+                      <h2>
+                        {(agencySettings.agencyName || "VIAITINERARY").toUpperCase()}
+                      </h2>
+                      <span>TRAVEL SIMPLIFIED</span>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+            renderBottom={() => (
+              <>
+                <div className="footer-line"></div>
+                <div className="footer">
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <WhatsAppIcon size={14} /> WhatsApp
+                  </span>
+                  <span>{agencySettings.whatsapp}</span>
+                  <span>{agencySettings.email}</span>
+                  <span>{agencySettings.website}</span>
+                </div>
+              </>
+            )}
+          />
+        );
+      })()}
 
       {/* DAY WISE ITINERARY PAGES */}
       {itinerary.map((day, index) => (

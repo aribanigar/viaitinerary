@@ -1,5 +1,5 @@
-import React from "react";
-import { Image as ImageIcon, MapPin, Trash2 } from "lucide-react";
+import React, { useState } from "react";
+import { GripVertical, Image as ImageIcon, MapPin, Trash2 } from "lucide-react";
 import { destinationActivityLabels } from "../../../utils/destinationActivities";
 import DestinationPicker from "./DestinationPicker";
 
@@ -10,7 +10,16 @@ const ItineraryTab = ({
   removeDay,
   addDayFromDestination,
   formatImageUrl,
+  moveDay,
 }) => {
+  // Drag a day by its handle (or pick "Move to day N" — easier on a long
+  // trip). moveDay re-dates the day's hotel, cabs and activities with it.
+  const [dragFrom, setDragFrom] = useState(null);
+  const [dragOver, setDragOver] = useState(null);
+  const endDrag = () => {
+    setDragFrom(null);
+    setDragOver(null);
+  };
   return (
     <div className="space-y-4 animate-in slide-in-from-right-4 duration-500">
       <div className="flex items-center justify-between gap-4 mb-2">
@@ -29,13 +38,45 @@ const ItineraryTab = ({
         </div>
       </div>
 
-      {itinerary.map((day) => (
+      {itinerary.map((day, index) => (
         <div
           key={day.id}
-          className="bg-white border border-black/5 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+          onDragOver={(e) => {
+            if (dragFrom == null) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            if (dragOver !== index) setDragOver(index);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            if (dragFrom != null && dragFrom !== index) moveDay?.(dragFrom + 1, index + 1);
+            endDrag();
+          }}
+          className={`bg-white border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all ${
+            dragOver === index && dragFrom !== index
+              ? dragFrom < index
+                ? "border-accent shadow-[0_3px_0_0_var(--color-accent)]"
+                : "border-accent shadow-[0_-3px_0_0_var(--color-accent)]"
+              : "border-black/5"
+          } ${dragFrom === index ? "opacity-40" : ""}`}
         >
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1 border-b border-transparent focus-within:border-black/5 transition-colors mr-4">
+              {moveDay && itinerary.length > 1 && (
+                <span
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", String(index));
+                    setDragFrom(index);
+                  }}
+                  onDragEnd={endDrag}
+                  title="Drag to move this day"
+                  className="cursor-grab active:cursor-grabbing text-[#c9ced6] hover:text-ink -ml-1"
+                >
+                  <GripVertical className="w-4 h-4" />
+                </span>
+              )}
               <div className="w-8 h-8 bg-white shadow-sm border border-black/10 rounded-md flex items-center justify-center text-ink font-bold text-xs shrink-0">
                 {day.day}
               </div>
@@ -66,6 +107,26 @@ const ItineraryTab = ({
                 }}
               />
             </div>
+            {moveDay && itinerary.length > 1 && (
+              <select
+                value=""
+                onChange={(e) => {
+                  const to = Number(e.target.value);
+                  if (to) moveDay(index + 1, to);
+                }}
+                title="Move this day"
+                className="mr-3 bg-white border border-black/10 rounded-lg py-1 px-2 text-[11px] font-semibold text-ink/60 focus:outline-none focus:ring-2 focus:ring-accent/20 cursor-pointer"
+              >
+                <option value="">Move to…</option>
+                {itinerary.map((_, i) =>
+                  i === index ? null : (
+                    <option key={i} value={i + 1}>
+                      Day {i + 1}
+                    </option>
+                  ),
+                )}
+              </select>
+            )}
             <button
               onClick={() => removeDay(day.id)}
               className="text-[#c9ced6] hover:text-red-500 transition-colors mr-1"

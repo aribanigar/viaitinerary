@@ -25,6 +25,8 @@ import CompactDataTable from "../common/CompactDataTable";
 import ActivityDetailsPanel from "./ActivityDetailsPanel";
 import { useAuth } from "../../context/AuthContext";
 import { fetchActivities, deleteActivity } from "../../api/activities";
+import { SortLabel, SelectAllBox, RowSelectCell, BulkActionBar } from "../common/tableTools";
+import { useTableSort, useSelection, deleteEach } from "../common/tableHooks";
 
 // The Activities catalog, laid out exactly like Accommodation: stat buttons,
 // search + filters, a lean table, and a details panel that opens beside it.
@@ -142,9 +144,31 @@ const Activities = () => {
     setCurrentPage(1);
   }, [searchQuery, filters, pageSize]);
 
+  const { sorted, sort, toggleSort } = useTableSort(filtered, {
+    name: (a) => a.name,
+    category: (a) => a.category,
+    price: (a) => startingPrice(a),
+    availability: (a) => (a.is_active ? 0 : 1),
+  });
+  const selection = useSelection(filtered.map((x) => x.id));
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const handleBulkDelete = async (ids) => {
+    setBulkDeleting(true);
+    const { ok, failed } = await deleteEach(ids, (id) => deleteActivity(id, token));
+    setBulkDeleting(false);
+    setActivities((prev) => prev.filter((x) => !ok.includes(x.id)));
+    if (failed.length) {
+      toast.error(
+        `${failed.length} of ${ids.length} couldn't be deleted${failed[0].error?.message ? `: ${failed[0].error.message}` : ""}`,
+      );
+    } else {
+      toast.success(`${ok.length} ${ok.length === 1 ? "activity" : "activities"} deleted`);
+    }
+  };
+
   const lastPage = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, lastPage);
-  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pageItems = sorted.slice((page - 1) * pageSize, page * pageSize);
   const pagination = {
     currentPage: page,
     lastPage,
@@ -328,12 +352,19 @@ const Activities = () => {
             )}
           </div>
 
+          <BulkActionBar
+            selection={selection}
+            noun="activity"
+            onDelete={handleBulkDelete}
+            deleting={bulkDeleting}
+          />
           <CompactDataTable
             headers={[
-              { label: "Activity" },
-              { label: "Category" },
-              { label: "Starting Price" },
-              { label: "Availability" },
+              { label: <SelectAllBox pageIds={pageItems.map((x) => x.id)} selection={selection} />, className: "w-10 !pr-0" },
+              { label: <SortLabel label="Activity" sortKey="name" sort={sort} onSort={toggleSort} /> },
+              { label: <SortLabel label="Category" sortKey="category" sort={sort} onSort={toggleSort} /> },
+              { label: <SortLabel label="Starting Price" sortKey="price" sort={sort} onSort={toggleSort} /> },
+              { label: <SortLabel label="Availability" sortKey="availability" sort={sort} onSort={toggleSort} /> },
               { label: "Contact" },
               { label: "Actions", className: "text-right" },
             ]}
@@ -351,7 +382,8 @@ const Activities = () => {
               const price = startingPrice(a);
               const options = (a.price_sections || []).length;
               return (
-                <tr key={a.id} className="hover:bg-slate-50/50 group transition-colors">
+                <tr key={a.id} className={`hover:bg-slate-50/50 group transition-colors ${selection.has(a.id) ? "bg-slate-50" : ""}`}>
+                  <RowSelectCell id={a.id} selection={selection} />
                   <td>
                     <button onClick={() => openPanel(a)} className="flex items-center gap-3 text-left w-full">
                       <div className="w-11 h-11 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">

@@ -315,7 +315,9 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     return [...transportation].sort((a, b) => {
       if (!a.date) return 1;
       if (!b.date) return -1;
-      return new Date(a.date) - new Date(b.date);
+      // "yyyy-MM-dd[ HH:mm]" strings sort as text; new Date() on them is
+      // Invalid Date in Safari.
+      return String(a.date).localeCompare(String(b.date));
     });
   }, [transportation]);
 
@@ -430,6 +432,20 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   const [editingHotelId, setEditingHotelId] = useState(null);
   const [editingTransportId, setEditingTransportId] = useState(null);
   const [editingActivityId, setEditingActivityId] = useState(null);
+
+  // Days that already have a cab (the row being edited excluded) — shown in
+  // the transport date picker the same way booked hotel nights are.
+  const reservedTransportDates = useMemo(() => {
+    const seen = new Map();
+    transportation.forEach((item) => {
+      if (editingTransportId && item.id === editingTransportId) return;
+      const d = parseAccommodationDate(item.date);
+      if (!d) return;
+      const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      seen.set(day.getTime(), day);
+    });
+    return Array.from(seen.values());
+  }, [transportation, editingTransportId, parseAccommodationDate]);
 
   const reservedAccommodationDates = useMemo(() => {
     const reservedDates = new Map();
@@ -1617,6 +1633,21 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     setActiveTab,
     currencySymbol: (tripInfo.currency || "").includes("₹") || /INR/.test(tripInfo.currency || "") ? "₹" : "",
   };
+  // Itinerary drag-and-drop / "Move to day N": the day carries its hotel
+  // night(s), cabs and activities, and every date is laid out again from the
+  // start date (editTrip.js MOVE_DAY) — so the Logistics tab and the PDF stay
+  // in step with the new day order.
+  const moveDay = (from, to) => {
+    const { snapshot, catalog, settings } = chingState.current;
+    const { snapshot: next, warnings } = applyEditActions(snapshot, [{ type: "MOVE_DAY", from, to }], { catalog, settings });
+    if (warnings.length) toast.warn(warnings[0]);
+    setPricingTouched(true);
+    setTripInfo((prev) => ({ ...next.tripInfo, cost: prev.cost }));
+    setItinerary(next.itinerary);
+    setAccommodations(next.accommodations);
+    setTransportation(next.transportation);
+    setTripActivities(next.tripActivities);
+  };
   const chingUndo = useRef([]);
   // Live (real-time) voice session: { base } = the trip as it was when the
   // agent started speaking; every update re-plans base + all text so far.
@@ -2575,6 +2606,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                         itinerary={itinerary}
                         setItinerary={setItinerary}
                         removeDay={removeDay}
+                        moveDay={moveDay}
                         addDayFromDestination={addDayFromDestination}
                         formatImageUrl={formatImageUrl}
                       />
@@ -2727,6 +2759,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         tripInfo={tripInfo}
         urlTripId={urlTripId}
         tripMarginPercentage={profitMarginPercentage}
+        reservedTransportDates={reservedTransportDates}
       />
 
       <ActivityModal

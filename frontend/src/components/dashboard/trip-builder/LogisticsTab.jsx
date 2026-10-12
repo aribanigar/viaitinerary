@@ -372,15 +372,15 @@ const LogisticsTab = ({
 
         <div className="space-y-4">
           {sortedTransportation.map((item, index) => {
-            const uniqueDates = [
-              ...new Set(
-                sortedTransportation.map((t) => t.date).filter(Boolean),
-              ),
-            ].sort((a, b) => new Date(a) - new Date(b));
-
-            const dayNumber = item.date
-              ? uniqueDates.indexOf(item.date) + 1
-              : index + 1;
+            // Day N counted from the trip's start date (not from the list of
+            // dates that happen to have a cab), so it stays right after the
+            // start date or the day order changes.
+            const itemDate = parseAccommodationDate(item.date);
+            const tripStart = parseAccommodationDate(tripInfo.startDate);
+            const dayNumber =
+              itemDate && tripStart
+                ? Math.round((itemDate - tripStart) / 86400000) + 1
+                : index + 1;
 
             const dateSuffix = (n) => {
               const s = ["th", "st", "nd", "rd"];
@@ -436,12 +436,22 @@ const LogisticsTab = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="bg-white border border-black/5 px-3 py-1.5 rounded-lg text-[#5b6472] text-[10px] font-bold shadow-sm">
-                      {new Date(item.date).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                      })}
-                    </div>
+                    {itemDate ? (
+                      <div className="bg-white border border-black/5 px-3 py-1.5 rounded-lg text-[#5b6472] text-[10px] font-bold shadow-sm">
+                        {itemDate.toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                        })}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openEditTransportModal(item)}
+                        className="bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg text-amber-700 text-[10px] font-bold"
+                      >
+                        Set date
+                      </button>
+                    )}
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => openEditTransportModal(item)}

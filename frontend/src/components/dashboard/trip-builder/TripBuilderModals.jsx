@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { shiftDateString } from "../../../utils/dateShift";
 import { Minus, Plus, AlertTriangle, Ban, X, Trash2, Layers } from "lucide-react";
 import Modal from "../../common/Modal";
 import { packageNamesOf } from "../../../utils/hotelOptions";
@@ -858,7 +859,13 @@ export const TransportModal = ({
   tripInfo,
   urlTripId,
   tripMarginPercentage,
+  reservedTransportDates = [],
 }) => {
+  const tripNights = parseInt(tripInfo?.duration, 10);
+  const tripEnd =
+    tripInfo?.startDate && Number.isFinite(tripNights)
+      ? shiftDateString(tripInfo.startDate, tripNights)
+      : null;
   return (
     <Modal
       isOpen={isOpen}
@@ -943,8 +950,18 @@ export const TransportModal = ({
               options={{
                 dateFormat: "d-m-Y",
                 minDate: urlTripId ? null : tripInfo.startDate || "today",
+                // Same as the hotel picker: the trip's dates as a range, days
+                // that already have a cab marked as booked.
+                highlightRangeStart: tripInfo.startDate,
+                highlightRangeEnd: tripEnd,
+                reservedDates: reservedTransportDates,
               }}
             />
+            {reservedTransportDates.length > 0 && (
+              <p className="mt-1.5 ml-1 text-[10px] font-medium text-[#9aa3b2]">
+                Marked days already have a cab booked.
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-[11px] font-semibold text-ink/45 uppercase tracking-[0.12em] mb-1.5">

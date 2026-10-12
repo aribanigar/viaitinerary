@@ -413,7 +413,133 @@ const withoutLeisure = (lines) => lines.filter((l) => !sameName(l, LEISURE_LINE)
 
 /* ───────────────────────────── actions ───────────────────────────── */
 
+/* ───────────────────────────── move a day ───────────────────────────── */
+
+// Split sorted night numbers into runs of consecutive nights: [1,2,4] → [[1,2],[4]].
+const nightRuns = (nights) =>
+  nights.reduce((runs, n) => {
+    const last = runs[runs.length - 1]
+    if (last && last[last.length - 1] === n - 1) last.push(n)
+    else runs.push([n])
+    return runs
+  }, [])
+
+/**
+ * Drag a day to another position. The day takes its own things with it: the
+ * hotel it sleeps in (every hotel option of a package), its cabs and its
+ * activities; then every date is laid out again from the start date. A stay
+ * whose nights end up apart is split into two bookings of the same hotel;
+ * nights of one hotel that end up together become one booking.
+ */
+function moveDay(st, from, to) {
+  const days = st.s.itinerary
+  const N = days.length
+  if (!(from >= 1 && from <= N && to >= 1 && to <= N)) return st.warnings.push('There is no such day to move')
+  if (from === to) return
+  const start = st.s.tripInfo.startDate
+  const order = days.map((_, i) => i + 1)
+  order.splice(to - 1, 0, ...order.splice(from - 1, 1))
+  const newPos = new Map(order.map((old, i) => [old, i + 1]))
+  const seq = staySequence(st)
+
+  // Routes Ching / the picker worked out for each day before the move — a cab
+  // still carrying one of them gets the route for its new place.
+  const autoRoutes = (list) => {
+    const stays = getStays(st.s.accommodations)
+    const nightCity = (i) => stays.find((a) => a.checkIn <= dateOfDay(st, i + 1) && dateOfDay(st, i + 1) < a.checkOut)?.city || ''
+    return list.map((_, i) => routeForDay(list, i, nightCity))
+  }
+  const oldRoutes = start ? autoRoutes(days) : []
+
+  if (start) {
+    // Night of old day d → night number after the move. The departure day (no
+    // night) is skipped, so the trip keeps the same number of nights.
+    const nights = Math.min(Number.isFinite(st.nights) && st.nights > 0 ? st.nights : N - 1, N - 1)
+    const nightMap = new Map()
+    let k = 0
+    for (const old of order) {
+      if (old <= nights) nightMap.set(old, (k += 1))
+    }
+    const moved = []
+    for (const acc of [...st.s.accommodations]) {
+      const ci = normDate(acc.checkIn)
+      const n = nightsOf(acc)
+      if (!ci || !(n >= 1)) continue
+      const d0 = dayOfDate(st, ci)
+      const own = []
+      for (let j = 0; j < n; j += 1) own.push(nightMap.get(d0 + j))
+      if (own.some((x) => x == null)) continue // stays outside the trip's nights are left alone
+      if (isCancelled(acc)) {
+        acc.checkIn = dateOfDay(st, own[0])
+        acc.checkOut = addDays(acc.checkIn, n)
+        continue
+      }
+      const runs = nightRuns([...own].sort((x, y) => x - y))
+      runs.forEach((run, r) => {
+        const target = r === 0 ? acc : { ...clone(acc), id: newId() }
+        if (r > 0) {
+          delete target.supplierToken
+          delete target.supplierStatus
+          moved.push(target)
+        }
+        target.checkIn = dateOfDay(st, run[0])
+        target.checkOut = addDays(target.checkIn, run.length)
+      })
+    }
+    // Nights of the same hotel option that now sit back to back: one booking.
+    const all = [...st.s.accommodations, ...moved]
+    const merged = []
+    const key = (a) => [a.hotelId ?? a.hotelName, a.roomType, a.mealPlan, a.packageIndex ?? a.package ?? '', a.rooms, a.pricePerRoom].join('|')
+    for (const acc of all.slice().sort((x, y) => String(x.checkIn).localeCompare(String(y.checkIn)))) {
+      const prev = !isCancelled(acc) && merged.find((m) => !isCancelled(m) && key(m) === key(acc) && m.checkOut === acc.checkIn)
+      if (prev) prev.checkOut = acc.checkOut
+      else merged.push(acc)
+    }
+    st.s.accommodations = st.s.accommodations.filter((a) => merged.includes(a)).concat(moved.filter((a) => merged.includes(a)))
+
+    for (const t of st.s.transportation) {
+      const date = normDate(t.date)
+      if (!date || isFullTripCab(t)) continue
+      const d = dayOfDate(st, date)
+      if (newPos.has(d)) t.date = dateOfDay(st, newPos.get(d))
+    }
+    st.s.transportation = st.s.transportation
+      .map((t, i) => ({ t, i }))
+      .sort((x, y) => String(x.t.date || '').localeCompare(String(y.t.date || '')) || x.i - y.i)
+      .map(({ t }) => t)
+  }
+
+  for (const act of st.s.tripActivities) {
+    const n = toInt(act.dayNumber)
+    if (newPos.has(n)) act.dayNumber = typeof act.dayNumber === 'string' ? String(newPos.get(n)) : newPos.get(n)
+  }
+
+  st.s.itinerary = order.map((old) => days[old - 1])
+  finishStructural(st, seq)
+
+  if (start) {
+    const newRoutes = autoRoutes(st.s.itinerary)
+    for (const t of st.s.transportation) {
+      const date = normDate(t.date)
+      if (!date || isFullTripCab(t)) continue
+      const n = dayOfDate(st, date)
+      const oldDay = order[n - 1]
+      const was = oldRoutes[oldDay - 1]
+      if (was && t.route === was.route && newRoutes[n - 1]) {
+        t.route = newRoutes[n - 1].route
+        t.tripType = newRoutes[n - 1].tripType
+      }
+    }
+  }
+  st.changes.push(`Day ${from} moved to day ${to}`)
+}
+
 const HANDLERS = {
+  /** Drag-and-drop in the Itinerary tab: { from, to } are 1-based day numbers. */
+  MOVE_DAY(st, a) {
+    moveDay(st, toInt(a.from), toInt(a.to))
+  },
+
   /** Reorder the hotels into the shortest road loop (route.js), moving each stay's days, cabs and activities with it. */
   SORT_STAYS(st, a) {
     if (!needDates(st)) return

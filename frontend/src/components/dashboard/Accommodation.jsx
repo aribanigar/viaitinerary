@@ -29,6 +29,8 @@ import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import CompactDataTable from "../common/CompactDataTable";
 import HotelDetailsPanel from "./HotelDetailsPanel";
+import { SortLabel, SelectAllBox, RowSelectCell, BulkActionBar } from "../common/tableTools";
+import { useTableSort, useSelection, deleteEach } from "../common/tableHooks";
 
 // Client-side pagination/filtering: an agency's hotel catalog is small
 // enough (tens to low hundreds) to fetch once and filter instantly, rather
@@ -86,7 +88,7 @@ const Accommodation = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [targetId, setTargetId] = useState(null);
@@ -197,9 +199,31 @@ const Accommodation = () => {
     setCurrentPage(1);
   }, [searchQuery, filters, pageSize]);
 
+  const { sorted, sort, toggleSort } = useTableSort(filtered, {
+    name: (a) => a.name,
+    stars: (a) => parseInt(a.category, 10) || null,
+    price: (a) => startingPrice(a),
+    availability: (a) => (a.is_available ? 0 : 1),
+  });
+  const selection = useSelection(filtered.map((a) => a.id));
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const handleBulkDelete = async (ids) => {
+    setBulkDeleting(true);
+    const { ok, failed } = await deleteEach(ids, (id) => deleteHotel(id, token));
+    setBulkDeleting(false);
+    setAccommodations((prev) => prev.filter((a) => !ok.includes(a.id)));
+    if (failed.length) {
+      toast.error(
+        `${failed.length} of ${ids.length} couldn't be deleted${failed[0].error?.message ? `: ${failed[0].error.message}` : ""}`,
+      );
+    } else {
+      toast.success(`${ok.length} accommodation${ok.length === 1 ? "" : "s"} deleted`);
+    }
+  };
+
   const lastPage = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, lastPage);
-  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pageItems = sorted.slice((page - 1) * pageSize, page * pageSize);
   const pagination = {
     currentPage: page,
     lastPage,
@@ -545,12 +569,19 @@ const Accommodation = () => {
           )}
         </div>
 
+        <BulkActionBar
+          selection={selection}
+          noun="accommodation"
+          onDelete={handleBulkDelete}
+          deleting={bulkDeleting}
+        />
         <CompactDataTable
           headers={[
-            { label: "Hotel" },
-            { label: "Category" },
-            { label: "Starting Price" },
-            { label: "Availability" },
+            { label: <SelectAllBox pageIds={pageItems.map((a) => a.id)} selection={selection} />, className: "w-10 !pr-0" },
+            { label: <SortLabel label="Hotel" sortKey="name" sort={sort} onSort={toggleSort} /> },
+            { label: <SortLabel label="Category" sortKey="stars" sort={sort} onSort={toggleSort} /> },
+            { label: <SortLabel label="Starting Price" sortKey="price" sort={sort} onSort={toggleSort} /> },
+            { label: <SortLabel label="Availability" sortKey="availability" sort={sort} onSort={toggleSort} /> },
             { label: "Contact" },
             { label: "Actions", className: "text-right" },
           ]}
@@ -574,8 +605,9 @@ const Accommodation = () => {
             return (
               <tr
                 key={accommodation.id}
-                className="hover:bg-slate-50/50 group transition-colors"
+                className={`hover:bg-slate-50/50 group transition-colors ${selection.has(accommodation.id) ? "bg-slate-50" : ""}`}
               >
+                <RowSelectCell id={accommodation.id} selection={selection} />
                 <td>
                   <button
                     onClick={() => openHotelPanel(accommodation)}

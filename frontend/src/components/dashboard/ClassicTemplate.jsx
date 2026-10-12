@@ -1,4 +1,5 @@
-import { activityPages } from "../../utils/activityRows";
+import { activityRow } from "../../utils/activityRows";
+import FlowPages from "./FlowPages";
 import React from "react";
 import {
   hotelOptionsOf,
@@ -95,12 +96,17 @@ const ClassicTemplate = ({
   const sortedTransportation = [...transportation].sort((a, b) => {
     if (!a.date) return 1;
     if (!b.date) return -1;
-    return new Date(a.date) - new Date(b.date);
+    return String(a.date).localeCompare(String(b.date));
   });
 
-  const uniqueTransportDates = [
-    ...new Set(sortedTransportation.map((t) => t.date).filter(Boolean)),
-  ].sort((a, b) => new Date(a) - new Date(b));
+  // "Nth Day" counted from the trip's start date, so it matches the Day-wise
+  // itinerary even when some days have no cab.
+  const transportDayNumber = (item, index) => {
+    const date = parseDateValue(item.date);
+    const start = parseDateValue(tripInfo.startDate);
+    if (!date || !start) return index + 1;
+    return Math.round((date - start) / 86400000) + 1;
+  };
 
   const getTotalExtraBeds = (hotel) => {
     const extraBeds5To12 = Number(
@@ -924,48 +930,13 @@ const ClassicTemplate = ({
         </div>
       ))}
 
-      {/* PAGE 2: Accommodation Info */}
+      {/* PAGES 2+: Accommodation (summary table + hotel cards), hotel packages,
+          Transportation Info, Activities — laid out by their real heights
+          (FlowPages): a section carries on under the one before it while
+          there is room, long ones break onto the next page, nothing is cut. */}
       {(() => {
-        if (!accommodations || accommodations.length === 0) {
-          return (
-            <div className="classic-page">
-              <div className="classic-section-header">
-                <div className="classic-section-left">
-                  <div className="classic-section-title">Accommodation</div>
-                </div>
-                {agencySettings.logo && (
-                  <img
-                    src={formatImageUrl(agencySettings.logo)}
-                    alt="Logo"
-                    className="classic-section-logo"
-                  />
-                )}
-              </div>
-              <div
-                style={{ padding: "60px", textAlign: "center", color: "#666" }}
-              >
-                <h3
-                  style={{
-                    fontSize: "24px",
-                    fontWeight: "800",
-                    color: secondaryColor,
-                  }}
-                >
-                  HOTEL BOOKED BY GUEST
-                </h3>
-                <p style={{ marginTop: "10px" }}>
-                  No accommodation details have been added to this quote.
-                </p>
-              </div>
-              <ClassicFooter />
-            </div>
-          );
-        }
-
-        const hotelsPerPage = 3;
-
-        // Group accommodations by Hotel Name, City, Category, and Room Type
         const groupedAccommodationList = [];
+        // Group accommodations by Hotel Name, City, Category, and Room Type
         if (accommodations && accommodations.length > 0) {
           const sorted = [...accommodations].sort((a, b) => {
             if (!a.checkIn) return 1;
@@ -1004,48 +975,54 @@ const ClassicTemplate = ({
           });
         }
 
-        // Optional hotels make a card taller, so such cards take more of
-        // the page than a plain one.
-        const cardWeight = (hotel) => {
-          const n = hotelOptionsOf(hotel).length;
-          return n ? 1.25 + 0.15 * n : 1;
-        };
-        const hotelChunks = [];
-        let page = [];
-        let used = 0;
-        groupedAccommodationList.forEach((hotel) => {
-          const w = cardWeight(hotel);
-          if (page.length && used + w > hotelsPerPage) {
-            hotelChunks.push(page);
-            page = [];
-            used = 0;
-          }
-          page.push(hotel);
-          used += w;
-        });
-        if (page.length) hotelChunks.push(page);
 
-        return (
-          <>
-            {/* Page 1: Summary Table Only */}
-            <div className="classic-page">
-              <div className="classic-section-header">
-                <div className="classic-section-left">
-                  <div className="classic-section-title">Accommodation</div>
-                </div>
-                {agencySettings.logo && (
-                  <img
-                    src={formatImageUrl(agencySettings.logo)}
-                    alt="Logo"
-                    className="classic-section-logo"
-                  />
-                )}
+        const inlineBar = (title) => (
+          <div className="classic-section-header" style={{ margin: "10px 0 24px" }}>
+            <div className="classic-section-left">
+              <div className="classic-section-title">{title}</div>
+            </div>
+          </div>
+        );
+        const tableWrap = { className: "classic-table-container", style: { paddingBottom: 10 } };
+
+        const sections = [
+          groupedAccommodationList.length === 0
+            ? {
+                key: "hotels-none",
+                title: "Accommodation",
+                bar: inlineBar("Accommodation"),
+                items: [
+                  {
+                    key: "none",
+                    node: (
+              <div
+                style={{ padding: "60px", textAlign: "center", color: "#666" }}
+              >
+                <h3
+                  style={{
+                    fontSize: "24px",
+                    fontWeight: "800",
+                    color: secondaryColor,
+                  }}
+                >
+                  HOTEL BOOKED BY GUEST
+                </h3>
+                <p style={{ marginTop: "10px" }}>
+                  No accommodation details have been added to this quote.
+                </p>
               </div>
-
-              <div style={{ flex: 1 }}>
-                {/* Full Table on Page 1 */}
-                <div className="classic-table-container">
-                  <table className="classic-table">
+                    ),
+                  },
+                ],
+              }
+            : {
+                key: "hotels-summary",
+                title: "Accommodation",
+                bar: inlineBar("Accommodation"),
+                wrap: tableWrap,
+                table: {
+                  className: "classic-table",
+                  head: (
                     <thead>
                       <tr>
                         <th>City</th>
@@ -1057,9 +1034,12 @@ const ClassicTemplate = ({
                         <th>Nights</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {groupedAccommodationList.map((hotel, index) => (
-                        <tr key={index}>
+                  ),
+                },
+                items: groupedAccommodationList.map((hotel, index) => ({
+                  key: `s${index}`,
+                  node: (
+                        <tr>
                           <td>{hotel.city || "-"}</td>
                           <td>
                             {hotel.name || "-"}
@@ -1105,37 +1085,16 @@ const ClassicTemplate = ({
                               : 1}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              <ClassicFooter />
-            </div>
-
-            {/* Subsequent Pages: Hotel Cards ONLY */}
-            {(() => {
-              return hotelChunks.map((chunk, pageIndex) => (
-                <div
-                  className="classic-page"
-                  key={`hotel-page-${pageIndex + 2}`}
-                >
-                  <div className="classic-section-header">
-                    <div className="classic-section-left">
-                      <div className="classic-section-title">Accommodation</div>
-                    </div>
-                    {agencySettings.logo && (
-                      <img
-                        src={formatImageUrl(agencySettings.logo)}
-                        alt="Logo"
-                        className="classic-section-logo"
-                      />
-                    )}
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    <div className="classic-hotel-cards">
-                      {chunk.map((hotel, index) => {
+),
+                })),
+              },
+          groupedAccommodationList.length > 0 && {
+            key: "hotels-cards",
+            title: "Accommodation",
+            wrap: { className: "classic-hotel-cards", style: { paddingBottom: 0 } },
+            items: groupedAccommodationList.map((hotel, index) => ({
+              key: `c${index}`,
+              node: (() => {
                         const getOrdinal = (n) => {
                           const s = ["th", "st", "nd", "rd"];
                           const v = n % 100;
@@ -1208,7 +1167,7 @@ const ClassicTemplate = ({
                         const totalExtraBeds = getTotalExtraBeds(hotel);
 
                         return (
-                          <div key={index} className="classic-hotel-card">
+                          <div className="classic-hotel-card">
                             <img
                               src={
                                 formatImageUrl(hotel.photo) ||
@@ -1339,34 +1298,17 @@ const ClassicTemplate = ({
                             </div>
                           </div>
                         );
-                      })}
-                    </div>
-                  </div>
-                  <ClassicFooter />
-                </div>
-              ));
-            })()}
-          </>
-        );
-      })()}
-
-      {/* HOTEL PACKAGES: one total per package (Standard / Deluxe / …) */}
-      {packageData && (
-        <div className="classic-page">
-          <div className="classic-section-header">
-            <div className="classic-section-left">
-              <div className="classic-section-title">Choose Your Hotel Package</div>
-            </div>
-            {agencySettings.logo && (
-              <img
-                src={formatImageUrl(agencySettings.logo)}
-                alt="Logo"
-                className="classic-section-logo"
-              />
-            )}
-          </div>
-          <div className="classic-table-container" style={{ flex: 1 }}>
-            <table className="classic-table">
+              })(),
+            })),
+          },
+          packageData && {
+            key: "packages",
+            title: "Choose Your Hotel Package",
+            bar: inlineBar("Choose Your Hotel Package"),
+            wrap: tableWrap,
+            table: {
+              className: "classic-table",
+              head: (
               <thead>
                 <tr>
                   <th>Package</th>
@@ -1378,9 +1320,12 @@ const ClassicTemplate = ({
                   <th>Total Price</th>
                 </tr>
               </thead>
-              <tbody>
-                {packageData.packages.map((pkg) => (
-                  <tr key={pkg.index}>
+              ),
+            },
+            items: packageData.packages.map((pkg) => ({
+              key: `p${pkg.index}`,
+              node: (
+                  <tr>
                     <td>
                       <b>{pkg.name}</b>
                     </td>
@@ -1405,37 +1350,27 @@ const ClassicTemplate = ({
                       </b>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-            <p style={{ marginTop: "16px", fontSize: "12px", color: "#666", lineHeight: 1.5 }}>
+),
+            })),
+            after: (
+              <div style={{ padding: "0 50px 20px" }}>
+                            <p style={{ marginTop: "16px", fontSize: "12px", color: "#666", lineHeight: 1.5 }}>
               Total price for the whole trip {includeGST ? "including" : "excluding"} GST.
               Where a package lists more than one hotel, choose any one — the first hotel
               is included in the package price; others cost the amount shown.
             </p>
-          </div>
-          <ClassicFooter />
-        </div>
-      )}
-
-      {/* PAGE 3: Transportation Info */}
-      <div className="classic-page">
-        <div className="classic-section-header">
-          <div className="classic-section-left">
-            <div className="classic-section-title">Transportation Info</div>
-          </div>
-          {agencySettings.logo && (
-            <img
-              src={formatImageUrl(agencySettings.logo)}
-              alt="Logo"
-              className="classic-section-logo"
-            />
-          )}
-        </div>
-
-        {transportation.length > 0 ? (
-          <div className="classic-table-container" style={{ flex: 1 }}>
-            <table className="classic-table">
+              </div>
+            ),
+          },
+          transportation.length > 0
+            ? {
+                key: "transport",
+                title: "Transportation Info",
+                bar: inlineBar("Transportation Info"),
+                wrap: tableWrap,
+                table: {
+                  className: "classic-table",
+                  head: (
               <thead>
                 <tr>
                   <th>Day</th>
@@ -1445,11 +1380,10 @@ const ClassicTemplate = ({
                   <th>Vehicle</th>
                 </tr>
               </thead>
-              <tbody>
-                {sortedTransportation.map((transport, index) => {
-                  const dayNum = transport.date
-                    ? uniqueTransportDates.indexOf(transport.date) + 1
-                    : index + 1;
+                  ),
+                },
+                items: sortedTransportation.map((transport, index) => {
+                  const dayNum = transportDayNumber(transport, index);
                   const suffixes = ["st", "nd", "rd"];
                   const suffix =
                     dayNum % 10 < 4 &&
@@ -1460,7 +1394,7 @@ const ClassicTemplate = ({
                   const dayLabel = dayNum + suffix + " Day";
 
                   return (
-                    <tr key={index}>
+                    <tr>
                       <td style={{ fontSize: "11px" }}>
                         {dayLabel}
                         {transport.date && (
@@ -1497,11 +1431,16 @@ const ClassicTemplate = ({
                       <td>{transport.vehicleType || "-"}</td>
                     </tr>
                   );
-                })}
-              </tbody>
-            </table>
-          </div>
-        ) : (
+                }).map((node, i) => ({ key: `t${i}`, node })),
+              }
+            : {
+                key: "transport",
+                title: "Transportation Info",
+                bar: inlineBar("Transportation Info"),
+                items: [
+                  {
+                    key: "t-empty",
+                    node: (
           <div style={{ padding: "60px", textAlign: "center", color: "#666" }}>
             <h3
               style={{
@@ -1516,29 +1455,18 @@ const ClassicTemplate = ({
               No transportation details have been added to this quote.
             </p>
           </div>
-        )}
-        <ClassicFooter />
-      </div>
-
-      {/* ACTIVITIES — optional: pages exist only when activities were added.
-          Same table shape as Transportation Info (no prices; the total covers them). */}
-      {activityPages(tripActivities).map((rows, pageIndex) => (
-        <div className="classic-page" key={`activities-page-${pageIndex}`}>
-          <div className="classic-section-header">
-            <div className="classic-section-left">
-              <div className="classic-section-title">Activities</div>
-            </div>
-            {agencySettings.logo && (
-              <img
-                src={formatImageUrl(agencySettings.logo)}
-                alt="Logo"
-                className="classic-section-logo"
-              />
-            )}
-          </div>
-
-          <div className="classic-table-container" style={{ flex: 1 }}>
-            <table className="classic-table">
+                    ),
+                  },
+                ],
+              },
+          tripActivities && tripActivities.length > 0 && {
+            key: "activities",
+            title: "Activities",
+            bar: inlineBar("Activities"),
+            wrap: tableWrap,
+            table: {
+              className: "classic-table",
+              head: (
               <thead>
                 <tr>
                   <th>Day</th>
@@ -1547,9 +1475,12 @@ const ClassicTemplate = ({
                   <th>Tickets</th>
                 </tr>
               </thead>
-              <tbody>
-                {rows.map((row, index) => (
-                  <tr key={row.key || index}>
+              ),
+            },
+            items: tripActivities.map(activityRow).map((row, index) => ({
+              key: `a${row.key || index}`,
+              node: (
+                  <tr>
                     <td style={{ fontSize: "11px" }}>{row.day}</td>
                     <td>{row.name}</td>
                     <td>{row.location}</td>
@@ -1557,13 +1488,40 @@ const ClassicTemplate = ({
                       {row.personsLabel}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <ClassicFooter />
-        </div>
-      ))}
+),
+            })),
+          },
+        ].filter(Boolean);
+
+        return (
+          <FlowPages
+            sections={sections}
+            pageClassName="classic-page"
+            barOnFirstSection={false}
+            renderTop={(section) => (
+              <div className="classic-section-header">
+                <div className="classic-section-left">
+                  <div className="classic-section-title">{section?.title || "Accommodation"}</div>
+                </div>
+                {agencySettings.logo && (
+                  <img
+                    src={formatImageUrl(agencySettings.logo)}
+                    alt="Logo"
+                    className="classic-section-logo"
+                  />
+                )}
+              </div>
+            )}
+            renderBottom={() => (
+              <>
+                {/* The footer is absolutely placed at the page foot; keep its room free. */}
+                <div style={{ height: 80, flexShrink: 0 }}></div>
+                <ClassicFooter />
+              </>
+            )}
+          />
+        );
+      })()}
 
       {/* PAGE 4-5: Day-by-Day Itinerary */}
       {itinerary.length > 0 &&

@@ -23,6 +23,8 @@ import {
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 import CompactDataTable from "../common/CompactDataTable";
+import { SortLabel, SelectAllBox, RowSelectCell, BulkActionBar } from "../common/tableTools";
+import { useTableSort, useSelection, deleteEach } from "../common/tableHooks";
 
 // Client-side pagination/filtering: an agency's destination catalog is small
 // enough to fetch once and filter instantly, matching Accommodation/Vehicles.
@@ -90,9 +92,29 @@ const Destinations = () => {
     setCurrentPage(1);
   }, [searchQuery, pageSize]);
 
+  const { sorted, sort, toggleSort } = useTableSort(filtered, {
+    name: (d) => d.name,
+    activities: (d) => (d.activities || []).length,
+  });
+  const selection = useSelection(filtered.map((x) => x.id));
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const handleBulkDelete = async (ids) => {
+    setBulkDeleting(true);
+    const { ok, failed } = await deleteEach(ids, (id) => deleteDestination(id, token));
+    setBulkDeleting(false);
+    setDestinations((prev) => prev.filter((x) => !ok.includes(x.id)));
+    if (failed.length) {
+      toast.error(
+        `${failed.length} of ${ids.length} couldn't be deleted${failed[0].error?.message ? `: ${failed[0].error.message}` : ""}`,
+      );
+    } else {
+      toast.success(`${ok.length} destination${ok.length === 1 ? "" : "s"} deleted`);
+    }
+  };
+
   const lastPage = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, lastPage);
-  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pageItems = sorted.slice((page - 1) * pageSize, page * pageSize);
   const pagination = {
     currentPage: page,
     lastPage,
@@ -242,11 +264,18 @@ const Destinations = () => {
           </div>
         </div>
 
+        <BulkActionBar
+          selection={selection}
+          noun="destination"
+          onDelete={handleBulkDelete}
+          deleting={bulkDeleting}
+        />
         <CompactDataTable
           headers={[
-            { label: "Destination" },
+            { label: <SelectAllBox pageIds={pageItems.map((x) => x.id)} selection={selection} />, className: "w-10 !pr-0" },
+            { label: <SortLabel label="Destination" sortKey="name" sort={sort} onSort={toggleSort} /> },
             { label: "Created By" },
-            { label: "Activities" },
+            { label: <SortLabel label="Activities" sortKey="activities" sort={sort} onSort={toggleSort} /> },
             { label: "Actions", className: "text-right" },
           ]}
           loading={loading}
@@ -266,8 +295,9 @@ const Destinations = () => {
           {pageItems.map((destination) => (
             <tr
               key={destination.id}
-              className="hover:bg-slate-50/50 group transition-colors"
+              className={`hover:bg-slate-50/50 group transition-colors ${selection.has(destination.id) ? "bg-slate-50" : ""}`}
             >
+              <RowSelectCell id={destination.id} selection={selection} />
               <td>
                 <button
                   onClick={() => navigate(`/destinations/edit/${destination.id}`)}

@@ -26,6 +26,8 @@ import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import CompactDataTable from "../common/CompactDataTable";
 import VehicleDetailsPanel from "./VehicleDetailsPanel";
+import { SortLabel, SelectAllBox, RowSelectCell, BulkActionBar } from "../common/tableTools";
+import { useTableSort, useSelection, deleteEach } from "../common/tableHooks";
 
 // Client-side pagination/filtering: an agency's vehicle catalog is small
 // enough (tens to low hundreds) to fetch once and filter instantly, rather
@@ -131,9 +133,31 @@ const Vehicles = () => {
     setCurrentPage(1);
   }, [searchQuery, filters, pageSize]);
 
+  const { sorted, sort, toggleSort } = useTableSort(filtered, {
+    name: (v) => v.name,
+    capacity: (v) => (v.seating_capacity == null ? null : Number(v.seating_capacity)),
+    price: (v) => (v.price == null || v.price === "" ? null : Number(v.price)),
+    availability: (v) => (v.is_available ? 0 : 1),
+  });
+  const selection = useSelection(filtered.map((x) => x.id));
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const handleBulkDelete = async (ids) => {
+    setBulkDeleting(true);
+    const { ok, failed } = await deleteEach(ids, (id) => deleteVehicle(id, token));
+    setBulkDeleting(false);
+    setVehicles((prev) => prev.filter((x) => !ok.includes(x.id)));
+    if (failed.length) {
+      toast.error(
+        `${failed.length} of ${ids.length} couldn't be deleted${failed[0].error?.message ? `: ${failed[0].error.message}` : ""}`,
+      );
+    } else {
+      toast.success(`${ok.length} vehicle${ok.length === 1 ? "" : "s"} deleted`);
+    }
+  };
+
   const lastPage = Math.max(1, Math.ceil(filtered.length / pageSize));
   const page = Math.min(currentPage, lastPage);
-  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pageItems = sorted.slice((page - 1) * pageSize, page * pageSize);
   const pagination = {
     currentPage: page,
     lastPage,
@@ -418,12 +442,19 @@ const Vehicles = () => {
             )}
           </div>
 
+          <BulkActionBar
+            selection={selection}
+            noun="vehicle"
+            onDelete={handleBulkDelete}
+            deleting={bulkDeleting}
+          />
           <CompactDataTable
             headers={[
-              { label: "Vehicle" },
-              { label: "Capacity" },
-              { label: "Price" },
-              { label: "Availability" },
+              { label: <SelectAllBox pageIds={pageItems.map((x) => x.id)} selection={selection} />, className: "w-10 !pr-0" },
+              { label: <SortLabel label="Vehicle" sortKey="name" sort={sort} onSort={toggleSort} /> },
+              { label: <SortLabel label="Capacity" sortKey="capacity" sort={sort} onSort={toggleSort} /> },
+              { label: <SortLabel label="Price" sortKey="price" sort={sort} onSort={toggleSort} /> },
+              { label: <SortLabel label="Availability" sortKey="availability" sort={sort} onSort={toggleSort} /> },
               { label: "Contact" },
               { label: "Actions", className: "text-right" },
             ]}
@@ -442,7 +473,8 @@ const Vehicles = () => {
             onPageSizeChange={(size) => setPageSize(size)}
           >
             {pageItems.map((vehicle) => (
-              <tr key={vehicle.id} className="hover:bg-slate-50/50 group transition-colors">
+              <tr key={vehicle.id} className={`hover:bg-slate-50/50 group transition-colors ${selection.has(vehicle.id) ? "bg-slate-50" : ""}`}>
+                <RowSelectCell id={vehicle.id} selection={selection} />
                 <td>
                   <button
                     onClick={() => openVehiclePanel(vehicle)}
