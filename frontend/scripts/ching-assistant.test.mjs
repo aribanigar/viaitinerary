@@ -287,7 +287,7 @@ test('manners: asks back and keeps the conversation going', () => {
   assert.match(a.reply, /\?$/) // asks back
   assert.equal(a.topic, 'asked-how')
   assert.match(b.reply, /^(?:Glad|That's great|Wonderful)/)
-  assert.match(c.reply, /client's name/)
+  assert.equal(c.start, 'trip') // "yes" to "shall we plan something?" starts the guided trip
   ;[a, b, c] = talk(['assalamu alaikum', "i'm a bit tired", 'no'])
   assert.match(a.reply, /^Wa alaikum assalam!/)
   assert.match(b.reply, /Sorry to hear|Oh no/)

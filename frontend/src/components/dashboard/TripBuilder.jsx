@@ -1292,6 +1292,9 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   // A trip Ching filled by voice that the agent hasn't confirmed yet:
   // { meta, base } (see utils/ching/tripDraft.js). Nothing autosaves while it's set.
   const chingDraft = useRef(null);
+  // Ching's guided trip (utils/ching/guide.js) is being built: nothing is
+  // saved until the agent says "save" (or the guide ends).
+  const chingGuideHold = useRef(false);
   const saveRef = useRef(saveTrip);
   saveRef.current = saveTrip;
   const savingRef = useRef(false);
@@ -1301,7 +1304,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     const t = setTimeout(() => {
       // Not mid-sentence (a live voice session is still reshaping the trip), and
       // not while a voice-filled trip waits on Confirm & Build in Ching.
-      if (!savingRef.current && !chingLive.current && !chingDraft.current) saveRef.current?.({ silent: true });
+      if (!savingRef.current && !chingLive.current && !chingDraft.current && !chingGuideHold.current) saveRef.current?.({ silent: true });
     }, 2500);
     return () => clearTimeout(t);
   }, [
@@ -1579,6 +1582,102 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   // preview, pricing and autosave all react exactly as for a manual edit.
   const chingState = useRef({});
   chingState.current = {
+    // Ching's guided trip drives the same controls a click would.
+    guide: {
+      patch: ({ tripInfo: info, includeGST: gst, inclusions: inc, exclusions: exc }) => {
+        if (info) setTripInfo((prev) => ({ ...prev, ...info }));
+        if (gst != null) {
+          setIncludeGST(gst);
+          setPricingTouched(true);
+        }
+        if (Array.isArray(inc)) setInclusions(inc);
+        if (Array.isArray(exc)) setExclusions(exc);
+      },
+      // The Itinerary tab's "Add Day from Destination", for day N.
+      setDay: ({ day, destinationId, name, title, location }) => {
+        const dest = availableDestinations.find((d) => String(d.id) === String(destinationId)) || null;
+        const labels = dest ? destinationActivityLabels(dest.activities) : [];
+        setItinerary((prev) => {
+          const rest = prev.filter((d) => Number(d.day) !== Number(day));
+          const old = prev.find((d) => Number(d.day) === Number(day));
+          const entry = {
+            ...(old || {}),
+            id: old?.id || Date.now() + Number(day),
+            day: Number(day),
+            title,
+            destination: dest?.name || name || "",
+            destinationId: dest?.id ?? null,
+            location: location || dest?.name || name || "",
+            description: labels.join("\n"),
+            activities: labels,
+            photo: dest?.image_path || old?.photo || null,
+          };
+          return [...rest, entry].sort((a, b) => Number(a.day) - Number(b.day));
+        });
+      },
+      openHotelForm: (form) => {
+        setHotelForm((prev) => ({
+          ...(isHotelModalOpen ? prev : {}),
+          hotelId: null,
+          name: "",
+          city: "",
+          category: "4 Star",
+          roomType: "Deluxe",
+          checkIn: "",
+          checkOut: "",
+          rooms: "1",
+          cnbCount: "0",
+          extraBeds5To12Count: "0",
+          extraBedsAbove12Count: "0",
+          extraAdultCount: "0",
+          mealPlan: "",
+          pricePerRoom: "",
+          bedPrices: [],
+          photo: null,
+          cancelled: false,
+          cancellationCharge: "",
+          cancellationNote: "",
+          alternateOptions: [],
+          markupPercentage: "",
+          ...form,
+          id: undefined,
+        }));
+        setEditingHotelId(null);
+        setIsTransportModalOpen(false);
+        setIsHotelModalOpen(true);
+      },
+      openCabForm: (form) => {
+        setTransportForm({
+          vehicleId: null,
+          tripType: "Transfer",
+          route: "",
+          destination: "",
+          date: tripInfo.startDate || "",
+          vehicleType: "",
+          quantity: 1,
+          remarks: "",
+          markupPercentage: "",
+          ...form,
+          id: undefined,
+        });
+        setEditingTransportId(null);
+        setIsHotelModalOpen(false);
+        setIsTransportModalOpen(true);
+      },
+      closeForms: () => {
+        setIsHotelModalOpen(false);
+        setIsTransportModalOpen(false);
+      },
+      // Throw an unsaved new trip away (nothing kept in the browser either).
+      discard: () => {
+        try {
+          localStorage.removeItem(draftStorageKey);
+        } catch {
+          /* blocked storage: nothing was kept */
+        }
+        navigate(isPackageMode ? "/packages" : "/my-trips");
+      },
+    },
     snapshot: {
       tripInfo,
       itinerary,
@@ -1792,6 +1891,22 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         };
       },
       setTab: (tab) => chingState.current.setActiveTab(tab),
+      // ── Ching's guided trip (utils/ching/guide.js) ──
+      // An edit worked out without committing it (to fill a form first).
+      plan: (actions) => run(actions),
+      catalog: () => chingState.current.catalog,
+      guide: {
+        patch: (p) => chingState.current.guide.patch(p),
+        setDay: (d) => chingState.current.guide.setDay(d),
+        openHotelForm: (f) => chingState.current.guide.openHotelForm(f),
+        openCabForm: (f) => chingState.current.guide.openCabForm(f),
+        closeForms: () => chingState.current.guide.closeForms(),
+        discard: () => chingState.current.guide.discard(),
+        hold: (on) => {
+          chingGuideHold.current = !!on;
+        },
+        isNew: () => !chingState.current.urlTripId,
+      },
       // The trip as the builder holds it right now (read-only; the AI
       // Assistant page draws its route, summary and progress from it).
       snapshot: () => chingState.current.snapshot,

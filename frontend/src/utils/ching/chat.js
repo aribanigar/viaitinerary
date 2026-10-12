@@ -79,7 +79,7 @@ export function chatReply(t, topic = null, { now = new Date() } = {}) {
   // The answer to "Shall we plan something?"
   if (topic === "offer") {
     if (/^(?:yes|yeah|yep|yup|sure|ok|okay|haan|han|ji|ji haan|of course|let's go|lets go|let's do it|new trip|a new trip|new one|why not|go ahead|please)(?: (?:please|sure|ji|a new trip|new trip|let's go))?$/.test(s)) {
-      return { reply: "Great — tell me the client's name, how many guests, the start date and where they're going. I'll fill in the rest.", topic: null };
+      return { reply: "Great — let's build it.", topic: null, start: 'trip' };
     }
     if (/^(?:changes?|change one|edit|edit one|an existing one|existing|old trip|modify)(?: (?:to )?(?:one|a trip|an existing trip|the trip))?$/.test(s)) {
       return { reply: "Sure — say “open” and the client's name, like “open Rahul's trip”, and tell me what to change.", topic: null };

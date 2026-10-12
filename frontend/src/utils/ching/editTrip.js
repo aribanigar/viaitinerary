@@ -377,8 +377,9 @@ function pricedStay(st, hotel, checkIn, nights, neighbour, opts = {}) {
     category: hotelCategoryLabel(hotel.category) || '4 Star',
     roomType,
     rooms: String(rooms),
-    cnbCount: String(Number(st.s.tripInfo.kids5to12) || 0),
-    extraBeds5To12Count: '0',
+    // Kids 5–12: no bed (CNB) unless the agent said they get extra beds.
+    cnbCount: String(opts.kidBeds === 'bed' || opts.kidBeds === 'none' ? 0 : Number(st.s.tripInfo.kids5to12) || 0),
+    extraBeds5To12Count: String(opts.kidBeds === 'bed' ? Number(st.s.tripInfo.kids5to12) || 0 : 0),
     extraBedsAbove12Count: String(opts.extraBeds || neighbour?.extraBedsAbove12Count || 0),
     extraAdultCount: '0',
     mealPlan,

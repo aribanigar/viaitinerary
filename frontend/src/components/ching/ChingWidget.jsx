@@ -36,6 +36,7 @@ import {
   voiceEnabled,
   setVoiceEnabled,
   onSpeakingChange,
+  isSpeaking,
   chingLang,
   setChingLang,
   CHING_LANGS,
@@ -272,6 +273,28 @@ export default function ChingWidget() {
   // A question Ching asked before doing something that moves money or cancels
   // ("Record ₹20,000 from Rahul by UPI? Say yes or no."): { run }.
   const confirmRef = useRef(null);
+
+  // Ching's guided trip (utils/ching/guide.js) while it runs: { state }.
+  // Trip Info → Itinerary → Logistics, asked one step at a time; nothing is
+  // filled that the agent didn't say.
+  const guideRef = useRef(null);
+  const guideCtx = useCallback(
+    (ed) => {
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      return {
+        snapshot: safe(() => ed.snapshot(), {}) || {},
+        catalog: { ...(safe(() => ed.catalog(), null) || initRef.current || {}), policies: initRef.current?.policies || null },
+        today,
+        plan: (actions) => safe(() => ed.plan(actions), null),
+      };
+    },
+    [],
+  );
+  const endGuide = useCallback((ed) => {
+    guideRef.current = null;
+    safe(() => ed?.guide?.hold(false));
+  }, []);
   const askConfirm = useCallback(
     (question, run) => {
       confirmRef.current = { run };
@@ -345,6 +368,31 @@ export default function ChingWidget() {
       setUndoTick((t) => t + 1);
     }
   }, []);
+
+  // The guide's steps, done on the open Trip Builder the way a click would.
+  const runGuideOps = useCallback(
+    async (ed, ops) => {
+      for (const o of list(ops)) {
+        if (o.op === "tab") safe(() => ed.setTab(o.tab));
+        else if (o.op === "patch") safe(() => ed.guide.patch(o));
+        else if (o.op === "day") safe(() => ed.guide.setDay(o));
+        else if (o.op === "hotelForm") safe(() => ed.guide.openHotelForm(o.form));
+        else if (o.op === "cabForm") safe(() => ed.guide.openCabForm(o.form));
+        else if (o.op === "closeForms") safe(() => ed.guide.closeForms());
+        else if (o.op === "apply") {
+          safe(() => ed.apply(o.actions));
+          setUndoTick((t) => t + 1);
+        } else if (o.op === "command") {
+          safe(() => ed.guide.hold(false));
+          await runCommands([{ type: o.type }], ed);
+        } else if (o.op === "discard") {
+          safe(() => ed.guide.hold(false));
+          safe(() => ed.guide.discard());
+        }
+      }
+    },
+    [runCommands],
+  );
 
   // ── live session plumbing ──────────────────────────────────────────────
   const showLive = useCallback((res, phase = "listening") => {
@@ -448,17 +496,26 @@ export default function ChingWidget() {
     [endSession, navigate, showLive],
   );
 
+  // Turns that wait for the whole sentence instead of filling as it's said:
+  // the guided trip (a blank trip is never filled with assumed values),
+  // "create a trip", and "add hotel" / "add transport" (they open the forms).
+  const streamless = useCallback((S, text) => {
+    const core = coreRef.current;
+    if (guideRef.current || S.guide || S.baseBlank) return true;
+    return !!core && (core.isCreateRequest(text) || core.wantsHotel(text) || core.wantsCab(text));
+  }, []);
+
   const attach = useCallback(
     (S, ed) => {
       S.editor = ed;
       S.navigating = false;
       S.baseBlank = safe(() => ed.isBlank(), true);
       safe(() => ed.live.begin());
-      if (S.text) liveUpdate(S, S.text);
+      if (S.text && !streamless(S, S.text)) liveUpdate(S, S.text);
       else showLive(null);
       if (S.ended) finishRef.current?.(S);
     },
-    [liveUpdate, showLive],
+    [liveUpdate, showLive, streamless],
   );
 
   // A new running transcript (throttled while speaking).
@@ -470,23 +527,17 @@ export default function ChingWidget() {
       text = toEnglishCommand(text, catalogForLanguage()) || text;
       S.text = text;
       if (S.navigating) return;
-      const core = coreRef.current;
       if (!S.editor) {
         const ed = getChingEditor();
-        if (ed) {
-          attach(S, ed);
-          return;
-        }
-        if (core && core.looksLikeTripRequest(text, initRef.current)) openDraft(S);
+        if (ed) attach(S, ed);
+        // Off the builder nothing opens until the sentence is finished and
+        // asked for a trip — no stray drafts from half-heard words.
         return;
       }
-      if (!S.baseBlank && core && core.isCreateRequest(text)) {
-        openDraft(S);
-        return;
-      }
+      if (streamless(S, text)) return;
       liveUpdate(S, text);
     },
-    [attach, liveUpdate, openDraft, catalogForLanguage, noteLanguage],
+    [attach, liveUpdate, catalogForLanguage, noteLanguage, streamless],
   );
 
   // The utterance is over: commit (or decide there was nothing to do).
@@ -515,11 +566,51 @@ export default function ChingWidget() {
         if (!confirmRef.current.draft) confirmRef.current = null;
       }
 
+      // The guided trip is waiting on an answer: it gets the first look.
+      const cancelLive = () => {
+        if (S.editor && safe(() => S.editor.live.active(), false)) safe(() => S.editor.live.cancel());
+      };
+      const guided = guideRef.current;
+      const guideEd = S.editor || getChingEditor();
+      // The guide belongs to the trip it started on: another trip open → it's over.
+      if (guided && guided.ed && guideEd && guided.ed !== guideEd) endGuide(guided.ed);
+      if (guideRef.current && core) {
+        if (!guideEd) guideRef.current = null;
+        else {
+          const r = safe(() => core.guideStep(guided.state, text, guideCtx(guideEd)), null);
+          if (r?.handled) {
+            cancelLive();
+            endSession();
+            await runGuideOps(guideEd, r.ops);
+            if (r.done) endGuide(guideEd);
+            respond(r.say);
+            return;
+          }
+          if (r?.done) endGuide(guideEd);
+          else {
+            // Something else first ("what's pending", a joke…), then back to the trip.
+            const g = guided;
+            const reask = (tries = 0) =>
+              setTimeout(() => {
+                if (guideRef.current !== g) return;
+                if (isSpeaking() && tries < 30) return reask(tries + 1);
+                const q = safe(() => core.currentQuestion(g.state, guideCtx(guideEd)), "");
+                if (q) say(`Back to the trip — ${q}`);
+              }, tries ? 500 : 2500);
+            reask();
+          }
+        }
+      }
+
       // Not a trip at all? ("open the ledger", "what's pending", "tell me a joke")
       const ask = safe(() => understandAssistant(text, { inBuilder: Boolean(S.editor || getChingEditor()), chat: chatTopic.current }), null);
       // Small talk remembers what Ching just asked ("How about you?") for one turn.
       chatTopic.current = ask?.type === "smalltalk" ? ask.topic || null : null;
-      if (ask) {
+      // "Shall we plan something?" — "yes": the guided trip, from its first question.
+      if (ask?.start === "trip") {
+        S.guide = true;
+        S.guideText = "";
+      } else if (ask) {
         if (S.editor && safe(() => S.editor.live.active(), false)) safe(() => S.editor.live.cancel());
         endSession();
         await assistRef.current?.(ask);
@@ -539,8 +630,9 @@ export default function ChingWidget() {
           return;
         }
         const kind = core.classifyWithoutEditor(text, initRef.current);
-        if (kind === "trip") {
-          openDraft(S); // finishes once the draft's editor appears
+        if (kind === "trip" || S.guide) {
+          S.guide = true;
+          openDraft(S); // finishes once the draft's editor appears, then guides
           return;
         }
         endSession();
@@ -550,8 +642,35 @@ export default function ChingWidget() {
         return;
       }
 
-      if (!S.baseBlank && core && core.isCreateRequest(text)) {
-        openDraft(S);
+      // A new trip is built WITH the agent, step by step (utils/ching/guide.js):
+      // "create a trip …", or anything trip-like said on a blank trip.
+      const createReq = S.guide || (core && core.isCreateRequest(text));
+      if (createReq && !S.baseBlank) {
+        S.guide = true;
+        openDraft(S); // a fresh trip — never over the one that's open
+        return;
+      }
+      if (core && S.baseBlank && (createReq || core.looksLikeTripRequest(text, initRef.current))) {
+        cancelLive();
+        endSession();
+        const ed0 = S.editor;
+        const g = core.startGuide(S.guideText != null ? S.guideText : text, guideCtx(ed0));
+        guideRef.current = { state: g.state, ed: ed0 };
+        safe(() => ed0.guide.hold(true));
+        setTripDraft(null);
+        await runGuideOps(ed0, g.ops);
+        respond(g.say);
+        return;
+      }
+      // "add hotel" / "add transport": the Logistics forms, filled by asking.
+      const hasDays = list(safe(() => S.editor.snapshot().itinerary, [])).length > 0;
+      if (core && hasDays && (core.wantsHotel(text) || core.wantsCab(text))) {
+        cancelLive();
+        endSession();
+        const g = core.startLogistics(text, guideCtx(S.editor));
+        guideRef.current = { state: g.state, ed: S.editor };
+        await runGuideOps(S.editor, g.ops);
+        respond(g.say);
         return;
       }
 
@@ -689,7 +808,7 @@ export default function ChingWidget() {
         say(reply + tip);
       }, 700);
     },
-    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine],
+    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine, guideCtx, runGuideOps, endGuide],
   );
 
   // ── Confirm & Build ─────────────────────────────────────────────────────

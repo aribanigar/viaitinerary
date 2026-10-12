@@ -108,7 +108,7 @@ export function understandAssistant(text, { inBuilder = false, chat = null } = {
   // Manners first: greetings, "how are you" (asked back), the agent's answer,
   // thanks, goodbyes — `chat` is what Ching last asked in small talk.
   const talk = chatReply(t, chat);
-  if (talk) return { type: "smalltalk", reply: talk.reply, topic: talk.topic, intent: smalltalkIntent(t) };
+  if (talk) return { type: "smalltalk", reply: talk.reply, topic: talk.topic, start: talk.start || null, intent: smalltalkIntent(t) };
 
   // Hotel search: "find a 4 star in Srinagar under 6000 with breakfast",
   // "use the cheapest available 4-star with breakfast", "use the first one".
