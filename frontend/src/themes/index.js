@@ -20,6 +20,6 @@ const THEMES = {
   },
 };
 
-export const ACTIVE_THEME = "via-kashmir";
+export const ACTIVE_THEME = "editorial";
 
 export const themeColors = THEMES[ACTIVE_THEME];

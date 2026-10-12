@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { CheckCircle2, Loader2, X } from "lucide-react";
-import { themeColors } from "../../themes";
 
 // Approve / request-changes form for the public proposal page. Bottom sheet on
 // phones, centred card from `sm` up. Mount it only while open (with a `key`
@@ -44,11 +43,11 @@ export default function RespondSheet({
 
   const who = agencyName || "your travel agent";
   const field =
-    "w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-[16px] sm:text-sm text-ink outline-none focus:border-brand placeholder:text-ink/35";
+    "w-full rounded-xl border border-black/10 bg-white px-3.5 py-2.5 text-[16px] sm:text-sm text-[#181c22] outline-none focus:border-[#181c22] placeholder:text-[#181c22]/35";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-brand/40 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 bg-[#181c22]/40 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
       <div
         role="dialog"
         aria-modal="true"
@@ -59,7 +58,7 @@ export default function RespondSheet({
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 grid place-items-center w-9 h-9 rounded-full text-ink/55 hover:bg-black/[0.05]"
+          className="absolute top-3 right-3 grid place-items-center w-9 h-9 rounded-full text-[#181c22]/55 hover:bg-black/[0.05]"
           aria-label="Close"
         >
           <X className="w-4 h-4" />
@@ -68,10 +67,10 @@ export default function RespondSheet({
         {done ? (
           <div className="px-6 pt-8 pb-7 text-center">
             <CheckCircle2 className="w-12 h-12 mx-auto" style={{ color: brand }} strokeWidth={1.8} />
-            <h2 className="mt-3 text-lg font-semibold text-ink">
+            <h2 className="mt-3 text-lg font-semibold text-[#181c22]">
               {approving ? "Trip approved" : "Thanks!"}
             </h2>
-            <p className="mt-1.5 text-sm text-ink/65">
+            <p className="mt-1.5 text-sm text-[#181c22]/65">
               {approving
                 ? `${who} will contact you with the next steps.`
                 : `We've shared your changes with ${who}.`}
@@ -88,10 +87,10 @@ export default function RespondSheet({
         ) : (
           <form onSubmit={submit} className="px-5 sm:px-6 pt-5 pb-6 space-y-4">
             <div className="pr-10">
-              <h2 className="text-lg font-semibold text-ink">
+              <h2 className="text-lg font-semibold text-[#181c22]">
                 {approving ? "Approve this trip" : "Request changes"}
               </h2>
-              <p className="mt-1 text-sm text-ink/60">
+              <p className="mt-1 text-sm text-[#181c22]/60">
                 {approving
                   ? `Let ${who} know you're happy to go ahead.`
                   : `Tell ${who} what you'd like to change — dates, hotels, activities, anything.`}
@@ -99,7 +98,7 @@ export default function RespondSheet({
             </div>
 
             <div>
-              <label htmlFor="proposal-name" className="block mb-1.5 text-xs font-semibold text-ink/60">
+              <label htmlFor="proposal-name" className="block mb-1.5 text-xs font-semibold text-[#181c22]/60">
                 Your name
               </label>
               <input
@@ -113,7 +112,7 @@ export default function RespondSheet({
             </div>
 
             <div>
-              <label htmlFor="proposal-message" className="block mb-1.5 text-xs font-semibold text-ink/60">
+              <label htmlFor="proposal-message" className="block mb-1.5 text-xs font-semibold text-[#181c22]/60">
                 {approving ? "Note (optional)" : "What would you like to change?"}
               </label>
               <textarea
@@ -145,7 +144,7 @@ export default function RespondSheet({
               style={
                 approving
                   ? { background: brand, color: brandText }
-                  : { background: themeColors.brand, color: "#ffffff" }
+                  : { background: "#181c22", color: "#ffffff" }
               }
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}

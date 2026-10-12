@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
-/* Site theme — one file. Active: Via Kashmir "Alpine Editorial".
-   Backup of the previous look: ./themes/editorial.css (its header says how to
-   switch back). */
-@import "./themes/via-kashmir.css";
+/* Site theme — one file. Active: "Minimalist Editorial" (graphite + lime,
+   Urbanist / Noto Serif) — the owner's chosen look. The 2026-10-08 Via Kashmir
+   theme stays in ./themes/via-kashmir.css, unused. */
+@import "./themes/editorial.css";
 
-/* Headlines use the theme's display face (Manrope); body text uses --font-sans. */
+/* Headlines use the theme's display face; body text uses --font-sans. */
 @layer base {
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
