@@ -12,7 +12,7 @@ async function copy(text, label) {
     await navigator.clipboard.writeText(String(text));
     toast.success(`${label} copied`);
   } catch {
-    toast.info(String(text));
+    toast.info(String(text), { keep: true });
   }
 }
 
