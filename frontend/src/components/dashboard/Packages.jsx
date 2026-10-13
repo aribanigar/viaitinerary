@@ -111,7 +111,7 @@ const Packages = () => {
                     )}
                   </div>
                   <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> {pkg.destination || "—"} · {pkg.duration ? `${pkg.duration} days` : "—"}
+                    <MapPin className="w-3 h-3" /> {pkg.destination || "—"} · {Number(pkg.duration) >= 0 && pkg.duration !== null && pkg.duration !== "" ? `${pkg.duration} Nights / ${Number(pkg.duration) + 1} Days` : "—"}
                   </p>
                   <p className="text-sm font-semibold text-slate-700 mt-2">
                     {pkg.currency_symbol || ""}

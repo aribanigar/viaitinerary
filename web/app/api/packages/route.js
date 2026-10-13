@@ -4,6 +4,7 @@ import { userFromRequest } from "@/lib/auth";
 import { adminIdOf, teamIdOf } from "@/lib/scope";
 import { serializeTrip, currencySymbol } from "@/lib/serialize";
 import { buildTripScalars, syncTripRelations, TRIP_INCLUDE } from "@/lib/trips";
+import { nightsOf } from "@/lib/duration";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -42,7 +43,7 @@ export async function GET(request) {
       trip_id: p.tripId,
       trip_title: p.tripTitle,
       destination: p.destination,
-      duration: p.duration,
+      duration: nightsOf(p.duration),
       cost: p.cost == null ? null : Number(p.cost),
       currency: p.currency,
       currency_symbol: currencySymbol(p.currency),

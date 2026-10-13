@@ -1,6 +1,8 @@
 // Convert Prisma records (camelCase) into the snake_case JSON shapes the
 // React frontend reads (the API's response contract).
 
+import { nightsOf } from "@/lib/duration";
+
 const num = (d) => (d == null ? null : Number(d));
 const dateOnly = (d) => (d ? new Date(d).toISOString().slice(0, 10) : null);
 const iso = (d) => (d ? new Date(d).toISOString() : null);
@@ -132,7 +134,7 @@ export function serializeTrip(trip) {
     kids_cnb: trip.kidsCnb,
     kids_5_to_12: trip.kids5to12,
     start_date: dateOnly(trip.startDate),
-    duration: trip.duration,
+    duration: nightsOf(trip.duration),
     cost: num(trip.cost),
     gst_amount: num(trip.gstAmount),
     gst_percentage: num(trip.gstPercentage),

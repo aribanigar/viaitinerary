@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { currencySymbol } from "@/lib/serialize";
+import { nightsOf } from "@/lib/duration";
 
 // Client proposal links (/p/:token). The page is public — anyone holding the
 // link can open it — so everything served there is built from an ALLOWLIST of
@@ -49,7 +50,7 @@ export function publicTrip(trip) {
     kids_cnb: trip.kidsCnb,
     kids_5_to_12: trip.kids5to12,
     start_date: dateOnly(trip.startDate),
-    duration: trip.duration,
+    duration: nightsOf(trip.duration),
     cost: num(trip.cost),
     currency: trip.currency,
     currency_symbol: currencySymbol(trip.currency),

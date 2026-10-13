@@ -405,7 +405,7 @@ const ModernTemplate = ({
         >
           <div className="hero-1-label">
             <h1 className="uppercase">
-              {tripInfo.duration || "0"} NIGHT{" "}
+              {tripInfo.duration || "0"} {parseInt(tripInfo.duration || 0) === 1 ? "NIGHT" : "NIGHTS"}{" "}
               {parseInt(tripInfo.duration || 0) + 1} DAYS
             </h1>
             <p>
@@ -1160,7 +1160,7 @@ const ModernTemplate = ({
               <>
                 <div className="orange-header-label secondary">
                   <h1>
-                    {tripInfo.duration || "0"} NIGHT{" "}
+                    {tripInfo.duration || "0"} {parseInt(tripInfo.duration || 0) === 1 ? "NIGHT" : "NIGHTS"}{" "}
                     {parseInt(tripInfo.duration || 0) + 1} DAYS
                   </h1>
                   <p>
@@ -1208,7 +1208,7 @@ const ModernTemplate = ({
         <div className="page" key={day.id || index}>
           <div className="orange-header-label secondary">
             <h1>
-              {tripInfo.duration || "0"} NIGHT{" "}
+              {tripInfo.duration || "0"} {parseInt(tripInfo.duration || 0) === 1 ? "NIGHT" : "NIGHTS"}{" "}
               {parseInt(tripInfo.duration || 0) + 1} DAYS
             </h1>
             <p>
@@ -1343,7 +1343,7 @@ const ModernTemplate = ({
               style={{ padding: "10px 40px" }}
             >
               <h1>
-                {tripInfo.duration || "0"} NIGHT{" "}
+                {tripInfo.duration || "0"} {parseInt(tripInfo.duration || 0) === 1 ? "NIGHT" : "NIGHTS"}{" "}
                 {parseInt(tripInfo.duration || 0) + 1} DAYS
               </h1>
               <p>
@@ -1691,7 +1691,7 @@ const ModernTemplate = ({
           style={{ padding: "10px 40px" }}
         >
           <h1>
-            {tripInfo.duration || "0"} NIGHT{" "}
+            {tripInfo.duration || "0"} {parseInt(tripInfo.duration || 0) === 1 ? "NIGHT" : "NIGHTS"}{" "}
             {parseInt(tripInfo.duration || 0) + 1} DAYS
           </h1>
           <p>
@@ -1896,7 +1896,7 @@ const ModernTemplate = ({
           style={{ padding: "10px 40px" }}
         >
           <h1 className="uppercase">
-            {tripInfo.duration || "0"} NIGHT{" "}
+            {tripInfo.duration || "0"} {parseInt(tripInfo.duration || 0) === 1 ? "NIGHT" : "NIGHTS"}{" "}
             {parseInt(tripInfo.duration || 0) + 1} DAYS
           </h1>
           <p>
@@ -2061,7 +2061,7 @@ const ModernTemplate = ({
           style={{ padding: "10px 40px" }}
         >
           <h1 className="uppercase">
-            {tripInfo.duration || "0"} NIGHT{" "}
+            {tripInfo.duration || "0"} {parseInt(tripInfo.duration || 0) === 1 ? "NIGHT" : "NIGHTS"}{" "}
             {parseInt(tripInfo.duration || 0) + 1} DAYS
           </h1>
           <p>

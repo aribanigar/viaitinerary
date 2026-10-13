@@ -15,6 +15,7 @@ import {
 import { POPPINS_REGULAR, POPPINS_SEMIBOLD } from "./pdf-assets.js";
 import { VIA_KASHMIR_LOGO, VIA_KASHMIR_LOGO_RATIO } from "./vk-logo.js";
 import prisma from "@/lib/prisma";
+import { nightsOf } from "@/lib/duration";
 
 // Server-side PDF generation (react-pdf, no Chromium). This is a faithful
 // reproduction of the in-app ModernTemplate live preview, so the exported PDF
@@ -236,7 +237,7 @@ function innerFooter(settings) {
 function pageHeader(trip, settings) {
   const brand = brandOf(settings);
   const green = greenOf(settings);
-  const nights = parseInt(trip.duration) || 0;
+  const nights = parseInt(nightsOf(trip.duration)) || 0;
   return h(
     View,
     { style: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" } },
@@ -306,7 +307,7 @@ function ItineraryDoc({ trip, settings }) {
   const brand = brandOf(settings);
   const green = greenOf(settings);
   const cur = trip.currency;
-  const nights = parseInt(trip.duration) || 0;
+  const nights = parseInt(nightsOf(trip.duration)) || 0;
   const days = arr(trip.itineraries);
   const hotels = arr(trip.accommodations);
   const packageData = tripPackages(trip, hotels);
@@ -777,7 +778,7 @@ function ConfirmationDoc({ trip, settings, message }) {
     h(Text, { style: { lineHeight: 1.5, marginBottom: 10 } }, txt(message)),
     h(View, { style: simpleStyles.section },
       infoRow("Trip ID", trip.tripId), infoRow("Start Date", fmtDate(trip.startDate)),
-      infoRow("Duration", trip.duration ? `${trip.duration}N` : "—"),
+      infoRow("Duration", nightsOf(trip.duration) ? `${nightsOf(trip.duration)}N/${Number(nightsOf(trip.duration)) + 1}D` : "—"),
       infoRow("Quote Price", money(trip.cost, cur)), infoRow("Paid Amount", money(trip.paidAmount, cur))),
     simpleFooter(settings)));
 }
@@ -803,7 +804,7 @@ function InvoiceDoc({ trip, settings }) {
       infoRow("Name", trip.clientName), infoRow("Email", trip.clientEmail), infoRow("Phone", trip.clientPhone)),
     h(View, { style: simpleStyles.section }, h(Text, { style: { ...simpleStyles.title, color: greenOf(settings) } }, "Package Details"),
       infoRow("Trip ID", trip.tripId), infoRow("Travel Date", fmtDate(trip.startDate)),
-      infoRow("Duration", trip.duration ? `${trip.duration}N` : "—"), infoRow("Total", money(trip.cost, cur))),
+      infoRow("Duration", nightsOf(trip.duration) ? `${nightsOf(trip.duration)}N/${Number(nightsOf(trip.duration)) + 1}D` : "—"), infoRow("Total", money(trip.cost, cur))),
     simpleFooter(settings)));
 }
 

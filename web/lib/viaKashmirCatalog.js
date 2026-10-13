@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
+import { nightsOf } from "@/lib/duration";
 
 /**
  * Via Kashmir catalog sync (viakashmir.in -> this builder), for two audiences:
@@ -292,7 +293,8 @@ async function syncPackages(userId, packages, hotels, vehicles, destinations) {
       tripTitle: p.title,
       destination: (p.destinations || []).join(", ") || p.startingCity || null,
       destinationId: firstDest,
-      duration: p.nights && p.days ? `${p.nights} Nights / ${p.days} Days` : p.days ? `${p.days} Days` : null,
+      // Nights only, like every trip ("5") — the templates write "5 Nights / 6 Days" themselves.
+      duration: p.nights ? String(p.nights) : p.days ? String(Math.max(0, Number(p.days) - 1)) : null,
       adults: Math.max(2, Number(p.minTravellers) || 2),
       startDate: start,
       imagePath: p.image || null,

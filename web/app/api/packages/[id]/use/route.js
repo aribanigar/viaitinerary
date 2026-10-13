@@ -5,6 +5,7 @@ import { adminIdOf, teamIdOf } from "@/lib/scope";
 import { serializeTrip } from "@/lib/serialize";
 import { TRIP_INCLUDE, cloneTripChildren, parseDate } from "@/lib/trips";
 import { canCreateTrip, incrementTripsUsed } from "@/lib/subscription";
+import { nightsOf } from "@/lib/duration";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -56,7 +57,7 @@ export async function POST(request, { params }) {
         kidsCnb: int(b.kids_cnb, pkg.kidsCnb),
         kids5to12: int(b.kids_5_to_12, pkg.kids5to12),
         startDate: b.start_date ? parseDate(b.start_date) : pkg.startDate,
-        duration: pkg.duration,
+        duration: nightsOf(pkg.duration),
         cost: pkg.cost,
         gstAmount: pkg.gstAmount,
         gstPercentage: pkg.gstPercentage,

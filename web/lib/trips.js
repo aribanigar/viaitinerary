@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { persistImage } from "@/lib/storage";
 import { bookingChanged } from "@/lib/operations";
+import { nightsOf } from "@/lib/duration";
 
 /** Parse "YYYY-MM-DD" or "DD-MM-YYYY" (or anything Date understands) to a Date. */
 export function parseDate(value) {
@@ -83,7 +84,7 @@ export async function buildTripScalars(body, { partial = false } = {}) {
     kidsCnb: int(body.kidsUpto5 ?? body.kids_cnb, 0),
     kids5to12: int(body.kids5to12 ?? body.kids_5_to_12, 0),
     startDate: parseDate(body.startDate),
-    duration: body.duration != null ? String(body.duration) : null,
+    duration: nightsOf(body.duration),
     cost: dec(body.cost),
     gstAmount: dec(body.gst_amount) ?? 0,
     gstPercentage: dec(body.gst_percentage),

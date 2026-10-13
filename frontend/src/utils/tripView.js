@@ -121,7 +121,11 @@ export function mapSavedTrip(
       savedTrip.start_date ||
       savedTrip.startDate ||
       new Date().toISOString().split("T")[0],
-    duration: savedTrip.duration,
+    // Nights as a number ("5"); old package copies held "5 Nights / 6 Days".
+    duration:
+      savedTrip.duration == null || /^\d+$/.test(String(savedTrip.duration).trim())
+        ? savedTrip.duration
+        : String(String(savedTrip.duration).match(/(\d+)\s*(?:n\b|nights?)/i)?.[1] ?? Math.max(0, (parseInt(String(savedTrip.duration).match(/\d+/)?.[0], 10) || 1) - 1)),
     cost: savedTrip.cost || "0",
     currency:
       savedTrip.currency || initData.settings?.currency || "INR (₹)",
