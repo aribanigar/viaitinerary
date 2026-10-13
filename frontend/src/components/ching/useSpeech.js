@@ -32,7 +32,7 @@ const IS_ANDROID =
 
 const LANG = "en-IN";
 const FIRST_WORDS_MS = TURN_MS.silentStart; // before anything was heard
-const STOP_GRACE_MS = 1500; // wait this long for `end` after stop()
+const STOP_GRACE_MS = 700; // wait this long for `end` after stop()
 
 // Spoken end-of-command markers ("... breakfast and dinner, done").
 const END_RE =
@@ -136,6 +136,7 @@ const freshCommand = (extra = {}) => ({
   baseIndex: 0, // first result index belonging to the command
   fromWake: false, // strip the wake phrase from the session text
   heard: false,
+  allFinal: false, // the recognizer has finalised everything heard so far
   audio: false, // the mic delivered audio (audiostart)
   sound: false, // some sound was detected (soundstart)
   finishing: false,
@@ -145,7 +146,8 @@ const freshCommand = (extra = {}) => ({
   ...extra,
 });
 
-class SpeechEngine {
+// Exported for scripts/ching-turn.test.mjs (a fake recognizer times the turns).
+export class SpeechEngine {
   constructor() {
     this.supported = Boolean(SR);
     this.state = {
@@ -157,7 +159,7 @@ class SpeechEngine {
       wakeBlocked: false,
     };
     this.listeners = new Set();
-    this.handlers = { onCommand: null, onWake: null, onStart: null, onAbort: null };
+    this.handlers = { onCommand: null, onWake: null, onStart: null, onAbort: null, isComplete: null };
     this.rec = null;
     this.recMode = null; // mode of this.rec: "wake" | "command" | null
     this.cmd = freshCommand();
@@ -335,6 +337,12 @@ class SpeechEngine {
     if (this.state.phase !== "command" || this.cmd.finishing) return;
     this.cmd.finishing = true;
     this.clearTimer("silence");
+    // Everything heard is already final: nothing to flush — answer now
+    // instead of waiting for the recognizer to wind down.
+    if (this.rec && this.cmd.allFinal) {
+      this.deliver();
+      return;
+    }
     if (this.rec) {
       try {
         this.rec.stop(); // flushes pending interim results as final, then `end`
@@ -384,14 +392,41 @@ class SpeechEngine {
     this.timers.silence = setTimeout(() => this.finishCommand(), ms);
   }
 
+  // The turn ends after a silence that depends on how the sentence ends and
+  // on whether the recognizer has closed the phrase. When the widget can
+  // already act on what was said (isComplete), the wait is a short beat; that
+  // is checked once, when the beat is over, not on every word.
+  armTurn(raw, full) {
+    const final = this.cmd.allFinal;
+    const base = endOfTurnDelay(raw, { final });
+    const fast = endOfTurnDelay(raw, { final, complete: true });
+    if (fast >= base || !this.handlers.isComplete) {
+      this.armSilence(base);
+      return;
+    }
+    this.clearTimer("silence");
+    this.timers.silence = setTimeout(() => {
+      let done = false;
+      try {
+        done = Boolean(this.handlers.isComplete?.(full));
+      } catch {
+        done = false;
+      }
+      if (done) this.finishCommand();
+      else this.armSilence(base - fast);
+    }, fast);
+  }
+
   currentText() {
     return joinText(this.cmd.committed, this.cmd.session);
   }
 
   onCommandResult(e) {
     const parts = [];
+    let allFinal = e.results.length > this.cmd.baseIndex;
     for (let i = this.cmd.baseIndex; i < e.results.length; i += 1) {
       const r = e.results[i];
+      if (!r?.isFinal) allFinal = false;
       const alts = [];
       for (let k = 0; k < (r?.length || 0); k += 1) alts.push(r[k]?.transcript || "");
       parts.push(pickAlternative(alts, this.vocab) || "");
@@ -402,6 +437,7 @@ class SpeechEngine {
       if (stripped.woke) text = norm(stripped.text);
     }
     this.cmd.session = text;
+    this.cmd.allFinal = allFinal;
     const raw = this.currentText();
     const full = stripFillers(raw);
     if (raw) this.cmd.heard = true;
@@ -416,7 +452,8 @@ class SpeechEngine {
     }
     // Wait longer while the sentence sounds unfinished (judged on the raw
     // text, so a trailing "umm" counts as still thinking).
-    this.armSilence(this.cmd.heard ? endOfTurnDelay(raw) : FIRST_WORDS_MS);
+    if (this.cmd.heard) this.armTurn(raw, full);
+    else this.armSilence(FIRST_WORDS_MS);
   }
 
   deliver() {
@@ -622,7 +659,9 @@ class SpeechEngine {
 }
 
 /**
- * useSpeech({ handsFree, paused, onCommand, onWake, onStart, onAbort })
+ * useSpeech({ handsFree, paused, onCommand, onWake, onStart, onAbort, isComplete })
+ *   isComplete(text) — true when the caller can already act on what was heard;
+ *               the turn then ends after a short beat instead of a long wait
  *   handsFree — keep a "Hello Ching" wake listener running
  *   paused    — temporarily stop the wake listener (e.g. while building)
  *   onCommand(text) — a finished command transcript
@@ -645,14 +684,15 @@ export default function useSpeech({
   onWake,
   onStart,
   onAbort,
+  isComplete = null,
   vocabulary = null,
 } = {}) {
   const [engine] = useState(() => new SpeechEngine());
   const state = useSyncExternalStore(engine.subscribe, engine.getSnapshot, engine.getSnapshot);
 
   useEffect(() => {
-    engine.setHandlers({ onCommand, onWake, onStart, onAbort });
-  }, [engine, onCommand, onWake, onStart, onAbort]);
+    engine.setHandlers({ onCommand, onWake, onStart, onAbort, isComplete });
+  }, [engine, onCommand, onWake, onStart, onAbort, isComplete]);
 
   useEffect(() => {
     engine.attach();

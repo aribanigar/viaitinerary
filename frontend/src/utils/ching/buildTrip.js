@@ -15,6 +15,7 @@ import {
 import { destinationActivityLabels } from "../destinationActivities.js";
 import { hotelInCity, findDestinationFor, placeKey, samePlace } from "./places.js";
 import { dayWiseCabs } from "./cabPlan.js";
+import { bestStayOrder } from "./route.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -66,7 +67,7 @@ export function hotelPreference(text) {
   const m = /\b([1-7])\s*-?\s*star\b/.exec(t);
   const tier = /\b(budget|cheap|cheapest|economy|affordable)\b/.test(t)
     ? "budget"
-    : /\b(luxury|luxurious|premium|best|top|5\s*star)\b/.test(t)
+    : /\b(luxury|luxurious|premium|best(?!\s+(?:itinerary|trip|tour|package|plan|price|rate|deal|time|route|way|possible))|top|5\s*star)\b/.test(t)
       ? "luxury"
       : null;
   const cap = /\b(?:under|below|less\s+than|within|upto|up\s+to|max(?:imum)?|not\s+more\s+than|budget\s+(?:of|is))\s*(?:rs\.?|₹|inr|rupees)?\s*(\d[\d,]*(?:\.\d+)?)\s*(k|thousand)?\b/.exec(t);
@@ -105,10 +106,16 @@ export function pickHotel(city, hotels, pref = {}, memory = null, why = {}) {
     if (within.length) pool = within;
     else why.overBudget = true;
   }
+  const fav = favouritesIn(memory, city).map((id) => pool.find((h) => String(h.id) === String(id))).find(Boolean);
+  // One class of hotel for the whole trip (softStars, chosen for the route)
+  // when the agent named none and has no usual hotel here.
+  if (!pref.stars && !pref.tier && !fav && pref.softStars) {
+    const same = pool.filter((h) => String(h.category || "").startsWith(pref.softStars));
+    if (same.length) pool = same;
+  }
   const priced = pool.slice().sort((a, b) => firstPrice(a) - firstPrice(b) || String(a.name).localeCompare(String(b.name)));
   if (pref.tier === "budget") return priced[0];
   if (pref.tier === "luxury") return priced[priced.length - 1];
-  const fav = favouritesIn(memory, city).map((id) => pool.find((h) => String(h.id) === String(id))).find(Boolean);
   if (fav) {
     why.favourite = true;
     return fav;
@@ -162,12 +169,14 @@ export function pickVehicle(vehicles, guests, memory = null, why = {}) {
  * gets one stay for all nights. → { stays, autoPicked: [{ city, hotel }] }
  */
 function resolveStays(command, hotels, nights, destinations = [], memory = null) {
-  const pref = hotelPreference(command.transcript);
+  // A whole-trip budget arrives as a ready-made room-rate cap (brief.js).
+  const pref = command.pref || hotelPreference(command.transcript);
   const autoPicked = [];
   const missing = [];
+  let soft = null;
   const pick = (city, extra = {}) => {
     const why = {};
-    const h = pickHotel(city, hotels, pref, memory, why);
+    const h = pickHotel(city, hotels, soft ? { ...pref, softStars: soft } : pref, memory, why);
     if (!h) {
       missing.push(city);
       return null;
@@ -175,6 +184,14 @@ function resolveStays(command, hotels, nights, destinations = [], memory = null)
     autoPicked.push({ city: h.city || city, hotel: h.name, favourite: !!why.favourite, overBudget: !!why.overBudget, ...extra });
     return h;
   };
+  // The class the trip is quoted in: the one the hotels already named are in,
+  // else the star rating every stop of the route has (commonClass).
+  const namedClass = (command.stays || [])
+    .map((st) => hotels.find((h) => String(h.id) === String(st.hotelId)))
+    .map((h) => /^[1-7]/.exec(String(h?.category || ""))?.[0])
+    .find(Boolean);
+  const classFor = (cities) => namedClass || commonClass(cities, hotels);
+  soft = classFor((command.stays || []).map((st) => st.city).filter(Boolean));
   let stays = (command.stays || []).map((st) => {
     if (st.hotelId || !st.city) return st;
     // The agent named a hotel we couldn't find: never swap in one of our own —
@@ -207,7 +224,8 @@ function resolveStays(command, hotels, nights, destinations = [], memory = null)
     }
   }
   if (!stays.length && nights > 0) {
-    const route = planRoute(command, hotels, destinations, nights, memory);
+    const route = inRoadOrder(planRoute(command, hotels, destinations, nights, memory), hotels, command);
+    soft = classFor(route.map((r) => r.city));
     stays = route.map(({ city, nights: n }) => {
       const h = pick(city, { routed: route.length > 1 });
       // No hotel there: keep the city in the plan so the day-wise
@@ -218,6 +236,43 @@ function resolveStays(command, hotels, nights, destinations = [], memory = null)
     });
   }
   return { stays, autoPicked, missing: [...new Set(missing)], pref };
+}
+
+/**
+ * A route Ching planned itself runs the way the road does: from the airport
+ * town, round, and back (route.js). The agency's own usual split (learned) and
+ * an order the agent asked for are left as they are.
+ */
+function inRoadOrder(route, hotels, command) {
+  if (route.length < 2 || route.learned || command.stayOrderSaid) return route;
+  const best = bestStayOrder(route, { hotels });
+  return best.ok && best.changed ? best.order.map((i) => route[i]) : route;
+}
+
+/**
+ * The star rating to quote a multi-stop trip in when none was asked for: the
+ * one found in the most of its cities (so the trip doesn't jump from a 3-star
+ * to a 5-star and back), then the one with the most hotels, then the lower.
+ */
+function commonClass(cities, hotels) {
+  const towns = [...new Set(cities.filter(Boolean))];
+  if (towns.length < 2) return null;
+  const tally = new Map();
+  for (const city of towns) {
+    const here = hotels.filter((h) => hotelInCity(h, city) && h.is_available !== false);
+    const stars = new Set();
+    for (const h of here) {
+      const k = /^[1-7]/.exec(String(h.category || ""))?.[0];
+      if (!k) continue;
+      const t = tally.get(k) || { k, cities: 0, hotels: 0 };
+      t.hotels += 1;
+      if (!stars.has(k)) t.cities += 1;
+      stars.add(k);
+      tally.set(k, t);
+    }
+  }
+  const best = [...tally.values()].sort((a, b) => b.cities - a.cities || b.hotels - a.hotels || Number(a.k) - Number(b.k))[0];
+  return best ? best.k : null;
 }
 
 /** How many cities a trip of `nights` nights comfortably covers. */
@@ -258,7 +313,7 @@ function planRoute(command, hotels, destinations, nights, memory = null, { exclu
   // The agency's usual split for this destination and length (learned).
   const learned = memory?.routes?.[`${placeKey(dest)}|${nights}`];
   if (!exclude.length && !allCities && Array.isArray(learned) && learned.length && learned.reduce((n, r) => n + (Number(r.nights) || 0), 0) === nights) {
-    return learned.map((r) => ({ city: r.city, nights: Number(r.nights) }));
+    return Object.assign(learned.map((r) => ({ city: r.city, nights: Number(r.nights) })), { learned: true });
   }
   if (!allCities && hotelCities.some((c) => samePlace(c, dest) && keep(c))) return [{ city: hotelCities.find((c) => samePlace(c, dest)), nights }];
 

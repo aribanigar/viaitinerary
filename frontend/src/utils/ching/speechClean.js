@@ -58,9 +58,11 @@ export function stripFillers(text) {
     .trim();
 }
 
-// Words a sentence can't end on: the agent is still thinking.
+// Words a sentence can't end on: the agent is still thinking. Only words that
+// need something after them — "4 nights", "3 adults", "5 days", "the hotel"
+// are finished sentences, and waiting on them made every trip request lag.
 const DANGLING =
-  /\b(?:and|or|with|in|at|to|for|from|of|the|a|an|then|also|but|because|plus|by|on|after|before|until|till|via|is|are|will|would|should|want|need|named|called|name|hotel|stay|staying|stays|night|nights|day|days|cab|car|vehicle|meal|plan|budget|under|around|about|between|like|my|his|her|their|our|this|that|some|per|each|price|rate|margin|markup|phone|number|email|client|guest|guests|adults?|kids?|children|child|activity|activities|trip|starting|start|arriving|arrival|departure|book|add|make|set|change|replace|put|use|include|excluding|including)\s*[,]?$/i;
+  /\b(?:and|or|with|in|at|to|for|from|of|the|a|an|then|also|but|because|plus|by|on|after|before|until|till|via|is|are|will|would|should|want|need|named|called|under|around|about|between|like|my|his|her|their|our|this|that|some|per|each|starting|arriving|staying|book|add|make|set|change|replace|put|use|include|excluding|including)\s*[,]?$/i;
 const ENDS_WITH_NUMBER = /(?:\b\d+|[\u0966-\u096F\u06F0-\u06F9]+)\s*[,]?$/;
 // Hindi / Urdu sentences end on the verb; one ending on "and / of / in / from /
 // to / for" (और, के, में, से, तक, लिए / اور، کے، میں، سے، تک، لیے) isn't finished.
@@ -68,22 +70,42 @@ const SCRIPT_DANGLING = /(?:^|\s)(?:और|के|की|का|में|से
 const ENDS_WITH_COMMA = /,\s*$/;
 const TRAILING_FILLER = /\b(?:u+h*m+|u+h+|a+h+|e+h+|e+h*m+|e+r+m*|h+m+)[\s.,…]*$/i;
 
+// How long Ching waits after the last thing it heard before taking the turn.
+// TURN_MS: the recognizer is still working on the phrase (interim text).
+// TURN_FINAL_MS: the recognizer itself has closed the phrase — it already
+// heard a pause — so only a short beat more is needed, like a person would.
 export const TURN_MS = {
-  thinking: 7000, // trailing "umm" / "and" / "in" — clearly mid-thought
-  number: 4500, // "for 2" … "nights" probably follows
-  normal: 3200, // looks complete, but trip requests are long: allow a breath
-  short: 2000, // a short complete request ("open the ledger")
+  thinking: 3500, // trailing "umm" / "and" / "in" — clearly mid-thought
+  number: 2200, // "for 2" … "nights" probably follows
+  normal: 1800, // looks complete
+  short: 1300, // a short complete request ("open the ledger")
+  complete: 1100, // Ching already knows what to do with it
   silentStart: 8000, // before anything was heard
 };
+export const TURN_FINAL_MS = {
+  thinking: 2500,
+  number: 1400,
+  normal: 900,
+  short: 500,
+  complete: 300,
+};
 
-export function endOfTurnDelay(text) {
+/**
+ * @param {string} text  what was heard so far (raw, fillers included)
+ * @param {{ final?: boolean, complete?: boolean }} [opts]
+ *   final — the recognizer has finalised everything heard (a pause was detected)
+ *   complete — the caller can already act on the sentence
+ */
+export function endOfTurnDelay(text, { final = false, complete = false } = {}) {
+  const ms = final ? TURN_FINAL_MS : TURN_MS;
   const raw = String(text || "").trim();
   if (!raw) return TURN_MS.silentStart;
-  if (TRAILING_FILLER.test(raw)) return TURN_MS.thinking;
+  if (TRAILING_FILLER.test(raw)) return ms.thinking;
   const s = stripFillers(raw);
-  if (!s) return TURN_MS.thinking;
-  if (DANGLING.test(s) || ENDS_WITH_COMMA.test(s) || SCRIPT_DANGLING.test(s)) return TURN_MS.thinking;
-  if (ENDS_WITH_NUMBER.test(s)) return TURN_MS.number;
+  if (!s) return ms.thinking;
+  if (DANGLING.test(s) || ENDS_WITH_COMMA.test(s) || SCRIPT_DANGLING.test(s)) return ms.thinking;
+  if (complete) return ms.complete;
+  if (ENDS_WITH_NUMBER.test(s)) return ms.number;
   const words = s.split(/\s+/).length;
-  return words <= 4 ? TURN_MS.short : TURN_MS.normal;
+  return words <= 4 ? ms.short : ms.normal;
 }

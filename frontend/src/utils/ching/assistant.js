@@ -261,6 +261,9 @@ function understandDoc(t, { inBuilder }) {
         : null;
   if (!action || t.split(" ").length > 14) return null;
   if (/\b\d+\s*(?:nights?|days?)\b/.test(t)) return null; // a trip request that mentions a PDF
+  // "make an itinerary for Kashmir", "plan a honeymoon itinerary": a trip to
+  // build, not a document to fetch (that is "download / send … itinerary").
+  if (doc === "itinerary" && !/\bpdf\b/.test(t) && /\b(?:make|create|plan|build|prepare|draft|design|suggest|need|want)\b/.test(t) && !/\b(?:download|export|print|send|e-?mail|mail|whats ?app|share|open|show)\b/.test(t)) return null;
   const query = targetOf(t);
   const toMe = /\b(?:to|for) me\b|\bemail me\b|\bmail me\b/.test(t);
   // Inside the builder, "export the PDF" / "email it to me" / "export excel" /
@@ -447,8 +450,8 @@ const SMALLTALK = [
     pick(["Fully charged and fully booked — in a good way. How can I help?", "Better than a Gulmarg sunrise. What are we planning?", "Great, thanks for asking! Got a trip for me?"])],
   [/^(?:who are you|what are you|what is your name|what's your name|tumhara naam)\b/, () =>
     "I'm Ching, your travel desk assistant. Tell me a trip and I'll fill the whole thing — hotels, cabs, day plan, price — while you talk."],
-  [/\b(?:what can you do|help me|how do i use you|what do you do|commands)\b/, () =>
-    "Try: \"3 night Srinagar trip for Rahul, 4 adults from 10 November\". Then \"make Gulmarg 2 nights\", \"give me 20% margin\", \"what's pending?\", \"send it to the client on WhatsApp\" — or \"open the ledger\" to go anywhere."],
+  [/\b(?:what can you do|help me|how do i use you|what do you do|commands)\b|^help$/, () =>
+    "Tell me a trip the way a client asks: \"plan a Kashmir trip for 4 people, 5 nights from 10 November, budget hotels\" — I'll ask what's missing and plan the hotels, cab and day-wise itinerary from your own catalog. Then \"make Gulmarg 2 nights\", \"give me 20% margin\", \"what's pending?\", \"send it to the client on WhatsApp\" — or \"open the ledger\" to go anywhere."],
   [/\b(?:joke|make me laugh|funny|mazak|chutkula)\b/, () => pick(JOKES)],
   [/^(?:thank you|thanks|thank u|shukriya|dhanyavad|great job|well done|awesome|nice|perfect|good job)\b/, () =>
     pick(["Anytime! That's what I'm here for.", "My pleasure. Next trip?", "Happy to help — go close that deal!", "Shukriya! Ping me whenever."])],

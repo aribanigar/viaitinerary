@@ -7,12 +7,16 @@
 // this a new-trip request (→ open a fresh draft and fill it), an edit with no
 // trip open, or nothing at all.
 import { loadBuilderInit, peekBuilderInit, prefetchBuilderInit } from "../../api/builderInit";
-import { parseChingCommand, prepareCatalog, cityLookup, matchHotel } from "../../utils/ching/parseCommand";
+import { prepareCatalog, cityLookup, matchHotel } from "../../utils/ching/parseCommand";
 import { parseChingEdit, isCreateRequest } from "../../utils/ching/parseEdit";
+import { namesATrip, parseTripRequest } from "../../utils/ching/brief.js";
 
 export { isCreateRequest };
 // Ching's guided trip (Trip Info → Itinerary → Logistics, asked one step at a time).
 export { startGuide, startLogistics, guideStep, currentQuestion, wantsHotel, wantsCab, guidePreview, repairTripInfo, isCorrection, correctTripInfo } from "../../utils/ching/guide.js";
+
+// The travel-agent brief: ask what's needed, then plan the whole trip.
+export { startBrief, briefStep, briefQuestion, briefWouldPlan, briefHeard, wantsStepByStep } from "../../utils/ching/brief.js";
 
 // /api/builder/init is shared with the Trip Builder (api/builderInit.js): the
 // last good copy answers at once and is refreshed in the background.
@@ -103,16 +107,25 @@ export function looksLikeTripRequest(text, init) {
   if (!init) return false;
   let cmd;
   try {
-    cmd = parseChingCommand(text, catalogOf(init));
+    cmd = parseTripRequest(text, catalogOf(init));
   } catch {
     return false;
   }
   if (!cmd || cmd.intent !== "create_trip") return false;
   const heardLength = Number(cmd.nights) > 0 || (cmd.stays?.length || 0) > 0;
-  if (!heardLength) return false;
+  // "Kashmir trip for 4 people", "they want to visit Gulmarg in January":
+  // a trip that names a place — the brief asks for the rest.
+  if (!heardLength) return namesATrip(text, catalogOf(init)) && !readsAsEdit(text, init);
+  // "3 adults and 4 kids travelling on 17th October for 4 nights": two or more
+  // facts of a trip (guests, date, length) are a trip, with or without a place.
+  const facts = [!(cmd.missing || []).includes("adults"), !!cmd.startDate, Number(cmd.nights) > 0].filter(Boolean).length;
   return (
+    facts >= 2 ||
     String(cmd.clientName || "").trim() !== "" ||
     (cmd.stays?.length || 0) >= 2 ||
+    // "family of 6 wants to visit Srinagar and Gulmarg for a week": a client's
+    // request, even though "for a week" alone could be read as an edit.
+    namesATrip(text, catalogOf(init)) ||
     !readsAsEdit(text, init)
   );
 }

@@ -7,7 +7,8 @@
 //    request (client, guests, dates, hotels, day plan, cab, meals), then any
 //    extras in the same sentence (activities, leisure days, margin, GST…).
 //  - "edit": the trip already has content → the sentence is a list of edits.
-import { parseChingCommand, validateChingCommand } from "./parseCommand.js";
+import { validateChingCommand } from "./parseCommand.js";
+import { parseTripRequest } from "./brief.js";
 import { parseChingEdit } from "./parseEdit.js";
 import { buildEditContext, applyEditActions } from "./editTrip.js";
 import { applyCorrections } from "./corrections.js";
@@ -110,11 +111,13 @@ function dateRange(start, nights) {
 }
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
+const rupees = (n) => `₹${Math.round(Number(n) || 0).toLocaleString("en-IN")}`;
+
 function planFill(base, rawText, { catalog, settings, today }) {
   // Aliases apply to the whole sentence — the fill and the extras riding along.
   const text = applyAliases(rawText, catalog.memory);
   const createCatalog = { hotels: catalog.hotels, destinations: catalog.destinations, vehicles: catalog.vehicles };
-  const command = parseChingCommand(text, createCatalog, { today });
+  const command = parseTripRequest(text, { ...createCatalog, memory: catalog.memory }, { today, settings });
   // Day 1 is the trip's start date: when none was said, use the one already on the trip.
   const baseStart = String(base.tripInfo?.startDate || "").slice(0, 10);
   if (!command.startDate && /^\d{4}-\d{2}-\d{2}$/.test(baseStart)) command.startDate = baseStart;
@@ -174,6 +177,9 @@ function planFill(base, rawText, { catalog, settings, today }) {
   if (parts.transportation.length) {
     const how = !autoCab ? "" : autoCab.favourite ? " (your usual)" : ` (picked for ${autoCab.guests} guests)`;
     changes.push(`Cab: ${parts.vehicle.name} · ${plural(parts.transportation.length, "day")}${how}`);
+  }
+  if (command.totalBudget && command.pref?.maxPrice && parts.accommodations.length) {
+    changes.push(`Budget ${rupees(command.totalBudget)}: rooms kept within ${rupees(command.pref.maxPrice)} a night`);
   }
   const meal = parts.remembered.find((r) => r.meal);
   if (command.mealPlan) changes.push(`Meals: ${command.mealPlan}`);
