@@ -10,6 +10,9 @@ import { loadBuilderInit, peekBuilderInit, prefetchBuilderInit } from "../../api
 import { prepareCatalog, cityLookup, matchHotel } from "../../utils/ching/parseCommand";
 import { parseChingEdit, isCreateRequest } from "../../utils/ching/parseEdit";
 import { namesATrip, parseTripRequest } from "../../utils/ching/brief.js";
+import { isNarrative } from "../../utils/ching/narrative.js";
+
+export { soundsLikeAStory } from "../../utils/ching/narrative.js";
 
 export { isCreateRequest };
 // Ching's guided trip (Trip Info → Itinerary → Logistics, asked one step at a time).
@@ -91,6 +94,22 @@ function readsAsEdit(text, init) {
     const catalog = editCatalogOf(init);
     const r = parseChingEdit(text, probeEditContext(catalog), catalog);
     return Boolean(r && r.intent === "edit" && r.actions?.length);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A client's own account of the trip they want (a voice note, a pasted
+ * message) that holds at least two facts of a trip: always a NEW trip, even
+ * with another one open.
+ */
+export function isClientStory(text, init) {
+  if (!isNarrative(text)) return false;
+  try {
+    const cmd = parseTripRequest(text, { ...catalogOf(init), activities: init?.activities || [] });
+    if (!cmd?.story) return false;
+    return [!(cmd.missing || []).includes("adults"), !!cmd.startDate, Number(cmd.nights) > 0, (cmd.stays?.length || 0) > 0].filter(Boolean).length >= 2;
   } catch {
     return false;
   }

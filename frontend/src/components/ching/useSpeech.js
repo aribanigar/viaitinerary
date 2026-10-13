@@ -159,7 +159,7 @@ export class SpeechEngine {
       wakeBlocked: false,
     };
     this.listeners = new Set();
-    this.handlers = { onCommand: null, onWake: null, onStart: null, onAbort: null, isComplete: null };
+    this.handlers = { onCommand: null, onWake: null, onStart: null, onAbort: null, isComplete: null, isLongForm: null };
     this.rec = null;
     this.recMode = null; // mode of this.rec: "wake" | "command" | null
     this.cmd = freshCommand();
@@ -397,6 +397,17 @@ export class SpeechEngine {
   // already act on what was said (isComplete), the wait is a short beat; that
   // is checked once, when the beat is over, not on every word.
   armTurn(raw, full) {
+    // A long first-person account (isLongForm): never cut in at a breath.
+    let story = false;
+    try {
+      story = Boolean(this.handlers.isLongForm?.(full));
+    } catch {
+      story = false;
+    }
+    if (story) {
+      this.armSilence(TURN_MS.story);
+      return;
+    }
     const final = this.cmd.allFinal;
     const base = endOfTurnDelay(raw, { final });
     const fast = endOfTurnDelay(raw, { final, complete: true });
@@ -662,6 +673,8 @@ export class SpeechEngine {
  * useSpeech({ handsFree, paused, onCommand, onWake, onStart, onAbort, isComplete })
  *   isComplete(text) — true when the caller can already act on what was heard;
  *               the turn then ends after a short beat instead of a long wait
+ *   isLongForm(text) — true while a long account is being told (a client's
+ *               voice note): Ching waits out the pauses instead of cutting in
  *   handsFree — keep a "Hello Ching" wake listener running
  *   paused    — temporarily stop the wake listener (e.g. while building)
  *   onCommand(text) — a finished command transcript
@@ -685,14 +698,15 @@ export default function useSpeech({
   onStart,
   onAbort,
   isComplete = null,
+  isLongForm = null,
   vocabulary = null,
 } = {}) {
   const [engine] = useState(() => new SpeechEngine());
   const state = useSyncExternalStore(engine.subscribe, engine.getSnapshot, engine.getSnapshot);
 
   useEffect(() => {
-    engine.setHandlers({ onCommand, onWake, onStart, onAbort, isComplete });
-  }, [engine, onCommand, onWake, onStart, onAbort, isComplete]);
+    engine.setHandlers({ onCommand, onWake, onStart, onAbort, isComplete, isLongForm });
+  }, [engine, onCommand, onWake, onStart, onAbort, isComplete, isLongForm]);
 
   useEffect(() => {
     engine.attach();

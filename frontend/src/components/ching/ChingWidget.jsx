@@ -776,7 +776,7 @@ export default function ChingWidget() {
 
       // A new trip is built WITH the agent, step by step (utils/ching/guide.js):
       // "create a trip …", or anything trip-like said on a blank trip.
-      const createReq = !planText && (S.guide || (core && core.isCreateRequest(text)));
+      const createReq = !planText && (S.guide || (core && (core.isCreateRequest(text) || core.isClientStory(text, initRef.current))));
       if (createReq && !S.baseBlank) {
         S.guide = true;
         openDraft(S); // a fresh trip — never over the one that's open
@@ -1201,6 +1201,10 @@ export default function ChingWidget() {
     [handleCommand],
   );
 
+  // A client's story is being told (a voice note played to the mic): wait for
+  // the end of it — pauses for breath are not the end of the turn.
+  const isLongForm = useCallback((said) => Boolean(coreRef.current?.soundsLikeAStory?.(said)), []);
+
   // Can Ching already act on what it has heard? Then the mic stops after a
   // short beat instead of waiting out a long silence (useSpeech armTurn).
   const isComplete = useCallback(
@@ -1243,6 +1247,7 @@ export default function ChingWidget() {
     onStart: handleStart,
     onAbort: cancelSession,
     isComplete,
+    isLongForm,
   });
   const {
     supported,

@@ -81,6 +81,9 @@ export const TURN_MS = {
   short: 1300, // a short complete request ("open the ledger")
   complete: 1100, // Ching already knows what to do with it
   silentStart: 8000, // before anything was heard
+  // A client's story (a voice note being played, a long account): people
+  // pause for breath between sentences — wait for it to really be over.
+  story: 4500,
 };
 export const TURN_FINAL_MS = {
   thinking: 2500,

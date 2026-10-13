@@ -23,12 +23,12 @@ const { SpeechEngine } = await import('../src/components/ching/useSpeech.js')
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 // Speak `text` (interim words, then the final result) → ms until onCommand.
-async function turn(text, { isComplete = null, finalise = true } = {}) {
+async function turn(text, { isComplete = null, isLongForm = null, finalise = true } = {}) {
   const engine = new SpeechEngine()
   engine.attached = true
   let got = null
   let at = 0
-  engine.setHandlers({ onCommand: (t) => { got = t; at = Date.now() }, isComplete })
+  engine.setHandlers({ onCommand: (t) => { got = t; at = Date.now() }, isComplete, isLongForm })
   engine.startCommand()
   await sleep(5)
   const rec = FakeSR.last
@@ -78,6 +78,11 @@ await test('interim text (phrase not closed yet) waits for the recognizer, then 
   const r = await turn('open the ledger', { finalise: false })
   assert.equal(r.got, 'open the ledger')
   within(r.ms, 1300, 1300 + 450 + 80, 'interim only')
+})
+
+await test('a client story (voice note) is not cut in on at a breath', async () => {
+  const r = await turn("Hi, so I'm planning to be in Kashmir from the 26th of November until the 30th of November", { isComplete: () => true, isLongForm: () => true })
+  within(r.ms, 4400, 4750, 'story pause')
 })
 
 console.log(`\n${pass} passed, ${fail} failed`)

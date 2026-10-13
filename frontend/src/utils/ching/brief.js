@@ -20,6 +20,7 @@ import { GAZETTEER, tripDestination } from './geo.js'
 import { normTokens } from './fuzzy.js'
 import { placeKey, samePlace } from './places.js'
 import { convertNumberWords, normalizeTripWords, titleCase } from './text.js'
+import { readNarrative } from './narrative.js'
 
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
 const MONTH_SHORT = { jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11 }
@@ -109,7 +110,20 @@ function tripBudgetFrom(m, t, guests) {
  *  - a whole-trip budget becomes a room-rate cap the trip fits in (`pref`).
  */
 export function parseTripRequest(text, catalog, { today, settings } = {}) {
+  // A client's own story (a voice note, a pasted message) is read for its
+  // facts and parsed as the plain request it amounts to (narrative.js).
+  const story = readNarrative(text, catalog, { today })
+  if (story) text = story.text
   const cmd = parseChingCommand(text, catalog, { today })
+  if (story && cmd) {
+    cmd.intent = 'create_trip'
+    cmd.story = story
+    cmd.canonical = story.text
+    // The name is only ever the one the client gave ("this is Rahul").
+    const hadName = !!cmd.clientName
+    cmd.clientName = story.client
+    if (hadName !== !!story.client) cmd.missing = story.client ? (cmd.missing || []).filter((k) => k !== 'clientName') : [...new Set([...(cmd.missing || []), 'clientName'])]
+  }
   if (!cmd || cmd.intent !== 'create_trip') return cmd
   const regions = regionWords(catalog)
   const towns = hotelCities(catalog).map(placeKey)

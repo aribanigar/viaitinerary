@@ -115,9 +115,12 @@ const rupees = (n) => `₹${Math.round(Number(n) || 0).toLocaleString("en-IN")}`
 
 function planFill(base, rawText, { catalog, settings, today }) {
   // Aliases apply to the whole sentence — the fill and the extras riding along.
-  const text = applyAliases(rawText, catalog.memory);
+  const rawAliased = applyAliases(rawText, catalog.memory);
   const createCatalog = { hotels: catalog.hotels, destinations: catalog.destinations, vehicles: catalog.vehicles };
-  const command = parseTripRequest(text, { ...createCatalog, memory: catalog.memory }, { today, settings });
+  const command = parseTripRequest(rawAliased, { ...createCatalog, activities: catalog.activities, memory: catalog.memory }, { today, settings });
+  // A client's story was rewritten as a plain request: extras ("add gondola
+  // on day 2") and "what was said" are read from that, not from the story.
+  const text = command.canonical || rawAliased;
   // Day 1 is the trip's start date: when none was said, use the one already on the trip.
   const baseStart = String(base.tripInfo?.startDate || "").slice(0, 10);
   if (!command.startDate && /^\d{4}-\d{2}-\d{2}$/.test(baseStart)) command.startDate = baseStart;
@@ -141,6 +144,31 @@ function planFill(base, rawText, { catalog, settings, today }) {
     accommodations: parts.accommodations.length ? parts.accommodations : base.accommodations,
     transportation: parts.transportation.length ? parts.transportation : base.transportation,
   };
+  // From a client's story: when they land and where they leave from go on the
+  // first and last day (and the last day's cab), as the client said them.
+  const story = command.story;
+  if (story && snapshot.itinerary.length) {
+    const days = snapshot.itinerary.map((d) => ({ ...d }));
+    if (story.arrivalTime) {
+      const d1 = days[0];
+      const line = `Arrival at ${story.arrivalTime}, transfer to the hotel`;
+      d1.activities = [line, ...(d1.activities || [])];
+      d1.description = [line, d1.description].filter(Boolean).join("\n");
+    }
+    if (story.departFrom && days.length > 1) {
+      const last = days[days.length - 1];
+      const from = last.location || "";
+      last.title = `Day ${last.day}: ${from ? `${from} to ` : "Drop at "}${story.departFrom} (Departure)`;
+      const cabs = snapshot.transportation.map((c) => ({ ...c }));
+      const lastDate = cabs.reduce((m, c) => (String(c.date || "") > m ? String(c.date) : m), "");
+      cabs.filter((c) => lastDate && String(c.date) === lastDate).forEach((c) => {
+        c.route = `${from ? `${from} → ` : ""}${story.departFrom}`;
+      });
+      snapshot = { ...snapshot, transportation: cabs };
+    }
+    snapshot = { ...snapshot, itinerary: days };
+  }
+
   // Inclusions / exclusions: a blank list starts from the agency's standard
   // lines, else lines written from this trip (nights, meals, cab).
   const start = startingInclusions(snapshot, catalog.standard);
@@ -190,6 +218,7 @@ function planFill(base, rawText, { catalog, settings, today }) {
   else if (rememberedPhone) changes.push(`Phone: ${rememberedPhone.phone} (from ${rememberedPhone.client}'s last trip)`);
   if (command.clientEmail) changes.push(`Email: ${command.clientEmail}`);
   else if (rememberedEmail) changes.push(`Email: ${rememberedEmail.email} (remembered)`);
+  (story?.notes || []).forEach((n) => changes.push(n));
   if (incBlank && snapshot.inclusions.length) changes.push(`Inclusions: ${plural(snapshot.inclusions.length, "line")}`);
   if (excBlank && snapshot.exclusions.length) changes.push(`Exclusions: ${plural(snapshot.exclusions.length, "line")}`);
 

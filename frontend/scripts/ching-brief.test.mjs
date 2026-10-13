@@ -4,6 +4,7 @@
 import assert from 'node:assert/strict'
 import { startBrief, briefStep, briefWouldPlan, briefHeard, parseTripRequest, tripBudget, namesATrip, wantsStepByStep } from '../src/utils/ching/brief.js'
 import { planLive } from '../src/utils/ching/liveFill.js'
+import { readNarrative, isNarrative, soundsLikeAStory } from '../src/utils/ching/narrative.js'
 import { understandAssistant } from '../src/utils/ching/assistant.js'
 import { toEnglishCommand } from '../src/utils/ching/language.js'
 
@@ -40,6 +41,7 @@ const catalog = {
     { id: 18, name: 'Heevan Resort', city: 'Pahalgam', category: '4', is_available: true, price_sections: P('Deluxe', 6000, 7500) },
     { id: 19, name: 'Hotel Mount View', city: 'Pahalgam', category: '3', is_available: true, price_sections: P('Deluxe', 3800, 4800) },
     { id: 20, name: 'Hotel Snowland', city: 'Sonamarg', category: '3', is_available: true, price_sections: P('Deluxe', 4200, 5200) },
+    { id: 24, name: 'Hotel Glacier Heights', city: 'Sonamarg', category: '4', is_available: true, price_sections: P('Deluxe', 7000, 8500) },
   ],
   vehicles: [
     { id: 21, name: 'Toyota Innova Crysta', price: 4000, rate_type: 'per_day', seating_capacity: 6, is_available: true },
@@ -47,7 +49,7 @@ const catalog = {
     { id: 23, name: 'Tempo Traveller', price: 6500, rate_type: 'per_day', seating_capacity: 12, is_available: true },
     { id: 60, name: 'Sunset Shikara', price: 1500, seating_capacity: 4, vehicle_type: 'Shikara', is_available: true },
   ],
-  activities: [{ id: 31, name: 'Shikara Ride', destination_id: 1, selling_price: 800 }],
+  activities: [{ id: 31, name: 'Shikara Ride', destination_id: 1, selling_price: 800 }, { id: 32, name: 'Gondola Phase 1', destination_id: 2, selling_price: 1200 }],
   standard: { inclusions: ['Accommodation on twin sharing', 'Daily breakfast'], exclusions: ['Airfare'] },
 }
 const settings = { profit_percentage: 10, gst_percentage: 5, include_gst: true }
@@ -212,6 +214,55 @@ test('the mic can stop the moment the last piece is said; what was caught shows 
   assert.deepEqual(h.lines, ['Destination: Kashmir', '4 nights / 5 days', 'Guests: 3 adults, 4 kids', 'From 17 Oct 2026'])
   assert.deepEqual(h.need, [])
   assert.deepEqual(briefHeard(r.state, '10 november', ctx).lines.slice(-1), ['From 10 Nov 2026'])
+})
+
+// A real client's WhatsApp voice note (13 Oct 2026), as a speech engine wrote it.
+const VOICE_NOTE = "Hi, so I'm planning to be in Kashmir from the 26th of November until the 30th of November. At 26th, 3 p.m. is the landing time and then 30th morning from Srinagar Railway Station is the departure time. I want to stay for 2 days in Gulmarg and one day in Sonmarg, so 26th once we reach the hotel in Srinagar, maybe Dal Lake and whatever we can see in the evening, maybe that. And then next day, 27th, go to Gulmarg, I don't know, see places in Gulmarg, do the gondola on the 27th or on the 28th. Check out from Gulmarg on the 29th, go to Sonmarg, see whatever we can in Sonmarg and then check out on the 30th from Sonmarg and go to the railway station. We are four people and one infant. We are also okay if we have one room to accommodate all four of us because it's just my parents and my sister and my baby, so an infant is 18 months. So yeah, the hotels should be decent, nothing very high-fi or something, but very decent clean. If there are good views like the Riverside or something, then of course also that because I saw there are quite a few options with three stars and four stars with good views as well, so that would be great and yeah, just let me know."
+
+test('a client\'s voice note: the story is read for its facts and planned as said', () => {
+  assert.equal(isNarrative(VOICE_NOTE), true)
+  const story = readNarrative(VOICE_NOTE, catalog, { today })
+  assert.equal(story.text, 'kashmir trip, 4 adults 1 infant, starting 26 november 2026, 4 nights, 1 night in srinagar, 2 nights in gulmarg, 1 night in sonamarg, 1 room, 2 extra beds, 3 star, add gondola phase 1 on day 3')
+  assert.equal(story.arrivalTime, '3 PM')
+  assert.equal(story.departFrom, 'Srinagar Railway Station')
+
+  const b = startBrief(VOICE_NOTE, ctx)
+  assert.equal(b.ready, true) // nothing to ask: plan it
+  const plan = planLive(blank(), b.text, { catalog, settings, today })
+  const s = plan.snapshot
+  assert.equal(s.tripInfo.clientName, '') // "landing time" is not a client
+  assert.equal(s.tripInfo.adults, 4)
+  assert.equal(s.tripInfo.kidsUpto5, 1)
+  assert.equal(s.tripInfo.startDate, '2026-11-26')
+  assert.equal(s.tripInfo.duration, '4')
+  assert.deepEqual(s.accommodations.map((a) => [a.city, a.checkIn, a.checkOut, a.rooms, a.extraBedsAbove12Count, a.category]), [
+    ['Srinagar', '2026-11-26', '2026-11-27', '1', '2', '3 Star'],
+    ['Gulmarg', '2026-11-27', '2026-11-29', '1', '2', '3 Star'],
+    ['Sonamarg', '2026-11-29', '2026-11-30', '1', '2', '3 Star'],
+  ])
+  assert.deepEqual(s.itinerary.map((d) => d.title), [
+    'Day 1: Arrival in Srinagar', 'Day 2: Srinagar to Gulmarg', 'Day 3: Gulmarg Sightseeing', 'Day 4: Gulmarg to Sonamarg',
+    'Day 5: Sonamarg to Srinagar Railway Station (Departure)',
+  ])
+  assert.equal(s.itinerary[0].activities[0], 'Arrival at 3 PM, transfer to the hotel')
+  assert.equal(s.transportation[s.transportation.length - 1].route, 'Sonamarg → Srinagar Railway Station')
+  // The gondola: on the day spent wholly in Gulmarg (the 28th), not the day they drive in.
+  assert.deepEqual(s.tripActivities.map((a) => [a.name, a.dayNumber]), [['Gondola Phase 1', 3]])
+  for (const line of ['1 room for all 4, with 2 extra beds — as the client asked', 'Client asked for 3 or 4 star: quoted 3 star', 'Leaves from Srinagar Railway Station']) {
+    assert.ok(plan.changes.includes(line), line)
+  }
+})
+
+test('a story is a story; an agent\'s request is not', () => {
+  assert.equal(soundsLikeAStory("Hi, so I'm planning to be in Kashmir from the 26th"), true)
+  assert.equal(soundsLikeAStory('make gulmarg 2 nights'), false)
+  for (const t of ['plan a kashmir trip for 4 people for 5 nights budget hotels', '5 day 4 night itinerary for Rahul Sharma 4 adults starting 10 November 2 nights in lalit grand palace 1 night in khyber and 1 night in heevan with innova', 'open the ledger']) {
+    assert.equal(isNarrative(t), false, t)
+    assert.equal(readNarrative(t, catalog, { today }), null)
+  }
+  // "nothing very fancy" is not a wish for luxury; "we are a couple" is 2 adults.
+  const r = readNarrative("hello we are a couple and we're planning a honeymoon in kashmir from 5th december to 9th december, we want 2 nights in pahalgam, nothing very fancy but not cheap either, i want a nice clean place", catalog, { today })
+  assert.equal(r.text, 'kashmir trip, 2 adults, starting 5 december 2026, 4 nights, 2 nights in pahalgam')
 })
 
 test('cancel drops the request', () => {
