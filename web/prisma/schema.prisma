@@ -593,6 +593,8 @@ model AgencySetting {
   bankName                  String?  @map("bank_name")
   accountNumber             String?  @map("account_number")
   ifscCode                  String?  @map("ifsc_code")
+  // Default currency for new trips/quotes, e.g. "INR (₹)" (Settings → Default Currency).
+  currency                  String?
   defaultTripImagePath      String?  @map("default_trip_image_path")
   gstPercentage             Decimal? @map("gst_percentage") @db.Decimal(8, 2)
   profitMarginPercentage    Decimal? @map("profit_margin_percentage") @db.Decimal(8, 2)
