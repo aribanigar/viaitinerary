@@ -42,7 +42,7 @@ const NAV_ITEMS = [
 
 // Bottom app-style tab bar shown on phones/tablets in place of the desktop
 // icon rail — always visible, thumb-reachable, and safe-area aware.
-const BottomTabBar = ({ is }) => (
+export const BottomTabBar = ({ is }) => (
   <nav
     className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-black/5 pb-[env(safe-area-inset-bottom)]"
     aria-label="Primary"
@@ -123,7 +123,7 @@ const AssistantFrame = ({ title, nav, actions, children }) => {
     .slice(0, 2);
 
   return (
-    <div className="h-[100dvh] w-full bg-[#f0f0f1] text-[#181c22] font-sans antialiased flex overflow-hidden">
+    <div className="app-shell h-[100dvh] w-full bg-[#f0f0f1] text-[#181c22] font-sans antialiased flex overflow-hidden">
       {/* Mobile: hamburger opens the same full-featured drawer the rest of the
           app uses. Desktop: collapses to icons, expands on hover/pin. */}
       <Sidebar

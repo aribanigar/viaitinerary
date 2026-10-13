@@ -12,6 +12,30 @@
   }
 }
 
+/* Compact UI: every signed-in screen (.app-shell = DashboardLayout and
+   AssistantFrame) runs ~10% tighter — spacing, control sizes and headings.
+   Body text sizes stay as they are. The trip templates (live preview, PDF
+   export) keep Tailwind's default scale, so quotes print exactly as before. */
+.app-shell {
+  --spacing: 0.225rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.15rem;
+  --text-2xl: 1.375rem;
+  --text-3xl: 1.625rem;
+  --text-4xl: 2rem;
+  --text-5xl: 2.5rem;
+}
+.app-shell .trip-preview-wrapper,
+.app-shell .classic-template-wrapper {
+  --spacing: 0.25rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+}
+
 :root {
   font-family: var(--font-sans);
   line-height: 1.6;

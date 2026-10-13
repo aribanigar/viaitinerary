@@ -349,10 +349,10 @@ const LeadInquiries = () => {
       </PageHeader>
 
       {/* Today's work */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 mb-4">
         <button
           onClick={() => pickFollow("due")}
-          className={`text-left rounded-xl border p-4 transition-all ${followFilter === "due" ? "border-red-300 bg-red-50" : "border-slate-100 bg-white hover:border-red-200"}`}
+          className={`text-left rounded-xl border p-3 sm:p-4 transition-all ${followFilter === "due" ? "border-red-300 bg-red-50" : "border-slate-100 bg-white hover:border-red-200"}`}
         >
           <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Follow-ups due</div>
           <div className={`text-2xl font-black mt-1 ${due ? "text-red-600" : "text-slate-900"}`}>{due}</div>
@@ -360,7 +360,7 @@ const LeadInquiries = () => {
         </button>
         <button
           onClick={() => pickTab("new")}
-          className={`text-left rounded-xl border p-4 transition-all ${statusFilter === "new" && !followFilter ? "border-emerald-300 bg-emerald-50" : "border-slate-100 bg-white hover:border-emerald-200"}`}
+          className={`text-left rounded-xl border p-3 sm:p-4 transition-all ${statusFilter === "new" && !followFilter ? "border-emerald-300 bg-emerald-50" : "border-slate-100 bg-white hover:border-emerald-200"}`}
         >
           <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">New — reply first</div>
           <div className="text-2xl font-black mt-1 text-slate-900">{counts.new || 0}</div>
@@ -368,7 +368,7 @@ const LeadInquiries = () => {
         </button>
         <button
           onClick={() => pickFollow("none")}
-          className={`text-left rounded-xl border p-4 transition-all ${followFilter === "none" ? "border-amber-300 bg-amber-50" : "border-slate-100 bg-white hover:border-amber-200"}`}
+          className={`text-left rounded-xl border p-3 sm:p-4 transition-all ${followFilter === "none" ? "border-amber-300 bg-amber-50" : "border-slate-100 bg-white hover:border-amber-200"}`}
         >
           <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Open pipeline</div>
           <div className="text-2xl font-black mt-1 text-slate-900">{counts.open || 0}</div>
@@ -376,7 +376,7 @@ const LeadInquiries = () => {
         </button>
         <button
           onClick={() => pickTab("converted")}
-          className={`text-left rounded-xl border p-4 transition-all ${statusFilter === "converted" ? "border-purple-300 bg-purple-50" : "border-slate-100 bg-white hover:border-purple-200"}`}
+          className={`text-left rounded-xl border p-3 sm:p-4 transition-all ${statusFilter === "converted" ? "border-purple-300 bg-purple-50" : "border-slate-100 bg-white hover:border-purple-200"}`}
         >
           <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">Won</div>
           <div className="text-2xl font-black mt-1 text-slate-900">{counts.converted || 0}</div>
@@ -405,8 +405,8 @@ const LeadInquiries = () => {
           })}
         </div>
 
-        <div className="p-4 border-b border-slate-50 flex flex-col md:flex-row items-stretch md:items-center gap-2">
-          <div className="relative flex-1">
+        <div className="p-3 sm:p-4 border-b border-slate-50 grid grid-cols-2 md:flex md:flex-row items-stretch md:items-center gap-2">
+          <div className="relative flex-1 col-span-2">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"

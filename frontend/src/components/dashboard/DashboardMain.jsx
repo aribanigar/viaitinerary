@@ -207,12 +207,12 @@ const DashboardMain = () => {
               <h3 className="text-sm font-bold text-[#181c22] uppercase tracking-widest mb-4">
                 Quick Access
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
                 {quickAccess.map((item) => (
                   <Link
                     key={item.to}
                     to={item.to}
-                    className="bg-white p-4 rounded-2xl border border-black/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 no-underline group flex flex-col items-center text-center gap-2"
+                    className="bg-white p-3 sm:p-4 rounded-2xl border border-black/5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 no-underline group flex flex-col items-center text-center gap-1.5 sm:gap-2"
                   >
                     <div className="w-10 h-10 rounded-xl bg-[#f3f3f4] group-hover:bg-[#e7f63c] flex items-center justify-center transition-colors">
                       <item.icon className="w-5 h-5 text-[#181c22]" />

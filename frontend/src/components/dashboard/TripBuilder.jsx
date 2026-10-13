@@ -2575,8 +2575,8 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
           <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-y-auto lg:overflow-hidden p-3 lg:p-4 gap-3 lg:gap-4">
             {/* Left Form — builder panel */}
             <div className="w-full lg:w-[45%] lg:h-full flex flex-col bg-white rounded-[20px] border border-black/5 shadow-sm overflow-hidden shrink-0 lg:shrink">
-              <div className="p-6 pb-0 shrink-0">
-                <div className="flex flex-wrap items-center gap-2 mb-6">
+              <div className="p-4 sm:p-5 pb-0 sm:pb-0 shrink-0">
+                <div className="flex flex-wrap items-center gap-1.5 mb-4 sm:mb-5">
                   {[
                     { tab: "Trip Info", icon: SettingsIcon },
                     { tab: "Itinerary", icon: Calendar },
@@ -2588,13 +2588,13 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                       onClick={() => !busy && setActiveTab(tab)}
                       disabled={busy}
                       title={tab}
-                      className={`inline-flex items-center gap-2 h-10 px-3.5 rounded-2xl border text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                         activeTab === tab
                           ? "border-brand bg-brand text-white shadow-sm"
                           : "border-black/10 text-ink/55 hover:text-ink hover:border-black/20 bg-white"
                       }`}
                     >
-                      <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.8} />
+                      <Icon className="w-4 h-4 shrink-0" strokeWidth={1.8} />
                       <span className="whitespace-nowrap">{tab}</span>
                       {pendingCounts[tab] > 0 && (
                         <span
@@ -2610,9 +2610,9 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                     <button
                       onClick={() => toggleMenu("templates")}
                       title="Load from package template"
-                      className="inline-flex items-center gap-2 h-10 px-3.5 rounded-2xl border border-black/10 text-sm font-semibold text-ink/55 hover:text-ink hover:border-black/20 bg-white transition-colors"
+                      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl border border-black/10 text-[13px] font-semibold text-ink/55 hover:text-ink hover:border-black/20 bg-white transition-colors"
                     >
-                      <PackageIcon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.8} />
+                      <PackageIcon className="w-4 h-4 shrink-0" strokeWidth={1.8} />
                       <span className="whitespace-nowrap">Template</span>
                     </button>
                     {openMenu === "templates" && (
@@ -2663,7 +2663,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto px-6 pb-6">
+              <div className="flex-1 overflow-y-auto px-4 sm:px-5 pb-5">
                 {loading ? (
                   <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-4">
                     <Loader text="Syncing trip data..." />

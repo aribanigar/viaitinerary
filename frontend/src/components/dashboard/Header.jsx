@@ -24,7 +24,7 @@ const Header = ({ onMenuClick }) => {
   };
 
   return (
-    <header className="h-20 border-b border-black/5 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-40 backdrop-blur-sm bg-[#fbfbfb]/90">
+    <header className="h-14 md:h-16 border-b border-black/5 flex items-center justify-between px-4 md:px-8 shrink-0 sticky top-0 z-40 backdrop-blur-sm bg-[#fbfbfb]/90">
       <div className="flex items-center gap-4">
         <button
           onClick={onMenuClick}
