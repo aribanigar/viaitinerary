@@ -3,7 +3,8 @@
 // Transport forms — and nothing filled that the agent didn't say.
 //   node frontend/scripts/ching-guide.test.mjs
 import assert from 'node:assert/strict'
-import { startGuide, guideStep, startLogistics } from '../src/utils/ching/guide.js'
+import { startGuide, guideStep, startLogistics, guidePreview, repairTripInfo, isCorrection, correctTripInfo } from '../src/utils/ching/guide.js'
+import { fixDurationText, readNights } from '../src/utils/ching/duration.js'
 import { applyEditActions } from '../src/utils/ching/editTrip.js'
 
 const catalog = {
@@ -189,6 +190,92 @@ test('an answer the guide cannot use is passed on (Ching handles it, then asks a
   guideStep(g.state, 'Rahul', b.ctx())
   const r = guideStep(g.state, "what's the weather like", b.ctx())
   assert.equal(r.handled, false)
+})
+
+
+test('a misheard "4N 5D" title ("495") is written as 4N/5D', () => {
+  const b = builder(blank())
+  converse(b, ['create a trip', 'Bilal', 'skip', 'skip', '2', 'no kids', '18 february 2027', '4 nights', 'kashmir', 'Kashmir 495'])
+  assert.equal(b.snap.tripInfo.tripTitle, 'Kashmir 4N/5D')
+  for (const [said, want] of [['Kashmir 4 9 5', 'Kashmir 4N/5D'], ['Kashmir four N five D', 'Kashmir 4N/5D'], ['Kashmir 4 nights 5 days', 'Kashmir 4N/5D'], ['Kashmir Honeymoon 2027', 'Kashmir Honeymoon 2027']]) {
+    assert.equal(fixDurationText(said.replace('four N five D', '4 n 5 d'), 4), want)
+  }
+  assert.equal(readNights('495'), 4)
+  assert.equal(readNights('4N 5D'), 4)
+})
+
+test('"correct it" mends the last field written; "correct the title to …" sets it', () => {
+  const b = builder(blank())
+  const { state } = converse(b, ['create a trip', 'Bilal', 'skip', 'skip', '2', 'no kids', '18 february 2027', '4 nights', 'kashmir'])
+  // Simulate a title written badly before this fix existed.
+  state.v.tripTitle = 'Kashmir 495'
+  state.answered_.tripTitle = true
+  state.lastKey = 'tripTitle'
+  b.snap.tripInfo.tripTitle = 'Kashmir 495'
+  let r = guideStep(state, 'correct it', b.ctx())
+  assert.ok(r.handled)
+  b.run(r.ops)
+  assert.equal(b.snap.tripInfo.tripTitle, 'Kashmir 4N/5D')
+  assert.match(r.say, /Fixed — the title is now "Kashmir 4N\/5D"/)
+  r = guideStep(state, 'correct the title to Kashmir Honeymoon Special', b.ctx())
+  b.run(r.ops)
+  assert.equal(b.snap.tripInfo.tripTitle, 'Kashmir Honeymoon Special')
+  r = guideStep(state, "that's wrong, the name should be Mr Bilal Ahmad", b.ctx())
+  b.run(r.ops)
+  assert.equal(b.snap.tripInfo.clientName, 'Mr Bilal Ahmad')
+  // Nothing to mend by itself → Ching asks, and the next answer goes to that field.
+  r = guideStep(state, 'fix the destination', b.ctx())
+  assert.match(r.say, /what should the destination be/i)
+  r = guideStep(state, 'srinagar and gulmarg', b.ctx())
+  b.run(r.ops)
+  assert.equal(b.snap.tripInfo.destination, 'Srinagar - Gulmarg')
+  assert.match(r.say, /Fixed/)
+  // "correct" alone is still a yes, never a correction.
+  assert.equal(isCorrection('correct'), false)
+  assert.equal(isCorrection('theek hai'), false)
+  assert.equal(isCorrection('galat hai'), true)
+})
+
+test('a correction of the itinerary asks that day again', () => {
+  const b = builder(blank())
+  const { state } = converse(b, ['create a trip', 'Bilal', 'skip', 'skip', '2', 'no kids', '18 february 2027', '2 nights', 'kashmir', 'yes', 'modern', 'yes', 'no', 'none', 'none', 'srinagar', 'gulmarg'])
+  let r = guideStep(state, 'wrong', b.ctx())
+  assert.match(r.say, /day 2/i)
+  r = guideStep(state, 'pahalgam', b.ctx())
+  b.run(r.ops)
+  assert.equal(b.snap.itinerary.find((d) => d.day === 2).location, 'Pahalgam')
+})
+
+test('the field is written while the agent is still speaking', () => {
+  const b = builder(blank())
+  const g = startGuide('create a trip', b.ctx())
+  // Asked for the client's name: each partial transcript fills it.
+  assert.equal(guidePreview(g.state, 'Mr', b.ctx()), null)
+  assert.equal(guidePreview(g.state, 'Mr Bil', b.ctx()).tripInfo.clientName, 'Mr Bil')
+  assert.equal(guidePreview(g.state, 'client name Mr Bilal', b.ctx()).tripInfo.clientName, 'Mr Bilal')
+  // A field named out of turn.
+  assert.equal(guidePreview(g.state, 'phone 98765 43210', b.ctx()).tripInfo.clientPhone, '+919876543210')
+  // Nothing from the guide's own words.
+  assert.equal(guidePreview(g.state, 'skip', b.ctx()), null)
+  // No guide yet: only a labelled field.
+  assert.equal(guidePreview(null, 'client name Mr Bilal', b.ctx()).tripInfo.clientName, 'Mr Bilal')
+  assert.equal(guidePreview(null, 'create a trip for', b.ctx()), null)
+  // The guide started with "client name Mr Bilal" keeps the name as said.
+  const g2 = startGuide('client name Mr Bilal', b.ctx())
+  assert.equal(g2.state.v.clientName, 'Mr Bilal')
+  assert.match(g2.say, /Bilal's phone/)
+})
+
+test('"correct it" on an open trip mends a misheard title', () => {
+  const r = repairTripInfo({ tripTitle: 'Kashmir 495', duration: '4', clientName: 'Bilal' })
+  assert.equal(r.patch.tripInfo.tripTitle, 'Kashmir 4N/5D')
+  assert.equal(repairTripInfo({ tripTitle: 'Kashmir Delight', duration: '4', clientName: 'Bilal' }), null)
+  const ctx = { snapshot: { tripInfo: { tripTitle: 'Kashmir 495', duration: '4', clientName: 'Bilal' } }, catalog, today: '2026-10-12' }
+  assert.equal(correctTripInfo('correct it', ctx).patch.tripInfo.tripTitle, 'Kashmir 4N/5D')
+  assert.equal(correctTripInfo('correct the client name to Mr Bilal Shah', ctx).patch.tripInfo.clientName, 'Mr Bilal Shah')
+  assert.equal(correctTripInfo('fix the hotel on day 3', ctx), null) // a hotel change belongs to the trip editor
+  assert.equal(correctTripInfo('make it 3 nights', ctx), null)
+  assert.equal(guidePreview(null, 'client name', ctx), null)
 })
 
 console.log(`\n${pass} passed, ${fail} failed`)

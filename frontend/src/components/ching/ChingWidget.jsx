@@ -65,7 +65,7 @@ const loadCore = () =>
   });
 
 const HANDSFREE_KEY = "ching_handsfree";
-const LIVE_THROTTLE_MS = 250;
+const LIVE_THROTTLE_MS = 150;
 const DRAFT_TIMEOUT_MS = 15000;
 
 const readHandsFree = () => {
@@ -422,14 +422,26 @@ export default function ChingWidget() {
     setLive(null);
   }, []);
 
+  // Trip Info fields written while the agent speaks (the guide's question, or
+  // "client name Mr Bilal"): put back what was there before, so the finished
+  // sentence decides. Run in the same tick as the final write — no flicker.
+  const dropPreview = useCallback((S) => {
+    const P = S?.preview;
+    if (!P) return;
+    S.preview = null;
+    safe(() => P.ed.guide.patch({ op: "patch", tripInfo: P.base }));
+    if (P.held && !guideRef.current) safe(() => P.ed.guide.hold(false));
+  }, []);
+
   const cancelSession = useCallback(() => {
     const S = sessionRef.current;
     if (!S) return;
     if (S.editor && safe(() => S.editor.live.active(), false)) {
       safe(() => S.editor.live.cancel());
     }
+    dropPreview(S);
     endSession();
-  }, [endSession]);
+  }, [endSession, dropPreview]);
 
   // Refs to the two mutually recursive steps, so either can call the other.
   const attachRef = useRef(null);
@@ -518,6 +530,33 @@ export default function ChingWidget() {
     [liveUpdate, showLive, streamless],
   );
 
+  // Write the field being answered as it is heard ("client name Mr Bil…").
+  const livePreview = useCallback(
+    (S, text) => {
+      const core = coreRef.current;
+      const ed = S.editor;
+      if (!core?.guidePreview || !ed?.guide) return;
+      const g = guideRef.current;
+      if (g && g.ed !== ed) return;
+      if (!g && !S.baseBlank) return; // an open trip is edited live by the trip editor
+      const op = safe(() => core.guidePreview(g ? g.state : null, text, guideCtx(ed)), null);
+      const info = op?.tripInfo;
+      if (!info && !S.preview) return;
+      if (!S.preview) {
+        S.preview = { ed, base: {}, held: !g };
+        // Nothing autosaves a half-heard value.
+        if (!g) safe(() => ed.guide.hold(true));
+      }
+      const cur = safe(() => ed.snapshot().tripInfo, {}) || {};
+      const next = { ...(info || {}) };
+      for (const k of Object.keys(next)) if (!(k in S.preview.base)) S.preview.base[k] = cur[k];
+      // A field the sentence no longer says goes back to what it was.
+      for (const k of Object.keys(S.preview.base)) if (!(k in next)) next[k] = S.preview.base[k];
+      safe(() => ed.guide.patch({ op: "patch", tripInfo: next }));
+    },
+    [guideCtx],
+  );
+
   // A new running transcript (throttled while speaking).
   const pump = useCallback(
     (text) => {
@@ -534,10 +573,13 @@ export default function ChingWidget() {
         // asked for a trip — no stray drafts from half-heard words.
         return;
       }
-      if (streamless(S, text)) return;
+      if (streamless(S, text)) {
+        livePreview(S, text);
+        return;
+      }
       liveUpdate(S, text);
     },
-    [attach, liveUpdate, catalogForLanguage, noteLanguage, streamless],
+    [attach, liveUpdate, livePreview, catalogForLanguage, noteLanguage, streamless],
   );
 
   // The utterance is over: commit (or decide there was nothing to do).
@@ -549,6 +591,7 @@ export default function ChingWidget() {
       let core = coreRef.current;
       if (!core) core = await ensureCore().catch(() => null);
       if (sessionRef.current !== S) return;
+      dropPreview(S);
 
       // The answer to a "yes or no?" Ching just asked.
       if (confirmRef.current) {
@@ -599,6 +642,23 @@ export default function ChingWidget() {
               }, tries ? 500 : 2500);
             reask();
           }
+        }
+      }
+
+      // "correct it" / "correct the title to …" on an open trip (no guide running).
+      const fixEd = S.editor || getChingEditor();
+      if (!guideRef.current && core?.isCorrection && fixEd && safe(() => core.isCorrection(text), false)) {
+        const c = safe(() => core.correctTripInfo(text, guideCtx(fixEd)), null);
+        if (c) {
+          cancelLive();
+          endSession();
+          if (c.patch) {
+            safe(() => fixEd.guide.patch(c.patch));
+            safe(() => fixEd.setTab("Trip Info"));
+            setUndoTick((t) => t + 1);
+          }
+          respond(c.say);
+          return;
         }
       }
 
@@ -808,7 +868,7 @@ export default function ChingWidget() {
         say(reply + tip);
       }, 700);
     },
-    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine, guideCtx, runGuideOps, endGuide],
+    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine, guideCtx, runGuideOps, endGuide, dropPreview],
   );
 
   // ── Confirm & Build ─────────────────────────────────────────────────────
@@ -1073,14 +1133,16 @@ export default function ChingWidget() {
     setChingListening(listening, listening ? interim || "" : "");
   }, [listening, interim]);
 
-  // Stream the running transcript to the editor, at most every 250 ms.
+  // Stream the running transcript to the editor as it is heard.
   useEffect(() => {
     if (phase !== "command" || !interim) return;
     latestTextRef.current = interim;
     if (throttleRef.current) return;
+    // The first words go in at once; later ones at most every 150 ms.
+    pump(interim);
     throttleRef.current = setTimeout(() => {
       throttleRef.current = null;
-      pump(latestTextRef.current);
+      if (latestTextRef.current !== interim) pump(latestTextRef.current);
     }, LIVE_THROTTLE_MS);
   }, [phase, interim, pump]);
 

@@ -91,6 +91,13 @@ const PHRASES = [
   ['जी एस टी', 'gst'], ['جی ایس ٹی', 'gst'], ['एक्स्ट्रा बेड', 'extra bed'], ['ایکسٹرا بیڈ', 'extra bed'],
   ['डे ट्रिप', 'day trip'], ['ڈے ٹرپ', 'day trip'], ['एयरपोर्ट पिकअप', 'airport pickup'], ['ایئرپورٹ پک اپ', 'airport pickup'],
   ['हो गया', 'done'], ['ہو گیا', 'done'],
+  // "correct it" — Ching wrote something wrong
+  ['غلط ہے', 'that is wrong'], ['غلط لکھا ہے', 'that is wrong'], ['غلط لکھا', 'that is wrong'], ['اسے ٹھیک کرو', 'correct it'], ['اسے ٹھیک کریں', 'correct it'],
+  ['ٹھیک کرو', 'correct it'], ['ٹھیک کریں', 'correct it'], ['درست کرو', 'correct it'], ['درست کریں', 'correct it'], ['صحیح کرو', 'correct it'], ['صحیح کریں', 'correct it'],
+  ['गलत है', 'that is wrong'], ['ग़लत है', 'that is wrong'], ['गलत लिखा है', 'that is wrong'], ['गलत लिखा', 'that is wrong'], ['इसे ठीक करो', 'correct it'], ['इसे ठीक करें', 'correct it'],
+  ['ठीक करो', 'correct it'], ['ठीक करें', 'correct it'], ['सही करो', 'correct it'], ['सही करें', 'correct it'], ['सुधारो', 'correct it'],
+  ['galat hai', 'that is wrong'], ['galat likha hai', 'that is wrong'], ['galat likha', 'that is wrong'], ['isko theek karo', 'correct it'], ['ise theek karo', 'correct it'],
+  ['isko thik karo', 'correct it'], ['theek karo', 'correct it'], ['thik karo', 'correct it'], ['sahi karo', 'correct it'], ['sudharo', 'correct it'], ['durust karo', 'correct it'],
   // questions to Ching ("کیا باقی ہے" = what's pending, "ٹوٹل کتنا ہے" = what's the total)
   ['کیا باقی ہے', 'what is pending'], ['کیا رہ گیا ہے', 'what is pending'], ['کیا رہ گیا', 'what is pending'], ['کیا بچا ہے', 'what is pending'],
   ['क्या बाकी है', 'what is pending'], ['क्या बाक़ी है', 'what is pending'], ['क्या बचा है', 'what is pending'], ['क्या रह गया है', 'what is pending'],

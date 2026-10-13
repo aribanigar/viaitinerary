@@ -25,6 +25,7 @@ import { convertNumberWords, normalizeTripWords, titleCase } from './text.js'
 import { isRoadCab, addDays } from './buildTrip.js'
 import { normTokens, levRatio, bestMatch } from './fuzzy.js'
 import { samePlace, placeKey } from './places.js'
+import { readNights, fixDurationText } from './duration.js'
 
 // ── words ───────────────────────────────────────────────────────────────────
 const clean = (t) =>
@@ -39,7 +40,8 @@ const BACK = /^(?:go back|back|previous|undo that|last question)\b/
 const REPEAT = /^(?:repeat|again|say (?:that|it) again|what|pardon|sorry what|come again)\??$/
 const STOP = /^(?:stop|cancel|exit|quit|end|abort)(?:\s+(?:it|this|the trip|the guide|creating|now))?$/
 const SAVE = /^(?:save|save it|yes save|save the (?:trip|hotel|cab|car)|confirm|done|ok save|looks good|that's it|thats it|perfect)\b/
-const first = (name) => String(name || '').trim().split(/\s+/)[0] || 'the client'
+const HONORIFIC = /^(?:mr|mrs|ms|miss|mister|dr|sir|madam|janab|shri|smt)\.?$/i
+const first = (name) => String(name || '').trim().split(/\s+/).filter((w) => !HONORIFIC.test(w))[0] || 'the client'
 const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`
 const fmtDate = (iso) => {
   if (!iso) return ''
@@ -110,20 +112,118 @@ function heard(text, ctx) {
   return out
 }
 
+// A client name as it was said: "client name is Mr Bilal" → "Mr Bilal".
+function readName(t) {
+  const name = String(t || '')
+    .toLowerCase()
+    .replace(/^(?:the\s+)?(?:client|guest|customer)(?:'s)?\s*(?:name)?\s*(?:is|:)?\s*/, '')
+    .replace(/^(?:name is|it'?s|its|his name is|her name is|he is|she is|this is)\s+/, '')
+    .replace(/[^a-z\s'.-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!name || name.split(' ').length > 5) return null
+  const words = name.split(' ')
+  if (words.every((w) => HONORIFIC.test(w))) return null
+  return titleCase(words.map((w) => (HONORIFIC.test(w) ? w.replace(/\.$/, '') : w)).join(' '))
+}
+
+// Which Trip Info field a sentence names ("correct the title", "client name …").
+const FIELD_WORDS = [
+  ['adults', /\badults?\b/],
+  ['kids', /\b(?:kids?|child|children)\b/],
+  ['clientEmail', /\b(?:e-?mail|mail id|mail)\b/],
+  ['clientPhone', /\b(?:phone|mobile|contact|whatsapp|number)\b/],
+  ['tripTitle', /\b(?:title|trip name|heading)\b/],
+  ['clientName', /\b(?:name|client|guest|customer)\b/],
+  ['startDate', /\b(?:date|start|starting|arrival)\b/],
+  ['nights', /\b(?:nights?|duration|days?)\b/],
+  ['destination', /\bdestination\b/],
+  ['template', /\btemplate\b/],
+  ['gst', /\bgst\b/],
+  ['inclusions', /\binclusions?\b/],
+  ['exclusions', /\bexclusions?\b/],
+]
+const fieldNamed = (t) => FIELD_WORDS.find(([, re]) => re.test(t))?.[0] || null
+const FIELD_LABEL = {
+  clientName: 'client name', clientPhone: 'phone', clientEmail: 'email', adults: 'adults', kids: 'kids',
+  startDate: 'start date', nights: 'nights', destination: 'destination', tripTitle: 'title', template: 'template',
+  gst: 'GST', travel: 'travel', inclusions: 'inclusions', exclusions: 'exclusions',
+}
+
+// "correct it", "that's wrong", "fix the title", "galat hai", "no, it's Bilal".
+const CORRECT_LEAD =
+  /^(?:no[,.!]?\s+)?(?:please\s+|ching\s+)?(?:(?:correct|fix|sudhar|sudhaar|theek|thik|sahi)\s+(?:karo|kar do|kijiye|it|that|this|ye|isko|the\s+[a-z ]+?)|sudharo|sudhaaro|change\s+(?:it|that|this|the\s+(?:title|name|client name|phone|number|email|nights|date|start date|destination|adults|kids|trip name))|(?:that'?s|that is|it'?s|its|this is|ye|yeh)\s+(?:wrong|incorrect|not right|not correct|galat(?:\s+hai)?)|wrong|incorrect|galat(?:\s+hai)?|not correct|that'?s not right)\b[\s,.!:-]*/i
+const CORRECT_NO_IS = /^(?:no|nahi|nope)[,.!]?\s+(?:it'?s|its|it is|it should be|make it|the [a-z ]+? (?:is|should be))\s+/i
+
+/** The correction in a sentence: { key?, value } — or null when it isn't one. */
+function readCorrection(text) {
+  const raw = String(text || '').trim()
+  const low = raw.toLowerCase()
+  let rest = null
+  let soft = false
+  if (CORRECT_NO_IS.test(low)) {
+    rest = raw.replace(CORRECT_NO_IS, '')
+    soft = true
+  }
+  else if (CORRECT_LEAD.test(low)) rest = raw.replace(CORRECT_LEAD, '')
+  else return null
+  const key = fieldNamed(low.slice(0, low.length - rest.length)) || null
+  // "… the title to X", "… it, it should be X", "… nights: 4"
+  const value = rest
+    .replace(/^(?:the\s+)?(?:client\s+name|trip\s+title|trip\s+name|title|name|phone(?:\s+number)?|number|email|nights|start\s+date|date|destination|adults|kids)\b\s*/i, '')
+    .replace(/^(?:to|as|into|is|should be|it should be|it'?s|its|make it|=|:|,)\s*/i, '')
+    .replace(/^(?:to|as|is|it'?s)\s+/i, '')
+    .trim()
+  const named = rest.match(/^(?:the\s+)?(client\s+name|trip\s+title|title|name|phone|number|email|nights|start\s+date|date|destination|adults|kids)\b/i)
+  return { key: key || (named ? fieldNamed(named[1].toLowerCase()) : null), value, soft }
+}
+
+/** "correct it" with nothing else said: mend the field the way it was most likely meant. */
+function autoRepair(key, st) {
+  const v = st.v[key]
+  const raw = st.raw?.[key] || ''
+  const n = Number(st.v.nights) || null
+  if (key === 'tripTitle' && v) {
+    const fixed = fixDurationText(v, n)
+    return fixed !== v ? { tripTitle: fixed } : null
+  }
+  if (key === 'nights') {
+    const r = readNights(clean(raw))
+    return r && r !== v && r <= 60 ? { nights: r } : null
+  }
+  if (key === 'clientName' && raw) {
+    const r = readName(clean(raw))
+    return r && r !== v ? { clientName: r } : null
+  }
+  if (key === 'clientPhone' && raw) {
+    const digits = raw.replace(/[^\d+]/g, '')
+    const p = extractPhone(digits).phone
+    return p && p !== v ? { clientPhone: p } : null
+  }
+  if (key === 'clientEmail' && raw) {
+    const e = extractEmail(`email ${clean(raw).replace(/^(?:e-?mail|mail)\s+/, '')}`).email
+    return e && e !== v ? { clientEmail: e } : null
+  }
+  return null
+}
+
+const valueSaid = (key, vals) => {
+  const v = vals[key === 'gst' ? 'includeGST' : key]
+  if (Array.isArray(v)) return v.length ? v.join(', ') : 'none'
+  if (key === 'gst') return v ? 'included' : 'not included'
+  if (key === 'nights') return `${v} night${v === 1 ? '' : 's'}`
+  if (key === 'startDate') return fmtDate(v)
+  if (key === 'template') return v === 'ClassicTemplate' ? 'Classic Professional' : 'Modern Elegant'
+  return `"${v}"`
+}
+
 function infoAnswer(key, text, ctx, st) {
   const t = clean(text)
   if (SKIP.test(t) && key !== 'kids') return { skip: true }
   switch (key) {
     case 'clientName': {
-      const name = t
-        .replace(/^(?:the\s+)?(?:client|guest|customer)(?:'s)?\s*(?:name)?\s*(?:is)?\s*/, '')
-        .replace(/^(?:it'?s|its|name is|his name is|her name is|he is|she is|this is)\s+/, '')
-        .replace(/\b(?:mr|mrs|ms|miss|sir|madam)\.?\s+/g, '')
-        .replace(/[^a-z\s'.-]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-      if (!name || name.split(' ').length > 4) return null
-      return { clientName: titleCase(name) }
+      const name = readName(t)
+      return name ? { clientName: name } : null
     }
     case 'clientPhone': {
       const p = extractPhone(t).phone
@@ -150,9 +250,8 @@ function infoAnswer(key, text, ctx, st) {
       return d ? { startDate: d.iso } : null
     }
     case 'nights': {
-      const m = t.match(/\b(\d{1,2})\s*(?:nights?|n)\b/) || t.match(/^(\d{1,2})\b/)
-      const days = t.match(/\b(\d{1,2})\s*days?\b/)
-      const n = m ? Number(m[1]) : days ? Number(days[1]) - 1 : null
+      // "4", "4 nights", "5 days", "4N 5D" — and "495", how "4N 5D" is often heard.
+      const n = readNights(t) ?? (t.match(/^(\d{1,2})\b/) ? Number(t.match(/^(\d{1,2})\b/)[1]) : null)
       return n >= 1 && n <= 60 ? { nights: n } : null
     }
     case 'destination': {
@@ -164,7 +263,11 @@ function infoAnswer(key, text, ctx, st) {
     case 'tripTitle': {
       const s = suggestTitle(st)
       if ((YES.test(t) || /\b(?:you choose|you decide|suggest|your choice|that one|use that|any)\b/.test(t)) && s) return { tripTitle: s }
-      const raw = String(text || '').trim().replace(/^(?:call it|name it|title is|the title is)\s+/i, '')
+      const said = String(text || '').trim().replace(/^(?:call it|name it|title is|the title is|trip title is|it'?s)\s+/i, '')
+      // "Kashmir four N five D" / "Kashmir 495" → "Kashmir 4N/5D"; other words stay as said.
+      const words = convertNumberWords(said)
+      const fixed = fixDurationText(words, Number(st.v.nights) || null)
+      const raw = fixed !== words.replace(/\s+/g, ' ').trim() ? fixed : said
       return raw ? { tripTitle: raw.charAt(0).toUpperCase() + raw.slice(1) } : null
     }
     case 'template':
@@ -439,11 +542,164 @@ const daysText = (days, total) =>
 const HOTEL_ASK = /\b(?:add|book|select|choose|need|put)\b.*\b(?:hotels?|accommodations?|stays?|rooms?)\b|^(?:hotels?|accommodation)$/
 const CAB_ASK = /\b(?:add|book|select|choose|need|arrange)\b.*\b(?:transport|transportation|cars?|cabs?|taxis?|vehicles?|innova|dzire|tempo)\b|^(?:transport|transportation|car|cab|vehicle)$/
 
+// A sentence that starts with a field's name: "client name Mr Bilal",
+// "phone 98765 43210", "title Kashmir 4N 5D". → { key, vals } or null.
+const LABELLED =
+  /^(?:the\s+)?(client'?s?\s+name|guest'?s?\s+name|customer\s+name|client|name|phone(?:\s+number)?|mobile(?:\s+number)?|contact(?:\s+number)?|whatsapp(?:\s+number)?|e-?mail(?:\s+id|\s+address)?|trip\s+title|trip\s+name|title|adults|kids|children|start\s+date|travel\s+date|nights|duration|destination)\b\s*(?:is|are|:|-|=|will be|should be)?\s+(.+)$/i
+function explicitField(text, ctx, st) {
+  const raw = String(text || '').trim()
+  const m = raw.match(LABELLED)
+  // "client name" alone (the value still coming) is not a name "Name".
+  if (!m || /^(?:name|number|no|title|id|address|date|is|of)\b/i.test(m[2].trim())) return null
+  const key = fieldNamed(m[1].toLowerCase())
+  if (!key) return null
+  const vals = infoAnswer(key, m[2], ctx, st)
+  return vals && !vals.skip ? { key, vals, raw: m[2] } : null
+}
+
+function keep(st, key, vals, raw, ops) {
+  delete vals.note
+  Object.assign(st.v, vals)
+  st.raw = st.raw || {}
+  st.raw[key] = raw
+  st.answered_[key] = true
+  st.lastKey = key
+  st.lastWhat = 'info'
+  const p = infoPatch(vals)
+  if (p) ops.push(p)
+}
+
+// Put right what Ching wrote: the named field, else the last one answered.
+function correct(st, fix, text, ctx, ops, out) {
+  if (!fix.key && st.lastWhat === 'day' && st.lastDay && (st.step === 'days' || st.step === 'logistics')) {
+    const d = st.lastDay
+    if (fix.value) {
+      const day = readDay(d, fix.value, ctx, st)
+      if (day) {
+        st.days[d] = { city: day.city }
+        ops.push({ op: 'day', ...day })
+        return out(`Fixed — day ${d} is ${day.city}. ${currentQuestion(st, ctx)}`)
+      }
+    }
+    delete st.days[d]
+    if (st.step === 'logistics') {
+      st.step = 'days'
+      ops.push({ op: 'tab', tab: 'Itinerary' })
+    }
+    st.ask = d
+    return out(`Sure — ${dayQuestion(d, st)}`)
+  }
+  if (!fix.key && (st.step === 'hotel' || st.step === 'cab')) {
+    return out(`Tell me what to change — for example "room type deluxe", "2 rooms" or "breakfast and dinner". ${currentQuestion(st, ctx)}`)
+  }
+  const key = fix.key || st.lastKey
+  if (!key) return out('What should I correct? Say the field and the right value — for example "the title is Kashmir 4N/5D".')
+  if (key === 'nights' && st.step !== 'info' && Object.keys(st.days).length) {
+    return out(`The days are already laid out for ${plural(st.v.nights, 'night')} — change the nights on the Trip Info tab and I'll carry on. ${currentQuestion(st, ctx)}`)
+  }
+  const vals = fix.value ? infoAnswer(key, fix.value, ctx, st) : autoRepair(key, st)
+  if (vals && !vals.skip) {
+    keep(st, key, vals, fix.value || st.raw?.[key] || '', ops)
+    st.fixing = null
+    const next = st.step === 'info' && st.ask === key ? advance(st, ctx, ops) : currentQuestion(st, ctx)
+    return out(`Fixed — the ${FIELD_LABEL[key]} is now ${valueSaid(key, vals)}. ${next}`)
+  }
+  st.fixing = key
+  const sug = key === 'tripTitle' && suggestTitle(st) ? ` Say it, or "yes" for "${suggestTitle(st)}".` : ''
+  return out(`Sure — what should the ${FIELD_LABEL[key]} be?${sug}`)
+}
+
+/**
+ * What the agent is saying right now, written into its field while they
+ * speak (the guide's current question, or a field they name): a patch op, or
+ * null. Changes nothing in the guide — the finished sentence still goes
+ * through guideStep().
+ */
+const LIVE_KEYS = ['clientName', 'clientPhone', 'clientEmail', 'adults', 'kids', 'nights', 'destination', 'tripTitle']
+export function guidePreview(st, text, ctx) {
+  const t = clean(text)
+  if (!t || STOP.test(t) || REPEAT.test(t) || BACK.test(t) || SKIP.test(t) || SAVE.test(t)) return null
+  const tmp = st ? { ...st, v: { ...st.v } } : { step: 'info', v: {}, answered_: {} }
+  const ex = explicitField(text, ctx, tmp)
+  if (ex && LIVE_KEYS.includes(ex.key)) return infoPatch({ ...ex.vals, note: undefined })
+  if (!st) return null
+  const fix = readCorrection(text)
+  if (fix) {
+    const key = fix.key || st.lastKey
+    if (!fix.value || !LIVE_KEYS.includes(key)) return null
+    const a = infoAnswer(key, fix.value, ctx, tmp)
+    return a && !a.skip ? infoPatch({ ...a, note: undefined }) : null
+  }
+  const key = st.fixing || (st.step === 'info' ? st.ask : null)
+  if (!key || !LIVE_KEYS.includes(key)) return null
+  const a = infoAnswer(key, text, ctx, tmp)
+  return a && !a.skip ? infoPatch({ ...a, note: undefined }) : null
+}
+
+/**
+ * "correct it" outside the guide, on any open trip: mend Trip Info fields
+ * that were clearly misheard (a "495" title → "4N/5D"). → { patch, said } or null.
+ */
+export function repairTripInfo(tripInfo = {}) {
+  const tripInfo2 = {}
+  const said = []
+  const n = Number(tripInfo.duration) || null
+  if (tripInfo.tripTitle) {
+    const fixed = fixDurationText(tripInfo.tripTitle, n)
+    if (fixed !== tripInfo.tripTitle) {
+      tripInfo2.tripTitle = fixed
+      said.push(`the title is now "${fixed}"`)
+    }
+  }
+  if (tripInfo.clientName && /[a-z]/.test(tripInfo.clientName.charAt(0))) {
+    tripInfo2.clientName = titleCase(tripInfo.clientName)
+    said.push(`the client name is now "${tripInfo2.clientName}"`)
+  }
+  return said.length ? { patch: { op: 'patch', tripInfo: tripInfo2 }, said } : null
+}
+
+/** Is this "correct it" / "that's wrong" / "fix the title to …"? */
+export const isCorrection = (text) => !!readCorrection(text)
+
+/**
+ * "correct it" / "correct the title to …" on an open trip when no guide runs.
+ * → { patch?, say } for a Trip Info correction, or null when the sentence is
+ * about something else (a hotel, a day…) and belongs to the trip editor.
+ */
+export function correctTripInfo(text, ctx) {
+  const fix = readCorrection(text)
+  if (!fix) return null
+  const ti = ctx.snapshot?.tripInfo || {}
+  if (fix.key) {
+    if (!fix.value) {
+      const r = repairTripInfo(ti)
+      const mine = r && r.patch.tripInfo[fix.key] != null
+      return mine
+        ? { patch: { op: 'patch', tripInfo: { [fix.key]: r.patch.tripInfo[fix.key] } }, say: `Fixed — the ${FIELD_LABEL[fix.key]} is now "${r.patch.tripInfo[fix.key]}".` }
+        : { say: `What should the ${FIELD_LABEL[fix.key]} be? Say it like "the ${FIELD_LABEL[fix.key]} is …".` }
+    }
+    const st = { step: 'info', v: { nights: Number(ti.duration) || null, destination: ti.destination, clientName: ti.clientName }, answered_: {} }
+    const a = infoAnswer(fix.key, fix.value, ctx, st)
+    if (!a || a.skip) return { say: `I couldn't read the ${FIELD_LABEL[fix.key]} in that — say it again?` }
+    delete a.note
+    return { patch: infoPatch(a), say: `Fixed — the ${FIELD_LABEL[fix.key]} is now ${valueSaid(fix.key, a)}.` }
+  }
+  if (fix.value) return null
+  const r = repairTripInfo(ti)
+  if (r) return { patch: r.patch, say: `Fixed — ${r.said.join(' and ')}.` }
+  return { say: 'Tell me what to correct — for example "correct the title to Kashmir 4N/5D" or "the client name is Mr Bilal".' }
+}
+
 /** Start (or restart) the guide for a blank trip. `text` may already carry answers. */
 export function startGuide(text, ctx) {
   const st = { step: 'info', ask: null, v: {}, days: {}, history: [], answered_: {} }
   const ops = [{ op: 'tab', tab: 'Trip Info' }]
   const said = heard(text || '', ctx)
+  const ex = explicitField(text || '', ctx, st)
+  if (ex) {
+    Object.assign(said, ex.vals)
+    delete said.note
+  }
   absorb(st, said, ops)
   const next = advance(st, ctx, ops)
   const told = Object.keys(st.v).length
@@ -611,6 +867,7 @@ function cabNext(st, ctx, ops) {
  */
 export function guideStep(st, text, ctx) {
   st.answered_ = st.answered_ || {}
+  ctx = { ...ctx, said: String(text || '') }
   const t = clean(text)
   const ops = []
   const out = (say, extra = {}) => ({ handled: true, ops, say, ...extra })
@@ -628,6 +885,28 @@ export function guideStep(st, text, ctx) {
     return out('Okay, I\'ve stopped. Say "save" to keep this trip, or "discard" to throw it away.')
   }
   if (REPEAT.test(t)) return out(currentQuestion(st, ctx))
+
+  // "correct it" / "that's wrong" / "fix the title to …": mend what was written.
+  const fix = readCorrection(text)
+  // "no, it's not included" answers a yes/no question; it isn't a correction.
+  const answersAsked = fix?.soft && st.step === 'info' && ['gst', 'travel', 'kids', 'inclusions', 'exclusions'].includes(st.ask)
+  // In the hotel / car forms "change the room type to deluxe" is just the next answer.
+  const formEdit = fix && fix.value && !fix.key && (st.step === 'hotel' || st.step === 'cab')
+  if (fix && !answersAsked && !formEdit) return correct(st, fix, text, ctx, ops, out)
+  // The answer to "what should the title be?" after a correction.
+  if (st.fixing) {
+    const key = st.fixing
+    if (SKIP.test(t)) {
+      st.fixing = null
+      return out(`Okay, I've left it. ${currentQuestion(st, ctx)}`)
+    }
+    const a = infoAnswer(key, text, ctx, st)
+    if (!a || a.skip) return { handled: false, ops }
+    keep(st, key, a, text, ops)
+    st.fixing = null
+    const next = st.step === 'info' && st.ask === key ? advance(st, ctx, ops) : currentQuestion(st, ctx)
+    return out(`Fixed — the ${FIELD_LABEL[key]} is now ${valueSaid(key, a)}. ${next}`)
+  }
 
   // Jumps the agent can make at any point.
   if (st.step !== 'info' || answered(st, 'nights')) {
@@ -661,6 +940,13 @@ export function guideStep(st, text, ctx) {
       const places = placesIn(st.suggestDestination, ctx)
       if (places.length === 1) vals.destinationId = places[0].id
       return takeInfo(st, key, vals, ctx, ops, out)
+    }
+    // "phone 98765 43210" while Ching asked for the name: that field, then the question again.
+    const ex = explicitField(text, ctx, st)
+    if (ex && ex.key !== key && !(key === 'clientName' && ex.key === 'clientName')) {
+      keep(st, ex.key, ex.vals, ex.raw, ops)
+      const next = answered(st, key) ? advance(st, ctx, ops) : infoQuestion(key, st)
+      return out(`Got it — the ${FIELD_LABEL[ex.key]} is ${valueSaid(ex.key, ex.vals)}. ${next}`)
     }
     const a = infoAnswer(key, text, ctx, st)
     if (a?.skip) {
@@ -716,6 +1002,8 @@ export function guideStep(st, text, ctx) {
       }
       return { handled: false, ops }
     }
+    st.lastDay = done[done.length - 1]
+    st.lastWhat = 'day'
     const next = advance(st, ctx, ops)
     const said = done.map((d) => `Day ${d}: ${st.days[d].city}`).join(', ')
     return out(`${said}. ${next}`)
@@ -787,6 +1075,10 @@ function takeInfo(st, key, vals, ctx, ops, out) {
   Object.assign(st.v, vals)
   st.answered_[key] = true
   st.history.push(key)
+  st.raw = st.raw || {}
+  st.raw[key] = ctx.said ?? ''
+  st.lastKey = key
+  st.lastWhat = 'info'
   const p = infoPatch(vals)
   if (p) ops.push(p)
   const next = advance(st, ctx, ops)
@@ -802,6 +1094,7 @@ function finishGuide(st, ops, out) {
 /** The question the guide is waiting on (to repeat it after Ching handled something else). */
 export function currentQuestion(st, ctx) {
   if (!st) return ''
+  if (st.fixing) return `What should the ${FIELD_LABEL[st.fixing]} be?`
   if (st.step === 'info' && st.ask) {
     if (st.ask === 'destination' && st.suggestDestination) return `What destination should the trip show? Say it, or "yes" for "${st.suggestDestination}".`
     return infoQuestion(st.ask, st)

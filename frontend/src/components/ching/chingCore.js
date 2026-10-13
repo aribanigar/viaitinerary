@@ -12,7 +12,7 @@ import { parseChingEdit, isCreateRequest } from "../../utils/ching/parseEdit";
 
 export { isCreateRequest };
 // Ching's guided trip (Trip Info → Itinerary → Logistics, asked one step at a time).
-export { startGuide, startLogistics, guideStep, currentQuestion, wantsHotel, wantsCab } from "../../utils/ching/guide.js";
+export { startGuide, startLogistics, guideStep, currentQuestion, wantsHotel, wantsCab, guidePreview, repairTripInfo, isCorrection, correctTripInfo } from "../../utils/ching/guide.js";
 
 // /api/builder/init is cached for the rest of the page session (per token);
 // a failed load is forgotten so the next request retries.
