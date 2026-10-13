@@ -64,7 +64,7 @@ export const MEANING_TREE = [
   N('mood', null, 'Mood'),
   N('mood.calm', 'mood', 'Relaxing', 'relax(?:ing|ed)?|peaceful|quiet|calm|serene|tranquil|unwind|laid ?back|away from (?:the )?(?:crowd|city|noise)|no crowd|sukoon|shanti', ['quiet', 'secluded', 'riverside', 'lake-view', 'garden', 'spa'], ['cottage', 'resort'], ['pahalgam']),
   N('mood.romantic', 'mood', 'Romantic', 'romantic|honeymoon|anniversary|newly ?wed|just married|couple(?:s)? (?:trip|getaway)', ['honeymoon', 'romantic'], ['lake-view', 'riverside', 'houseboat', 'boutique', 'quiet']),
-  N('mood.lively', 'mood', 'Lively', 'lively|happening|nightlife|shopping|close to everything|in the middle of (?:town|things)', ['lively', 'central', 'near-market']),
+  N('mood.lively', 'mood', 'Lively', 'lively|happening|nightlife|close to everything|in the middle of (?:town|things)', ['lively', 'central', 'near-market']),
   N('mood.adventure', 'mood', 'Adventure', 'adventure|adventurous|trek(?:king)?|rafting|skiing|ski|thrill', ['near-gondola', 'camp', 'mountain-view'], [], ['gulmarg', 'sonamarg', 'pahalgam']),
   N('mood.heritage', 'mood', 'Heritage', 'heritage|old ?world|traditional|historic|royal|palace', ['heritage', 'boutique'], ['houseboat']),
 
@@ -88,6 +88,24 @@ export const MEANING_TREE = [
   N('where.gondola', 'where', 'Near the gondola', 'near (?:the )?gondola|close to (?:the )?gondola|ski ?lift', ['near-gondola'], [], ['gulmarg']),
   N('where.airport', 'where', 'Near the airport', 'near (?:the )?airport|close to (?:the )?airport|early (?:morning )?flight', ['near-airport'], [], ['srinagar']),
   N('where.secluded', 'where', 'Secluded', 'secluded|remote|off ?beat|hidden|isolated|in the (?:forest|woods)', ['secluded', 'quiet']),
+
+  // Things to do ask nothing of a hotel: they choose the PLACE (whereTo.js).
+  N('do', null, 'Things to do'),
+  N('do.shopping', 'do', 'Shopping', 'shopping|shop|markets?|bazaars?|handicrafts?|shawls?|souvenirs?'),
+  N('do.skiing', 'do', 'Skiing', 'ski(?:ing)?|snowboard(?:ing)?|sledg(?:e|ing)'),
+  N('do.gondola', 'do', 'Gondola', 'gondola|cable ?car|ropeway'),
+  N('do.trekking', 'do', 'Trekking', 'trek(?:s|king)?|hik(?:e|es|ing)|long walks?'),
+  N('do.rafting', 'do', 'Rafting', 'rafting|river rafting|white ?water'),
+  N('do.shikara', 'do', 'Shikara ride', 'shikara|boat ride|boating'),
+  N('do.pilgrimage', 'do', 'Pilgrimage', 'pilgrim(?:age)?|yatra|darshan|temples?|shrines?|ziyarat|dargah|gurudwara'),
+  N('do.golf', 'do', 'Golf', 'golf(?:ing)?'),
+  N('do.fishing', 'do', 'Fishing', 'fishing|angling|trout'),
+  N('do.monasteries', 'do', 'Monasteries', 'monaster(?:y|ies)|gompas?|buddhist'),
+  N('do.wildlife', 'do', 'Wildlife', 'wildlife|safari|national park|birds?|bird ?watching'),
+  N('do.meadows', 'do', 'Meadows', 'meadows?|valleys?|green(?:ery)? valley|pony rides?|horse rid(?:e|ing)'),
+  N('do.desert', 'do', 'Desert', 'desert|sand dunes?|camel'),
+  N('do.beach', 'do', 'Beach', 'beach(?:es)?|sea ?side|coast'),
+  N('do.offbeat', 'do', 'Offbeat', 'off ?beat|unexplored|less (?:crowded|touristy)|hidden gems?|not touristy|untouched'),
 
   N('comfort', null, 'Comforts'),
   N('comfort.spa', 'comfort', 'Spa', 'spa|massage|wellness|sauna', ['spa'], ['luxury', 'resort']),
@@ -193,4 +211,4 @@ export function matchHotel(hotel, wishes, tagMap = null) {
 }
 
 /** Wishes that ask something of a hotel at all (some only describe the party). */
-export const hasHotelWishes = (wishes) => (wishes?.nodes || []).length > 0
+export const hasHotelWishes = (wishes) => (wishes?.nodes || []).some((n) => n.want.length > 0)

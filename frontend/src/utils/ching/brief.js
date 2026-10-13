@@ -22,6 +22,7 @@ import { placeKey, samePlace } from './places.js'
 import { convertNumberWords, normalizeTripWords, titleCase } from './text.js'
 import { readNarrative } from './narrative.js'
 import { readWishes } from './meaning.js'
+import { suggestPlaces, pickPlaces } from './whereTo.js'
 
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
 const MONTH_SHORT = { jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11 }
@@ -250,6 +251,7 @@ function heardLine(cmd, need) {
   return bits.join(', ')
 }
 function question(need, cmd, askName) {
+  if (!need.length) return askName ? "Tell me the client's name." : ''
   const month = Number.isInteger(cmd.month) ? titleCase(MONTHS[cmd.month]) : ''
   const ask = {
     destination: 'where they want to go',
@@ -275,6 +277,15 @@ const NOT_NAME = /^(?:people|persons?|pax|adults?|kids?|child|children|nights?|d
 /** An answer, written the way the parser reads it. */
 function asPhrase(answer, st) {
   const t = clean(answer)
+  // "the first one" / "both" / a name, picked from the places just suggested.
+  if (st.ask.includes('destination')) {
+    const where = placeOptions(st)
+    const picked = where ? pickPlaces(t, where.places.map((p) => p.name), where.cover?.places || null) : null
+    if (picked) {
+      const rest = t.replace(/\b(?:the |option |number )?(?:first|1st|second|2nd|third|3rd|last)(?: one| option| place)?\b|\b(?:both|all three|all of them)\b/g, ' ').replace(/\s+/g, ' ').trim()
+      return `trip to ${picked.join(' and ')}${rest.split(' ').length >= 2 ? `, ${asPhrase(rest, { ...st, ask: st.ask.filter((k) => k !== 'destination') })}` : ''}`
+    }
+  }
   const only = st.ask.length === 1 ? st.ask[0] : null
   const num = /^(\d{1,3})$/.exec(t)
   // A bare number answers the one count that was asked.
@@ -309,6 +320,15 @@ function evaluate(st, text, ctx) {
   return { cmd: cmd || {}, need }
 }
 
+// No destination yet, but the client said what they want from one ("snow",
+// "somewhere quiet by a river"): the agency's own places for it (whereTo.js).
+function placeOptions(st) {
+  const cat = st.catalog || {}
+  const r = suggestPlaces(readWishes(st.text || ''), cat, { tagMap: cat.memory?.placeTags || null })
+  return r.places.length ? r : null
+}
+const andList = (xs) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`)
+
 function reply(st, cmd, need, lead = '') {
   // The name is asked along with the rest, once; it never holds the plan up.
   const askName = !cmd.clientName && !st.nameAsked && !st.nameSkipped
@@ -318,7 +338,14 @@ function reply(st, cmd, need, lead = '') {
   st.places = [...regionWords(st.catalog || {}), ...hotelCities(st.catalog || {}).flatMap((c) => normTokens(c))]
   const got = heardLine(cmd, need)
   const opener = lead || (got ? `${got}. Got it.` : "Let's plan it.")
-  return `${opener} ${question(need, cmd, askName)}`
+  const where = need.includes('destination') ? placeOptions(st) : null
+  if (!where) return `${opener} ${question(need, cmd, askName)}`
+  // Suggest where, instead of only asking it.
+  const rest = need.filter((k) => k !== 'destination')
+  const list = where.places.map((p, i) => `${i + 1}. ${p.name} (${andList(p.met).toLowerCase()})`).join('; ')
+  const both = where.cover ? ` No single place has it all: ${andList(where.cover.places)} together would. Say “both”, or pick one.` : ' Which one?'
+  const more = rest.length || askName ? ` ${question(rest, cmd, askName).replace(/^Tell me/, 'Also tell me')}` : ''
+  return `${opener} For ${andList(where.wishes).toLowerCase()} I would suggest: ${list}.${both}${more}`
 }
 
 /**

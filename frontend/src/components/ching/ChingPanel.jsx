@@ -237,9 +237,10 @@ const CHECK_STYLE = {
   blocking: { icon: CircleX, cls: "text-[#b42318]", dot: "bg-[#fff0ee]" },
 };
 
-function DraftCard({ tripDraft, running, onConfirm, onEdit, onCancel }) {
+function DraftCard({ tripDraft, running, onConfirm, onEdit, onCancel, onUseOption, onOfferOptions }) {
   const { draft } = tripDraft;
   const [showOk, setShowOk] = useState(false);
+  const [openStay, setOpenStay] = useState(-1); // the stay whose other hotels are showing
   const problems = draft.checks.filter((c) => c.level !== "ok");
   const passed = draft.checks.filter((c) => c.level === "ok");
   const value = (k) => draft.rows.find((r) => r[0] === k)?.[1];
@@ -255,19 +256,54 @@ function DraftCard({ tripDraft, running, onConfirm, onEdit, onCancel }) {
       </div>
       {draft.stays.length > 0 && (
         <ul className="rounded-xl bg-[#f7f7f8] divide-y divide-black/5">
-          {draft.stays.map((g, i) => (
-            <li key={i} className="flex items-baseline gap-2 px-2.5 py-1.5 text-[13px]">
-              <span className="font-semibold shrink-0">{g.city} – {g.nights}N</span>
-              <span className="flex-1 min-w-0 truncate text-[#181c22]/65" title={g.hotel}>
-                {g.hotel || "no hotel"}
-              </span>
-              {(g.suggested || g.picked) && (
-                <span className="shrink-0 rounded-full bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-800" title={g.suggested ? "Ching planned this city — nobody said it" : "Ching picked this hotel"}>
-                  {g.suggested ? "suggested" : "picked"}
-                </span>
-              )}
-            </li>
-          ))}
+          {draft.stays.map((g, i) => {
+            // The other hotels for this stay: one that costs less, one step up (stayOptions.js).
+            const others = (g.options || []).filter((o) => String(o.id) !== String(g.hotelId));
+            const open = openStay === i && others.length > 0;
+            return (
+              <li key={i} className="px-2.5 py-1.5 text-[13px]">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-semibold shrink-0">{g.city} – {g.nights}N</span>
+                  <span className="flex-1 min-w-0 truncate text-[#181c22]/65" title={g.hotel}>
+                    {g.hotel || "no hotel"}
+                  </span>
+                  {(g.suggested || g.picked) && (
+                    <span className="shrink-0 rounded-full bg-amber-100 px-1.5 text-[10px] font-semibold text-amber-800" title={g.suggested ? "Ching planned this city, nobody said it" : "Ching picked this hotel"}>
+                      {g.suggested ? "suggested" : "picked"}
+                    </span>
+                  )}
+                  {others.length > 0 && (
+                    <button type="button" onClick={() => setOpenStay(open ? -1 : i)} aria-expanded={open} className="shrink-0 text-[11px] font-semibold text-[#181c22] underline underline-offset-2">
+                      {open ? "Hide" : `${others.length} more`}
+                    </button>
+                  )}
+                </div>
+                {open && (
+                  <div className="mt-1.5 space-y-1">
+                    {others.map((o) => (
+                      <div key={o.id} className="flex items-center gap-2 rounded-lg bg-white px-2 py-1.5 border border-black/5">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[12.5px] font-semibold leading-tight break-words">
+                            {o.name} <span className="font-medium text-[#181c22]/55">· {o.label}</span>
+                          </div>
+                          <div className="text-[11px] text-[#181c22]/60 break-words">
+                            {o.why}
+                            {o.delta ? ` · ${o.delta}` : ""}
+                          </div>
+                        </div>
+                        <button type="button" disabled={running} onClick={() => onUseOption?.(g, o)} className="shrink-0 rounded-lg bg-[#181c22] px-2 py-1 text-[11px] font-semibold text-white disabled:opacity-50">
+                          Use
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" disabled={running} onClick={() => onOfferOptions?.(g, others)} className="text-[11px] font-semibold text-[#181c22]/70 underline underline-offset-2 disabled:opacity-50" title="The client sees the main hotel with these as choices, each with its price difference">
+                      Offer all {others.length + 1} to the client
+                    </button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
       {(value("Vehicle") || value("Meals")) && (
@@ -411,6 +447,8 @@ export default function ChingPanel({
   onConfirmDraft,
   onEditDraft,
   onCancelDraft,
+  onUseOption,
+  onOfferOptions,
   onUseHotel,
 }) {
   const [draft, setDraft] = useState("");
@@ -587,7 +625,7 @@ export default function ChingPanel({
         )}
 
         {tripDraft && !live && !listening && (
-          <DraftCard tripDraft={tripDraft} running={running} onConfirm={onConfirmDraft} onEdit={onEditDraft} onCancel={onCancelDraft} />
+          <DraftCard tripDraft={tripDraft} running={running} onConfirm={onConfirmDraft} onEdit={onEditDraft} onCancel={onCancelDraft} onUseOption={onUseOption} onOfferOptions={onOfferOptions} />
         )}
 
         {outcome && !tripDraft && !live && !listening && !running && (

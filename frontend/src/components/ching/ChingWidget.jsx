@@ -29,6 +29,7 @@ import { handleAssist } from "./assistActions";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
 import { draftSpeech } from "../../utils/ching/tripDraft";
 import { vocabularyFrom } from "../../utils/ching/vocabulary";
+import { logMiss, logStat, setInsightToken } from "../../utils/ching/insightLog";
 import { chingSaid, setChingListening, setChingStage, setChingUnderstanding, initChingConversation, setChingThread, threadOfLocation, setChingPending, getChingPending } from "../../utils/ching/chingBus";
 import {
   speak,
@@ -185,7 +186,25 @@ export default function ChingWidget() {
   // under the trip on screen.
   useEffect(() => {
     initChingConversation(token || null, user?.id ?? null);
+    setInsightToken(token || null);
   }, [token, user?.id]);
+  // How Ching is doing (utils/ching/insightLog.js): what it last did, so an
+  // undo or a cancel straight after is logged as "taken back".
+  const lastDid = useRef(null); // { text, at }
+  const did = useCallback((text) => {
+    lastDid.current = { text, at: Date.now() };
+  }, []);
+  const takenBack = useCallback(() => {
+    const d = lastDid.current;
+    lastDid.current = null;
+    if (!d || Date.now() - d.at > 90000) return;
+    logMiss("corrected", d.text, { catalog: initRef.current });
+    logStat("corrected");
+  }, []);
+  const missed = useCallback((kind, text) => {
+    logMiss(kind, text, { catalog: initRef.current });
+    if (kind !== "no-trip") logStat("missed");
+  }, []);
   useEffect(() => {
     setChingThread(threadOfLocation(), safe(() => editor?.snapshot?.().tripInfo?.tripTitle, "") || "");
   }, [location.pathname, location.search, editor]);
@@ -774,6 +793,7 @@ export default function ChingWidget() {
       if (!planText && !guideRef.current && core?.isCorrection && fixEd && safe(() => core.isCorrection(text), false)) {
         const c = safe(() => core.correctTripInfo(text, guideCtx(fixEd)), null);
         if (c) {
+          takenBack();
           cancelLive();
           endSession();
           if (c.patch) {
@@ -802,6 +822,7 @@ export default function ChingWidget() {
       }
       // Not an answer and nothing else either: ask the brief's question again.
       if (briefMiss && !(core && (core.isCreateRequest(text) || core.looksLikeTripRequest(text, initRef.current)))) {
+        if ((briefRef.current?.state?.tries || 0) >= 2) missed("stuck", `[asked: ${getChingPending()?.question || "a trip detail"}] ${text}`);
         cancelLive();
         endSession();
         respond(briefMiss);
@@ -828,6 +849,7 @@ export default function ChingWidget() {
         }
         endSession();
         setNotice({ kind: kind === "edit" ? "no-editor" : "unknown", text });
+        missed(kind === "edit" ? "no-trip" : "unknown", text);
         if (kind === "edit") say("Open a trip in the Trip Builder and I'll change it for you.");
         else sayLine(lineFor("notUnderstood", notUnderstood()));
         return;
@@ -903,6 +925,13 @@ export default function ChingWidget() {
       if (res.mode === "fill" && res.draft) {
         setUndoTick((t) => t + 1);
         safe(() => ed.setTab("Trip Info")); // step 1, while the agent checks the draft
+        logStat("plans");
+        did(text);
+        // A wish nothing in the catalog is tagged for: a data gap worth seeing in the report.
+        list(res.warnings).forEach((w) => {
+          const m = /^Asked for “(.+?)”: no hotel in (.+?) is tagged/.exec(w);
+          if (m) logMiss("unmet", `${m[1]} in ${m[2]}`, { catalog: null });
+        });
         setTripDraft({ draft: res.draft, commands });
         setChingThread(threadOfLocation(), safe(() => ed.snapshot().tripInfo?.tripTitle, "") || "");
         setOutcome(null);
@@ -936,6 +965,7 @@ export default function ChingWidget() {
           return;
         }
         setNotice({ kind: "unknown", text, editing: true, unrecognized: list(res.unrecognized) });
+        missed("unknown", text);
         sayLine(lineFor("notUnderstood", notUnderstood()));
         return;
       }
@@ -955,6 +985,12 @@ export default function ChingWidget() {
           if (lines.length) respond(`${lines.join(". ")}.`);
         });
         return;
+      }
+      if (commands.some((c) => c.type === "UNDO")) takenBack();
+      else if (changes.length) did(text);
+      if (list(res.unrecognized).length && changes.length) {
+        logMiss("partial", text, { catalog: initRef.current });
+        logStat("partial");
       }
       const lines = commands.length ? (await runCommands(commands, ed)) || [] : [];
       const n = changes.length;
@@ -1018,7 +1054,7 @@ export default function ChingWidget() {
         say(reply + tip);
       }, REPLY_BEAT_MS);
     },
-    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine, guideCtx, runGuideOps, endGuide, dropPreview, briefCtx, setBrief, navigate],
+    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine, guideCtx, runGuideOps, endGuide, dropPreview, briefCtx, setBrief, navigate, did, missed, takenBack],
   );
 
   // ── Confirm & Build ─────────────────────────────────────────────────────
@@ -1036,6 +1072,8 @@ export default function ChingWidget() {
       respond(`I can't build it yet: ${r.blocked[0].text}.`);
       return;
     }
+    logStat("confirmed");
+    lastDid.current = null;
     setTripDraft(null);
     confirmRef.current = null;
     // Build it in the agent's order: Trip Info → Itinerary (a destination a
@@ -1081,15 +1119,48 @@ export default function ChingWidget() {
     setCompact(true);
     setUndoTick((t) => t + 1);
   }, [askConfirm, respond, runCommands, tripDraft]);
+  // The draft card's other hotels for a stay: switch to one, or offer them all
+  // to the client. Both are ordinary, undoable edits on the trip in the builder.
+  const stayIndex = (ed, city) => list(safe(() => ed.getContext().stays, [])).find((x) => String(x.city || "").toLowerCase() === String(city || "").toLowerCase())?.index;
+  const refreshDraft = useCallback((ed) => {
+    const d = safe(() => ed.draft?.(), null);
+    if (d) setTripDraft((cur) => (cur ? { ...cur, draft: d } : cur));
+    setUndoTick((t) => t + 1);
+  }, []);
+  const useStayOption = useCallback(
+    (stay, option) => {
+      const ed = getChingEditor();
+      const index = ed ? stayIndex(ed, stay.city) : undefined;
+      if (index === undefined) return;
+      const r = safe(() => ed.apply([{ type: "REPLACE_HOTEL", stay: index, hotelId: option.id, hotelName: option.name, city: stay.city }]), null);
+      if (list(r?.changes).length) say(`${stay.city}: ${option.name}${option.delta ? `, ${option.delta}` : ""}.`);
+      refreshDraft(ed);
+    },
+    [refreshDraft, say],
+  );
+  const offerStayOptions = useCallback(
+    (stay, others) => {
+      const ed = getChingEditor();
+      const index = ed ? stayIndex(ed, stay.city) : undefined;
+      if (index === undefined) return;
+      const r = safe(() => ed.apply([{ type: "SET_STAY_OPTIONS", stay: index, hotelIds: others.map((o) => o.id) }]), null);
+      if (list(r?.changes).length) say(`${list(r.changes)[0]}. Each one shows its price difference on the itinerary.`);
+      refreshDraft(ed);
+    },
+    [refreshDraft, say],
+  );
+
   const cancelDraft = useCallback(() => {
     const ed = getChingEditor();
+    logStat("cancelled");
+    takenBack();
     safe(() => ed?.cancelDraft?.());
     setTripDraft(null);
     confirmRef.current = null;
     setOutcome(null);
     respond("Cancelled — the trip is back to how it was.");
     setUndoTick((t) => t + 1);
-  }, [respond]);
+  }, [respond, takenBack]);
   // "Edit": keep the filled form, tuck Ching away; the draft stays unsaved.
   const editDraft = useCallback(() => {
     setOutcome({ title: "Draft — not saved yet. Tap to review", lines: [] });
@@ -1243,6 +1314,7 @@ export default function ChingWidget() {
       const text = toEnglishCommand(clean, catalogForLanguage()) || clean;
       // File the line under the trip on screen (named once the trip has a title).
       setChingThread(threadOfLocation(), safe(() => getChingEditor()?.snapshot?.().tripInfo?.tripTitle, "") || "");
+      logStat("turns");
       chingSaid("you", clean);
       const S = sessionRef.current || startSession();
       S.ended = true;
@@ -1258,6 +1330,7 @@ export default function ChingWidget() {
   const handleSpoken = useCallback(
     (said) => {
       voiceTurn.current = true;
+      logStat("voice");
       handleCommand(said);
     },
     [handleCommand],
@@ -1372,6 +1445,7 @@ export default function ChingWidget() {
       primeAudio(); // the send tap lets a phone speak the reply
       if (listening) cancelCommand();
       voiceTurn.current = false;
+      logStat("typed");
       startSession();
       handleCommand(text);
     },
@@ -1398,13 +1472,14 @@ export default function ChingWidget() {
     if (!ed) return;
     const label = safe(() => ed.undo(), null);
     toast.info(label ? `Undone: ${label}` : "Nothing to undo");
+    if (label) takenBack();
     if (!safe(() => ed.draft?.(), null)) {
       setTripDraft(null);
       if (confirmRef.current?.draft) confirmRef.current = null;
     }
     if (label) setOutcome((o) => (o ? { ...o, title: `Undone: ${label}` } : o));
     setUndoTick((t) => t + 1);
-  }, []);
+  }, [takenBack]);
 
   const handleFab = () => {
     if (open) {
@@ -1528,6 +1603,8 @@ export default function ChingWidget() {
             onConfirmDraft={confirmDraft}
             onEditDraft={editDraft}
             onCancelDraft={cancelDraft}
+            onUseOption={useStayOption}
+            onOfferOptions={offerStayOptions}
             onUseHotel={(n) => assistRef.current?.({ type: "hotel-pick", n })}
           />
         </Suspense>

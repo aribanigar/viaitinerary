@@ -265,6 +265,24 @@ test('a story is a story; an agent\'s request is not', () => {
   assert.equal(r.text, 'kashmir trip, 2 adults, starting 5 december 2026, 4 nights, 2 nights in pahalgam')
 })
 
+test('no destination yet, but wishes: Ching suggests where, then plans the pick', () => {
+  const r = startBrief('they want snow and shopping, 2 adults for 4 nights from 10 november', ctx)
+  assert.equal(r.ready, false)
+  assert.match(r.say, /For snow and shopping I would suggest: 1\. Gulmarg \(snow\)/)
+  assert.match(r.say, /No single place has it all: (?:Srinagar and Gulmarg|Gulmarg and Srinagar) together would\. Say “both”, or pick one\./)
+  const both = talk(['they want snow and shopping, 2 adults for 4 nights from 10 november', 'both'])
+  assert.equal(both.ready, true)
+  assert.deepEqual([...both.cities].sort(), ['Gulmarg', 'Srinagar'])
+  assert.equal(both.info.tripTitle, 'Kashmir 4N/5D')
+  // One place by its number, with the rest of the answer in the same breath.
+  const one = talk(['somewhere with a gondola', 'the first one, 2 adults, 3 nights from 12 december'])
+  assert.equal(one.ready, true)
+  assert.deepEqual(one.cities, ['Gulmarg'])
+  assert.equal(one.info.startDate, '2026-12-12')
+  // Nothing to go on: it just asks, as before.
+  assert.match(startBrief('create a trip', ctx).say, /where they want to go/)
+})
+
 test('cancel drops the request', () => {
   const r = startBrief('new trip', ctx)
   assert.equal(briefStep(r.state, 'cancel', ctx).cancelled, true)

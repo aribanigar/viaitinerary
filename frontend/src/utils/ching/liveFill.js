@@ -9,6 +9,9 @@
 //  - "edit": the trip already has content → the sentence is a list of edits.
 import { validateChingCommand } from "./parseCommand.js";
 import { parseTripRequest } from "./brief.js";
+import { stayOptions } from "./stayOptions.js";
+import { hotelPreference } from "./buildTrip.js";
+import { readWishes } from "./meaning.js";
 import { parseChingEdit } from "./parseEdit.js";
 import { buildEditContext, applyEditActions } from "./editTrip.js";
 import { applyCorrections } from "./corrections.js";
@@ -112,6 +115,23 @@ function dateRange(start, nights) {
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
 const rupees = (n) => `₹${Math.round(Number(n) || 0).toLocaleString("en-IN")}`;
+
+export const draftCityKey = (c) => String(c || "").toLowerCase().split(",")[0].replace(/\bcity\b/g, "").replace(/\s+/g, " ").trim();
+
+/** { cityKey: [options] } for every stay of a trip that has a choice of hotels. */
+export function stayOptionsFor(snapshot, text, command, catalog) {
+  const base = command?.pref || hotelPreference(text || "");
+  const wishes = command?.wishes || base.wishes || readWishes(text || "");
+  const out = {};
+  for (const a of snapshot?.accommodations || []) {
+    const k = draftCityKey(a.city); // the key the Trip Draft groups stays by (tripDraft.js cityKey)
+    if (!k || out[k] || a.cancelled) continue;
+    const stars = /[1-7]/.exec(String(a.category || ""))?.[0] || null;
+    const opts = stayOptions(a.city, catalog?.hotels || [], { ...base, wishes, softStars: stars }, catalog?.memory || null, { current: a.hotelId, roomType: a.roomType, date: a.checkIn });
+    if (opts.length > 1) out[k] = opts;
+  }
+  return out;
+}
 
 function planFill(base, rawText, { catalog, settings, today }) {
   // Aliases apply to the whole sentence — the fill and the extras riding along.
@@ -294,6 +314,9 @@ function planFill(base, rawText, { catalog, settings, today }) {
     pickedHotels: parts.autoPicked.filter((p) => p.hotel).map((p) => p.hotel),
     // Asked back in the draft until answered: "day 2 Gulmarg — day trip or transfer?",
     // and hotels the agent named that aren't in the catalog.
+    // Three hotels for each stay (stayOptions.js): the one planned, one that
+    // costs less, one step up — for the draft card and "use the cheaper one".
+    options: stayOptionsFor(snapshot, text, command, catalog),
     dayQuestions: command.dayPlan?.questions || [],
     unmatchedHotels: command.unmatchedHotels || [],
   };

@@ -8,6 +8,7 @@ const prisma = (await import('../lib/prisma.js')).default
 const mem = await import('../lib/chingMemory.js')
 const conv = await import('../lib/chingConversation.js')
 const { ALL_TAGS } = await import('../../frontend/src/utils/ching/meaning.js')
+const { ALL_PLACE_TAGS } = await import('../../frontend/src/utils/ching/whereTo.js')
 
 // ── a fake chingMemory table
 let rows = []
@@ -37,6 +38,17 @@ assert.deepEqual(await mem.hotelTagMap(8), {})
 assert.deepEqual((await mem.chingMemory(7, 5)).hotelTags, { 11: ['riverside', 'quiet'], 12: ['houseboat', 'lake-view'] }, 'tags reach Ching with its memory')
 assert.deepEqual(await mem.setHotelTags(7, 12, []), [], 'no tags = the row is removed')
 assert.equal(rows.filter((r) => r.kind === 'hoteltag').length, 1)
+
+// ── place tags (what a destination is like)
+prisma.destination.findFirst = async ({ where }) => (where.userId === 7 && where.id === 2 ? { id: 2 } : null)
+assert.deepEqual([...mem.PLACE_TAGS].sort(), [...ALL_PLACE_TAGS].sort(), 'PLACE_TAGS (web) and PLACE_TAG_GROUPS (frontend) are the same vocabulary')
+assert.deepEqual(await mem.setPlaceTags(7, 2, ['snow', 'skiing', 'riverside']), ['snow', 'skiing'], 'a hotel tag is not a place tag')
+assert.equal(await mem.setPlaceTags(8, 2, ['snow']), null, 'tenant-scoped')
+assert.deepEqual(await mem.placeTagMap(7), { 2: ['snow', 'skiing'] })
+assert.deepEqual((await mem.chingMemory(7, 5)).placeTags, { 2: ['snow', 'skiing'] }, 'place tags reach Ching with its memory')
+assert.deepEqual(await mem.hotelTagMap(7), { 11: ['riverside', 'quiet'] }, 'and are kept apart from hotel tags')
+await mem.setPlaceTags(7, 2, [])
+assert.deepEqual(await mem.placeTagMap(7), {})
 
 // ── conversations
 const c0 = await conv.readConversation(7, 5)

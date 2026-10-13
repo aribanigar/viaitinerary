@@ -834,6 +834,33 @@ const HANDLERS = {
     }
   },
 
+  // Offer the client a choice at one stay: the main hotel "or" these (the
+  // Trip Builder's optional hotels — priced to the client as a difference on
+  // the main one). a = { stay, hotelIds: [...] }; an empty list takes the choice away.
+  SET_STAY_OPTIONS(st, a) {
+    const acc = stayAt(st, a.stay)
+    if (!acc) return
+    const ids = (Array.isArray(a.hotelIds) ? a.hotelIds : []).filter((id) => String(id) !== String(acc.hotelId))
+    const options = ids
+      .map((id) => findById(st.catalog.hotels, id))
+      .filter(Boolean)
+      .map((hotel) => {
+        const types = hotelRoomTypes(hotel)
+        const roomType = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(acc.roomType)) || types[0] || acc.roomType || 'Deluxe'
+        const section = findRateSection(hotel, roomType, acc.checkIn)
+        return { hotel_id: hotel.id, name: hotel.name, category: hotelCategoryLabel(hotel.category) || '', room_type: roomType, price: section.price || '', photo: hotel.image_url || hotel.image_path || '', package: 0 }
+      })
+    const had = (acc.alternateOptions || []).filter((o) => String(o?.name || '').trim()).length
+    if (!options.length) {
+      if (!had) return
+      acc.alternateOptions = []
+      return st.changes.push(`${acc.city}: only ${acc.name} is offered now`)
+    }
+    acc.alternateOptions = options
+    st.changes.push(`${acc.city}: the client can choose ${acc.name} or ${options.map((o) => o.name).join(' or ')}`)
+    options.filter((o) => !o.price).forEach((o) => st.warnings.push(`${o.name} has no rate for these dates — its price difference can't be shown`))
+  },
+
   SET_TRIP_NIGHTS(st, a) {
     const target = toInt(a.nights)
     if (!(target >= 1)) return st.warnings.push('A trip needs at least 1 night')

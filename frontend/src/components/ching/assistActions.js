@@ -22,7 +22,10 @@ import {
   updateBooking,
   downloadVouchersPdf,
 } from "../../api/operations";
-import { rememberChing, forgetChing, saveHotelTags } from "../../api/ching";
+import { rememberChing, forgetChing, saveHotelTags, savePlaceTags } from "../../api/ching";
+import { suggestPlaces, whereReply, pickPlaces, placeTags as tagsOfPlace } from "../../utils/ching/whereTo";
+import { logMiss } from "../../utils/ching/insightLog";
+import { stayOptions, optionsLine } from "../../utils/ching/stayOptions";
 import { matchHotel as meets, tagLabel } from "../../utils/ching/meaning";
 import { clearChingConversation as forgetConversation } from "../../utils/ching/chingBus";
 import { fetchAccountingTripLedger, createAccountingSettlement } from "../../api/accounting";
@@ -551,7 +554,21 @@ async function doRemember(ask, ctx) {
 // ── hotel tags: what a hotel is like, for Ching's meaning tree (utils/ching/meaning.js)
 async function doTag(ask, ctx) {
   const core = await ctx.core();
+  // A destination named ("tag Gulmarg as snow and skiing"): the place's own tags.
+  const dest = list(ctx.init?.destinations).find((d) => samePlace(d.name, ask.hotel));
+  if (dest && (list(ask.placeAdd).length || list(ask.placeRemove).length)) {
+    const memory = getChingMemory() || {};
+    const r = await savePlaceTags(ctx.token, { destination_id: dest.id, add: ask.placeAdd, remove: ask.placeRemove, base: tagsOfPlace(dest, memory.placeTags || null) });
+    await loadChingMemory(ctx.token, { force: true });
+    const now = list(r?.tags).map((t) => t.replace(/-/g, " "));
+    ctx.respond(`${dest.name} is now tagged: ${and(now) || "nothing"}. I use these when a client asks where to go.`);
+    return;
+  }
   const hotel = core?.matchHotelName?.(ask.hotel, "", ctx.init) || null;
+  if (hotel && !list(ask.add).length && !list(ask.remove).length) {
+    ctx.respond(`Those are tags for a place, not a hotel. Hotel tags are things like riverside, quiet, family, lift. Try “tag ${hotel.name} as quiet”.`);
+    return;
+  }
   if (!hotel) {
     ctx.respond(`I couldn't find “${ask.hotel}” in your hotels. Check the name in Accommodation?`);
     return;
@@ -583,6 +600,113 @@ async function doTagged(ask, ctx) {
   }
   const names = hits.map((x) => `${x.h.name}${ask.city ? "" : ` (${String(x.h.city || "").split(",")[0]})`}`);
   ctx.respond(`${plural(hits.length, "hotel")}${where} for ${what}: ${and(names)}.`);
+}
+
+// ── three hotels for a stay: the one on the trip, one that costs less, one step up (utils/ching/stayOptions.js)
+function optionsForStay(stay, ctx) {
+  const memory = getChingMemory() || {};
+  const hotels = list(ctx.init?.hotels);
+  let acc = null;
+  try {
+    acc = list(ctx.editor.snapshot().accommodations).find((a) => String(a.hotelId) === String(stay.hotelId) && samePlace(a.city, stay.city)) || null;
+  } catch {
+    acc = null;
+  }
+  const stars = /[1-7]/.exec(String(acc?.category || ""))?.[0] || null;
+  return stayOptions(stay.city, hotels, { softStars: stars }, memory, { current: stay.hotelId, roomType: acc?.roomType || "", date: acc?.checkIn || stay.checkIn || "" });
+}
+async function doStayOptions(ask, ctx) {
+  if (!ctx.editor) {
+    ctx.respond("Open a trip first, then ask me for the hotel options at any of its stays.");
+    return;
+  }
+  const city = ask.city ? catalogCity(ask.city, ctx.init) || ask.city : "";
+  const { stay, stays } = tripStay(ctx, city);
+  if (ask.city && !stay) {
+    ctx.respond(stays.length ? `This trip doesn't stay in ${titleCase(ask.city)}. It stays in ${and(stays.map((x) => x.city))}.` : "This trip has no hotels yet.");
+    return;
+  }
+  if (!stays.length) {
+    ctx.respond("This trip has no hotels yet.");
+    return;
+  }
+  // No town said on a trip with several: every stay when offering or clearing, else ask which.
+  const targets = stay ? [stay] : ask.mode === "offer" || ask.mode === "clear" ? stays : null;
+  if (!targets) {
+    ctx.respond(`Which town? This trip stays in ${and(stays.map((x) => x.city))}.`);
+    return;
+  }
+  if (ask.mode === "clear") {
+    const res = ctx.editor.apply(targets.map((x) => ({ type: "SET_STAY_OPTIONS", stay: x.index, hotelIds: [] }))) || {};
+    ctx.changed?.();
+    ctx.respond(list(res.changes).length ? `${list(res.changes).join(". ")}.` : "No hotel choices were being offered there.");
+    return;
+  }
+  if (ask.mode === "offer") {
+    const actions = targets
+      .map((x) => ({ x, opts: optionsForStay(x, ctx).filter((o) => String(o.id) !== String(x.hotelId)) }))
+      .filter((y) => y.opts.length)
+      .map((y) => ({ type: "SET_STAY_OPTIONS", stay: y.x.index, hotelIds: y.opts.map((o) => o.id) }));
+    if (!actions.length) {
+      ctx.respond("There is no other hotel to offer there: it is the only one in your catalog for that town.");
+      return;
+    }
+    const res = ctx.editor.apply(actions) || {};
+    ctx.changed?.();
+    ctx.respond(list(res.changes).length ? `${list(res.changes).join(". ")}. Each choice shows its price difference on the itinerary. Say “undo” to take it back.` : "Those choices are already offered.");
+    return;
+  }
+  const opts = optionsForStay(targets[0], ctx);
+  if (opts.length < 2) {
+    ctx.respond(`${targets[0].city}: ${opts[0]?.name || "that hotel"} is the only one in your catalog there.`);
+    return;
+  }
+  // "use the second one" works on these too (doHotelPick reads lastHotels).
+  lastHotels = { results: opts.map((o) => ({ id: o.id, name: o.name, city: o.city, stars: o.stars, rate_per_night: o.price })), city: targets[0].city, at: Date.now() };
+  if (ask.mode === "pick") {
+    const o = opts.find((x) => x.role === ask.role);
+    if (!o) {
+      ctx.respond(ask.role === "cheaper" ? `Nothing in ${targets[0].city} costs clearly less than ${opts[0].name}.` : `Nothing in ${targets[0].city} is a step up from ${opts[0].name} in your catalog.`);
+      return;
+    }
+    const res = ctx.editor.apply([{ type: "REPLACE_HOTEL", stay: targets[0].index, hotelId: o.id, hotelName: o.name, city: o.city }]) || {};
+    ctx.changed?.();
+    ctx.respond(list(res.changes).length ? `${targets[0].city}: ${o.name} (${o.why}${o.delta ? `, ${o.delta}` : ""}). Say “undo” to switch back.` : list(res.warnings)[0] || `${o.name} is already on the trip.`);
+    return;
+  }
+  ctx.respond(`${targets[0].city}: ${optionsLine(opts)}. Say “use the second one”, “the cheaper one”, or “offer all ${opts.length} to the client”.`);
+}
+
+// ── "where should they go?": the agency's own places, by what was wished (utils/ching/whereTo.js)
+let lastPlaces = null; // { names, cover, text, at }
+async function doWhere(ask, ctx) {
+  const memory = (await loadChingMemory(ctx.token)) || getChingMemory() || {};
+  const r = suggestPlaces(ask.wishes, { ...ctx.init, memory }, { tagMap: memory.placeTags || null });
+  lastPlaces = r.places.length ? { names: r.places.map((p) => p.name), cover: r.cover?.places || null, text: ask.text, at: Date.now() } : null;
+  // Asked for something no place is tagged for: a gap in the catalog's tags, worth seeing in the report.
+  if (r.wishes.length && !r.places.length) logMiss("unmet", `a place for ${r.wishes.join(", ").toLowerCase()}`);
+  ctx.respond(whereReply(r));
+}
+
+/** The place(s) picked from the last suggestions, said as a trip request Ching then plans. */
+function pickedTrip(text) {
+  const last = lastPlaces;
+  if (!last || Date.now() - last.at > 30 * 60 * 1000) return null;
+  const names = pickPlaces(text, last.names, last.cover);
+  if (!names) return null;
+  // What the client wanted goes along, so the hotels are picked for it too.
+  const wanted = last.text.replace(/\b(?:where|which|what|should|can|could|do|shall|would|i|we|they|he|she|you|go|send|take|suggest|recommend|me|us|them|a|the|best|good|nice|place|places|destination|destinations|town|is|are|for|to|not sure|don'?t know)\b/g, " ").replace(/\s+/g, " ").trim();
+  return `plan a trip to ${names.join(" and ")}${wanted ? `, ${wanted}` : ""}`;
+}
+async function doWherePick(ask, ctx) {
+  const trip = pickedTrip(ask.text);
+  if (!trip) {
+    ctx.respond("Pick from what? Ask me first, like “where should they go for snow and shopping?”.");
+    return;
+  }
+  lastPlaces = null;
+  // Handed back to Ching as a request: it asks what is missing and plans it.
+  window.dispatchEvent(new CustomEvent("ching:submit", { detail: { text: trip } }));
 }
 
 async function doClearConversation(ctx) {
@@ -644,6 +768,9 @@ export async function handleAssist(ask, ctx) {
     driver: () => doDriver(ask, ctx),
     ops: () => doOps(ask, ctx),
     "find-trips": () => doFind(ask, ctx),
+    "stay-options": () => doStayOptions(ask, ctx),
+    where: () => doWhere(ask, ctx),
+    "where-pick": () => doWherePick(ask, ctx),
     tag: () => doTag(ask, ctx),
     tagged: () => doTagged(ask, ctx),
     "clear-conversation": () => doClearConversation(ctx),

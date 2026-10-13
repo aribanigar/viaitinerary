@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "../../components/dashboard/DashboardLayout";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { PlaceTags } from "../../components/dashboard/HotelTags";
 import { toast } from "react-toastify";
 import {
   fetchDestination,
@@ -232,6 +233,15 @@ const DestinationForm = () => {
                 activity.
               </p>
             </div>
+
+            {/* What the place is like: Ching's answer to "where should they go?" */}
+            {isEditing && (
+              <PlaceTags
+                destination={{ id: Number(id), name: formData.name, activities: String(formData.activities || "").split("\n").filter(Boolean) }}
+                token={token}
+                className="bg-slate-50 rounded-2xl p-4"
+              />
+            )}
           </div>
 
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 space-y-4">

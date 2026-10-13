@@ -17,6 +17,7 @@ import { hotelInCity, findDestinationFor, placeKey, samePlace } from "./places.j
 import { dayWiseCabs } from "./cabPlan.js";
 import { bestStayOrder } from "./route.js";
 import { readWishes, matchHotel as meets, hasHotelWishes } from "./meaning.js";
+import { suggestPlaces } from "./whereTo.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -386,8 +387,9 @@ function planRoute(command, hotels, destinations, nights, memory = null, { exclu
   const count = (city) => hotels.filter((h) => samePlace(h.city, city)).length;
   // Towns of the kind wished for ("relaxing" → Pahalgam, "snow" → Gulmarg) go
   // first, then the busiest: with few nights they are the ones kept.
-  const hints = (command.wishes || readWishes(command.transcript)).places || [];
-  const wished = (city) => (hints.some((p) => samePlace(p, city)) ? 1 : 0);
+  // (ranked by the same place tags that answer "where should they go?": whereTo.js)
+  const ranked = suggestPlaces(command.wishes || readWishes(command.transcript), { hotels, destinations }, { tagMap: memory?.placeTags || null, max: 12 }).places;
+  const wished = (city) => ranked.find((p) => samePlace(p.name, city))?.score || 0;
   const cities = hotelCities.filter(inRegion).sort((a, b) => wished(b) - wished(a) || count(b) - count(a));
   // allCities: just the region's cities in route order (for ranking stays).
   if (allCities) return cities;

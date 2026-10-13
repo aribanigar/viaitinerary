@@ -60,7 +60,7 @@ test('what was said → the branch it means', () => {
   assert.deepEqual(ids('some place with a nice view'), ['setting.view'])
   assert.deepEqual(ids('honeymoon on a houseboat'), ['mood.romantic', 'stay.houseboat'])
   assert.deepEqual(ids("it's just my parents and my baby"), ['party.seniors', 'party.baby'])
-  assert.deepEqual(ids('near the gondola'), ['where.gondola'])
+  assert.deepEqual(ids('near the gondola'), ['where.gondola', 'do.gondola'])
   assert.deepEqual(ids('open the ledger'), [])
   assert.equal(readWishes('relaxing').nodes[0].path, 'Mood › Relaxing')
 })
@@ -113,8 +113,10 @@ test('with few nights, the towns of the kind wished for are the ones kept', () =
 })
 
 test('Ching tags hotels and finds them by tag, without stealing the rate search', () => {
-  assert.deepEqual(understandAssistant('tag heevan resort as riverside and quiet'), { type: 'tag', hotel: 'heevan resort', add: ['riverside', 'quiet'], remove: [] })
-  assert.deepEqual(understandAssistant('remove the riverside tag from heevan resort'), { type: 'tag', hotel: 'heevan resort', add: [], remove: ['riverside'] })
+  assert.deepEqual(understandAssistant('tag heevan resort as riverside and quiet'), { type: 'tag', hotel: 'heevan resort', add: ['riverside', 'quiet'], remove: [], placeAdd: ['quiet'], placeRemove: [] })
+  assert.deepEqual(understandAssistant('remove the riverside tag from heevan resort'), { type: 'tag', hotel: 'heevan resort', add: [], remove: ['riverside'], placeAdd: [], placeRemove: [] })
+  // A destination's own tags ("snow", "skiing") are not hotel tags.
+  assert.deepEqual(understandAssistant('tag gulmarg as snow and skiing'), { type: 'tag', hotel: 'gulmarg', add: [], remove: [], placeAdd: ['snow', 'skiing'], placeRemove: [] })
   const q = understandAssistant('which hotels are riverside in pahalgam')
   assert.deepEqual([q.type, q.city, q.said], ['tagged', 'pahalgam', ['by the river']])
   assert.equal(understandAssistant('show me quiet hotels in gulmarg').type, 'tagged')
@@ -129,8 +131,10 @@ test('help answers from the capability tree, branch by branch', () => {
   assert.equal(helpAsk('help me plan a kashmir trip for 4 people from 10 november'), null) // a request, not a question
   assert.equal(branchFor('payments').id, 'money')
   assert.equal(branchFor('hotels').id, 'find')
+  assert.equal(branchFor('destinations').id, 'where')
+  assert.equal(branchFor('upgrade').id, 'options')
   assert.equal(branchFor('voice note').id, 'client')
-  assert.match(helpReply(''), /^I can plan a trip, read a client’s voice note or message, find hotels/)
+  assert.match(helpReply(''), /^I can plan a trip, suggest where a client should go, read a client’s voice note or message, find hotels/)
   assert.match(helpReply('payments'), /Rahul paid 20000 by UPI/)
   for (const b of CAPABILITY_TREE) assert.ok(b.examples.length && b.covers && b.can, b.id)
   assert.equal(understandAssistant('help with hotels').type, 'smalltalk')

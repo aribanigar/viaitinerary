@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Clock,
+  BarChart3,
   X,
   Mic,
   SendHorizontal,
@@ -380,6 +381,9 @@ const AIAssistant = () => {
           <span className="flex items-center gap-2 text-sm font-medium text-[#181c22]/50">
             <Clock className="w-4 h-4" /> {lines.length} messages
           </span>
+          <Link to="/assistant/insights" className="flex items-center gap-2 text-sm font-medium text-[#181c22] hover:opacity-70 transition-opacity">
+            <BarChart3 className="w-4 h-4" /> How Ching is doing
+          </Link>
         </>
       }
     >

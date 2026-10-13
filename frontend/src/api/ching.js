@@ -35,3 +35,30 @@ export async function saveChingConversation(token, conversation) {
 export async function clearChingConversation(token) {
   return request("/ching/conversation", { method: "DELETE", token });
 }
+
+// How Ching is doing (web/app/api/ching/insights): what it missed + the daily numbers.
+export async function recordChingInsights(token, events) {
+  return request("/ching/insights", { method: "POST", token, body: JSON.stringify({ events }) });
+}
+
+export async function fetchChingInsights(token, { days = 14, all = false } = {}) {
+  return request(`/ching/insights?days=${days}${all ? "&all=1" : ""}`, { token });
+}
+
+export async function setChingMissStatus(token, key, status) {
+  return request("/ching/insights", { method: "PATCH", token, body: JSON.stringify({ key, status }) });
+}
+
+export async function deleteChingMisses(token, key = null) {
+  return request("/ching/insights", { method: "DELETE", token, body: JSON.stringify(key ? { key } : {}) });
+}
+
+// Place tags (web/app/api/ching/place-tags): what each destination is like, for "where should they go?".
+export async function fetchPlaceTags(token) {
+  return request("/ching/place-tags", { token });
+}
+
+/** { destination_id, tags } replaces; { destination_id, add, remove, base } changes. */
+export async function savePlaceTags(token, body) {
+  return request("/ching/place-tags", { method: "PUT", token, body: JSON.stringify(body) });
+}

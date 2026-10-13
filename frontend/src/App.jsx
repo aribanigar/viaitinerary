@@ -27,6 +27,7 @@ const GenerateItinerary = lazy(
 );
 const MyTrips = lazy(() => import("./components/dashboard/MyTrips"));
 const AIAssistant = lazy(() => import("./pages/assistant/AIAssistant"));
+const ChingInsights = lazy(() => import("./pages/assistant/ChingInsights"));
 const Packages = lazy(() => import("./components/dashboard/Packages"));
 const SsoLogin = lazy(() => import("./pages/SsoLogin"));
 const AgencySettings = lazy(
@@ -351,6 +352,7 @@ function App() {
                     <Route path="/my-trips" element={<MyTrips />} />
                     <Route path="/operations" element={<Operations />} />
                     <Route path="/assistant" element={<AIAssistant />} />
+                    <Route path="/assistant/insights" element={<ChingInsights />} />
                     <Route path="/packages" element={<Packages />} />
                     <Route path="/package-builder" element={<TripBuilder mode="package" />} />
                     <Route
