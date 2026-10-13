@@ -14,9 +14,14 @@ import { TRIP_INCLUDE } from "@/lib/trips";
 
 export const dynamic = "force-dynamic";
 
-// The columns serializeHotel / serializeVehicle read — nothing else is sent.
-const HOTEL_LITE = { id: true, name: true, city: true, category: true, isAvailable: true, priceSections: true, imagePath: true };
+// The columns the lite serializers read — nothing else is fetched or sent.
+const HOTEL_LITE = { id: true, name: true, city: true, category: true, isAvailable: true, latitude: true, longitude: true, priceSections: true, imagePath: true };
 const VEHICLE_LITE = { id: true, name: true, price: true, rateType: true, seatingCapacity: true, vehicleType: true, isAvailable: true };
+const DESTINATION_LITE = { id: true, name: true, activities: true, country: true, state: true, city: true, imagePath: true };
+const ACTIVITY_LITE = {
+  id: true, name: true, destinationId: true, sellingPrice: true, durationHours: true, cost: true, childPrice: true,
+  childCost: true, priceSections: true, category: true, city: true, imagePath: true, description: true,
+};
 
 // GET /api/builder/init?trip_id=... — bootstrap the Trip Builder.
 export async function GET(request) {
@@ -32,7 +37,12 @@ export async function GET(request) {
   // Everything — including the account flag and the trip being opened — runs
   // in ONE parallel round of queries; hotels and cabs read only the columns
   // the builder's lite shapes (serializeHotel / serializeVehicle) send.
-  const tripId = new URL(request.url).searchParams.get("trip_id");
+  const params = new URL(request.url).searchParams;
+  const tripId = params.get("trip_id");
+  // catalogs=0: the client already holds the catalogs (api/builderInit.js) and
+  // only needs the trip + settings + policies — the hotels' rate sheets are
+  // most of this response.
+  const withCatalogs = params.get("catalogs") !== "0";
   // (A Prisma query only starts once something subscribes to it, so these two
   // get their handlers right here — which also means a failure is never an
   // unhandled rejection while the batch below is still running.)
@@ -50,10 +60,10 @@ export async function GET(request) {
   const PARTS = ["settings", "destinations", "vehicles", "hotels", "activities", "policies"];
   const settled = await Promise.allSettled([
     prisma.agencySetting.findUnique({ where: { userId: adminId } }),
-    prisma.destination.findMany({ where: { userId: adminId }, orderBy: { name: "asc" } }),
-    prisma.vehicle.findMany({ where: { userId: adminId }, orderBy: { name: "asc" }, select: VEHICLE_LITE }),
-    prisma.hotel.findMany({ where: { userId: adminId }, orderBy: { name: "asc" }, select: HOTEL_LITE }),
-    prisma.activity.findMany({ where: { userId: adminId, isActive: true }, orderBy: { name: "asc" } }),
+    withCatalogs ? prisma.destination.findMany({ where: { userId: adminId }, orderBy: { name: "asc" }, select: DESTINATION_LITE }) : null,
+    withCatalogs ? prisma.vehicle.findMany({ where: { userId: adminId }, orderBy: { name: "asc" }, select: VEHICLE_LITE }) : null,
+    withCatalogs ? prisma.hotel.findMany({ where: { userId: adminId }, orderBy: { name: "asc" }, select: HOTEL_LITE }) : null,
+    withCatalogs ? prisma.activity.findMany({ where: { userId: adminId, isActive: true }, orderBy: { name: "asc" }, select: ACTIVITY_LITE }) : null,
     prisma.policy.findUnique({ where: { userId: adminId } }),
   ]);
   const part = (i, fallback) => {
@@ -88,13 +98,15 @@ export async function GET(request) {
   const resp = {
     // DMC partner agencies get the "Powered by Via Kashmir" mark on every itinerary page.
     settings: { ...serializeSettings(settings), powered_by_via_kashmir: isDmcBridge },
-    destinations: destinations.map(serializeDestination),
-    vehicles: vehicles.map(serializeVehicle),
-    hotels: hotels.map(serializeHotel),
-    activities: activities.map(serializeActivityLite),
     policies: mappedPolicies,
     load_errors: loadErrors,
   };
+  if (withCatalogs) {
+    resp.destinations = (destinations || []).map(serializeDestination);
+    resp.vehicles = (vehicles || []).map(serializeVehicle);
+    resp.hotels = (hotels || []).map(serializeHotel);
+    resp.activities = (activities || []).map(serializeActivityLite);
+  }
 
   if (tripQuery) {
     const { trip, error } = await tripQuery;

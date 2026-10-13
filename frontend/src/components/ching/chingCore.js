@@ -6,7 +6,7 @@
 // questions the widget has to decide *before* there is an editor to ask: is
 // this a new-trip request (→ open a fresh draft and fill it), an edit with no
 // trip open, or nothing at all.
-import { fetchBuilderInit } from "../../api/trips";
+import { loadBuilderInit, peekBuilderInit, prefetchBuilderInit } from "../../api/builderInit";
 import { parseChingCommand, prepareCatalog, cityLookup, matchHotel } from "../../utils/ching/parseCommand";
 import { parseChingEdit, isCreateRequest } from "../../utils/ching/parseEdit";
 
@@ -14,18 +14,15 @@ export { isCreateRequest };
 // Ching's guided trip (Trip Info → Itinerary → Logistics, asked one step at a time).
 export { startGuide, startLogistics, guideStep, currentQuestion, wantsHotel, wantsCab, guidePreview, repairTripInfo, isCorrection, correctTripInfo } from "../../utils/ching/guide.js";
 
-// /api/builder/init is cached for the rest of the page session (per token);
-// a failed load is forgotten so the next request retries.
-let initCache = null;
-
+// /api/builder/init is shared with the Trip Builder (api/builderInit.js): the
+// last good copy answers at once and is refreshed in the background.
 export function getInit(token) {
-  if (initCache && initCache.token === token) return initCache.promise;
-  const promise = fetchBuilderInit(token).catch((err) => {
-    if (initCache?.promise === promise) initCache = null;
-    throw err;
-  });
-  initCache = { token, promise };
-  return promise;
+  const cached = peekBuilderInit(token);
+  if (cached) {
+    prefetchBuilderInit(token);
+    return Promise.resolve(cached);
+  }
+  return loadBuilderInit(token);
 }
 
 const catalogOf = (init) => ({
