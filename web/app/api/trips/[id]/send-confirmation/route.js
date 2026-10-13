@@ -130,13 +130,14 @@ export async function POST(request, { params }) {
   const message = applyVars(settings.confirmationMessage || defaultMsg, {
     "{agencyName}": agencyName,
     "{clientName}": trip.clientName || "Guest",
+    "{tripId}": trip.tripId,
   }).trim();
 
   const confirmationPdf = await renderConfirmationPdf(trip, settings, message);
   await sendMail(mailer, {
     to: settings.contactEmail,
     subject: `Booking Confirmation - Trip #${trip.tripId}`,
-    html: confirmationHtml(message, agencyName),
+    html: confirmationHtml(message, agencyName, { heroUrl: settings.confirmationHeroImage || trip.imagePath }),
     text: message,
     attachments: [{ filename: `${trip.tripId}_Confirmation.pdf`, content: confirmationPdf, contentType: "application/pdf" }],
   });

@@ -30,6 +30,7 @@ import "react-international-phone/style.css";
 import { useGoogleMapsScript } from "../../hooks/useGoogleMapsScript";
 import { useAgencyMapsKey } from "../../hooks/useAgencyMapsKey";
 import DateInput from "../../components/common/DateInput";
+import { prepareImage, prepareImageBlob } from "../../utils/imageFile";
 
 const AccommodationForm = () => {
   const { token } = useAuth();
@@ -210,12 +211,7 @@ const AccommodationForm = () => {
       const url = photoRef.getURI({ maxWidth: 800, maxHeight: 600 });
       const res = await fetch(url);
       const blob = await res.blob();
-      const dataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      const dataUrl = await prepareImageBlob(blob, { maxSide: 1600 });
       setFormData((prev) => ({ ...prev, photo: dataUrl }));
     } catch {
       // Photo fetch can fail (CORS, rate limits) — non-fatal, just skip it.
@@ -319,14 +315,15 @@ const AccommodationForm = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, photo: reader.result }));
-      };
-      reader.readAsDataURL(file);
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const photo = await prepareImage(file, { maxSide: 1600 });
+      setFormData((prev) => ({ ...prev, photo }));
+    } catch (err) {
+      toast.error(err.message || "Couldn't read that image.");
     }
   };
 

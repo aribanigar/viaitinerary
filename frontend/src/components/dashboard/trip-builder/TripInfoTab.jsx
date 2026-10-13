@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
+import { toast } from "react-toastify";
+import { useAuth } from "../../../context/AuthContext";
+import { uploadImage } from "../../../utils/imageFile";
 import { PhoneInput } from "react-international-phone";
 import {
   CheckCircle,
@@ -56,6 +59,8 @@ const TripInfoTab = ({
   saveExclusionEdit,
   removeExclusion,
 }) => {
+  const { token } = useAuth();
+  const [coverUploading, setCoverUploading] = useState(false);
   const resolvedTemplate =
     tripInfo.template === "ClassicTemplate"
       ? "ClassicTemplate"
@@ -803,17 +808,20 @@ const TripInfoTab = ({
                 id="coverImageInput"
                 className="hidden"
                 accept=".jpg,.jpeg,.png,.webp"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      setTripInfo({
-                        ...tripInfo,
-                        image: reader.result,
-                      });
-                    };
-                    reader.readAsDataURL(file);
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!file) return;
+                  // Uploaded once and kept as a URL (utils/imageFile.js) —
+                  // autosave would otherwise resend the image on every save.
+                  setCoverUploading(true);
+                  try {
+                    const image = await uploadImage(token, file, { kind: "trips", maxSide: 1600 });
+                    setTripInfo((prev) => ({ ...prev, image }));
+                  } catch (err) {
+                    toast.error(err.message || "Couldn't use that image.");
+                  } finally {
+                    setCoverUploading(false);
                   }
                 }}
               />
@@ -826,7 +834,9 @@ const TripInfoTab = ({
                 Choose File
               </button>
               <span className="text-[#9aa3b2] font-bold truncate max-w-37.5">
-                {tripInfo.image
+                {coverUploading
+                  ? "Uploading…"
+                  : tripInfo.image
                   ? tripInfo.image.startsWith("data:")
                     ? "Custom image selected"
                     : "Saved image"

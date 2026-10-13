@@ -25,6 +25,7 @@ export async function GET(request, { params }) {
   const message = applyVars(settings?.confirmationPdfMessage || settings?.confirmationMessage || defaultMsg, {
     "{agencyName}": agencyName,
     "{clientName}": trip.clientName || "Guest",
+    "{tripId}": trip.tripId,
   });
 
   const buffer = await renderConfirmationPdf(trip, settings, message);

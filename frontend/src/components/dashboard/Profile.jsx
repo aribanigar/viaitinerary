@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import DashboardLayout from "./DashboardLayout";
 import { updateProfile } from "../../api/auth";
+import { prepareImage } from "../../utils/imageFile";
 
 const Profile = () => {
   const { user, setUser, token, passwordUpdateRequired, markPasswordUpdated } =
@@ -64,9 +65,8 @@ const Profile = () => {
       }
 
       if (formData.profile_picture instanceof File) {
-        // Convert file to base64
-        const base64 = await fileToBase64(formData.profile_picture);
-        submitData.profile_picture = base64;
+        // Upright, resized JPEG/PNG (utils/imageFile.js) instead of the raw file.
+        submitData.profile_picture = await prepareImage(formData.profile_picture, { maxSide: 512 });
       }
 
       const response = await updateProfile(submitData, token);
@@ -85,20 +85,11 @@ const Profile = () => {
           errors.forEach((error) => toast.error(error));
         });
       } else {
-        toast.error("Failed to update profile");
+        toast.error(error.message || "Failed to update profile");
       }
     } finally {
       setLoading(false);
     }
-  };
-
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
   };
 
   const getInitials = (name) => {

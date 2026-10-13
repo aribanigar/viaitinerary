@@ -132,7 +132,12 @@ export function vehicleAvailabilityRequestHtml(vehicle, settings) {
   return { subject: `Vehicle Availability Request - ${agencyName}`, html: shell("Vehicle Availability Request", body, agencyName) };
 }
 
-export function confirmationHtml(message, agencyName) {
-  const body = `<div style="white-space:pre-wrap;font-size:14px;line-height:1.6">${esc(message)}</div>`;
+// heroUrl: the agency's confirmation hero image (Voucher Desk). Only a hosted
+// http(s) image is used — mail clients (Gmail, Outlook) block data: URLs.
+export function confirmationHtml(message, agencyName, { heroUrl } = {}) {
+  const hero = /^https?:\/\//i.test(String(heroUrl || ""))
+    ? `<img src="${esc(heroUrl)}" alt="" width="552" style="display:block;width:100%;max-width:552px;height:auto;border-radius:8px;margin:0 0 18px" />`
+    : "";
+  const body = `${hero}<div style="white-space:pre-wrap;font-size:14px;line-height:1.6">${esc(message)}</div>`;
   return shell(`${agencyName} — Booking Confirmation`, body, agencyName);
 }

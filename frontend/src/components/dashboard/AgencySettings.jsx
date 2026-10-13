@@ -38,6 +38,7 @@ import Loader from "../common/Loader";
 import { CURRENCY_OPTIONS } from "../../constants/currencies";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
+import { prepareImage } from "../../utils/imageFile";
 
 const AgencySettings = () => {
   const { token } = useAuth();
@@ -93,27 +94,20 @@ const AgencySettings = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, logo: reader.result }));
-      };
-      reader.readAsDataURL(file);
+  // Logos keep transparency (PNG); covers become JPEG — see utils/imageFile.js.
+  const pickImage = (field, maxSide) => async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // picking the same file again still fires
+    if (!file) return;
+    try {
+      const image = await prepareImage(file, { maxSide });
+      setFormData((prev) => ({ ...prev, [field]: image }));
+    } catch (err) {
+      toast.error(err.message || "Couldn't read that image.");
     }
   };
-
-  const handleDefaultTripImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, defaultTripImage: reader.result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const handleLogoChange = pickImage("logo", 800);
+  const handleDefaultTripImageChange = pickImage("defaultTripImage", 1600);
 
   const handleBulkImport = async (e) => {
     const file = e.target.files[0];

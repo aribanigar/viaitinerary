@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
+import { prepareImage } from "../../utils/imageFile";
 
 const VEHICLE_TYPES = [
   { value: "hatchback", label: "Hatchback" },
@@ -218,14 +219,15 @@ const VehicleForm = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, photo: reader.result }));
-      };
-      reader.readAsDataURL(file);
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const photo = await prepareImage(file, { maxSide: 1600 });
+      setFormData((prev) => ({ ...prev, photo }));
+    } catch (err) {
+      toast.error(err.message || "Couldn't read that image.");
     }
   };
 

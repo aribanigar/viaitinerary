@@ -32,3 +32,10 @@ export async function deleteAccountingSettlement(token, settlementId) {
     token,
   });
 }
+
+// Reports: every trip in the range, aggregated on the server (lib/report.js).
+// params: { from, to (YYYY-MM-DD), basis: "travel" | "booking", tz }
+export async function fetchAccountingReport(token, params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return request(`/accounting/report${query ? `?${query}` : ""}`, { token });
+}

@@ -28,6 +28,7 @@ import {
 import { fetchSettings, updateSettings } from "../../api/settings";
 import Loader from "../common/Loader";
 import Modal from "../common/Modal";
+import { prepareImage } from "../../utils/imageFile";
 import DatePicker from "../common/DatePicker";
 import {
   createAccountingSettlement,
@@ -41,6 +42,9 @@ const DEFAULT_TEMPLATE_DATA = {
   paymentVoucherEmailMessage: "",
   invoiceEmailMessage: "",
 };
+
+const TEMPLATE_TEXT_KEYS = Object.keys(DEFAULT_TEMPLATE_DATA).filter((k) => k !== "confirmationHeroImage");
+const pick = (obj, keys) => Object.fromEntries(keys.filter((k) => obj && obj[k] !== undefined).map((k) => [k, obj[k]]));
 
 const TABS = [
   { id: "confirmation", label: "Confirmation Email", icon: FileCheck2 },
@@ -129,7 +133,6 @@ const Accounting = () => {
   const [heroImageUploading, setHeroImageUploading] = useState(false);
   const [heroImageRemoving, setHeroImageRemoving] = useState(false);
   const [activeTab, setActiveTab] = useState("confirmation");
-  const [fullSettings, setFullSettings] = useState(null);
   const [templates, setTemplates] = useState(DEFAULT_TEMPLATE_DATA);
   const [trips, setTrips] = useState([]);
   const [selectedTripId, setSelectedTripId] = useState("");
@@ -178,7 +181,6 @@ const Accounting = () => {
           setSelectedTripId(tripRows[0].trip_id || tripRows[0].tripId || "");
         }
 
-        setFullSettings(settingsResp || {});
         setTemplates({
           ...DEFAULT_TEMPLATE_DATA,
           ...(settingsResp || {}),
@@ -204,32 +206,25 @@ const Accounting = () => {
     }));
   };
 
-  const handleImageChange = (event) => {
+  const handleImageChange = async (event) => {
     const file = event.target.files?.[0];
+    event.target.value = ""; // picking the same file again still fires
     if (!file) {
       return;
     }
-
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      try {
-        setHeroImageUploading(true);
-        const payload = {
-          ...(fullSettings || {}),
-          ...templates,
-          confirmationHeroImage: reader.result,
-        };
-        const updated = await updateSettings(token, payload);
-        setFullSettings(updated || payload);
-        setTemplates((prev) => ({ ...prev, ...(updated || {}) }));
-        toast.success("Hero image updated.");
-      } catch (err) {
-        toast.error(err.message || "Failed to update hero image.");
-      } finally {
-        setHeroImageUploading(false);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      setHeroImageUploading(true);
+      const image = await prepareImage(file, { maxSide: 1600 });
+      // Only this field — the settings API is a partial update, and resending
+      // the whole settings object would overwrite edits made elsewhere.
+      const updated = await updateSettings(token, { confirmationHeroImage: image });
+      setTemplates((prev) => ({ ...prev, confirmationHeroImage: updated?.confirmationHeroImage ?? image }));
+      toast.success("Hero image updated.");
+    } catch (err) {
+      toast.error(err.message || "Failed to update hero image.");
+    } finally {
+      setHeroImageUploading(false);
+    }
   };
 
   const triggerHeroImagePicker = () => {
@@ -247,14 +242,8 @@ const Accounting = () => {
 
     try {
       setHeroImageRemoving(true);
-      const payload = {
-        ...(fullSettings || {}),
-        ...templates,
-        confirmationHeroImage: null,
-      };
-      const updated = await updateSettings(token, payload);
-      setFullSettings(updated || payload);
-      setTemplates((prev) => ({ ...prev, ...(updated || {}) }));
+      await updateSettings(token, { confirmationHeroImage: null });
+      setTemplates((prev) => ({ ...prev, confirmationHeroImage: null }));
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -269,13 +258,11 @@ const Accounting = () => {
   const saveTemplates = async () => {
     try {
       setSaving(true);
-      const payload = {
-        ...(fullSettings || {}),
-        ...templates,
-      };
+      // The template texts only (the hero image saves on upload).
+      const payload = {};
+      for (const key of TEMPLATE_TEXT_KEYS) payload[key] = templates[key] ?? "";
       const updated = await updateSettings(token, payload);
-      setFullSettings(updated || payload);
-      setTemplates((prev) => ({ ...prev, ...(updated || {}) }));
+      setTemplates((prev) => ({ ...prev, ...pick(updated, TEMPLATE_TEXT_KEYS) }));
       toast.success("Accounting templates saved successfully!");
     } catch (err) {
       toast.error(err.message || "Failed to save template settings");

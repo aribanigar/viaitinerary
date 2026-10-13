@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Calendar } from "lucide-react";
 
-const DateRangePicker = ({ onApply, className }) => {
+const DateRangePicker = ({ onApply, className, initialPreset = "Today" }) => {
   const presets = [
     {
       key: "Today",
@@ -60,6 +60,35 @@ const DateRangePicker = ({ onApply, className }) => {
         return { start: first, end: last };
       },
     },
+    {
+      key: "ThisQuarter",
+      label: "This Quarter",
+      range: () => {
+        const e = new Date();
+        const s = new Date(e.getFullYear(), Math.floor(e.getMonth() / 3) * 3, 1);
+        return { start: s, end: new Date(e.getFullYear(), Math.floor(e.getMonth() / 3) * 3 + 3, 0) };
+      },
+    },
+    {
+      // Indian financial year: 1 April → 31 March.
+      key: "ThisFY",
+      label: "This Financial Year",
+      range: () => {
+        const e = new Date();
+        const y = e.getMonth() >= 3 ? e.getFullYear() : e.getFullYear() - 1;
+        return { start: new Date(y, 3, 1), end: new Date(y + 1, 2, 31) };
+      },
+    },
+    {
+      key: "Next30",
+      label: "Next 30 Days",
+      range: () => {
+        const s = new Date();
+        const e = new Date();
+        e.setDate(s.getDate() + 29);
+        return { start: s, end: e };
+      },
+    },
     { key: "All", label: "All", range: () => ({ start: null, end: null }) },
     { key: "Custom", label: "Custom Range >>", range: null },
   ];
@@ -68,9 +97,10 @@ const DateRangePicker = ({ onApply, className }) => {
   const [menuPos, setMenuPos] = useState(null);
   const ref = useRef(null);
   const menuRef = useRef(null);
-  const [selectedPreset, setSelectedPreset] = useState("Today");
-  const [start, setStart] = useState(() => new Date());
-  const [end, setEnd] = useState(() => new Date());
+  const initial = (presets.find((p) => p.key === initialPreset && p.range) || presets[0]).range();
+  const [selectedPreset, setSelectedPreset] = useState(initialPreset);
+  const [start, setStart] = useState(initial.start);
+  const [end, setEnd] = useState(initial.end);
   const [customMode, setCustomMode] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
 
@@ -237,7 +267,7 @@ const DateRangePicker = ({ onApply, className }) => {
         <span className="text-sm">
           {selectedPreset === "Custom"
             ? `${fmt(start)} - ${fmt(end)}`
-            : selectedPreset || "Date Range"}
+            : presets.find((p) => p.key === selectedPreset)?.label || "Date Range"}
         </span>
         <svg
           className="w-3 h-3 ml-1 text-neutral-400"

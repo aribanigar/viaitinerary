@@ -769,12 +769,15 @@ const simpleFooter = (settings) =>
     ),
   );
 
+const confirmationHero = (trip, settings) =>
+  [settings?.confirmationHeroImage, trip?.imagePath].find(isImg) || null;
 function ConfirmationDoc({ trip, settings, message }) {
   const cur = trip.currency;
   return h(Document, {}, h(Page, { size: "A4", style: simpleStyles.page },
     brandHead(settings),
     h(Text, { style: { ...simpleStyles.banner, backgroundColor: greenOf(settings) } }, "BOOKING CONFIRMED"),
-    isImg(trip.imagePath) ? h(Image, { src: pdfImg(trip.imagePath), style: { width: "100%", height: 150, objectFit: "cover", borderRadius: 6, marginBottom: 14 } }) : null,
+    // The agency's confirmation hero image (Voucher Desk), else the trip's cover.
+    confirmationHero(trip, settings) ? h(Image, { src: pdfImg(confirmationHero(trip, settings)), style: { width: "100%", height: 150, objectFit: "cover", borderRadius: 6, marginBottom: 14 } }) : null,
     h(Text, { style: { lineHeight: 1.5, marginBottom: 10 } }, txt(message)),
     h(View, { style: simpleStyles.section },
       infoRow("Trip ID", trip.tripId), infoRow("Start Date", fmtDate(trip.startDate)),
