@@ -47,10 +47,12 @@ export async function mailerForAdminId(adminId) {
   return { settings, mailer: transportFromSettings(settings) || globalMailer() };
 }
 
-export async function sendMail(mailer, { to, subject, html, text, attachments }) {
+export async function sendMail(mailer, { to, bcc, replyTo, subject, html, text, attachments }) {
   return mailer.transporter.sendMail({
     from: `"${mailer.fromName}" <${mailer.fromEmail}>`,
     to,
+    ...(bcc ? { bcc } : {}),
+    ...(replyTo ? { replyTo } : {}),
     subject,
     ...(html ? { html } : {}),
     ...(text ? { text } : {}),
