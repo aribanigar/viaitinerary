@@ -16,6 +16,7 @@ import { convertNumberWords, normalizeTripWords, titleCase } from './text.js'
 import { levRatio, normTokens } from './fuzzy.js'
 import { placeKey, samePlace } from './places.js'
 import { GAZETTEER, GATEWAYS } from './geo.js'
+import { readWishes } from './meaning.js'
 
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
 const ONE = '(?:\\d{1,2}|a|an|one)'
@@ -249,7 +250,7 @@ export function readNarrative(raw, catalog = {}, { today } = {}) {
   if (rooms) {
     bits.push(`${rooms.rooms} room${rooms.rooms === 1 ? '' : 's'}`)
     if (rooms.extraBeds) bits.push(`${rooms.extraBeds} extra beds`)
-    notes.push(rooms.extraBeds ? `${rooms.rooms} room for all ${party.adults}, with ${rooms.extraBeds} extra bed${rooms.extraBeds === 1 ? '' : 's'} — as the client asked` : `${rooms.rooms} room${rooms.rooms === 1 ? '' : 's'} — as the client asked`)
+    notes.push(rooms.extraBeds ? `${rooms.rooms} room for all ${party.adults}, with ${rooms.extraBeds} extra bed${rooms.extraBeds === 1 ? '' : 's'}, as the client asked` : `${rooms.rooms} room${rooms.rooms === 1 ? '' : 's'}, as the client asked`)
   }
   if (cls.stars) {
     bits.push(`${cls.stars} star`)
@@ -257,11 +258,12 @@ export function readNarrative(raw, catalog = {}, { today } = {}) {
   } else if (cls.tier) bits.push(`${cls.tier} hotels`)
   for (const a of acts) {
     if (a.day) bits.push(`add ${a.name.toLowerCase()} on day ${a.day}`)
-    else notes.push(`Client mentioned ${a.name} — say which day to add it`)
+    else notes.push(`Client mentioned ${a.name}: say which day to add it`)
   }
-  if (/\b(?:good|nice|great|beautiful|river|riverside|lake|mountain|valley)\s*(?:side\s*)?views?\b|\b(?:river|lake) ?side\b/.test(t)) notes.push('Client would like rooms with a good view — check the hotels picked')
   if (ends.arrivalTime) notes.push(`Arrives ${ends.arrivalTime}`)
   if (ends.departFrom) notes.push(`Leaves from ${ends.departFrom}`)
 
-  return { text: bits.filter(Boolean).join(', '), client, notes, classRange: cls.range || null, ...ends }
+  // What the stay should be like ("good views", "riverside", "my parents") is
+  // read from the client's own words by the meaning tree (meaning.js).
+  return { text: bits.filter(Boolean).join(', '), client, notes, classRange: cls.range || null, wishes: readWishes(t), ...ends }
 }

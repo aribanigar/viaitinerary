@@ -1,5 +1,5 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Mic, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
@@ -29,7 +29,7 @@ import { handleAssist } from "./assistActions";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
 import { draftSpeech } from "../../utils/ching/tripDraft";
 import { vocabularyFrom } from "../../utils/ching/vocabulary";
-import { chingSaid, setChingListening, setChingStage, setChingUnderstanding } from "../../utils/ching/chingBus";
+import { chingSaid, setChingListening, setChingStage, setChingUnderstanding, initChingConversation, setChingThread, threadOfLocation, setChingPending, getChingPending } from "../../utils/ching/chingBus";
 import {
   speak,
   stopSpeaking,
@@ -177,9 +177,18 @@ const CLIENT_EMAIL_LABEL = {
 const EMPTY_LIVE = { phase: "listening", mode: null, changes: [], warnings: [], unrecognized: [] };
 
 export default function ChingWidget() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const editor = useChingEditor();
+  // The conversation is kept per agent (utils/ching/chingBus.js) and filed
+  // under the trip on screen.
+  useEffect(() => {
+    initChingConversation(token || null, user?.id ?? null);
+  }, [token, user?.id]);
+  useEffect(() => {
+    setChingThread(threadOfLocation(), safe(() => editor?.snapshot?.().tripInfo?.tripTitle, "") || "");
+  }, [location.pathname, location.search, editor]);
   const [open, setOpen] = useState(false);
   const [handsFree, setHandsFree] = useState(readHandsFree);
   // The language Ching listens in (English / Hindi / Urdu) — remembered.
@@ -285,6 +294,17 @@ export default function ChingWidget() {
   // The travel-agent brief (utils/ching/brief.js): a trip request Ching is
   // still asking about — { state, ed } — before it plans the whole trip.
   const briefRef = useRef(null);
+  const resumeRef = useRef(false); // "continue": take the pending request to whichever blank trip opens
+  // Set / clear it through here: the pending request is saved with the
+  // conversation, so a reload mid-question picks up at the same question.
+  const setBrief = useCallback((value, question = "") => {
+    briefRef.current = value;
+    if (!value) setChingPending(null);
+    else {
+      const st = value.state || {};
+      setChingPending({ text: st.text || "", ask: st.ask || [], month: st.month ?? null, nameAsked: !!st.nameAsked, nameSkipped: !!st.nameSkipped, question });
+    }
+  }, []);
   const guideCtx = useCallback(
     (ed) => {
       const now = new Date();
@@ -456,6 +476,26 @@ export default function ChingWidget() {
     dropPreview(S);
     endSession();
   }, [endSession, dropPreview]);
+
+  // A trip request Ching was still asking about when the page was reloaded (or
+  // left on another device): once a blank trip is on screen again, the same
+  // question is back, with everything already answered kept.
+  useEffect(() => {
+    if (!editor || briefRef.current || guideRef.current || sessionRef.current) return;
+    const p = getChingPending();
+    if (!p?.text || Date.now() - (p.at || 0) > 24 * 3600 * 1000) return;
+    if (!safe(() => editor.isBlank(), false)) return;
+    if (p.thread && p.thread !== threadOfLocation() && !resumeRef.current) return;
+    resumeRef.current = false;
+    briefRef.current = { state: { text: p.text, ask: p.ask || [], month: p.month ?? null, nameAsked: !!p.nameAsked, nameSkipped: !!p.nameSkipped, tries: 0 }, ed: editor };
+    setChingPending({ ...p, thread: threadOfLocation() });
+    if (p.question) {
+      setOpen(true);
+      setCompact(false);
+      setOutcome(null);
+      setNotice({ kind: "reply", text: `Picking up where we left off. ${p.question}` });
+    }
+  }, [editor]);
 
   // Refs to the two mutually recursive steps, so either can call the other.
   const attachRef = useRef(null);
@@ -686,27 +726,46 @@ export default function ChingWidget() {
       const briefed = briefRef.current;
       if (briefed && core && !guideRef.current) {
         const bEd = S.editor || getChingEditor();
-        if (!bEd || briefed.ed !== bEd || !safe(() => bEd.isBlank(), false)) briefRef.current = null;
+        if (!bEd || briefed.ed !== bEd || !safe(() => bEd.isBlank(), false)) setBrief(null);
         else {
           const r = safe(() => core.briefStep(briefed.state, text, briefCtx(bEd)), null);
           if (r?.cancelled) {
-            briefRef.current = null;
+            setBrief(null);
             cancelLive();
             endSession();
             respond(r.say);
             return;
           }
           if (r?.ready) {
-            briefRef.current = null;
+            setBrief(null);
             planText = r.text;
             S.editor = bEd;
             S.baseBlank = true;
           } else if (r?.handled) {
             cancelLive();
             endSession();
+            setBrief(briefed, r.say); // what was just answered is kept too
             respond(r.say);
             return;
           } else if (r) briefMiss = r.say; // maybe something else ("what's pending")
+        }
+      }
+
+      // "continue" / "where were we": back to the request that was left half-asked.
+      if (!planText && !briefRef.current && !guideRef.current && /^(?:let'?s |please )?(?:continue|carry on|resume|go on|where were we|pick up where we left off)(?: (?:the|that|our) (?:trip|plan|request))?$/.test(String(text || "").toLowerCase().trim())) {
+        const p = getChingPending();
+        if (p?.text) {
+          cancelLive();
+          endSession();
+          const here = S.editor || getChingEditor();
+          if (here && safe(() => here.isBlank(), false)) {
+            briefRef.current = { state: { text: p.text, ask: p.ask || [], month: p.month ?? null, nameAsked: !!p.nameAsked, nameSkipped: !!p.nameSkipped, tries: 0 }, ed: here };
+            respond(p.question || safe(() => core.briefQuestion(briefRef.current.state, briefCtx(here)), "") || "Go on.");
+          } else {
+            resumeRef.current = true;
+            navigate(newDraftPath());
+          }
+          return;
         }
       }
 
@@ -789,7 +848,7 @@ export default function ChingWidget() {
         if (core.wantsStepByStep(asked)) {
           cancelLive();
           endSession();
-          briefRef.current = null;
+          setBrief(null);
           const g = core.startGuide("", guideCtx(ed0));
           guideRef.current = { state: g.state, ed: ed0 };
           safe(() => ed0.guide.hold(true));
@@ -804,12 +863,12 @@ export default function ChingWidget() {
         if (!b.ready) {
           cancelLive();
           endSession();
-          briefRef.current = { state: b.state, ed: ed0 };
+          setBrief({ state: b.state, ed: ed0 }, b.say);
           setTripDraft(null);
           respond(b.say);
           return;
         }
-        briefRef.current = null;
+        setBrief(null);
         planText = b.text;
       }
       // "add hotel" / "add transport": the Logistics forms, filled by asking.
@@ -845,6 +904,7 @@ export default function ChingWidget() {
         setUndoTick((t) => t + 1);
         safe(() => ed.setTab("Trip Info")); // step 1, while the agent checks the draft
         setTripDraft({ draft: res.draft, commands });
+        setChingThread(threadOfLocation(), safe(() => ed.snapshot().tripInfo?.tripTitle, "") || "");
         setOutcome(null);
         setNotice(null);
         setCompact(false);
@@ -958,7 +1018,7 @@ export default function ChingWidget() {
         say(reply + tip);
       }, REPLY_BEAT_MS);
     },
-    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine, guideCtx, runGuideOps, endGuide, dropPreview, briefCtx],
+    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine, guideCtx, runGuideOps, endGuide, dropPreview, briefCtx, setBrief, navigate],
   );
 
   // ── Confirm & Build ─────────────────────────────────────────────────────
@@ -1181,6 +1241,8 @@ export default function ChingWidget() {
       const clean = stripFillers(said) || said;
       noteLanguage(clean);
       const text = toEnglishCommand(clean, catalogForLanguage()) || clean;
+      // File the line under the trip on screen (named once the trip has a title).
+      setChingThread(threadOfLocation(), safe(() => getChingEditor()?.snapshot?.().tripInfo?.tripTitle, "") || "");
       chingSaid("you", clean);
       const S = sessionRef.current || startSession();
       S.ended = true;

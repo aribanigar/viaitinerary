@@ -196,7 +196,7 @@ test('"create a trip" with nothing said: everything is asked, an aside is not an
   const aside = briefStep(st, "what's pending", ctx)
   assert.equal(aside.handled, false)
   const kids = briefStep(st, '2 adults and 2 kids', ctx)
-  assert.match(kids.say, /2 adults and 2 children — got it\. From which date\?/)
+  assert.match(kids.say, /2 adults and 2 children\. Got it\. From which date\?/)
   const done = briefStep(st, '1 december', ctx)
   assert.equal(done.ready, true)
   const s = planLive(blank(), done.text, { catalog, settings, today }).snapshot
@@ -248,7 +248,7 @@ test('a client\'s voice note: the story is read for its facts and planned as sai
   assert.equal(s.transportation[s.transportation.length - 1].route, 'Sonamarg → Srinagar Railway Station')
   // The gondola: on the day spent wholly in Gulmarg (the 28th), not the day they drive in.
   assert.deepEqual(s.tripActivities.map((a) => [a.name, a.dayNumber]), [['Gondola Phase 1', 3]])
-  for (const line of ['1 room for all 4, with 2 extra beds — as the client asked', 'Client asked for 3 or 4 star: quoted 3 star', 'Leaves from Srinagar Railway Station']) {
+  for (const line of ['1 room for all 4, with 2 extra beds, as the client asked', 'Client asked for 3 or 4 star: quoted 3 star', 'Leaves from Srinagar Railway Station']) {
     assert.ok(plan.changes.includes(line), line)
   }
 })

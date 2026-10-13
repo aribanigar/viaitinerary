@@ -22,7 +22,9 @@ import {
   updateBooking,
   downloadVouchersPdf,
 } from "../../api/operations";
-import { rememberChing, forgetChing } from "../../api/ching";
+import { rememberChing, forgetChing, saveHotelTags } from "../../api/ching";
+import { matchHotel as meets, tagLabel } from "../../utils/ching/meaning";
+import { clearChingConversation as forgetConversation } from "../../utils/ching/chingBus";
 import { fetchAccountingTripLedger, createAccountingSettlement } from "../../api/accounting";
 import { updateTrip, sendReminder } from "../../api/trips";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
@@ -546,6 +548,48 @@ async function doRemember(ask, ctx) {
   ctx.respond(`I'll remember that: “${ask.value}”.`);
 }
 
+// ── hotel tags: what a hotel is like, for Ching's meaning tree (utils/ching/meaning.js)
+async function doTag(ask, ctx) {
+  const core = await ctx.core();
+  const hotel = core?.matchHotelName?.(ask.hotel, "", ctx.init) || null;
+  if (!hotel) {
+    ctx.respond(`I couldn't find “${ask.hotel}” in your hotels. Check the name in Accommodation?`);
+    return;
+  }
+  const r = await saveHotelTags(ctx.token, { hotel_id: hotel.id, add: ask.add, remove: ask.remove });
+  await loadChingMemory(ctx.token, { force: true });
+  const now = list(r?.tags).map((t) => tagLabel(t).toLowerCase());
+  const did = ask.remove.length ? `Removed ${and(ask.remove.map((t) => tagLabel(t).toLowerCase()))} from ${hotel.name}.` : `Tagged ${hotel.name} as ${and(ask.add.map((t) => tagLabel(t).toLowerCase()))}.`;
+  ctx.respond(`${did}${now.length ? ` It's now: ${and(now)}.` : " It has no tags now."}`);
+}
+
+async function doTagged(ask, ctx) {
+  const memory = (await loadChingMemory(ctx.token)) || getChingMemory() || {};
+  const hotels = list(ctx.init?.hotels).filter((h) => h.is_available !== false && (!ask.city || samePlace(String(h.city || "").split(",")[0], ask.city)));
+  const what = and(ask.said);
+  const where = ask.city ? ` in ${ask.city.replace(/\b[a-z]/g, (c) => c.toUpperCase())}` : "";
+  if (!hotels.length) {
+    ctx.respond(`I don't have any hotels${where} in your catalog.`);
+    return;
+  }
+  const hits = hotels
+    .map((h) => ({ h, m: meets(h, ask.wishes, memory.hotelTags || null) }))
+    .filter((x) => x.m.score >= 1)
+    .sort((a, b) => b.m.score - a.m.score)
+    .slice(0, 6);
+  if (!hits.length) {
+    ctx.respond(`No hotel${where} is tagged ${what} yet. Open one in Accommodation and tick its tags, or tell me: “tag Heevan Resort as riverside”.`);
+    return;
+  }
+  const names = hits.map((x) => `${x.h.name}${ask.city ? "" : ` (${String(x.h.city || "").split(",")[0]})`}`);
+  ctx.respond(`${plural(hits.length, "hotel")}${where} for ${what}: ${and(names)}.`);
+}
+
+async function doClearConversation(ctx) {
+  await forgetConversation(ctx.token);
+  ctx.respond("Done, our conversation is cleared. What I've learned about your hotels and clients stays.");
+}
+
 async function doRecall(ctx) {
   const m = (await loadChingMemory(ctx.token, { force: true })) || getChingMemory() || {};
   const hotels = list(ctx.init?.hotels);
@@ -600,6 +644,9 @@ export async function handleAssist(ask, ctx) {
     driver: () => doDriver(ask, ctx),
     ops: () => doOps(ask, ctx),
     "find-trips": () => doFind(ask, ctx),
+    tag: () => doTag(ask, ctx),
+    tagged: () => doTagged(ask, ctx),
+    "clear-conversation": () => doClearConversation(ctx),
     remember: () => doRemember(ask, ctx),
     recall: () => doRecall(ctx),
     forget: () => doForget(ask, ctx),

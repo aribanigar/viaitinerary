@@ -21,6 +21,7 @@ import { normTokens } from './fuzzy.js'
 import { placeKey, samePlace } from './places.js'
 import { convertNumberWords, normalizeTripWords, titleCase } from './text.js'
 import { readNarrative } from './narrative.js'
+import { readWishes } from './meaning.js'
 
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
 const MONTH_SHORT = { jan: 0, feb: 1, mar: 2, apr: 3, jun: 5, jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11 }
@@ -119,6 +120,7 @@ export function parseTripRequest(text, catalog, { today, settings } = {}) {
     cmd.intent = 'create_trip'
     cmd.story = story
     cmd.canonical = story.text
+    cmd.wishes = story.wishes
     // The name is only ever the one the client gave ("this is Rahul").
     const hadName = !!cmd.clientName
     cmd.clientName = story.client
@@ -134,7 +136,9 @@ export function parseTripRequest(text, catalog, { today, settings } = {}) {
   // A client is a person: never a place, a region or a word describing the trip.
   if (cmd.clientName) {
     const nw = normTokens(cmd.clientName).filter((w) => !/^(?:mr|mrs|ms|miss|dr)$/.test(w))
-    if (nw.length && nw.every((w) => regions.has(w) || towns.includes(w) || REQUEST_WORDS.has(w))) {
+    // ("a relaxing Kashmir trip": what the trip should be like is not who it is for)
+    const wishWord = (w) => readWishes(w).nodes.length > 0
+    if (nw.length && nw.every((w) => regions.has(w) || towns.includes(w) || REQUEST_WORDS.has(w) || wishWord(w))) {
       cmd.clientName = ''
       missing.add('clientName')
       // …and the real one may be said later in the sentence ("client name is Rahul Sharma").
@@ -313,7 +317,7 @@ function reply(st, cmd, need, lead = '') {
   st.month = Number.isInteger(cmd.month) ? cmd.month : st.month
   st.places = [...regionWords(st.catalog || {}), ...hotelCities(st.catalog || {}).flatMap((c) => normTokens(c))]
   const got = heardLine(cmd, need)
-  const opener = lead || (got ? `${got} — got it.` : "Let's plan it.")
+  const opener = lead || (got ? `${got}. Got it.` : "Let's plan it.")
   return `${opener} ${question(need, cmd, askName)}`
 }
 

@@ -39,7 +39,7 @@ export async function POST(request) {
   if (kind === "name") key = `me:${user.id}`;
   if (!key || !value) return NextResponse.json({ message: "Nothing to remember." }, { status: 422 });
 
-  const count = await prisma.chingMemory.count({ where: { userId: adminId } });
+  const count = await prisma.chingMemory.count({ where: { userId: adminId, kind: { in: [...MEMORY_KINDS] } } });
   if (count >= 500) return NextResponse.json({ message: "Ching's memory is full — ask it to forget something first." }, { status: 422 });
 
   const row = await prisma.chingMemory.upsert({
@@ -57,7 +57,9 @@ export async function DELETE(request) {
   if (!user) return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
   const adminId = await adminIdOf(user);
   const b = await request.json().catch(() => ({}));
-  const where = { userId: adminId };
+  // Only what the agency TOLD Ching: hotel tags and saved conversations share
+  // this table and must never go with "forget everything".
+  const where = { userId: adminId, kind: { in: [...MEMORY_KINDS] } };
   if (b.kind && MEMORY_KINDS.has(String(b.kind))) where.kind = String(b.kind);
   if (b.key) where.key = clip(b.key, 120).toLowerCase();
   if (b.match) {

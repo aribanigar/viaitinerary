@@ -195,9 +195,14 @@ function planFill(base, rawText, { catalog, settings, today }) {
   parts.accommodations.forEach((a) => {
     const n = Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 86400000);
     const pick = autoHotel.get(a.name);
-    const how = !pick ? "" : pick.favourite ? " (your usual)" : pick.overBudget ? " (nothing under budget — cheapest)" : " (picked for you)";
+    const why = pick?.met?.length ? `: ${pick.met.join(", ").toLowerCase()}` : "";
+    const how = !pick ? "" : pick.favourite ? " (your usual)" : pick.overBudget ? " (nothing under budget — cheapest)" : ` (picked for you${why})`;
     changes.push(`${a.city}: ${a.name} · ${plural(n, "night")}${how}`);
   });
+  // A wish no hotel there is tagged for: say so, once per wish.
+  const unmet = new Map();
+  parts.autoPicked.filter((p) => p.hotel).forEach((p) => (p.unmet || []).forEach((w) => unmet.set(w, [...(unmet.get(w) || []), p.city])));
+  const wishNotes = [...unmet.entries()].map(([w, cities]) => `Asked for “${w.toLowerCase()}”: no hotel in ${[...new Set(cities)].join(", ")} is tagged for it. Tick tags on your hotels (Accommodation)`);
   if (parts.itinerary.length) {
     const route = parts.itinerary.map((d) => d.location).filter((c, i, a) => c && c !== a[i - 1]);
     changes.push(`Day-wise plan: ${plural(parts.itinerary.length, "day")}${route.length > 1 ? ` · ${route.join(" → ")}` : ""}`);
@@ -235,6 +240,7 @@ function planFill(base, rawText, { catalog, settings, today }) {
     const m = /^Couldn't find "(.+?)" in your hotels/.exec(w);
     return !(m && stayCities.includes(placeKey(m[1])));
   });
+  warnings.push(...wishNotes);
   (parts.missingHotels || []).forEach((city) =>
     warnings.push(`No hotel in ${city} in your catalog — add one in Logistics (or to Accommodation)`),
   );

@@ -31,6 +31,7 @@ import {
 } from "../../api/hotels";
 import { useAuth } from "../../context/AuthContext";
 import HotelLocationMap from "./HotelLocationMap";
+import HotelTags from "./HotelTags";
 import DateInput from "../common/DateInput";
 
 const StarRow = ({ count }) => {
@@ -254,6 +255,8 @@ const HotelDetailsPanel = ({ hotel, onClose }) => {
         />
         <Fact icon={Send} label="Requests Sent" value={live.request_count || 0} />
       </div>
+
+      <HotelTags hotel={live} token={token} />
 
       <div className="mt-6">
         <h3 className="text-[10px] font-black uppercase tracking-widest text-[#8a93a2] mb-3">
