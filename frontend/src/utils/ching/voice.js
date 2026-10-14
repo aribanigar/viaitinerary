@@ -185,6 +185,15 @@ function cloudReady() {
   }
   return cloudCheck;
 }
+/** Settings changed the voice or key: ask the server again, drop cached clips. */
+export function resetChingVoice() {
+  cloud = "unknown";
+  cloudCheck = null;
+  cloudFailures = 0;
+  clips.forEach((url) => URL.revokeObjectURL(url));
+  clips.clear();
+}
+
 // Recent replies' audio, so "Done." / greetings don't cost credits twice.
 const clips = new Map();
 const CLIP_LIMIT = 40;

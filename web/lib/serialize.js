@@ -365,6 +365,8 @@ export function settingsToCamel(s) {
     smtpEncryption: s.smtpEncryption || "tls",
     hasSmtpPassword: !!s.smtpAppPassword,
     googleMapsApiKey: s.googleMapsApiKey || "",
+    chingVoiceId: s.chingVoiceId || "",
+    hasElevenlabsKey: !!s.elevenlabsApiKey, // the key itself never leaves the server
     razorpayKeyId: s.razorpayKeyId || "",
     hasRazorpaySecret: !!s.razorpayKeySecret, // the secret itself never leaves the server
     upiId: s.upiId || "",
@@ -421,6 +423,8 @@ export const SETTINGS_DEFAULTS = {
   smtpEncryption: "tls",
   hasSmtpPassword: false,
   googleMapsApiKey: "",
+  chingVoiceId: "",
+  hasElevenlabsKey: false,
   razorpayKeyId: "",
   hasRazorpaySecret: false,
   upiId: "",

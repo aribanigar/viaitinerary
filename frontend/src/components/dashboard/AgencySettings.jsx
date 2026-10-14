@@ -39,6 +39,8 @@ import { CURRENCY_OPTIONS } from "../../constants/currencies";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 import { prepareImage } from "../../utils/imageFile";
+import ChingVoiceSettings from "./settings/ChingVoiceSettings";
+import { resetChingVoice } from "../../utils/ching/voice";
 
 const AgencySettings = () => {
   const { token } = useAuth();
@@ -64,6 +66,9 @@ const AgencySettings = () => {
     greetingMessage:
       "Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.",
     googleMapsApiKey: "",
+    chingVoiceId: "",
+    elevenlabsApiKey: "",
+    hasElevenlabsKey: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -229,7 +234,15 @@ const AgencySettings = () => {
 
     try {
       setSaving(true);
-      await updateSettings(token, formData);
+      const saved = await updateSettings(token, formData);
+      // The write-only key field empties once saved; the voice shows as its ID.
+      setFormData((prev) => ({
+        ...prev,
+        elevenlabsApiKey: "",
+        chingVoiceId: saved?.chingVoiceId ?? prev.chingVoiceId,
+        hasElevenlabsKey: saved?.hasElevenlabsKey ?? prev.hasElevenlabsKey,
+      }));
+      resetChingVoice();
       toast.success("Settings saved successfully!");
     } catch (err) {
       console.error("Save failed:", err);
@@ -608,6 +621,9 @@ const AgencySettings = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Ching voice (ElevenLabs) */}
+              <ChingVoiceSettings formData={formData} setFormData={setFormData} handleInputChange={handleInputChange} token={token} />
 
               {/* Itinerary Generator Section */}
               <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col">
