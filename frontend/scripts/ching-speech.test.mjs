@@ -1,7 +1,7 @@
 // Filler words and end-of-turn timing (utils/ching/speechClean.js):
 //   node frontend/scripts/ching-speech.test.mjs
 import assert from 'node:assert/strict'
-import { stripFillers, endOfTurnDelay, TURN_MS } from '../src/utils/ching/speechClean.js'
+import { stripFillers, endOfTurnDelay, TURN_MS, TURN_FINAL_MS } from '../src/utils/ching/speechClean.js'
 
 let pass = 0
 let fail = 0
@@ -43,6 +43,20 @@ test('an unfinished sentence waits longer than a finished one', () => {
   assert.equal(endOfTurnDelay('open the ledger'), TURN_MS.short)
   assert.equal(endOfTurnDelay(''), TURN_MS.silentStart)
   assert.ok(TURN_MS.thinking > TURN_MS.normal && TURN_MS.normal > TURN_MS.short)
+})
+
+test('a finished sentence is taken quickly; nouns that end a sentence do not make Ching wait', () => {
+  // These used to count as "still thinking" (7 s): they are whole sentences.
+  for (const t of ['there will be 3 adults and 4 kids travelling on 17th of October for 4 nights 5 days', 'kashmir trip for 4 adults', 'change the gulmarg hotel', 'make it 5 nights']) {
+    assert.notEqual(endOfTurnDelay(t), TURN_MS.thinking, t)
+  }
+  // Once the recognizer has closed the phrase, the wait is a beat.
+  assert.equal(endOfTurnDelay('open the ledger', { final: true }), TURN_FINAL_MS.short)
+  assert.equal(endOfTurnDelay('3 nights in Gulmarg at Heevan Resort', { final: true }), TURN_FINAL_MS.normal)
+  assert.equal(endOfTurnDelay('make gulmarg 2 nights', { final: true, complete: true }), TURN_FINAL_MS.complete)
+  // …but never when the sentence is plainly unfinished, even if "complete".
+  assert.equal(endOfTurnDelay('make gulmarg 2 nights and', { final: true, complete: true }), TURN_FINAL_MS.thinking)
+  assert.ok(TURN_FINAL_MS.complete <= 400 && TURN_FINAL_MS.normal <= 1000 && TURN_MS.thinking <= 4000)
 })
 
 console.log(`\n${pass} passed, ${fail} failed`)

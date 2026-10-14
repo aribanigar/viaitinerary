@@ -1,5 +1,5 @@
 import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Mic, X } from "lucide-react";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
@@ -29,7 +29,7 @@ import { handleAssist } from "./assistActions";
 import { loadChingMemory, getChingMemory } from "../../utils/ching/memoryStore";
 import { draftSpeech } from "../../utils/ching/tripDraft";
 import { vocabularyFrom } from "../../utils/ching/vocabulary";
-import { chingSaid, setChingListening, setChingStage, setChingUnderstanding } from "../../utils/ching/chingBus";
+import { chingSaid, setChingListening, setChingStage, setChingUnderstanding, initChingConversation, setChingThread, threadOfLocation, setChingPending, getChingPending } from "../../utils/ching/chingBus";
 import {
   speak,
   stopSpeaking,
@@ -66,6 +66,10 @@ const loadCore = () =>
 
 const HANDSFREE_KEY = "ching_handsfree";
 const LIVE_THROTTLE_MS = 150;
+// One beat for the builder to re-price before Ching reads the total out.
+const REPLY_BEAT_MS = 150;
+// How long each tab is shown while a confirmed trip is being built.
+const BUILD_STEP_MS = 450;
 const DRAFT_TIMEOUT_MS = 15000;
 
 const readHandsFree = () => {
@@ -173,9 +177,18 @@ const CLIENT_EMAIL_LABEL = {
 const EMPTY_LIVE = { phase: "listening", mode: null, changes: [], warnings: [], unrecognized: [] };
 
 export default function ChingWidget() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const editor = useChingEditor();
+  // The conversation is kept per agent (utils/ching/chingBus.js) and filed
+  // under the trip on screen.
+  useEffect(() => {
+    initChingConversation(token || null, user?.id ?? null);
+  }, [token, user?.id]);
+  useEffect(() => {
+    setChingThread(threadOfLocation(), safe(() => editor?.snapshot?.().tripInfo?.tripTitle, "") || "");
+  }, [location.pathname, location.search, editor]);
   const [open, setOpen] = useState(false);
   const [handsFree, setHandsFree] = useState(readHandsFree);
   // The language Ching listens in (English / Hindi / Urdu) — remembered.
@@ -278,6 +291,20 @@ export default function ChingWidget() {
   // Trip Info → Itinerary → Logistics, asked one step at a time; nothing is
   // filled that the agent didn't say.
   const guideRef = useRef(null);
+  // The travel-agent brief (utils/ching/brief.js): a trip request Ching is
+  // still asking about — { state, ed } — before it plans the whole trip.
+  const briefRef = useRef(null);
+  const resumeRef = useRef(false); // "continue": take the pending request to whichever blank trip opens
+  // Set / clear it through here: the pending request is saved with the
+  // conversation, so a reload mid-question picks up at the same question.
+  const setBrief = useCallback((value, question = "") => {
+    briefRef.current = value;
+    if (!value) setChingPending(null);
+    else {
+      const st = value.state || {};
+      setChingPending({ text: st.text || "", ask: st.ask || [], month: st.month ?? null, nameAsked: !!st.nameAsked, nameSkipped: !!st.nameSkipped, question });
+    }
+  }, []);
   const guideCtx = useCallback(
     (ed) => {
       const now = new Date();
@@ -294,6 +321,11 @@ export default function ChingWidget() {
   const endGuide = useCallback((ed) => {
     guideRef.current = null;
     safe(() => ed?.guide?.hold(false));
+  }, []);
+  const briefCtx = useCallback((ed) => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return { catalog: safe(() => ed.catalog(), null) || initRef.current || {}, today, settings: safe(() => ed.settings?.(), null) || initRef.current?.settings || {} };
   }, []);
   const askConfirm = useCallback(
     (question, run) => {
@@ -353,6 +385,8 @@ export default function ChingWidget() {
     setOpen(true);
     setCompact(false);
     ensureCore().catch(() => {});
+    // Have the Trip Builder's code ready, so "opening a new trip" is instant.
+    import("../dashboard/TripBuilder").catch(() => {});
   }, [ensureCore]);
 
   const runCommands = useCallback(async (commands, ed) => {
@@ -443,6 +477,26 @@ export default function ChingWidget() {
     endSession();
   }, [endSession, dropPreview]);
 
+  // A trip request Ching was still asking about when the page was reloaded (or
+  // left on another device): once a blank trip is on screen again, the same
+  // question is back, with everything already answered kept.
+  useEffect(() => {
+    if (!editor || briefRef.current || guideRef.current || sessionRef.current) return;
+    const p = getChingPending();
+    if (!p?.text || Date.now() - (p.at || 0) > 24 * 3600 * 1000) return;
+    if (!safe(() => editor.isBlank(), false)) return;
+    if (p.thread && p.thread !== threadOfLocation() && !resumeRef.current) return;
+    resumeRef.current = false;
+    briefRef.current = { state: { text: p.text, ask: p.ask || [], month: p.month ?? null, nameAsked: !!p.nameAsked, nameSkipped: !!p.nameSkipped, tries: 0 }, ed: editor };
+    setChingPending({ ...p, thread: threadOfLocation() });
+    if (p.question) {
+      setOpen(true);
+      setCompact(false);
+      setOutcome(null);
+      setNotice({ kind: "reply", text: `Picking up where we left off. ${p.question}` });
+    }
+  }, [editor]);
+
   // Refs to the two mutually recursive steps, so either can call the other.
   const attachRef = useRef(null);
   const finishRef = useRef(null);
@@ -450,6 +504,8 @@ export default function ChingWidget() {
   const liveUpdate = useCallback(
     (S, text) => {
       const res = safe(() => S.editor.live.update(text), null);
+      // For the mic: an edit Ching fully understood can be taken at once.
+      S.liveOk = !!res && list(res.changes).length > 0 && !list(res.unrecognized).length;
       if (res) showLive(res);
     },
     [showLive],
@@ -503,7 +559,7 @@ export default function ChingWidget() {
       };
       S.stopWatch = stop;
       unsub = subscribeChingEditor(tryAttach);
-      iv = setInterval(tryAttach, 250);
+      iv = setInterval(tryAttach, 80);
     },
     [endSession, navigate, showLive],
   );
@@ -557,6 +613,22 @@ export default function ChingWidget() {
     [guideCtx],
   );
 
+  // A new trip being asked for: show what Ching has caught as it is said
+  // ("Destination: Kashmir", "4 nights / 5 days", "Guests: 3 adults, 4 kids").
+  const heardSoFar = useCallback(
+    (S, text, ed) => {
+      const core = coreRef.current;
+      if (!core?.briefHeard || guideRef.current) return;
+      if (ed && !S.baseBlank) return;
+      const b = briefRef.current;
+      const st = b && (!ed || b.ed === ed) ? b.state : null;
+      if (!st && !(core.isCreateRequest(text) || core.looksLikeTripRequest(text, initRef.current))) return;
+      const r = safe(() => core.briefHeard(st, text, ed ? briefCtx(ed) : { catalog: initRef.current || {}, settings: initRef.current?.settings || {} }), null);
+      if (r?.lines?.length) showLive({ mode: "fill", changes: r.lines });
+    },
+    [briefCtx, showLive],
+  );
+
   // A new running transcript (throttled while speaking).
   const pump = useCallback(
     (text) => {
@@ -565,21 +637,24 @@ export default function ChingWidget() {
       noteLanguage(text);
       text = toEnglishCommand(text, catalogForLanguage()) || text;
       S.text = text;
+      S.liveOk = false;
       if (S.navigating) return;
       if (!S.editor) {
         const ed = getChingEditor();
         if (ed) attach(S, ed);
         // Off the builder nothing opens until the sentence is finished and
         // asked for a trip — no stray drafts from half-heard words.
+        else heardSoFar(S, text, null);
         return;
       }
       if (streamless(S, text)) {
         livePreview(S, text);
+        heardSoFar(S, text, S.editor);
         return;
       }
       liveUpdate(S, text);
     },
-    [attach, liveUpdate, livePreview, catalogForLanguage, noteLanguage, streamless],
+    [attach, liveUpdate, livePreview, catalogForLanguage, noteLanguage, streamless, heardSoFar],
   );
 
   // The utterance is over: commit (or decide there was nothing to do).
@@ -645,9 +720,58 @@ export default function ChingWidget() {
         }
       }
 
+      // The brief is waiting on an answer ("4 people, from 10 November").
+      let planText = null;
+      let briefMiss = null;
+      const briefed = briefRef.current;
+      if (briefed && core && !guideRef.current) {
+        const bEd = S.editor || getChingEditor();
+        if (!bEd || briefed.ed !== bEd || !safe(() => bEd.isBlank(), false)) setBrief(null);
+        else {
+          const r = safe(() => core.briefStep(briefed.state, text, briefCtx(bEd)), null);
+          if (r?.cancelled) {
+            setBrief(null);
+            cancelLive();
+            endSession();
+            respond(r.say);
+            return;
+          }
+          if (r?.ready) {
+            setBrief(null);
+            planText = r.text;
+            S.editor = bEd;
+            S.baseBlank = true;
+          } else if (r?.handled) {
+            cancelLive();
+            endSession();
+            setBrief(briefed, r.say); // what was just answered is kept too
+            respond(r.say);
+            return;
+          } else if (r) briefMiss = r.say; // maybe something else ("what's pending")
+        }
+      }
+
+      // "continue" / "where were we": back to the request that was left half-asked.
+      if (!planText && !briefRef.current && !guideRef.current && /^(?:let'?s |please )?(?:continue|carry on|resume|go on|where were we|pick up where we left off)(?: (?:the|that|our) (?:trip|plan|request))?$/.test(String(text || "").toLowerCase().trim())) {
+        const p = getChingPending();
+        if (p?.text) {
+          cancelLive();
+          endSession();
+          const here = S.editor || getChingEditor();
+          if (here && safe(() => here.isBlank(), false)) {
+            briefRef.current = { state: { text: p.text, ask: p.ask || [], month: p.month ?? null, nameAsked: !!p.nameAsked, nameSkipped: !!p.nameSkipped, tries: 0 }, ed: here };
+            respond(p.question || safe(() => core.briefQuestion(briefRef.current.state, briefCtx(here)), "") || "Go on.");
+          } else {
+            resumeRef.current = true;
+            navigate(newDraftPath());
+          }
+          return;
+        }
+      }
+
       // "correct it" / "correct the title to …" on an open trip (no guide running).
       const fixEd = S.editor || getChingEditor();
-      if (!guideRef.current && core?.isCorrection && fixEd && safe(() => core.isCorrection(text), false)) {
+      if (!planText && !guideRef.current && core?.isCorrection && fixEd && safe(() => core.isCorrection(text), false)) {
         const c = safe(() => core.correctTripInfo(text, guideCtx(fixEd)), null);
         if (c) {
           cancelLive();
@@ -663,7 +787,7 @@ export default function ChingWidget() {
       }
 
       // Not a trip at all? ("open the ledger", "what's pending", "tell me a joke")
-      const ask = safe(() => understandAssistant(text, { inBuilder: Boolean(S.editor || getChingEditor()), chat: chatTopic.current }), null);
+      const ask = planText ? null : safe(() => understandAssistant(text, { inBuilder: Boolean(S.editor || getChingEditor()), chat: chatTopic.current }), null);
       // Small talk remembers what Ching just asked ("How about you?") for one turn.
       chatTopic.current = ask?.type === "smalltalk" ? ask.topic || null : null;
       // "Shall we plan something?" — "yes": the guided trip, from its first question.
@@ -674,6 +798,13 @@ export default function ChingWidget() {
         if (S.editor && safe(() => S.editor.live.active(), false)) safe(() => S.editor.live.cancel());
         endSession();
         await assistRef.current?.(ask);
+        return;
+      }
+      // Not an answer and nothing else either: ask the brief's question again.
+      if (briefMiss && !(core && (core.isCreateRequest(text) || core.looksLikeTripRequest(text, initRef.current)))) {
+        cancelLive();
+        endSession();
+        respond(briefMiss);
         return;
       }
 
@@ -704,27 +835,45 @@ export default function ChingWidget() {
 
       // A new trip is built WITH the agent, step by step (utils/ching/guide.js):
       // "create a trip …", or anything trip-like said on a blank trip.
-      const createReq = S.guide || (core && core.isCreateRequest(text));
+      const createReq = !planText && (S.guide || (core && (core.isCreateRequest(text) || core.isClientStory(text, initRef.current))));
       if (createReq && !S.baseBlank) {
         S.guide = true;
         openDraft(S); // a fresh trip — never over the one that's open
         return;
       }
-      if (core && S.baseBlank && (createReq || core.looksLikeTripRequest(text, initRef.current))) {
-        cancelLive();
-        endSession();
+      if (!planText && core && S.baseBlank && (createReq || core.looksLikeTripRequest(text, initRef.current))) {
         const ed0 = S.editor;
-        const g = core.startGuide(S.guideText != null ? S.guideText : text, guideCtx(ed0));
-        guideRef.current = { state: g.state, ed: ed0 };
-        safe(() => ed0.guide.hold(true));
-        setTripDraft(null);
-        await runGuideOps(ed0, g.ops);
-        respond(g.say);
-        return;
+        const asked = S.guideText != null ? S.guideText : text;
+        // "guide me step by step": the field-by-field interview (utils/ching/guide.js).
+        if (core.wantsStepByStep(asked)) {
+          cancelLive();
+          endSession();
+          setBrief(null);
+          const g = core.startGuide("", guideCtx(ed0));
+          guideRef.current = { state: g.state, ed: ed0 };
+          safe(() => ed0.guide.hold(true));
+          setTripDraft(null);
+          await runGuideOps(ed0, g.ops);
+          respond(g.say);
+          return;
+        }
+        // Like a travel agent: ask only what's needed to plan (where, nights,
+        // people, date), then plan the whole trip from the agency's catalog.
+        const b = core.startBrief(asked, briefCtx(ed0));
+        if (!b.ready) {
+          cancelLive();
+          endSession();
+          setBrief({ state: b.state, ed: ed0 }, b.say);
+          setTripDraft(null);
+          respond(b.say);
+          return;
+        }
+        setBrief(null);
+        planText = b.text;
       }
       // "add hotel" / "add transport": the Logistics forms, filled by asking.
       const hasDays = list(safe(() => S.editor.snapshot().itinerary, [])).length > 0;
-      if (core && hasDays && (core.wantsHotel(text) || core.wantsCab(text))) {
+      if (!planText && core && hasDays && (core.wantsHotel(text) || core.wantsCab(text))) {
         cancelLive();
         endSession();
         const g = core.startLogistics(text, guideCtx(S.editor));
@@ -738,7 +887,7 @@ export default function ChingWidget() {
       showLive(null, "finishing");
       let res;
       try {
-        res = ed.live.finish(text) || {};
+        res = ed.live.finish(planText || text) || {};
       } catch (err) {
         safe(() => ed.live.cancel());
         endSession();
@@ -755,6 +904,7 @@ export default function ChingWidget() {
         setUndoTick((t) => t + 1);
         safe(() => ed.setTab("Trip Info")); // step 1, while the agent checks the draft
         setTripDraft({ draft: res.draft, commands });
+        setChingThread(threadOfLocation(), safe(() => ed.snapshot().tripInfo?.tripTitle, "") || "");
         setOutcome(null);
         setNotice(null);
         setCompact(false);
@@ -766,7 +916,7 @@ export default function ChingWidget() {
           const speech = draftSpeech(draft);
           const left = draft.ok ? pendingLine(list(safe(() => ed.summary().pending, []))) : "";
           say(left ? speech.replace(/ Say “confirm”/, ` ${left} Say “confirm”`) : speech);
-        }, 700);
+        }, REPLY_BEAT_MS);
         return;
       }
       // An edit while a draft waits: refresh the card with the corrected trip.
@@ -866,9 +1016,9 @@ export default function ChingWidget() {
         }
         setOutcome((o) => (o ? { ...o, reply: localized(reply + tip)?.text || reply + tip, pending: list(sum.pending) } : o));
         say(reply + tip);
-      }, 700);
+      }, REPLY_BEAT_MS);
     },
-    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine, guideCtx, runGuideOps, endGuide, dropPreview],
+    [answerConfirm, askConfirm, attach, endSession, ensureCore, openDraft, runCommands, showLive, say, respond, localized, lineFor, respondLine, sayLine, guideCtx, runGuideOps, endGuide, dropPreview, briefCtx, setBrief, navigate],
   );
 
   // ── Confirm & Build ─────────────────────────────────────────────────────
@@ -895,7 +1045,7 @@ export default function ChingWidget() {
     for (const tab of BUILD_STEPS) {
       setChingStage(tab);
       safe(() => getChingEditor()?.setTab(tab));
-      await wait(1300);
+      await wait(BUILD_STEP_MS);
     }
     setChingStage("PDF");
     let pdfLine = "";
@@ -1091,6 +1241,8 @@ export default function ChingWidget() {
       const clean = stripFillers(said) || said;
       noteLanguage(clean);
       const text = toEnglishCommand(clean, catalogForLanguage()) || clean;
+      // File the line under the trip on screen (named once the trip has a title).
+      setChingThread(threadOfLocation(), safe(() => getChingEditor()?.snapshot?.().tripInfo?.tripTitle, "") || "");
       chingSaid("you", clean);
       const S = sessionRef.current || startSession();
       S.ended = true;
@@ -1099,6 +1251,45 @@ export default function ChingWidget() {
       finish(S);
     },
     [finish, startSession, catalogForLanguage, noteLanguage],
+  );
+
+  // Spoken turns keep the conversation going by voice (see the re-listen below).
+  const voiceTurn = useRef(false);
+  const handleSpoken = useCallback(
+    (said) => {
+      voiceTurn.current = true;
+      handleCommand(said);
+    },
+    [handleCommand],
+  );
+
+  // A client's story is being told (a voice note played to the mic): wait for
+  // the end of it — pauses for breath are not the end of the turn.
+  const isLongForm = useCallback((said) => Boolean(coreRef.current?.soundsLikeAStory?.(said)), []);
+
+  // Can Ching already act on what it has heard? Then the mic stops after a
+  // short beat instead of waiting out a long silence (useSpeech armTurn).
+  const isComplete = useCallback(
+    (said) => {
+      const core = coreRef.current;
+      const clean = stripFillers(said) || said;
+      const text = toEnglishCommand(clean, catalogForLanguage()) || clean;
+      const low = String(text).toLowerCase().replace(/^\s*(?:hello |hey )?ching[\s,]*/, "").trim();
+      if (!low) return false;
+      // The answer to "yes or no?" / "say confirm".
+      if (confirmRef.current && /^(?:yes|yeah|yep|yup|haan|han|ji|ok|okay|sure|confirm|confirmed|do it|go ahead|correct|right|build(?: it)?|looks good|no|nope|nah|cancel|nahi|leave it)$/.test(low)) return true;
+      if (guideRef.current) return false; // short answers already end quickly
+      const ed = getChingEditor();
+      // The last missing piece of a trip request.
+      const b = briefRef.current;
+      if (b && core?.briefWouldPlan && ed && b.ed === ed) return !!safe(() => core.briefWouldPlan(b.state, text, briefCtx(ed)), false);
+      // "open the ledger", "what's pending", "who hasn't paid".
+      if (safe(() => understandAssistant(text, { inBuilder: Boolean(ed), chat: chatTopic.current }), null)) return true;
+      // An edit to the open trip that Ching understood in full.
+      const S = sessionRef.current;
+      return Boolean(S && S.editor && !S.baseBlank && S.liveOk && S.text === text);
+    },
+    [briefCtx, catalogForLanguage],
   );
 
   const handleWake = useCallback(() => {
@@ -1113,10 +1304,12 @@ export default function ChingWidget() {
     handsFree,
     lang: listenLang,
     paused: status === "running" || speaking, // don't hear our own voice
-    onCommand: handleCommand,
+    onCommand: handleSpoken,
     onWake: handleWake,
     onStart: handleStart,
     onAbort: cancelSession,
+    isComplete,
+    isLongForm,
   });
   const {
     supported,
@@ -1132,6 +1325,24 @@ export default function ChingWidget() {
   useEffect(() => {
     setChingListening(listening, listening ? interim || "" : "");
   }, [listening, interim]);
+
+  // A conversation, not a walkie-talkie: when Ching has asked something (the
+  // trip brief, the guided trip, "yes or no?", "say confirm") in reply to a
+  // SPOKEN turn, the mic opens again by itself once Ching stops talking — no
+  // tap, no "Hello Ching". Once per question; typed turns never open the mic.
+  const askedKey = `${notice?.kind === "reply" ? notice.text : ""}|${tripDraft ? "draft" : ""}`;
+  const relistened = useRef("");
+  useEffect(() => {
+    if (!open || !supported || speaking || phase !== "idle" || status !== "idle") return undefined;
+    if (!voiceTurn.current || relistened.current === askedKey || askedKey === "|") return undefined;
+    const t = setTimeout(() => {
+      const waiting = briefRef.current || guideRef.current || confirmRef.current;
+      if (!waiting || isSpeaking() || sessionRef.current) return;
+      relistened.current = askedKey;
+      startCommand();
+    }, 450);
+    return () => clearTimeout(t);
+  }, [open, supported, speaking, phase, status, askedKey, startCommand]);
 
   // Stream the running transcript to the editor as it is heard.
   useEffect(() => {
@@ -1160,6 +1371,7 @@ export default function ChingWidget() {
       if (!text || status === "running") return;
       primeAudio(); // the send tap lets a phone speak the reply
       if (listening) cancelCommand();
+      voiceTurn.current = false;
       startSession();
       handleCommand(text);
     },

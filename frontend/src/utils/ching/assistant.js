@@ -5,6 +5,8 @@
 import { chatReply } from "./chat.js";
 import { smalltalkIntent, personaLine } from "./persona.js";
 import { understandHotelSearch } from "./hotelQuery.js";
+import { readWishes, toTag, hasHotelWishes } from "./meaning.js";
+import { helpAsk, helpReply } from "./capabilities.js";
 
 const clean = (t) =>
   String(t || "")
@@ -102,6 +104,12 @@ export function understandAssistant(text, { inBuilder = false, chat = null } = {
   if (!t) return null;
   const words = t.split(" ").length;
 
+  // "help", "what can you do with payments": the capability tree (capabilities.js).
+  const help = helpAsk(t);
+  if (help) return { type: "smalltalk", reply: helpReply(help.topic), intent: "help" };
+  if (/^(?:please )?(?:clear|delete|erase|wipe|reset) (?:our |the |this |my )?(?:conversation|chat|chat history|history)$/.test(t)) return { type: "clear-conversation" };
+  const tags = understandTags(t);
+  if (tags) return tags;
   const memory = understandMemory(t, inBuilder);
   if (memory) return memory;
 
@@ -198,6 +206,30 @@ export function understandAssistant(text, { inBuilder = false, chat = null } = {
 }
 
 
+// ── hotel tags (meaning.js): "tag Heevan Resort as riverside and quiet",
+// "remove the riverside tag from Heevan", "which hotels are riverside in Pahalgam"
+const tagList = (words) => [...new Set(String(words || "").split(/\s*(?:,|\band\b|&|\+)\s*/).map((w) => toTag(w.replace(/^(?:a|an|the|very|also) /, "").replace(/ (?:hotel|property|place|stay|one)$/, ""))).filter(Boolean))];
+function understandTags(t) {
+  let m;
+  if ((m = /^(?:please )?(?:tag|mark|label)\s+(.+?)\s+(?:as|with|is|:)\s+(.+)$/.exec(t))) {
+    const add = tagList(m[2]);
+    // "mark Rahul's trip as confirmed" is a trip status, not a hotel tag.
+    if (add.length && !/\b(?:trip|booking|confirmed|cancelled|paid)\b/.test(t)) return { type: "tag", hotel: m[1].replace(/^(?:the |hotel )/, "").trim(), add, remove: [] };
+  }
+  if ((m = /^(?:please )?(?:remove|delete|drop|untag)\s+(?:the\s+)?(.+?)\s+tags?\s+(?:from|of|on)\s+(.+)$/.exec(t))) {
+    const remove = tagList(m[1]);
+    if (remove.length) return { type: "tag", hotel: m[2].replace(/^(?:the |hotel )/, "").trim(), add: [], remove };
+  }
+  if ((m = /^(?:please )?(?:which|what|show(?: me)?|list|find|any|do (?:we|i) have(?: any)?|have (?:we|i) got(?: any)?|suggest|recommend)\b(.*)$/.exec(t)) && /\b(?:hotels?|propert(?:y|ies)|stays?|houseboats?|resorts?|places?|options?|cottages?|camps?)\b|\bdo (?:we|i|you) have\b/.test(t)) {
+    // Stars, prices, meals and "available" are the rate search (hotelQuery.js), not a tag lookup.
+    if (/\d|\bstars?\b|\bunder\b|\bbelow\b|\bcheap|\bbreakfast\b|\bdinner\b|\bavailable\b|\btrips?\b|\bunpaid\b/.test(t)) return null;
+    const where = /\b(?:in|at|near|around)\s+([a-z]+(?: [a-z]+)?)\s*$/.exec(t);
+    const wishes = readWishes(where ? t.slice(0, where.index) : t);
+    if (hasHotelWishes(wishes)) return { type: "tagged", city: where ? where[1] : "", wishes, said: wishes.nodes.map((n) => n.label.toLowerCase()) };
+  }
+  return null;
+}
+
 // ── memory: "call me…", "when I say X I mean Y", "my usual hotel in Gulmarg is…", "remember…", "forget…"
 const title = (x) => String(x || "").trim().replace(/\b[a-z]/g, (c) => c.toUpperCase());
 function understandMemory(t, inBuilder = false) {
@@ -261,6 +293,9 @@ function understandDoc(t, { inBuilder }) {
         : null;
   if (!action || t.split(" ").length > 14) return null;
   if (/\b\d+\s*(?:nights?|days?)\b/.test(t)) return null; // a trip request that mentions a PDF
+  // "make an itinerary for Kashmir", "plan a honeymoon itinerary": a trip to
+  // build, not a document to fetch (that is "download / send … itinerary").
+  if (doc === "itinerary" && !/\bpdf\b/.test(t) && /\b(?:make|create|plan|build|prepare|draft|design|suggest|need|want)\b/.test(t) && !/\b(?:download|export|print|send|e-?mail|mail|whats ?app|share|open|show)\b/.test(t)) return null;
   const query = targetOf(t);
   const toMe = /\b(?:to|for) me\b|\bemail me\b|\bmail me\b/.test(t);
   // Inside the builder, "export the PDF" / "email it to me" / "export excel" /
@@ -447,8 +482,8 @@ const SMALLTALK = [
     pick(["Fully charged and fully booked — in a good way. How can I help?", "Better than a Gulmarg sunrise. What are we planning?", "Great, thanks for asking! Got a trip for me?"])],
   [/^(?:who are you|what are you|what is your name|what's your name|tumhara naam)\b/, () =>
     "I'm Ching, your travel desk assistant. Tell me a trip and I'll fill the whole thing — hotels, cabs, day plan, price — while you talk."],
-  [/\b(?:what can you do|help me|how do i use you|what do you do|commands)\b/, () =>
-    "Try: \"3 night Srinagar trip for Rahul, 4 adults from 10 November\". Then \"make Gulmarg 2 nights\", \"give me 20% margin\", \"what's pending?\", \"send it to the client on WhatsApp\" — or \"open the ledger\" to go anywhere."],
+  [/\b(?:what can you do|help me|how do i use you|what do you do|commands)\b|^help$/, () =>
+    "Tell me a trip the way a client asks: \"plan a Kashmir trip for 4 people, 5 nights from 10 November, budget hotels\". I'll ask what's missing and plan the hotels, cab and day-wise itinerary from your own catalog. Then \"make Gulmarg 2 nights\", \"give me 20% margin\", \"what's pending?\", \"send it to the client on WhatsApp\" — or \"open the ledger\" to go anywhere."],
   [/\b(?:joke|make me laugh|funny|mazak|chutkula)\b/, () => pick(JOKES)],
   [/^(?:thank you|thanks|thank u|shukriya|dhanyavad|great job|well done|awesome|nice|perfect|good job)\b/, () =>
     pick(["Anytime! That's what I'm here for.", "My pleasure. Next trip?", "Happy to help — go close that deal!", "Shukriya! Ping me whenever."])],
