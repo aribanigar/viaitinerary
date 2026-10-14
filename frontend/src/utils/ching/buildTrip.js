@@ -17,7 +17,7 @@ import { hotelInCity, findDestinationFor, placeKey, samePlace } from "./places.j
 import { dayWiseCabs } from "./cabPlan.js";
 import { bestStayOrder } from "./route.js";
 import { readWishes, matchHotel as meets, hasHotelWishes } from "./meaning.js";
-import { suggestPlaces } from "./whereTo.js";
+import { suggestPlaces, placeTags } from "./whereTo.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -231,9 +231,18 @@ function resolveStays(command, hotels, nights, destinations = [], memory = null)
   const autoPicked = [];
   const missing = [];
   let soft = null;
+  // Snow is wished of a PLACE: on a Srinagar + Gulmarg trip it is Gulmarg's
+  // to answer, not every hotel's — Srinagar's hotels aren't asked for it.
+  const forTown = (city) => {
+    if (!pref.wishes?.nodes?.some((n) => n.id === "setting.snow")) return pref;
+    const dest = findDestinationFor(destinations, city) || { name: city, activities: [] };
+    if (placeTags(dest, memory?.placeTags || null).includes("snow")) return pref;
+    return { ...pref, wishes: { ...pref.wishes, nodes: pref.wishes.nodes.filter((n) => n.id !== "setting.snow") } };
+  };
   const pick = (city, extra = {}) => {
     const why = {};
-    const h = pickHotel(city, hotels, soft ? { ...pref, softStars: soft } : pref, memory, why);
+    const p = forTown(city);
+    const h = pickHotel(city, hotels, soft ? { ...p, softStars: soft } : p, memory, why);
     if (!h) {
       missing.push(city);
       return null;

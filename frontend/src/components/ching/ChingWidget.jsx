@@ -1306,7 +1306,7 @@ export default function ChingWidget() {
   }, [startSession]);
 
   const handleCommand = useCallback(
-    (said) => {
+    (said, { count = true } = {}) => {
       // Typed or spoken, "umm"/"ahh"/stutters never reach the parsers, and
       // Hindi / Urdu become Ching's English commands.
       const clean = stripFillers(said) || said;
@@ -1314,7 +1314,7 @@ export default function ChingWidget() {
       const text = toEnglishCommand(clean, catalogForLanguage()) || clean;
       // File the line under the trip on screen (named once the trip has a title).
       setChingThread(threadOfLocation(), safe(() => getChingEditor()?.snapshot?.().tripInfo?.tripTitle, "") || "");
-      logStat("turns");
+      if (count) logStat("turns");
       chingSaid("you", clean);
       const S = sessionRef.current || startSession();
       S.ended = true;
@@ -1409,13 +1409,16 @@ export default function ChingWidget() {
     if (!open || !supported || speaking || phase !== "idle" || status !== "idle") return undefined;
     if (!voiceTurn.current || relistened.current === askedKey || askedKey === "|") return undefined;
     const t = setTimeout(() => {
-      const waiting = briefRef.current || guideRef.current || confirmRef.current;
+      // Waiting on the agent: a trip question, "yes or no?", or a reply that ends by
+      // inviting one ("Say “plan both”…", "Say “use the second one”…", a question).
+      const invites = /\bSay “(?:plan|use|both|the first|the second|the cheaper|yes|confirm|offer)|\?\s*$/.test(String(notice?.text || ""));
+      const waiting = briefRef.current || guideRef.current || confirmRef.current || invites;
       if (!waiting || isSpeaking() || sessionRef.current) return;
       relistened.current = askedKey;
       startCommand();
     }, 450);
     return () => clearTimeout(t);
-  }, [open, supported, speaking, phase, status, askedKey, startCommand]);
+  }, [open, supported, speaking, phase, status, askedKey, startCommand, notice]);
 
   // Stream the running transcript to the editor as it is heard.
   useEffect(() => {
@@ -1438,16 +1441,20 @@ export default function ChingWidget() {
   );
 
   // Typed input = one finished utterance.
+  // handoff: a request Ching passes to itself ("plan both" → "plan a trip to
+  // Gulmarg and Srinagar…"): it keeps the conversation's voice and isn't a new turn.
   const handleTyped = useCallback(
-    (raw) => {
+    (raw, { handoff = false } = {}) => {
       const text = String(raw || "").trim();
       if (!text || status === "running") return;
       primeAudio(); // the send tap lets a phone speak the reply
       if (listening) cancelCommand();
-      voiceTurn.current = false;
-      logStat("typed");
+      if (!handoff) {
+        voiceTurn.current = false;
+        logStat("typed");
+      }
       startSession();
-      handleCommand(text);
+      handleCommand(text, { count: !handoff });
     },
     [cancelCommand, handleCommand, listening, startSession, status],
   );
@@ -1515,7 +1522,7 @@ export default function ChingWidget() {
       const text = String(e?.detail?.text || "").trim();
       if (!text) return;
       openPanel();
-      handleTyped(text);
+      handleTyped(text, { handoff: !!e?.detail?.handoff });
     };
     window.addEventListener("ching:submit", onSubmit);
     return () => window.removeEventListener("ching:submit", onSubmit);

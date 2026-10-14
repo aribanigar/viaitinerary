@@ -102,6 +102,11 @@ test('asking where, and picking from the answer', () => {
   assert.equal(pickPlaces('4 adults', ['Gulmarg', 'Srinagar']), null)
 })
 
+test('snow is asked of the place, not of every hotel on the trip', () => {
+  const r = planLive(blank(), 'kashmir trip to srinagar and gulmarg for snow and shopping, 2 adults 4 nights from 10 november', { catalog, settings, today })
+  assert.ok(!r.warnings.some((w) => /“snow”: no hotel in Srinagar/.test(w)), r.warnings.join(' | '))
+})
+
 // ── three hotels for a stay
 test('recommended, one that costs less, one step up — each with the difference', () => {
   const o = stayOptions('Srinagar', catalog.hotels, { softStars: '3' }, catalog.memory, { current: 13 })

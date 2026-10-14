@@ -706,7 +706,7 @@ async function doWherePick(ask, ctx) {
   }
   lastPlaces = null;
   // Handed back to Ching as a request: it asks what is missing and plans it.
-  window.dispatchEvent(new CustomEvent("ching:submit", { detail: { text: trip } }));
+  window.dispatchEvent(new CustomEvent("ching:submit", { detail: { text: trip, handoff: true } }));
 }
 
 async function doClearConversation(ctx) {
