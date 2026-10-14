@@ -176,6 +176,7 @@ function cloudReady() {
       .then((r) => (r.ok ? r.json() : { enabled: false }))
       .then((d) => {
         cloud = d?.enabled ? "on" : "off";
+        if (cloud === "off") console.info("Ching voice: no ElevenLabs key configured — using the browser voice.");
         return cloud === "on";
       })
       .catch(() => {
@@ -206,7 +207,12 @@ async function cloudClip(say) {
     body: JSON.stringify({ text: say }),
   });
   if (r.status === 503) cloud = "off"; // not configured after all
-  if (!r.ok || !/audio/.test(r.headers.get("content-type") || "")) throw new Error(`tts ${r.status}`);
+  if (!r.ok || !/audio/.test(r.headers.get("content-type") || "")) {
+    const why = await r.json().then((d) => d?.message).catch(() => "");
+    // Visible in the browser console; Settings → Ching voice → "Check voice" explains it in full.
+    console.warn(`Ching voice: ElevenLabs unavailable (${r.status}${why ? `: ${why}` : ""}) — using the browser voice.`);
+    throw new Error(`tts ${r.status}`);
+  }
   const url = URL.createObjectURL(await r.blob());
   clips.set(say, url);
   if (clips.size > CLIP_LIMIT) {

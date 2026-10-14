@@ -40,10 +40,50 @@ export function parseVoiceId(input) {
 
 /** { apiKey, voiceId, source } for this tenant; apiKey null → not configured. */
 export async function chingVoiceConfig(adminId) {
+  let dbOk = true;
   const s = await prisma.agencySetting
     .findUnique({ where: { userId: adminId }, select: { chingVoiceId: true, elevenlabsApiKey: true } })
-    .catch(() => null); // columns not pushed yet → platform defaults
-  const apiKey = s?.elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || null;
-  const voiceId = s?.chingVoiceId || process.env.ELEVENLABS_VOICE_ID || DEFAULT_VOICE_ID;
-  return { apiKey, voiceId, ownKey: !!s?.elevenlabsApiKey };
+    .catch(() => {
+      dbOk = false; // columns not pushed yet (the build's prisma db push failed) → platform defaults
+      return null;
+    });
+  const envKey = (process.env.ELEVENLABS_API_KEY || "").trim();
+  const apiKey = s?.elevenlabsApiKey || envKey || null;
+  const voiceId = s?.chingVoiceId || (process.env.ELEVENLABS_VOICE_ID || "").trim() || DEFAULT_VOICE_ID;
+  return { apiKey, voiceId, ownKey: !!s?.elevenlabsApiKey, source: s?.elevenlabsApiKey ? "settings" : envKey ? "vercel" : null, dbOk };
+}
+
+/**
+ * Ask ElevenLabs whether this key + voice will work, without spending credits:
+ * the voice's name, and the characters left this month when the key may read them.
+ * → { ok, voiceName, credits: { used, limit } | null, problem }
+ */
+export async function checkChingVoice({ apiKey, voiceId }) {
+  if (!apiKey) return { ok: false, voiceName: null, credits: null, problem: "no_key" };
+  const get = (path) =>
+    fetch(`https://api.elevenlabs.io${path}`, { headers: { "xi-api-key": apiKey }, signal: AbortSignal.timeout(10000) });
+  let voiceRes;
+  try {
+    voiceRes = await get(`/v1/voices/${encodeURIComponent(voiceId)}`);
+  } catch {
+    return { ok: false, voiceName: null, credits: null, problem: "unreachable" };
+  }
+  const voice = voiceRes.ok ? await voiceRes.json().catch(() => ({})) : null;
+  let credits = null;
+  try {
+    const sub = await get("/v1/user/subscription");
+    if (sub.ok) {
+      const d = await sub.json();
+      if (Number.isFinite(d?.character_limit)) credits = { used: d.character_count ?? 0, limit: d.character_limit };
+    }
+  } catch {
+    /* restricted key or network — credits just aren't shown */
+  }
+  let problem = null;
+  if (voiceRes.status === 401) problem = "bad_key";
+  else if (voiceRes.status === 403) problem = "key_permissions";
+  else if (voiceRes.status === 404 || voiceRes.status === 400) problem = "voice_not_found";
+  else if (!voiceRes.ok) problem = `error_${voiceRes.status}`;
+  else if (credits && credits.limit - credits.used < 50) problem = "no_credits";
+  return { ok: !problem, voiceName: voice?.name || null, credits, problem };
 }

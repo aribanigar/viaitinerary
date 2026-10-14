@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
-import { chingVoiceConfig, parseVoiceId } from "@/lib/chingVoice";
+import { chingVoiceConfig, checkChingVoice, parseVoiceId } from "@/lib/chingVoice";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,12 +27,27 @@ function allow(userId) {
   return true;
 }
 
-// GET /api/ching/tts → { enabled, voice_id, own_key } (the widget asks once per page load)
+// GET /api/ching/tts → { enabled, voice_id, own_key, source } (the widget asks once per page load)
+// GET /api/ching/tts?check=1 → also asks ElevenLabs (Settings → "Check voice"):
+//   { voice_name, credits, problem, db_ok, server_version } — no credits spent.
 export async function GET(request) {
   const user = await userFromRequest(request);
   if (!user) return NextResponse.json({ message: "Unauthenticated." }, { status: 401 });
   const cfg = await chingVoiceConfig(await adminIdOf(user));
-  return NextResponse.json({ enabled: !!cfg.apiKey, voice_id: cfg.voiceId, own_key: cfg.ownKey });
+  const out = { enabled: !!cfg.apiKey, voice_id: cfg.voiceId, own_key: cfg.ownKey, source: cfg.source };
+  if (new URL(request.url).searchParams.get("check")) {
+    const c = await checkChingVoice(cfg);
+    Object.assign(out, {
+      ok: c.ok,
+      voice_name: c.voiceName,
+      credits: c.credits,
+      problem: c.problem,
+      db_ok: cfg.dbOk,
+      model: MODEL_ID,
+      server_version: (process.env.VERCEL_GIT_COMMIT_SHA || "").slice(0, 7) || null,
+    });
+  }
+  return NextResponse.json(out);
 }
 
 // POST /api/ching/tts { text, voice_id? } → audio/mpeg
