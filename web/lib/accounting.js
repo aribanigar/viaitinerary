@@ -35,7 +35,7 @@ function nightsBetween(checkIn, checkOut) {
   return diff > 0 ? diff : 1;
 }
 
-function accommodationCost(acc) {
+export function accommodationCost(acc) {
   // A cancelled stay only owes the hotel its cancellation charge.
   if (acc.cancelledAt) return Math.max(0, num(acc.cancellationCharge));
   const nights = nightsBetween(acc.checkIn, acc.checkOut);
@@ -59,7 +59,7 @@ function accommodationCost(acc) {
   return Math.max(0, roomSubtotal + cnbCost + extra512Cost + extraAbove12Cost + extraAdultCost);
 }
 
-function transportationCost(trans) {
+export function transportationCost(trans) {
   const price = num(trans.vehicle?.price);
   let qty = num(trans.quantity) || 1;
   if (qty <= 0) qty = 1;
