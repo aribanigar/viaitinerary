@@ -70,6 +70,7 @@ import LogisticsTab from "./trip-builder/LogisticsTab";
 import PricingTab from "./trip-builder/PricingTab";
 import TripPayments from "./trip-builder/TripPayments";
 import TripBookings from "./trip-builder/TripBookings";
+import TierExportModal from "./trip-builder/TierExportModal";
 import { HotelModal, TransportModal, ActivityModal } from "./trip-builder/TripBuilderModals";
 import { tripActivityTotal, dateForDay } from "../../utils/activityRates";
 import { priceBreakdown } from "../../utils/ching/pricing";
@@ -83,6 +84,7 @@ import { buildTripDraft } from "../../utils/ching/tripDraft";
 import { planLive, isBlankTrip } from "../../utils/ching/liveFill";
 import { tripChecklist, pendingByTab } from "../../utils/tripChecklist";
 import { optionSupplement, hotelPackages } from "../../utils/hotelOptions";
+import { TIERS, tierAccommodations, tierFileName, tierTitle } from "../../utils/tierExport";
 import {
   DRAFT_KEY,
   useTripBuilderData,
@@ -118,6 +120,10 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  // "Export Budget + Premium" picker open (utils/tierExport.js).
+  const [tierPicker, setTierPicker] = useState(false);
+  // While the two tiers are rendered and exported: no autosave, no undo steps.
+  const tierExportRef = useRef(false);
   const [sharing, setSharing] = useState(false);
   const [amendmentsOpen, setAmendmentsOpen] = useState(false);
   const [revisions, setRevisions] = useState([]);
@@ -1304,7 +1310,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     const t = setTimeout(() => {
       // Not mid-sentence (a live voice session is still reshaping the trip), and
       // not while a voice-filled trip waits on Confirm & Build in Ching.
-      if (!savingRef.current && !chingLive.current && !chingDraft.current && !chingGuideHold.current) saveRef.current?.({ silent: true });
+      if (!savingRef.current && !chingLive.current && !chingDraft.current && !chingGuideHold.current && !tierExportRef.current) saveRef.current?.({ silent: true });
     }, 2500);
     return () => clearTimeout(t);
   }, [
@@ -1333,6 +1339,68 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       toast.error("There was an error generating your PDF. Please try again.");
     } finally {
       setExporting(false);
+    }
+  };
+
+  // ── Budget + Premium: the trip exported twice, only the hotels differ ──
+  // Each tier's price = the quoted price + the change in its hotels' cost,
+  // with each stay's margin and the trip's GST — exactly how the total is built.
+  const hotelCostMarkedUp = (item) => calculateHotelCost(item) * (1 + effectiveMarkup(item) / 100);
+  const tierCost = (tierAccs, baseAccs, baseCost) => {
+    const delta = tierAccs.reduce((n, a, i) => n + hotelCostMarkedUp(a) - hotelCostMarkedUp(baseAccs[i]), 0);
+    const withGst = delta * (includeGST ? 1 + (gstPercentage || 0) / 100 : 1);
+    return Math.max(0, Math.round((parseFloat(baseCost) || 0) + withGst)).toString();
+  };
+  const tierPriceFor = (picks) => tierCost(tierAccommodations(accommodations, picks, masterHotels), accommodations, tripInfo.cost);
+
+  // Wait until the live preview shows the tier's hotels (and has re-measured its pages).
+  const waitForPreview = async (accs) => {
+    const names = accs.filter((a) => !a.cancelled && a.name).map((a) => String(a.name).toLowerCase());
+    const started = Date.now();
+    while (Date.now() - started < 6000) {
+      await new Promise((r) => setTimeout(r, 150));
+      const el = document.querySelector(".trip-preview-wrapper, .classic-template-wrapper");
+      const text = (el?.innerText || "").toLowerCase();
+      if (el && names.every((n) => text.includes(n))) break;
+    }
+    await new Promise((r) => setTimeout(r, 700));
+  };
+
+  const handleTierExport = async (picks) => {
+    setTierPicker(false);
+    const savedAccs = accommodations;
+    const savedInfo = tripInfo;
+    tierExportRef.current = true;
+    setExporting(true);
+    const done = [];
+    try {
+      const { exportPreviewToPdf } = await import("../../utils/exportPdf");
+      for (const tier of TIERS) {
+        const accs = tierAccommodations(savedAccs, picks[tier.key], masterHotels);
+        setAccommodations(accs);
+        setTripInfo({
+          ...savedInfo,
+          tripTitle: tierTitle(savedInfo.tripTitle, tier.label),
+          cost: tierCost(accs, savedAccs, savedInfo.cost),
+          tierLabel: tier.label,
+        });
+        await waitForPreview(accs);
+        await exportPreviewToPdf(tierFileName(savedInfo.tripId, tier.label));
+        done.push(tier.label);
+      }
+      toast.success(`Exported ${done.map((l) => tierFileName(savedInfo.tripId, l)).join(" and ")}`);
+      logSendForAmendmentHistory("export");
+    } catch (err) {
+      console.error("Budget/Premium export error:", err);
+      toast.error(done.length ? `Exported ${done.join(", ")} — the other one failed. Please try again.` : "There was an error generating the PDFs. Please try again.");
+    } finally {
+      // Back to the trip exactly as it was.
+      setAccommodations(savedAccs);
+      setTripInfo(savedInfo);
+      setExporting(false);
+      setTimeout(() => {
+        tierExportRef.current = false;
+      }, 1500);
     }
   };
 
@@ -1788,7 +1856,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     setGstPercentage(snap.gstPercentage);
     setIncludeGST(snap.includeGST);
   }, []);
-  const chingLiveActive = useCallback(() => !!chingLive.current, []);
+  const chingLiveActive = useCallback(() => !!chingLive.current || tierExportRef.current, []);
   const history = useUndoHistory({
     snapshot: historySnapshot,
     ready: !loading && dataIsCurrent,
@@ -2434,6 +2502,15 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
               >
                 <Download className="w-4 h-4 text-ink/60" /> Itinerary PDF
               </button>
+              <button
+                onClick={() => {
+                  setOpenMenu(null);
+                  setTierPicker(true);
+                }}
+                className="w-full text-left px-4 py-2.5 hover:bg-black/[0.03] transition-colors flex items-center gap-3 text-sm font-medium text-ink"
+              >
+                <Download className="w-4 h-4 text-ink/60" /> Budget + Premium PDFs
+              </button>
               {!isPackageMode && (
                 <button
                   onClick={() => handleExportExcel().catch(() => {})}
@@ -2841,6 +2918,18 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         >
           {builderBody}
         </AssistantFrame>
+      )}
+
+      {tierPicker && (
+        <TierExportModal
+          accommodations={accommodations}
+          hotels={masterHotels}
+          tripId={tripInfo.tripId}
+          currency={tripInfo.currency}
+          priceFor={tierPriceFor}
+          onExport={handleTierExport}
+          onClose={() => setTierPicker(false)}
+        />
       )}
 
       <HotelModal

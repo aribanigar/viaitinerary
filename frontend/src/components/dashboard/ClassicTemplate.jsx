@@ -752,6 +752,8 @@ const ClassicTemplate = ({
               <div className="classic-destination-label">Trip ID</div>
               <div className="classic-destination-value">
                 {tripInfo.tripId ? `#${tripInfo.tripId}` : "—"}
+                {/* Budget + Premium export: which of the two itineraries this is. */}
+                {tripInfo.tierLabel ? ` · ${tripInfo.tierLabel}` : ""}
               </div>
             </div>
           </div>

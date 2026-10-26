@@ -538,6 +538,8 @@ const ModernTemplate = ({
               </label>
               <div style={{ fontSize: "22px", fontWeight: "600" }}>
                 {tripInfo.tripId ? `#${tripInfo.tripId}` : "—"}
+                {/* Budget + Premium export: which of the two itineraries this is. */}
+                {tripInfo.tierLabel ? ` · ${tripInfo.tierLabel}` : ""}
               </div>
             </div>
           </div>
