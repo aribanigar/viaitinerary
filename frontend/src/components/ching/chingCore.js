@@ -6,26 +6,30 @@
 // questions the widget has to decide *before* there is an editor to ask: is
 // this a new-trip request (→ open a fresh draft and fill it), an edit with no
 // trip open, or nothing at all.
-import { fetchBuilderInit } from "../../api/trips";
-import { parseChingCommand, prepareCatalog, cityLookup, matchHotel } from "../../utils/ching/parseCommand";
+import { loadBuilderInit, peekBuilderInit, prefetchBuilderInit } from "../../api/builderInit";
+import { prepareCatalog, cityLookup, matchHotel } from "../../utils/ching/parseCommand";
 import { parseChingEdit, isCreateRequest } from "../../utils/ching/parseEdit";
+import { namesATrip, parseTripRequest } from "../../utils/ching/brief.js";
+import { isNarrative } from "../../utils/ching/narrative.js";
+
+export { soundsLikeAStory } from "../../utils/ching/narrative.js";
 
 export { isCreateRequest };
 // Ching's guided trip (Trip Info → Itinerary → Logistics, asked one step at a time).
 export { startGuide, startLogistics, guideStep, currentQuestion, wantsHotel, wantsCab, guidePreview, repairTripInfo, isCorrection, correctTripInfo } from "../../utils/ching/guide.js";
 
-// /api/builder/init is cached for the rest of the page session (per token);
-// a failed load is forgotten so the next request retries.
-let initCache = null;
+// The travel-agent brief: ask what's needed, then plan the whole trip.
+export { startBrief, briefStep, briefQuestion, briefWouldPlan, briefHeard, wantsStepByStep } from "../../utils/ching/brief.js";
 
+// /api/builder/init is shared with the Trip Builder (api/builderInit.js): the
+// last good copy answers at once and is refreshed in the background.
 export function getInit(token) {
-  if (initCache && initCache.token === token) return initCache.promise;
-  const promise = fetchBuilderInit(token).catch((err) => {
-    if (initCache?.promise === promise) initCache = null;
-    throw err;
-  });
-  initCache = { token, promise };
-  return promise;
+  const cached = peekBuilderInit(token);
+  if (cached) {
+    prefetchBuilderInit(token);
+    return Promise.resolve(cached);
+  }
+  return loadBuilderInit(token);
 }
 
 const catalogOf = (init) => ({
@@ -96,6 +100,22 @@ function readsAsEdit(text, init) {
 }
 
 /**
+ * A client's own account of the trip they want (a voice note, a pasted
+ * message) that holds at least two facts of a trip: always a NEW trip, even
+ * with another one open.
+ */
+export function isClientStory(text, init) {
+  if (!isNarrative(text)) return false;
+  try {
+    const cmd = parseTripRequest(text, { ...catalogOf(init), activities: init?.activities || [] });
+    if (!cmd?.story) return false;
+    return [!(cmd.missing || []).includes("adults"), !!cmd.startDate, Number(cmd.nights) > 0, (cmd.stays?.length || 0) > 0].filter(Boolean).length >= 2;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * With no trip open: does this (possibly partial) text ask for a new trip?
  * "create a 5 day trip…" always does; otherwise the trip parser must hear
  * nights or stays, and — so "make Gulmarg 2 nights" isn't mistaken for a new
@@ -106,16 +126,25 @@ export function looksLikeTripRequest(text, init) {
   if (!init) return false;
   let cmd;
   try {
-    cmd = parseChingCommand(text, catalogOf(init));
+    cmd = parseTripRequest(text, catalogOf(init));
   } catch {
     return false;
   }
   if (!cmd || cmd.intent !== "create_trip") return false;
   const heardLength = Number(cmd.nights) > 0 || (cmd.stays?.length || 0) > 0;
-  if (!heardLength) return false;
+  // "Kashmir trip for 4 people", "they want to visit Gulmarg in January":
+  // a trip that names a place — the brief asks for the rest.
+  if (!heardLength) return namesATrip(text, catalogOf(init)) && !readsAsEdit(text, init);
+  // "3 adults and 4 kids travelling on 17th October for 4 nights": two or more
+  // facts of a trip (guests, date, length) are a trip, with or without a place.
+  const facts = [!(cmd.missing || []).includes("adults"), !!cmd.startDate, Number(cmd.nights) > 0].filter(Boolean).length;
   return (
+    facts >= 2 ||
     String(cmd.clientName || "").trim() !== "" ||
     (cmd.stays?.length || 0) >= 2 ||
+    // "family of 6 wants to visit Srinagar and Gulmarg for a week": a client's
+    // request, even though "for a week" alone could be read as an edit.
+    namesATrip(text, catalogOf(init)) ||
     !readsAsEdit(text, init)
   );
 }

@@ -22,6 +22,7 @@ import { useAuth } from "../../context/AuthContext";
 import { fetchActivity, createActivity, updateActivity } from "../../api/activities";
 import { fetchDestinations } from "../../api/destinations";
 import DateInput from "../../components/common/DateInput";
+import { prepareImage } from "../../utils/imageFile";
 
 // Add / edit an activity — laid out like the Accommodation form: details,
 // location, supplier & availability, seasonal rates (B2B cost + selling price
@@ -157,12 +158,15 @@ const ActivityForm = () => {
     }));
   };
 
-  const onPhoto = (e) => {
+  const onPhoto = async (e) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => set("photo", reader.result);
-    reader.readAsDataURL(file);
+    try {
+      set("photo", await prepareImage(file, { maxSide: 1600 }));
+    } catch (err) {
+      toast.error(err.message || "Couldn't read that image.");
+    }
   };
 
   const updateSection = (i, key, value) =>

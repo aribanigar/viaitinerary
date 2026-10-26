@@ -28,6 +28,20 @@ async function imageValue(image, prefix = "trips") {
   return persistImage(String(image), prefix);
 }
 
+// A stay's package options ("OR" hotels) carry their own `photo`; an uploaded
+// one arrives as a data URL and would otherwise be stored inside the JSON
+// column and re-sent with every trip load.
+async function optionPhotos(options) {
+  if (!Array.isArray(options)) return options;
+  return Promise.all(
+    options.map(async (o) =>
+      o && typeof o.photo === "string" && o.photo.startsWith("data:")
+        ? { ...o, photo: await persistImage(o.photo, "accommodations") }
+        : o,
+    ),
+  );
+}
+
 const int = (v, d = 0) => (v === undefined || v === null || v === "" ? d : parseInt(v, 10) || d);
 const dec = (v) => (v === undefined || v === null || v === "" ? null : Number(v));
 
@@ -168,7 +182,7 @@ export async function syncTripRelations(tripDbId, body) {
         cancelledAt: item.cancelled_at !== undefined ? parseDate(item.cancelled_at) : undefined,
         cancellationCharge: item.cancellation_charge !== undefined ? dec(item.cancellation_charge) : undefined,
         cancellationNote: item.cancellation_note !== undefined ? item.cancellation_note : undefined,
-        alternateOptions: item.alternate_options !== undefined ? item.alternate_options : undefined,
+        alternateOptions: item.alternate_options !== undefined ? await optionPhotos(item.alternate_options) : undefined,
         markupPercentage: item.markup_percentage !== undefined ? dec(item.markup_percentage) : undefined,
       };
       const img = await imageValue(item.image, "accommodations");

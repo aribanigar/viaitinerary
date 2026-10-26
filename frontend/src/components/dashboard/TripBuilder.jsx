@@ -1963,6 +1963,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       // An edit worked out without committing it (to fill a form first).
       plan: (actions) => run(actions),
       catalog: () => chingState.current.catalog,
+      settings: () => chingState.current.settings,
       guide: {
         patch: (p) => chingState.current.guide.patch(p),
         setDay: (d) => chingState.current.guide.setDay(d),

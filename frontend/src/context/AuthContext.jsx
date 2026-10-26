@@ -56,6 +56,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem(USER_CACHE_KEY);
     localStorage.removeItem("password_update_required");
     sessionStorage.removeItem("dashboard_offer_shown");
+    // The Trip Builder's cached catalogs (api/builderInit.js) leave with the
+    // session. Cleared inline so this entry-chunk module doesn't import it.
+    try {
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("builder_init:")) localStorage.removeItem(k);
+      }
+    } catch {
+      /* storage blocked */
+    }
   }, []);
 
   useEffect(() => {

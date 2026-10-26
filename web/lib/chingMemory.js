@@ -133,20 +133,25 @@ export async function learnedMemory(adminId) {
 
 /** What the agency told Ching to remember (callMe is the asking user's own). */
 export async function toldMemory(adminId, userId = null) {
-  const rows = await prisma.chingMemory.findMany({ where: { userId: adminId }, orderBy: { updatedAt: "desc" } });
+  // Conversations live in the same table (kind "conversation") but are never part of memory.
+  const rows = await prisma.chingMemory.findMany({ where: { userId: adminId, kind: { in: [...MEMORY_KINDS, HOTEL_TAG_KIND, PLACE_TAG_KIND] } }, orderBy: { updatedAt: "desc" } });
   const aliases = {};
   const hotels = {};
+  const hotelTags = {};
+  const placeTags = {};
   const notes = [];
   let callMe = null;
   let agencyName = null; // a pre-per-user "me" row, used until this user sets their own
   for (const r of rows) {
-    if (r.kind === "alias") aliases[r.key] = r.value;
+    if (r.kind === HOTEL_TAG_KIND) hotelTags[r.key] = splitTags(r.value);
+    else if (r.kind === PLACE_TAG_KIND) placeTags[r.key] = splitPlaceTags(r.value);
+    else if (r.kind === "alias") aliases[r.key] = r.value;
     else if (r.kind === "hotel") hotels[r.key] = [Number(r.value)].filter(Number.isFinite);
     else if (r.kind === "note") notes.push({ key: r.key, text: r.value, at: r.updatedAt.toISOString() });
     else if (r.kind === "name" && userId != null && r.key === `me:${userId}`) callMe = r.value;
     else if (r.kind === "name" && r.key === "me" && !agencyName) agencyName = r.value;
   }
-  return { aliases, hotels, notes, callMe: callMe || agencyName };
+  return { aliases, hotels, hotelTags, placeTags, notes, callMe: callMe || agencyName };
 }
 
 /** Learned + told, told winning (a told hotel goes ahead of the learned ones). */
@@ -156,7 +161,92 @@ export async function chingMemory(adminId, userId = null) {
   for (const [city, ids] of Object.entries(told.hotels)) {
     hotels[city] = [...ids, ...(hotels[city] || []).filter((id) => !ids.includes(id))];
   }
-  return { ...learned, hotels, aliases: told.aliases, notes: told.notes, callMe: told.callMe, told_hotels: told.hotels };
+  return { ...learned, hotels, aliases: told.aliases, notes: told.notes, callMe: told.callMe, told_hotels: told.hotels, hotelTags: told.hotelTags, placeTags: told.placeTags };
 }
 
 export const MEMORY_KINDS = new Set(["alias", "hotel", "note", "name"]);
+
+// Two more kinds of row share the ChingMemory table (so neither needs a schema
+// change), and neither is "what the agency told Ching": they are never listed
+// by "what do you remember", never wiped by "forget everything", and don't
+// count towards the 500-row memory limit.
+//  - "hoteltag": key = hotel id, value = the hotel's tags, comma-joined — what
+//    Ching's meaning tree (frontend utils/ching/meaning.js) searches hotels by.
+//  - "conversation": key = "u:<userId>", value = that agent's conversation with
+//    Ching as JSON (lib/chingConversation.js).
+export const HOTEL_TAG_KIND = "hoteltag";
+export const PLACE_TAG_KIND = "placetag"; // key = destination id: what the PLACE is like (frontend utils/ching/whereTo.js)
+export const CONVERSATION_KIND = "conversation";
+
+// The tag vocabulary. Keep in step with TAG_GROUPS in frontend/src/utils/ching/meaning.js.
+export const HOTEL_TAGS = new Set([
+  "riverside", "lake-view", "mountain-view", "valley-view", "garden", "snow-view",
+  "quiet", "romantic", "lively", "heritage", "boutique", "luxury", "budget",
+  "family", "honeymoon", "groups", "seniors", "solo", "pets",
+  "houseboat", "resort", "cottage", "homestay", "camp",
+  "central", "near-airport", "near-gondola", "near-market", "near-lake", "secluded",
+  "spa", "pool", "heating", "parking", "restaurant", "lift", "wifi", "bonfire",
+]);
+// Keep in step with PLACE_TAG_GROUPS in frontend/src/utils/ching/whereTo.js.
+export const PLACE_TAGS = new Set([
+  "snow", "lake", "river", "meadows", "mountains", "glacier", "forest", "gardens", "desert", "beach",
+  "skiing", "gondola", "trekking", "rafting", "shikara", "houseboats", "shopping", "golf", "fishing", "camping", "pony-rides", "wildlife", "monasteries",
+  "quiet", "lively", "romantic", "family", "adventure", "offbeat", "heritage", "pilgrimage",
+  "airport", "easy-walking", "high-altitude",
+]);
+export const splitPlaceTags = (v) => [...new Set(String(v || "").split(",").map((t) => t.trim()).filter((t) => PLACE_TAGS.has(t)))];
+
+/** { destinationId: [tags] } for the agency. */
+export async function placeTagMap(adminId) {
+  const rows = await prisma.chingMemory.findMany({ where: { userId: adminId, kind: PLACE_TAG_KIND }, select: { key: true, value: true } });
+  const out = {};
+  for (const r of rows) out[r.key] = splitPlaceTags(r.value);
+  return out;
+}
+
+/** Set one destination's tags (an empty list goes back to what Ching reads off it). → tags | null */
+export async function setPlaceTags(adminId, destinationId, tags, userId = null) {
+  const id = Number(destinationId);
+  const dest = Number.isInteger(id) ? await prisma.destination.findFirst({ where: { id, userId: adminId }, select: { id: true } }) : null;
+  if (!dest) return null;
+  const clean = splitPlaceTags((Array.isArray(tags) ? tags : []).join(","));
+  if (!clean.length) {
+    await prisma.chingMemory.deleteMany({ where: { userId: adminId, kind: PLACE_TAG_KIND, key: String(id) } });
+    return [];
+  }
+  await prisma.chingMemory.upsert({
+    where: { userId_kind_key: { userId: adminId, kind: PLACE_TAG_KIND, key: String(id) } },
+    create: { userId: adminId, kind: PLACE_TAG_KIND, key: String(id), value: clean.join(","), createdBy: userId },
+    update: { value: clean.join(","), createdBy: userId },
+  });
+  return clean;
+}
+
+export const splitTags = (v) => [...new Set(String(v || "").split(",").map((t) => t.trim()).filter((t) => HOTEL_TAGS.has(t)))];
+
+/** { hotelId: [tags] } for the agency. */
+export async function hotelTagMap(adminId) {
+  const rows = await prisma.chingMemory.findMany({ where: { userId: adminId, kind: HOTEL_TAG_KIND }, select: { key: true, value: true } });
+  const out = {};
+  for (const r of rows) out[r.key] = splitTags(r.value);
+  return out;
+}
+
+/** Set one hotel's tags (an empty list removes the row). The hotel must be the agency's own. → tags | null */
+export async function setHotelTags(adminId, hotelId, tags, userId = null) {
+  const id = Number(hotelId);
+  const hotel = Number.isInteger(id) ? await prisma.hotel.findFirst({ where: { id, userId: adminId }, select: { id: true } }) : null;
+  if (!hotel) return null;
+  const clean = splitTags((Array.isArray(tags) ? tags : []).join(","));
+  const where = { userId_kind_key: { userId: adminId, kind: HOTEL_TAG_KIND, key: String(id) } };
+  if (!clean.length) {
+    await prisma.chingMemory.deleteMany({ where: { userId: adminId, kind: HOTEL_TAG_KIND, key: String(id) } });
+    return [];
+  }
+  await prisma.chingMemory.upsert({
+    where,
+    create: { userId: adminId, kind: HOTEL_TAG_KIND, key: String(id), value: clean.join(","), createdBy: userId },
+    update: { value: clean.join(","), createdBy: userId },
+  });
+  return clean;
+}

@@ -15,6 +15,9 @@ import {
 import { destinationActivityLabels } from "../destinationActivities.js";
 import { hotelInCity, findDestinationFor, placeKey, samePlace } from "./places.js";
 import { dayWiseCabs } from "./cabPlan.js";
+import { bestStayOrder } from "./route.js";
+import { readWishes, matchHotel as meets, hasHotelWishes } from "./meaning.js";
+import { suggestPlaces, placeTags } from "./whereTo.js";
 
 const pad = (n) => String(n).padStart(2, "0");
 
@@ -66,7 +69,7 @@ export function hotelPreference(text) {
   const m = /\b([1-7])\s*-?\s*star\b/.exec(t);
   const tier = /\b(budget|cheap|cheapest|economy|affordable)\b/.test(t)
     ? "budget"
-    : /\b(luxury|luxurious|premium|best|top|5\s*star)\b/.test(t)
+    : /\b(luxury|luxurious|premium|best(?!\s+(?:itinerary|trip|tour|package|plan|price|rate|deal|time|route|way|possible))|top|5\s*star)\b/.test(t)
       ? "luxury"
       : null;
   const cap = /\b(?:under|below|less\s+than|within|upto|up\s+to|max(?:imum)?|not\s+more\s+than|budget\s+(?:of|is))\s*(?:rs\.?|₹|inr|rupees)?\s*(\d[\d,]*(?:\.\d+)?)\s*(k|thousand)?\b/.exec(t);
@@ -75,7 +78,47 @@ export function hotelPreference(text) {
     const n = Number(cap[1].replace(/,/g, "")) * (cap[2] ? 1000 : 1);
     if (n >= 300) maxPrice = n; // "under 5" is nights, not rupees
   }
-  return { stars: m ? m[1] : null, tier, maxPrice };
+  // What the stay should be like ("riverside", "relaxing", "for my parents"):
+  // the meaning tree's wishes (meaning.js).
+  return { stars: m ? m[1] : null, tier, maxPrice, wishes: readWishes(t) };
+}
+
+// Wishes worth telling the agent about when no hotel answers them (who is
+// travelling shapes the pick quietly; a view or a houseboat was asked for).
+const SAID_WISH = /^(?:setting|stay|where|comfort|mood)\./;
+const starOf = (h) => Number(/^[1-7]/.exec(String(h?.category || ""))?.[0] || 0);
+
+/**
+ * Narrow `pool` to the hotels that answer the most wishes. Within the trip's
+ * class first; a wish may reach one star up or down, never further — a river
+ * view is not a reason to quote a 5-star on a 3-star trip.
+ */
+function byWishes(pool, pref, memory, why) {
+  const wishes = pref.wishes;
+  if (!hasHotelWishes(wishes) || !pool.length) return pool;
+  const tagMap = memory?.hotelTags || null;
+  const score = (list) => list.map((h) => ({ h, m: meets(h, wishes, tagMap) })).sort((a, b) => b.m.score - a.m.score);
+  const cls = Number(pref.stars || pref.softStars || 0);
+  const inClass = cls ? pool.filter((h) => starOf(h) === cls) : pool;
+  const near = cls && !pref.stars ? pool.filter((h) => Math.abs(starOf(h) - cls) <= 1) : inClass;
+  let ranked = score(inClass.length ? inClass : pool);
+  if (!(ranked[0]?.m.score >= 1) && near.length > inClass.length) {
+    const wider = score(near);
+    if (wider[0]?.m.score >= 1) ranked = wider;
+  }
+  const asked = wishes.nodes.filter((n) => SAID_WISH.test(n.id)).map((n) => n.label);
+  const best = ranked[0];
+  if (!best || best.m.score < 1) {
+    why.unmet = asked;
+    return pool;
+  }
+  const top = Math.floor(best.m.score);
+  const kept = ranked.filter((r) => Math.floor(r.m.score) === top);
+  why.met = (h) => kept.find((r) => r.h === h)?.m.met || [];
+  why.asked = asked;
+  // The fullest answers only: a tie-breaking tag decides between equals.
+  const fullest = kept.filter((r) => r.m.score >= best.m.score - 0.05);
+  return (fullest.length ? fullest : kept).map((r) => r.h);
 }
 
 /** Learned favourites for a city (memory.hotels: { placeKey: [hotelId…] }, most used first). */
@@ -105,17 +148,35 @@ export function pickHotel(city, hotels, pref = {}, memory = null, why = {}) {
     if (within.length) pool = within;
     else why.overBudget = true;
   }
-  const priced = pool.slice().sort((a, b) => firstPrice(a) - firstPrice(b) || String(a.name).localeCompare(String(b.name)));
-  if (pref.tier === "budget") return priced[0];
-  if (pref.tier === "luxury") return priced[priced.length - 1];
+  // What was wished for comes before habit: "riverside" beats the usual hotel.
+  const wished = byWishes(pool, pref, memory, why);
+  const narrowed = wished !== pool;
+  pool = wished;
   const fav = favouritesIn(memory, city).map((id) => pool.find((h) => String(h.id) === String(id))).find(Boolean);
+  // One class of hotel for the whole trip (softStars, chosen for the route)
+  // when the agent named none and has no usual hotel here.
+  if (!narrowed && !pref.stars && !pref.tier && !fav && pref.softStars) {
+    const same = pool.filter((h) => String(h.category || "").startsWith(pref.softStars));
+    if (same.length) pool = same;
+  }
+  const done = (h) => {
+    if (h && typeof why.met === "function") {
+      const met = why.met(h);
+      why.unmet = (why.asked || []).filter((l) => !met.includes(l));
+      why.met = met;
+    } else if (typeof why.met === "function") why.met = [];
+    return h;
+  };
+  const priced = pool.slice().sort((a, b) => firstPrice(a) - firstPrice(b) || String(a.name).localeCompare(String(b.name)));
+  if (pref.tier === "budget") return done(priced[0]);
+  if (pref.tier === "luxury") return done(priced[priced.length - 1]);
   if (fav) {
     why.favourite = true;
-    return fav;
+    return done(fav);
   }
   // With a budget cap, the best one that still fits it.
-  if (pref.maxPrice && !why.overBudget) return priced[priced.length - 1];
-  return priced[Math.floor((priced.length - 1) / 2)];
+  if (pref.maxPrice && !why.overBudget) return done(priced[priced.length - 1]);
+  return done(priced[Math.floor((priced.length - 1) / 2)]);
 }
 
 /**
@@ -162,19 +223,41 @@ export function pickVehicle(vehicles, guests, memory = null, why = {}) {
  * gets one stay for all nights. → { stays, autoPicked: [{ city, hotel }] }
  */
 function resolveStays(command, hotels, nights, destinations = [], memory = null) {
-  const pref = hotelPreference(command.transcript);
+  // A whole-trip budget arrives as a ready-made room-rate cap (brief.js).
+  let pref = command.pref || hotelPreference(command.transcript);
+  // A client's story keeps its wishes though it was rewritten as a plain request.
+  if (command.wishes) pref = { ...pref, wishes: command.wishes };
+  else if (!pref.wishes) pref = { ...pref, wishes: readWishes(command.transcript) };
   const autoPicked = [];
   const missing = [];
+  let soft = null;
+  // Snow is wished of a PLACE: on a Srinagar + Gulmarg trip it is Gulmarg's
+  // to answer, not every hotel's — Srinagar's hotels aren't asked for it.
+  const forTown = (city) => {
+    if (!pref.wishes?.nodes?.some((n) => n.id === "setting.snow")) return pref;
+    const dest = findDestinationFor(destinations, city) || { name: city, activities: [] };
+    if (placeTags(dest, memory?.placeTags || null).includes("snow")) return pref;
+    return { ...pref, wishes: { ...pref.wishes, nodes: pref.wishes.nodes.filter((n) => n.id !== "setting.snow") } };
+  };
   const pick = (city, extra = {}) => {
     const why = {};
-    const h = pickHotel(city, hotels, pref, memory, why);
+    const p = forTown(city);
+    const h = pickHotel(city, hotels, soft ? { ...p, softStars: soft } : p, memory, why);
     if (!h) {
       missing.push(city);
       return null;
     }
-    autoPicked.push({ city: h.city || city, hotel: h.name, favourite: !!why.favourite, overBudget: !!why.overBudget, ...extra });
+    autoPicked.push({ city: h.city || city, hotel: h.name, favourite: !!why.favourite, overBudget: !!why.overBudget, met: Array.isArray(why.met) ? why.met : [], unmet: why.unmet || [], ...extra });
     return h;
   };
+  // The class the trip is quoted in: the one the hotels already named are in,
+  // else the star rating every stop of the route has (commonClass).
+  const namedClass = (command.stays || [])
+    .map((st) => hotels.find((h) => String(h.id) === String(st.hotelId)))
+    .map((h) => /^[1-7]/.exec(String(h?.category || ""))?.[0])
+    .find(Boolean);
+  const classFor = (cities) => namedClass || commonClass(cities, hotels);
+  soft = classFor((command.stays || []).map((st) => st.city).filter(Boolean));
   let stays = (command.stays || []).map((st) => {
     if (st.hotelId || !st.city) return st;
     // The agent named a hotel we couldn't find: never swap in one of our own —
@@ -207,7 +290,8 @@ function resolveStays(command, hotels, nights, destinations = [], memory = null)
     }
   }
   if (!stays.length && nights > 0) {
-    const route = planRoute(command, hotels, destinations, nights, memory);
+    const route = inRoadOrder(planRoute(command, hotels, destinations, nights, memory), hotels, command);
+    soft = classFor(route.map((r) => r.city));
     stays = route.map(({ city, nights: n }) => {
       const h = pick(city, { routed: route.length > 1 });
       // No hotel there: keep the city in the plan so the day-wise
@@ -218,6 +302,43 @@ function resolveStays(command, hotels, nights, destinations = [], memory = null)
     });
   }
   return { stays, autoPicked, missing: [...new Set(missing)], pref };
+}
+
+/**
+ * A route Ching planned itself runs the way the road does: from the airport
+ * town, round, and back (route.js). The agency's own usual split (learned) and
+ * an order the agent asked for are left as they are.
+ */
+function inRoadOrder(route, hotels, command) {
+  if (route.length < 2 || route.learned || command.stayOrderSaid) return route;
+  const best = bestStayOrder(route, { hotels });
+  return best.ok && best.changed ? best.order.map((i) => route[i]) : route;
+}
+
+/**
+ * The star rating to quote a multi-stop trip in when none was asked for: the
+ * one found in the most of its cities (so the trip doesn't jump from a 3-star
+ * to a 5-star and back), then the one with the most hotels, then the lower.
+ */
+function commonClass(cities, hotels) {
+  const towns = [...new Set(cities.filter(Boolean))];
+  if (towns.length < 2) return null;
+  const tally = new Map();
+  for (const city of towns) {
+    const here = hotels.filter((h) => hotelInCity(h, city) && h.is_available !== false);
+    const stars = new Set();
+    for (const h of here) {
+      const k = /^[1-7]/.exec(String(h.category || ""))?.[0];
+      if (!k) continue;
+      const t = tally.get(k) || { k, cities: 0, hotels: 0 };
+      t.hotels += 1;
+      if (!stars.has(k)) t.cities += 1;
+      stars.add(k);
+      tally.set(k, t);
+    }
+  }
+  const best = [...tally.values()].sort((a, b) => b.cities - a.cities || b.hotels - a.hotels || Number(a.k) - Number(b.k))[0];
+  return best ? best.k : null;
 }
 
 /** How many cities a trip of `nights` nights comfortably covers. */
@@ -258,7 +379,7 @@ function planRoute(command, hotels, destinations, nights, memory = null, { exclu
   // The agency's usual split for this destination and length (learned).
   const learned = memory?.routes?.[`${placeKey(dest)}|${nights}`];
   if (!exclude.length && !allCities && Array.isArray(learned) && learned.length && learned.reduce((n, r) => n + (Number(r.nights) || 0), 0) === nights) {
-    return learned.map((r) => ({ city: r.city, nights: Number(r.nights) }));
+    return Object.assign(learned.map((r) => ({ city: r.city, nights: Number(r.nights) })), { learned: true });
   }
   if (!allCities && hotelCities.some((c) => samePlace(c, dest) && keep(c))) return [{ city: hotelCities.find((c) => samePlace(c, dest)), nights }];
 
@@ -273,7 +394,12 @@ function planRoute(command, hotels, destinations, nights, memory = null, { exclu
     );
   };
   const count = (city) => hotels.filter((h) => samePlace(h.city, city)).length;
-  const cities = hotelCities.filter(inRegion).sort((a, b) => count(b) - count(a));
+  // Towns of the kind wished for ("relaxing" → Pahalgam, "snow" → Gulmarg) go
+  // first, then the busiest: with few nights they are the ones kept.
+  // (ranked by the same place tags that answer "where should they go?": whereTo.js)
+  const ranked = suggestPlaces(command.wishes || readWishes(command.transcript), { hotels, destinations }, { tagMap: memory?.placeTags || null, max: 12 }).places;
+  const wished = (city) => ranked.find((p) => samePlace(p.name, city))?.score || 0;
+  const cities = hotelCities.filter(inRegion).sort((a, b) => wished(b) - wished(a) || count(b) - count(a));
   // allCities: just the region's cities in route order (for ranking stays).
   if (allCities) return cities;
   const open = cities.filter(keep);

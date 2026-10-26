@@ -93,6 +93,8 @@ export function buildTripDraft(snapshot, meta = {}) {
           mealPlan: a.mealPlan || "",
           suggested: suggested.has(cityKey(a.city)),
           picked: picked.has(String(a.name || "").toLowerCase()),
+          // The other hotels the agent can switch to in one tap (stayOptions.js).
+          options: list((meta.options || {})[cityKey(a.city)]),
         });
       }
     });

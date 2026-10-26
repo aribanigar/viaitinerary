@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import InstallAppButton from "../common/InstallAppButton";
+import { prefetchBuilderInit } from "../../api/builderInit";
 
 const INK = "#181c22";
 const PIN_KEY = "nav_rail_pinned";
@@ -159,11 +160,14 @@ function useRoleFilteredTree(role) {
     .filter((item) => !item.children || item.children.length > 0);
 }
 
-function Row({ icon: Icon, label, to, active, expanded, onNavigate }) {
+function Row({ icon: Icon, label, to, active, expanded, onNavigate, onWarm }) {
   return (
     <Link
       to={to}
       onClick={onNavigate}
+      onMouseEnter={onWarm}
+      onFocus={onWarm}
+      onTouchStart={onWarm}
       className={`flex items-center h-11 rounded-2xl transition-colors whitespace-nowrap ${
         expanded ? "gap-3 px-[18px] w-full" : "w-11 mx-auto justify-center"
       } ${
@@ -225,8 +229,26 @@ function GroupHeader({ label, icon, open, active, onToggle }) {
 const NavRail = () => {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [hovered, setHovered] = useState(false);
+
+  // Warm the Trip Builder's catalogs (api/builderInit.js) once the page is
+  // idle, so "Create a Trip" opens without waiting on the server.
+  const buildsTrips = user?.role === "admin" || user?.role === "team";
+  useEffect(() => {
+    if (!buildsTrips || !token) return undefined;
+    const run = () => prefetchBuilderInit(token);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(run, { timeout: 4000 });
+      return () => window.cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(run, 1500);
+    return () => clearTimeout(t);
+  }, [buildsTrips, token]);
+  const warmBuilder = (to) =>
+    buildsTrips && token && (to === "/trip-builder" || to === "/assistant")
+      ? () => prefetchBuilderInit(token)
+      : undefined;
   const [pinned, setPinned] = useState(
     () => localStorage.getItem(PIN_KEY) === "1",
   );
@@ -338,6 +360,7 @@ const NavRail = () => {
               to={item.to}
               active={isActive(item.to)}
               expanded={expanded}
+              onWarm={warmBuilder(item.to)}
             />
           ),
         )}

@@ -79,9 +79,14 @@ export async function fetchSubscriptionStatus(token) {
   return request("/subscription/status", { token });
 }
 
-export async function fetchBuilderInit(token, tripId = null) {
-  const url = tripId ? `/builder/init?trip_id=${tripId}` : "/builder/init";
-  return request(url, { token });
+// catalogs: false → only the trip, settings and policies (the caller already
+// holds the hotels, cabs, destinations and activities — api/builderInit.js).
+export async function fetchBuilderInit(token, tripId = null, { catalogs = true } = {}) {
+  const query = new URLSearchParams();
+  if (tripId) query.set("trip_id", tripId);
+  if (!catalogs) query.set("catalogs", "0");
+  const qs = query.toString();
+  return request(qs ? `/builder/init?${qs}` : "/builder/init", { token });
 }
 
 export async function fetchTripRevisions(token, id) {

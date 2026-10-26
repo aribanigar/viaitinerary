@@ -111,10 +111,35 @@ export async function POST(request, { params }) {
   }
 
   // ── Client booking confirmation ──
-  if (!settings || !settings.contactEmail) {
-    return NextResponse.json({ message: "Agency contact email is not set." }, { status: 422 });
+  // Goes to the client; the agency gets a copy (BCC) and the client's replies
+  // (Reply-To). Checked before anything changes, so a trip without a client
+  // email isn't marked confirmed.
+  if (!trip.clientEmail) {
+    return NextResponse.json({ message: "Client email is not set for this trip." }, { status: 422 });
   }
 
+  const agencyName = settings?.agencyName || "ViaItinerary";
+  const agencyEmail = settings?.contactEmail || null;
+  const defaultMsg = `Warm greetings from ${agencyName},\n\nThank you for choosing ${agencyName} for your upcoming journey. We are pleased to confirm your travel arrangements and sincerely appreciate the opportunity to curate your travel experience. Our team looks forward to welcoming you and ensuring a seamless, comfortable, and memorable holiday.`;
+  const message = applyVars(settings?.confirmationMessage || defaultMsg, {
+    "{agencyName}": agencyName,
+    "{clientName}": trip.clientName || "Guest",
+    "{tripId}": trip.tripId,
+  }).trim();
+
+  const confirmationPdf = await renderConfirmationPdf(trip, settings, message);
+  await sendMail(mailer, {
+    to: trip.clientEmail,
+    ...(agencyEmail && agencyEmail.toLowerCase() !== String(trip.clientEmail).toLowerCase()
+      ? { bcc: agencyEmail, replyTo: agencyEmail }
+      : {}),
+    subject: `Booking Confirmation - Trip #${trip.tripId}`,
+    html: confirmationHtml(message, agencyName, { heroUrl: settings?.confirmationHeroImage || trip.imagePath }),
+    text: message,
+    attachments: [{ filename: `${trip.tripId}_Confirmation.pdf`, content: confirmationPdf, contentType: "application/pdf" }],
+  });
+
+  // Marked confirmed only once the email has actually gone out.
   // Trips created via duplicate/package-use/lead-conversion start at
   // "draft" rather than "pending" — without including it here, sending a
   // confirmation on one of those never actually marks the trip confirmed,
@@ -125,25 +150,9 @@ export async function POST(request, { params }) {
     await prisma.trip.update({ where: { id: trip.id }, data: { confirmationSent: true } });
   }
 
-  const agencyName = settings.agencyName || "ViaItinerary";
-  const defaultMsg = `Warm greetings from ${agencyName},\n\nThank you for choosing ${agencyName} for your upcoming journey. We are pleased to confirm your travel arrangements and sincerely appreciate the opportunity to curate your travel experience. Our team looks forward to welcoming you and ensuring a seamless, comfortable, and memorable holiday.`;
-  const message = applyVars(settings.confirmationMessage || defaultMsg, {
-    "{agencyName}": agencyName,
-    "{clientName}": trip.clientName || "Guest",
-  }).trim();
-
-  const confirmationPdf = await renderConfirmationPdf(trip, settings, message);
-  await sendMail(mailer, {
-    to: settings.contactEmail,
-    subject: `Booking Confirmation - Trip #${trip.tripId}`,
-    html: confirmationHtml(message, agencyName),
-    text: message,
-    attachments: [{ filename: `${trip.tripId}_Confirmation.pdf`, content: confirmationPdf, contentType: "application/pdf" }],
-  });
-
   await recordTripRevision(trip.id, "confirmation_email");
 
-  const response = { message: "Confirmation email sent for the client." };
+  const response = { message: `Confirmation emailed to ${trip.clientEmail}${agencyEmail ? " (copy to you)" : ""}.` };
   if (trip.clientPhone) {
     response.whatsapp_url = `https://wa.me/${String(trip.clientPhone).replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
   }

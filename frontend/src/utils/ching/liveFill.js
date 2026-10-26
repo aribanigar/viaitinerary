@@ -7,7 +7,11 @@
 //    request (client, guests, dates, hotels, day plan, cab, meals), then any
 //    extras in the same sentence (activities, leisure days, margin, GST…).
 //  - "edit": the trip already has content → the sentence is a list of edits.
-import { parseChingCommand, validateChingCommand } from "./parseCommand.js";
+import { validateChingCommand } from "./parseCommand.js";
+import { parseTripRequest } from "./brief.js";
+import { stayOptions } from "./stayOptions.js";
+import { hotelPreference } from "./buildTrip.js";
+import { readWishes } from "./meaning.js";
 import { parseChingEdit } from "./parseEdit.js";
 import { buildEditContext, applyEditActions } from "./editTrip.js";
 import { applyCorrections } from "./corrections.js";
@@ -110,11 +114,33 @@ function dateRange(start, nights) {
 }
 const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 
+const rupees = (n) => `₹${Math.round(Number(n) || 0).toLocaleString("en-IN")}`;
+
+export const draftCityKey = (c) => String(c || "").toLowerCase().split(",")[0].replace(/\bcity\b/g, "").replace(/\s+/g, " ").trim();
+
+/** { cityKey: [options] } for every stay of a trip that has a choice of hotels. */
+export function stayOptionsFor(snapshot, text, command, catalog) {
+  const base = command?.pref || hotelPreference(text || "");
+  const wishes = command?.wishes || base.wishes || readWishes(text || "");
+  const out = {};
+  for (const a of snapshot?.accommodations || []) {
+    const k = draftCityKey(a.city); // the key the Trip Draft groups stays by (tripDraft.js cityKey)
+    if (!k || out[k] || a.cancelled) continue;
+    const stars = /[1-7]/.exec(String(a.category || ""))?.[0] || null;
+    const opts = stayOptions(a.city, catalog?.hotels || [], { ...base, wishes, softStars: stars }, catalog?.memory || null, { current: a.hotelId, roomType: a.roomType, date: a.checkIn });
+    if (opts.length > 1) out[k] = opts;
+  }
+  return out;
+}
+
 function planFill(base, rawText, { catalog, settings, today }) {
   // Aliases apply to the whole sentence — the fill and the extras riding along.
-  const text = applyAliases(rawText, catalog.memory);
+  const rawAliased = applyAliases(rawText, catalog.memory);
   const createCatalog = { hotels: catalog.hotels, destinations: catalog.destinations, vehicles: catalog.vehicles };
-  const command = parseChingCommand(text, createCatalog, { today });
+  const command = parseTripRequest(rawAliased, { ...createCatalog, activities: catalog.activities, memory: catalog.memory }, { today, settings });
+  // A client's story was rewritten as a plain request: extras ("add gondola
+  // on day 2") and "what was said" are read from that, not from the story.
+  const text = command.canonical || rawAliased;
   // Day 1 is the trip's start date: when none was said, use the one already on the trip.
   const baseStart = String(base.tripInfo?.startDate || "").slice(0, 10);
   if (!command.startDate && /^\d{4}-\d{2}-\d{2}$/.test(baseStart)) command.startDate = baseStart;
@@ -138,6 +164,31 @@ function planFill(base, rawText, { catalog, settings, today }) {
     accommodations: parts.accommodations.length ? parts.accommodations : base.accommodations,
     transportation: parts.transportation.length ? parts.transportation : base.transportation,
   };
+  // From a client's story: when they land and where they leave from go on the
+  // first and last day (and the last day's cab), as the client said them.
+  const story = command.story;
+  if (story && snapshot.itinerary.length) {
+    const days = snapshot.itinerary.map((d) => ({ ...d }));
+    if (story.arrivalTime) {
+      const d1 = days[0];
+      const line = `Arrival at ${story.arrivalTime}, transfer to the hotel`;
+      d1.activities = [line, ...(d1.activities || [])];
+      d1.description = [line, d1.description].filter(Boolean).join("\n");
+    }
+    if (story.departFrom && days.length > 1) {
+      const last = days[days.length - 1];
+      const from = last.location || "";
+      last.title = `Day ${last.day}: ${from ? `${from} to ` : "Drop at "}${story.departFrom} (Departure)`;
+      const cabs = snapshot.transportation.map((c) => ({ ...c }));
+      const lastDate = cabs.reduce((m, c) => (String(c.date || "") > m ? String(c.date) : m), "");
+      cabs.filter((c) => lastDate && String(c.date) === lastDate).forEach((c) => {
+        c.route = `${from ? `${from} → ` : ""}${story.departFrom}`;
+      });
+      snapshot = { ...snapshot, transportation: cabs };
+    }
+    snapshot = { ...snapshot, itinerary: days };
+  }
+
   // Inclusions / exclusions: a blank list starts from the agency's standard
   // lines, else lines written from this trip (nights, meals, cab).
   const start = startingInclusions(snapshot, catalog.standard);
@@ -164,9 +215,14 @@ function planFill(base, rawText, { catalog, settings, today }) {
   parts.accommodations.forEach((a) => {
     const n = Math.round((new Date(a.checkOut) - new Date(a.checkIn)) / 86400000);
     const pick = autoHotel.get(a.name);
-    const how = !pick ? "" : pick.favourite ? " (your usual)" : pick.overBudget ? " (nothing under budget — cheapest)" : " (picked for you)";
+    const why = pick?.met?.length ? `: ${pick.met.join(", ").toLowerCase()}` : "";
+    const how = !pick ? "" : pick.favourite ? " (your usual)" : pick.overBudget ? " (nothing under budget — cheapest)" : ` (picked for you${why})`;
     changes.push(`${a.city}: ${a.name} · ${plural(n, "night")}${how}`);
   });
+  // A wish no hotel there is tagged for: say so, once per wish.
+  const unmet = new Map();
+  parts.autoPicked.filter((p) => p.hotel).forEach((p) => (p.unmet || []).forEach((w) => unmet.set(w, [...(unmet.get(w) || []), p.city])));
+  const wishNotes = [...unmet.entries()].map(([w, cities]) => `Asked for “${w.toLowerCase()}”: no hotel in ${[...new Set(cities)].join(", ")} is tagged for it. Tick tags on your hotels (Accommodation)`);
   if (parts.itinerary.length) {
     const route = parts.itinerary.map((d) => d.location).filter((c, i, a) => c && c !== a[i - 1]);
     changes.push(`Day-wise plan: ${plural(parts.itinerary.length, "day")}${route.length > 1 ? ` · ${route.join(" → ")}` : ""}`);
@@ -174,6 +230,9 @@ function planFill(base, rawText, { catalog, settings, today }) {
   if (parts.transportation.length) {
     const how = !autoCab ? "" : autoCab.favourite ? " (your usual)" : ` (picked for ${autoCab.guests} guests)`;
     changes.push(`Cab: ${parts.vehicle.name} · ${plural(parts.transportation.length, "day")}${how}`);
+  }
+  if (command.totalBudget && command.pref?.maxPrice && parts.accommodations.length) {
+    changes.push(`Budget ${rupees(command.totalBudget)}: rooms kept within ${rupees(command.pref.maxPrice)} a night`);
   }
   const meal = parts.remembered.find((r) => r.meal);
   if (command.mealPlan) changes.push(`Meals: ${command.mealPlan}`);
@@ -184,6 +243,7 @@ function planFill(base, rawText, { catalog, settings, today }) {
   else if (rememberedPhone) changes.push(`Phone: ${rememberedPhone.phone} (from ${rememberedPhone.client}'s last trip)`);
   if (command.clientEmail) changes.push(`Email: ${command.clientEmail}`);
   else if (rememberedEmail) changes.push(`Email: ${rememberedEmail.email} (remembered)`);
+  (story?.notes || []).forEach((n) => changes.push(n));
   if (incBlank && snapshot.inclusions.length) changes.push(`Inclusions: ${plural(snapshot.inclusions.length, "line")}`);
   if (excBlank && snapshot.exclusions.length) changes.push(`Exclusions: ${plural(snapshot.exclusions.length, "line")}`);
 
@@ -200,6 +260,7 @@ function planFill(base, rawText, { catalog, settings, today }) {
     const m = /^Couldn't find "(.+?)" in your hotels/.exec(w);
     return !(m && stayCities.includes(placeKey(m[1])));
   });
+  warnings.push(...wishNotes);
   (parts.missingHotels || []).forEach((city) =>
     warnings.push(`No hotel in ${city} in your catalog — add one in Logistics (or to Accommodation)`),
   );
@@ -253,6 +314,9 @@ function planFill(base, rawText, { catalog, settings, today }) {
     pickedHotels: parts.autoPicked.filter((p) => p.hotel).map((p) => p.hotel),
     // Asked back in the draft until answered: "day 2 Gulmarg — day trip or transfer?",
     // and hotels the agent named that aren't in the catalog.
+    // Three hotels for each stay (stayOptions.js): the one planned, one that
+    // costs less, one step up — for the draft card and "use the cheaper one".
+    options: stayOptionsFor(snapshot, text, command, catalog),
     dayQuestions: command.dayPlan?.questions || [],
     unmatchedHotels: command.unmatchedHotels || [],
   };

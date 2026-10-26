@@ -593,6 +593,8 @@ model AgencySetting {
   bankName                  String?  @map("bank_name")
   accountNumber             String?  @map("account_number")
   ifscCode                  String?  @map("ifsc_code")
+  // Default currency for new trips/quotes, e.g. "INR (₹)" (Settings → Default Currency).
+  currency                  String?
   defaultTripImagePath      String?  @map("default_trip_image_path")
   gstPercentage             Decimal? @map("gst_percentage") @db.Decimal(8, 2)
   profitMarginPercentage    Decimal? @map("profit_margin_percentage") @db.Decimal(8, 2)
@@ -606,6 +608,10 @@ model AgencySetting {
   smtpEncryption            String?  @map("smtp_encryption")
   smtpAppPassword           String?  @map("smtp_app_password")
   googleMapsApiKey          String?  @map("google_maps_api_key")
+  // Ching's spoken voice (ElevenLabs): the voice to use and, optionally, the
+  // agency's own API key (write-only; blank → the platform key in Vercel env).
+  chingVoiceId              String?  @map("ching_voice_id")
+  elevenlabsApiKey          String?  @map("elevenlabs_api_key")
   // Client payments on the proposal page — the agency's OWN Razorpay account
   // (never the platform's subscription keys). No keys → UPI / bank transfer
   // with an "I've paid" claim the agency verifies.

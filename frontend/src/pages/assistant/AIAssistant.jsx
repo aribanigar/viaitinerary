@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Clock,
+  BarChart3,
   X,
   Mic,
   SendHorizontal,
@@ -25,7 +26,7 @@ import worldRaw from "./world.svg?raw";
 import AssistantFrame from "../../components/dashboard/AssistantFrame";
 import TripBuilder from "../../components/dashboard/TripBuilder";
 import { useChingEditor } from "../../utils/ching/editorBridge";
-import { useChingBus, clearChingHistory, setChingUnderstanding } from "../../utils/ching/chingBus";
+import { useChingBus, chingThreads, setChingUnderstanding } from "../../utils/ching/chingBus";
 
 // The AI Trip Assistant: Ching's own workspace. Same design as before (world
 // map card, greeting, waveform + mic, message box, destination card), now live:
@@ -320,12 +321,21 @@ const AIAssistant = () => {
   }, [trip]);
   const progress = buildProgress(trip, bus.stage, bus.pdfAt);
 
+  // One thread per trip: this trip's lines, or an earlier conversation picked from the list.
+  // (The pick belongs to the trip it was made on: another trip shows its own again.)
+  const [picked, setPicked] = useState({ on: "", id: "" });
+  const setViewThread = (id) => setPicked({ on: bus.thread || "general", id });
+  const viewThread = picked.on === (bus.thread || "general") ? picked.id : "";
+  const threads = useMemo(() => chingThreads(bus.history, bus.threads), [bus.history, bus.threads]);
+  const shownThread = viewThread && threads.some((t) => t.id === viewThread) ? viewThread : bus.thread || "general";
+  const lines = useMemo(() => bus.history.filter((h) => (h.thread || "general") === shownThread), [bus.history, shownThread]);
+
   // The conversation scrolls to its newest line.
   const threadRef = useRef(null);
   useEffect(() => {
     const el = threadRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [bus.history.length, bus.understanding]);
+  }, [lines.length, bus.understanding]);
 
   const photo = list(trip?.itinerary).find((d) => d.photo)?.photo || list(trip?.accommodations).find((a) => a.photo)?.photo || "";
   const dest = ti.destination || route[0]?.city || "";
@@ -352,8 +362,10 @@ const AIAssistant = () => {
       // builder not ready yet
     }
   };
+  // The conversation is kept (per trip): a new trip starts a new thread, the
+  // earlier ones stay under "Earlier".
   const newChat = () => {
-    clearChingHistory();
+    setViewThread("");
     setChingUnderstanding(null);
     navigate(`/assistant?d=${Date.now().toString(36)}`);
   };
@@ -367,8 +379,11 @@ const AIAssistant = () => {
             <Plus className="w-4 h-4" /> New Trip
           </button>
           <span className="flex items-center gap-2 text-sm font-medium text-[#181c22]/50">
-            <Clock className="w-4 h-4" /> {bus.history.length} messages
+            <Clock className="w-4 h-4" /> {lines.length} messages
           </span>
+          <Link to="/assistant/insights" className="flex items-center gap-2 text-sm font-medium text-[#181c22] hover:opacity-70 transition-opacity">
+            <BarChart3 className="w-4 h-4" /> How Ching is doing
+          </Link>
         </>
       }
     >
@@ -380,7 +395,23 @@ const AIAssistant = () => {
               {TABS.map((t) => (
                 <ToolIcon key={t.tab} icon={t.icon} label={t.tab} active={shownTab === t.tab} onClick={() => openTab(t.tab)} />
               ))}
-              <span className="ml-auto text-[11px] font-medium text-[#181c22]/45 hidden sm:block">Conversation</span>
+              {threads.length > 1 ? (
+                <select
+                  aria-label="Conversation"
+                  value={shownThread}
+                  onChange={(e) => setViewThread(e.target.value === (bus.thread || "general") ? "" : e.target.value)}
+                  className="ml-auto max-w-[190px] bg-transparent text-[11px] font-medium text-[#181c22]/60 outline-none cursor-pointer"
+                >
+                  {!threads.some((t) => t.id === (bus.thread || "general")) && <option value={bus.thread || "general"}>This trip</option>}
+                  {threads.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.id === (bus.thread || "general") ? "This trip" : `${t.title} · ${t.lines.length}`}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="ml-auto text-[11px] font-medium text-[#181c22]/45 hidden sm:block">Conversation</span>
+              )}
             </div>
 
             {/* thread */}
@@ -393,7 +424,7 @@ const AIAssistant = () => {
                   Hi! I'm <span className="font-semibold">Ching</span>. Tell me the trip in any order — who, how many, when, where and which hotels — and watch it build on the right. If I'm unsure of something, I'll ask instead of guessing.
                 </p>
               </div>
-              {bus.history.map((h, i) =>
+              {lines.map((h, i) =>
                 h.role === "you" ? (
                   <div key={i} className="flex justify-end">
                     <p className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-br-md bg-[#181c22] text-white text-[13.5px] leading-snug">{h.text}</p>

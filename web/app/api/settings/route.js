@@ -4,6 +4,7 @@ import { userFromRequest } from "@/lib/auth";
 import { adminIdOf } from "@/lib/scope";
 import { settingsToCamel, SETTINGS_DEFAULTS } from "@/lib/serialize";
 import { persistImage } from "@/lib/storage";
+import { parseVoiceId } from "@/lib/chingVoice";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -41,6 +42,8 @@ const FIELD_MAP = {
   smtpEncryption: "smtpEncryption",
   smtpAppPassword: "smtpAppPassword",
   googleMapsApiKey: "googleMapsApiKey",
+  chingVoiceId: "chingVoiceId",
+  elevenlabsApiKey: "elevenlabsApiKey",
   razorpayKeyId: "razorpayKeyId",
   razorpayKeySecret: "razorpayKeySecret",
   upiId: "upiId",
@@ -94,6 +97,21 @@ export async function PUT(request) {
     if (body.clearSmtpPassword) data.smtpAppPassword = null;
     // Write-only secret: an empty value keeps the saved one; clear explicitly.
     if (data.razorpayKeySecret === "") delete data.razorpayKeySecret;
+    // Ching voice: an ElevenLabs voice link or ID → the ID; blank → back to the default.
+    if (data.chingVoiceId !== undefined) {
+      if (!data.chingVoiceId) data.chingVoiceId = null;
+      else {
+        const id = parseVoiceId(data.chingVoiceId);
+        if (!id) return NextResponse.json({ message: "That doesn't look like an ElevenLabs voice link or ID." }, { status: 422 });
+        data.chingVoiceId = id;
+      }
+    }
+    // Write-only like the Razorpay secret: blank keeps the saved key; clear explicitly.
+    if (data.elevenlabsApiKey !== undefined) {
+      data.elevenlabsApiKey = String(data.elevenlabsApiKey || "").trim();
+      if (!data.elevenlabsApiKey) delete data.elevenlabsApiKey;
+    }
+    if (body.clearElevenlabsKey) data.elevenlabsApiKey = null;
     if (body.clearRazorpay) {
       data.razorpayKeyId = null;
       data.razorpayKeySecret = null;

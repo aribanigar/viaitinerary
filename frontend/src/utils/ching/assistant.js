@@ -5,6 +5,9 @@
 import { chatReply } from "./chat.js";
 import { smalltalkIntent, personaLine } from "./persona.js";
 import { understandHotelSearch } from "./hotelQuery.js";
+import { readWishes, toTag, hasHotelWishes } from "./meaning.js";
+import { helpAsk, helpReply } from "./capabilities.js";
+import { whereAsk, toPlaceTag } from "./whereTo.js";
 
 const clean = (t) =>
   String(t || "")
@@ -23,6 +26,7 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 // Pages Ching can open: [route, label, keyword patterns]. Order matters: more
 // specific first ("hotel calendar" before "hotels", "accounting summary" before "accounting").
 const PAGES = [
+  ["/assistant/insights", "my report", /\bhow (?:are|is) (?:you|ching) doing\b|\b(?:your|ching'?s?) (?:report|score|scorecard|insights|misses|mistakes)\b|\bwhat (?:did|do) you (?:miss|get wrong|not understand)\b/],
   ["/operations", "today's operations", /\b(?:daily )?op(?:eration)?s(?: board| desk)?\b|\bdaily ops\b|\bschedule\b|\bdrivers?\b|\bsupplier confirmations?\b/],
   ["/accommodation/calendar", "the hotel calendar", /\bhotel (?:booking )?calendar|availability calendar|room calendar\b/],
   ["/accounting-summary", "the accounting summary", /\b(?:accounting|accounts|profit|p ?and ?l|p&l) summary\b|\bprofit and loss\b|\bprofits?\b/],
@@ -102,6 +106,16 @@ export function understandAssistant(text, { inBuilder = false, chat = null } = {
   if (!t) return null;
   const words = t.split(" ").length;
 
+  // "help", "what can you do with payments": the capability tree (capabilities.js).
+  const help = helpAsk(t);
+  if (help) return { type: "smalltalk", reply: helpReply(help.topic), intent: "help" };
+  if (/^(?:please )?(?:clear|delete|erase|wipe|reset) (?:our |the |this |my )?(?:conversation|chat|chat history|history)$/.test(t)) return { type: "clear-conversation" };
+  // "where should they go for snow and shopping?" (whereTo.js): places by meaning.
+  const where = whereAsk(t);
+  if (where) return { type: "where", text: where.text, wishes: where.wishes };
+  if (/^(?:ok(?:ay)? )?(?:please )?(?:plan|book|take|go with|let'?s (?:do|go with|plan)|do) (?:the |option |number )?(?:first|1st|second|2nd|third|3rd|last|both|all(?: three| 3| of them)?)(?: one| option| place)?$/.test(t)) return { type: "where-pick", text: t };
+  const tags = understandTags(t);
+  if (tags) return tags;
   const memory = understandMemory(t, inBuilder);
   if (memory) return memory;
 
@@ -112,6 +126,9 @@ export function understandAssistant(text, { inBuilder = false, chat = null } = {
 
   // Hotel search: "find a 4 star in Srinagar under 6000 with breakfast",
   // "use the cheapest available 4-star with breakfast", "use the first one".
+  // "options for Gulmarg", "use the cheaper one in Pahalgam", "offer all three to the client" (stayOptions.js).
+  const opts = understandStayOptions(t);
+  if (opts) return opts;
   const hotel = understandHotelSearch(t, { inBuilder });
   if (hotel) return hotel;
 
@@ -198,6 +215,71 @@ export function understandAssistant(text, { inBuilder = false, chat = null } = {
 }
 
 
+// ── three hotels for a stay (stayOptions.js): show them, switch to one, offer them to the client
+const IN_TOWN = "(?: (?:in|for|at) (?:the )?([a-z]+(?: [a-z]+)??)(?: hotel| stay)?)?";
+function understandStayOptions(t) {
+  let m;
+  // "options for payment", "what else can you do": not about a stay's hotels.
+  if (/\b(?:pay(?:ment|ing)?|price|pricing|cabs?|cars?|vehicles?|meals?|food|activit(?:y|ies)|flights?|dates?|you do|can you)\b/.test(t)) return null;
+  const town = (x) => String(x || "").replace(/\b(?:the|hotel|stay|client|trip)\b/g, " ").replace(/\s+/g, " ").trim();
+  // Offer the client a choice.
+  if (
+    (m = new RegExp(`^(?:please )?(?:offer|give|show|send) (?:the )?(?:client|them|him|her) (?:a choice|(?:all |the )?(?:three |3 |two |2 )?(?:options|choices|hotels))(?: of hotels)?${IN_TOWN}$`).exec(t)) ||
+    (m = new RegExp(`^(?:please )?offer (?:a choice|(?:all |the )?(?:three |3 |two |2 )?(?:options|choices|hotels))(?: of hotels)?(?: to (?:the )?(?:client|them))?${IN_TOWN}$`).exec(t)) ||
+    (m = new RegExp(`^(?:please )?(?:add|keep|put) (?:them|these|those|all (?:three|3)?|the (?:three|3|other(?: two| 2)?)) as (?:options|choices)${IN_TOWN}$`).exec(t)) ||
+    (m = new RegExp(`^(?:please )?offer (?:all|both|all (?:three|3)|the (?:three|3|two|2))(?: (?:hotels|options|choices))?(?: to (?:the )?(?:client|them))?${IN_TOWN}$`).exec(t)) ||
+    (m = new RegExp(`^(?:please )?let (?:the )?(?:client|them) (?:choose|pick|decide)(?: the hotel)?${IN_TOWN}$`).exec(t))
+  ) {
+    return { type: "stay-options", mode: "offer", city: town(m[1]) };
+  }
+  if ((m = new RegExp(`^(?:please )?(?:remove|drop|take away|no) (?:the )?(?:hotel )?(?:options|choices)${IN_TOWN}$`).exec(t)) || (m = new RegExp(`^(?:please )?offer (?:only|just) (?:one|the main) hotel${IN_TOWN}$`).exec(t))) {
+    return { type: "stay-options", mode: "clear", city: town(m[1]) };
+  }
+  // Switch to the cheaper one / the step up.
+  if ((m = new RegExp(`^(?:please )?(?:use|take|pick|choose|select|book|go with|switch to|give (?:me|them)) (?:the |a )?(cheaper|cheapest|budget|lower|upgrade|upgraded|better|nicer|premium|step up)(?: one| option| hotel)?${IN_TOWN}$`).exec(t))) {
+    return { type: "stay-options", mode: "pick", role: /cheap|budget|lower/.test(m[1]) ? "cheaper" : "upgrade", city: town(m[2]) };
+  }
+  if ((m = /^(?:please )?upgrade (?:the )?(?:hotel (?:in|at) )?([a-z]+(?: [a-z]+)??)(?: hotel| stay)?$/.exec(t)) && !/^(?:it|this|that|trip|the trip|everything|all)$/.test(m[1])) {
+    return { type: "stay-options", mode: "pick", role: "upgrade", city: town(m[1]) };
+  }
+  // Show them.
+  if (
+    (m = new RegExp(`^(?:please )?(?:show(?: me)?|what are|give me|list|any|tell me)? ?(?:the |my |our )?(?:other |more |alternative |hotel )*(?:options|choices|alternatives)${IN_TOWN}$`).exec(t)) ||
+    (m = new RegExp(`^what else(?: do (?:we|you|i) have| is there)?${IN_TOWN}$`).exec(t)) ||
+    (m = new RegExp(`^(?:please )?(?:show(?: me)?|any|what are the) other hotels${IN_TOWN}$`).exec(t))
+  ) {
+    return { type: "stay-options", mode: "show", city: town(m[1]) };
+  }
+  return null;
+}
+
+// ── hotel tags (meaning.js): "tag Heevan Resort as riverside and quiet",
+// "remove the riverside tag from Heevan", "which hotels are riverside in Pahalgam"
+const tagList = (words) => [...new Set(String(words || "").split(/\s*(?:,|\band\b|&|\+)\s*/).map((w) => toTag(w.replace(/^(?:a|an|the|very|also) /, "").replace(/ (?:hotel|property|place|stay|one)$/, ""))).filter(Boolean))];
+const placeTagList = (words) => [...new Set(String(words || "").split(/\s*(?:,|\band\b|&|\+)\s*/).map((w) => toPlaceTag(w.replace(/^(?:a|an|the|very|also|good for|great for) /, ""))).filter(Boolean))];
+function understandTags(t) {
+  let m;
+  if ((m = /^(?:please )?(?:tag|mark|label)\s+(.+?)\s+(?:as|with|is|:)\s+(.+)$/.exec(t))) {
+    const add = tagList(m[2]);
+    const place = placeTagList(m[2]);
+    // "mark Rahul's trip as confirmed" is a trip status, not a tag.
+    if ((add.length || place.length) && !/\b(?:trip|booking|confirmed|cancelled|paid)\b/.test(t)) return { type: "tag", hotel: m[1].replace(/^(?:the |hotel )/, "").trim(), add, remove: [], placeAdd: place, placeRemove: [] };
+  }
+  if ((m = /^(?:please )?(?:remove|delete|drop|untag)\s+(?:the\s+)?(.+?)\s+tags?\s+(?:from|of|on)\s+(.+)$/.exec(t))) {
+    const remove = tagList(m[1]);
+    const place = placeTagList(m[1]);
+    if (remove.length || place.length) return { type: "tag", hotel: m[2].replace(/^(?:the |hotel )/, "").trim(), add: [], remove, placeAdd: [], placeRemove: place };
+  }
+  if ((m = /^(?:please )?(?:which|what|show(?: me)?|list|find|any|do (?:we|i) have(?: any)?|have (?:we|i) got(?: any)?|suggest|recommend)\b(.*)$/.exec(t)) && /\b(?:hotels?|propert(?:y|ies)|stays?|houseboats?|resorts?|places?|options?|cottages?|camps?)\b|\bdo (?:we|i|you) have\b/.test(t)) {
+    // Stars, prices, meals and "available" are the rate search (hotelQuery.js), not a tag lookup.
+    if (/\d|\bstars?\b|\bunder\b|\bbelow\b|\bcheap|\bbreakfast\b|\bdinner\b|\bavailable\b|\btrips?\b|\bunpaid\b/.test(t)) return null;
+    const where = /\b(?:in|at|near|around)\s+([a-z]+(?: [a-z]+)?)\s*$/.exec(t);
+    const wishes = readWishes(where ? t.slice(0, where.index) : t);
+    if (hasHotelWishes(wishes)) return { type: "tagged", city: where ? where[1] : "", wishes, said: wishes.nodes.map((n) => n.label.toLowerCase()) };
+  }
+  return null;
+}
+
 // ── memory: "call me…", "when I say X I mean Y", "my usual hotel in Gulmarg is…", "remember…", "forget…"
 const title = (x) => String(x || "").trim().replace(/\b[a-z]/g, (c) => c.toUpperCase());
 function understandMemory(t, inBuilder = false) {
@@ -261,6 +343,9 @@ function understandDoc(t, { inBuilder }) {
         : null;
   if (!action || t.split(" ").length > 14) return null;
   if (/\b\d+\s*(?:nights?|days?)\b/.test(t)) return null; // a trip request that mentions a PDF
+  // "make an itinerary for Kashmir", "plan a honeymoon itinerary": a trip to
+  // build, not a document to fetch (that is "download / send … itinerary").
+  if (doc === "itinerary" && !/\bpdf\b/.test(t) && /\b(?:make|create|plan|build|prepare|draft|design|suggest|need|want)\b/.test(t) && !/\b(?:download|export|print|send|e-?mail|mail|whats ?app|share|open|show)\b/.test(t)) return null;
   const query = targetOf(t);
   const toMe = /\b(?:to|for) me\b|\bemail me\b|\bmail me\b/.test(t);
   // Inside the builder, "export the PDF" / "email it to me" / "export excel" /
@@ -447,8 +532,8 @@ const SMALLTALK = [
     pick(["Fully charged and fully booked — in a good way. How can I help?", "Better than a Gulmarg sunrise. What are we planning?", "Great, thanks for asking! Got a trip for me?"])],
   [/^(?:who are you|what are you|what is your name|what's your name|tumhara naam)\b/, () =>
     "I'm Ching, your travel desk assistant. Tell me a trip and I'll fill the whole thing — hotels, cabs, day plan, price — while you talk."],
-  [/\b(?:what can you do|help me|how do i use you|what do you do|commands)\b/, () =>
-    "Try: \"3 night Srinagar trip for Rahul, 4 adults from 10 November\". Then \"make Gulmarg 2 nights\", \"give me 20% margin\", \"what's pending?\", \"send it to the client on WhatsApp\" — or \"open the ledger\" to go anywhere."],
+  [/\b(?:what can you do|help me|how do i use you|what do you do|commands)\b|^help$/, () =>
+    "Tell me a trip the way a client asks: \"plan a Kashmir trip for 4 people, 5 nights from 10 November, budget hotels\". I'll ask what's missing and plan the hotels, cab and day-wise itinerary from your own catalog. Then \"make Gulmarg 2 nights\", \"give me 20% margin\", \"what's pending?\", \"send it to the client on WhatsApp\" — or \"open the ledger\" to go anywhere."],
   [/\b(?:joke|make me laugh|funny|mazak|chutkula)\b/, () => pick(JOKES)],
   [/^(?:thank you|thanks|thank u|shukriya|dhanyavad|great job|well done|awesome|nice|perfect|good job)\b/, () =>
     pick(["Anytime! That's what I'm here for.", "My pleasure. Next trip?", "Happy to help — go close that deal!", "Shukriya! Ping me whenever."])],

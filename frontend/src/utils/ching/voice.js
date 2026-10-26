@@ -1,6 +1,9 @@
-// Ching's spoken replies — the browser's own speech synthesis (no API keys).
-// Prefers an Indian-English voice, then any English one. While Ching speaks,
-// the widget pauses hands-free listening so Ching doesn't hear itself.
+// Ching's spoken replies. English replies use the agency's ElevenLabs voice
+// when the server has one configured (POST /api/ching/tts — the API key never
+// reaches the browser); otherwise, and whenever that fails, the browser's own
+// speech synthesis (an Indian-English voice, then any English one). Urdu /
+// Hindi replies always use the browser's voices. While Ching speaks, the
+// widget pauses hands-free listening so Ching doesn't hear itself.
 
 const KEY = "ching_voice";
 const supported = () => typeof window !== "undefined" && "speechSynthesis" in window;
@@ -94,6 +97,7 @@ function speakUrdu(urdu, english, resolve) {
   const en = pickVoice();
   const synth = window.speechSynthesis;
   synth.cancel();
+  if (player && !player.paused) player.pause();
   const queue = urdu.parts
     .map((p) => (p.ur ? { text: ur ? p.ur : p.hi, voice: ur || hi } : { text: spoken(p.en), voice: en }))
     .filter((q) => q.text);
@@ -134,13 +138,89 @@ function speakUrdu(urdu, english, resolve) {
  */
 export function speak(text, { urdu = null } = {}) {
   return new Promise((resolve) => {
-    if (!supported() || !voiceEnabled() || !String(text || "").trim()) {
+    if (!voiceEnabled() || !String(text || "").trim() || (!supported() && typeof Audio === "undefined")) {
       resolve();
       return;
     }
-    if (urdu?.parts?.length) speakUrdu(urdu, text, resolve);
+    if (urdu?.parts?.length && supported()) speakUrdu(urdu, text, resolve);
     else speakText(text, resolve);
   });
+}
+
+// ── ElevenLabs voice (server-side, /api/ching/tts) ──────────────────────
+// One <audio> element for every reply: phones only allow playback on an
+// element a tap has already started (unlockSpeech plays silence on it).
+let player = null;
+const getPlayer = () => {
+  if (!player && typeof Audio !== "undefined") player = new Audio();
+  return player;
+};
+// "unknown" until asked once per page; "off" when the server has no voice set
+// up, or after repeated failures (then the browser voice for the rest of the visit).
+let cloud = "unknown";
+let cloudCheck = null;
+let cloudFailures = 0;
+const authHeaders = () => {
+  let token = null;
+  try {
+    token = localStorage.getItem("token");
+  } catch {
+    /* storage blocked — the httpOnly cookie still authenticates */
+  }
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+function cloudReady() {
+  if (cloud !== "unknown") return Promise.resolve(cloud === "on");
+  if (!cloudCheck) {
+    cloudCheck = fetch("/api/ching/tts", { headers: authHeaders(), credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : { enabled: false }))
+      .then((d) => {
+        cloud = d?.enabled ? "on" : "off";
+        if (cloud === "off") console.info("Ching voice: no ElevenLabs key configured — using the browser voice.");
+        return cloud === "on";
+      })
+      .catch(() => {
+        cloudCheck = null; // offline for a moment — ask again next reply
+        return false;
+      });
+  }
+  return cloudCheck;
+}
+/** Settings changed the voice or key: ask the server again, drop cached clips. */
+export function resetChingVoice() {
+  cloud = "unknown";
+  cloudCheck = null;
+  cloudFailures = 0;
+  clips.forEach((url) => URL.revokeObjectURL(url));
+  clips.clear();
+}
+
+// Recent replies' audio, so "Done." / greetings don't cost credits twice.
+const clips = new Map();
+const CLIP_LIMIT = 40;
+async function cloudClip(say) {
+  if (clips.has(say)) return clips.get(say);
+  const r = await fetch("/api/ching/tts", {
+    method: "POST",
+    headers: { ...authHeaders(), "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ text: say }),
+  });
+  if (r.status === 503) cloud = "off"; // not configured after all
+  if (!r.ok || !/audio/.test(r.headers.get("content-type") || "")) {
+    const why = await r.json().then((d) => d?.message).catch(() => "");
+    // Visible in the browser console; Settings → Ching voice → "Check voice" explains it in full.
+    console.warn(`Ching voice: ElevenLabs unavailable (${r.status}${why ? `: ${why}` : ""}) — using the browser voice.`);
+    throw new Error(`tts ${r.status}`);
+  }
+  const url = URL.createObjectURL(await r.blob());
+  clips.set(say, url);
+  if (clips.size > CLIP_LIMIT) {
+    const [oldest, oldUrl] = clips.entries().next().value;
+    clips.delete(oldest);
+    URL.revokeObjectURL(oldUrl);
+  }
+  return url;
 }
 
 function speakText(text, resolve) {
@@ -149,9 +229,57 @@ function speakText(text, resolve) {
     resolve();
     return;
   }
+  stopSpeaking();
+  const turn = ++speechTurn;
+  setSpeaking(true); // listening pauses from now, while the audio is fetched
+  cloudReady()
+    .then((on) => (on ? cloudClip(say) : null))
+    .then((url) => {
+      if (turn !== speechTurn) return resolve(); // a newer reply took over
+      if (!url) return browserSpeak(say, turn, resolve);
+      cloudFailures = 0;
+      playClip(url, say, turn, resolve);
+    })
+    .catch(() => {
+      if (++cloudFailures >= 3) cloud = "off";
+      if (turn !== speechTurn) return resolve();
+      browserSpeak(say, turn, resolve);
+    });
+}
+
+function playClip(url, say, turn, resolve) {
+  const audio = getPlayer();
+  if (!audio) return browserSpeak(say, turn, resolve);
+  let finished = false;
+  const done = () => {
+    if (finished) return;
+    finished = true;
+    audio.onended = audio.onerror = null;
+    if (turn === speechTurn) setSpeaking(false);
+    resolve();
+  };
+  audio.onended = done;
+  audio.onerror = done;
+  audio.src = url;
+  audio.play().catch(() => {
+    // Autoplay refused (no tap yet on this phone) → the browser voice.
+    audio.onended = audio.onerror = null;
+    finished = true;
+    if (turn === speechTurn) browserSpeak(say, turn, resolve);
+    else resolve();
+  });
+  // Never block listening forever if 'ended' doesn't fire.
+  setTimeout(done, Math.min(45000, 4000 + say.length * 90));
+}
+
+function browserSpeak(say, turn, resolve) {
+  if (!supported()) {
+    if (turn === speechTurn) setSpeaking(false);
+    resolve();
+    return;
+  }
   const synth = window.speechSynthesis;
   synth.cancel();
-  speechTurn++;
   const u = new SpeechSynthesisUtterance(say);
   const v = pickVoice();
   if (v) {
@@ -162,8 +290,11 @@ function speakText(text, resolve) {
   }
   u.rate = 1.04;
   u.pitch = 1.05;
+  let finished = false;
   const done = () => {
-    setSpeaking(false);
+    if (finished) return;
+    finished = true;
+    if (turn === speechTurn) setSpeaking(false);
     resolve();
   };
   u.onend = done;
@@ -171,14 +302,34 @@ function speakText(text, resolve) {
   setSpeaking(true);
   synth.speak(u);
   // Some browsers never fire onend for long text; don't block listening forever.
-  setTimeout(() => speaking && done(), Math.min(20000, 2500 + say.length * 75));
+  setTimeout(done, Math.min(20000, 2500 + say.length * 75));
 }
 
 // Phones (iOS Safari above all) only let a page speak once speech has been
 // started from a tap. Ching answers a moment after the agent stops talking —
 // outside that tap — so the mic tap unlocks it with a silent utterance.
+// The same tap also starts the shared <audio> element (silent clip) so the
+// ElevenLabs replies may play later, and asks once whether a voice is set up.
+const SILENT_MP3 =
+  "data:audio/mpeg;base64,//NAxAAAAANIAAAAAExBTUUzLjEwMFVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEWwAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVMQU1FMy4xMDBVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80DEpAAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsSjAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=";
+let audioUnlocked = false;
 let unlocked = false;
 export function unlockSpeech() {
+  if (!audioUnlocked) {
+    const audio = getPlayer();
+    if (audio) {
+      audioUnlocked = true;
+      try {
+        audio.src = SILENT_MP3;
+        audio.play().catch(() => {
+          audioUnlocked = false;
+        });
+      } catch {
+        audioUnlocked = false;
+      }
+    }
+    cloudReady();
+  }
   if (unlocked || !supported()) return;
   unlocked = true;
   try {
@@ -191,7 +342,9 @@ export function unlockSpeech() {
 }
 
 export function stopSpeaking() {
+  speechTurn++; // a reply whose audio is still downloading is dropped, not played
   if (supported()) window.speechSynthesis.cancel();
+  if (player && !player.paused) player.pause();
   if (speaking) setSpeaking(false);
 }
 

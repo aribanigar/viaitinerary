@@ -38,6 +38,9 @@ import Loader from "../common/Loader";
 import { CURRENCY_OPTIONS } from "../../constants/currencies";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
+import { prepareImage } from "../../utils/imageFile";
+import ChingVoiceSettings from "./settings/ChingVoiceSettings";
+import { resetChingVoice } from "../../utils/ching/voice";
 
 const AgencySettings = () => {
   const { token } = useAuth();
@@ -63,6 +66,9 @@ const AgencySettings = () => {
     greetingMessage:
       "Greetings from {agencyName}. Our team has put up this Quote regarding your upcoming trip. Please review it and let us know if you would like any changes.",
     googleMapsApiKey: "",
+    chingVoiceId: "",
+    elevenlabsApiKey: "",
+    hasElevenlabsKey: false,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -93,27 +99,20 @@ const AgencySettings = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, logo: reader.result }));
-      };
-      reader.readAsDataURL(file);
+  // Logos keep transparency (PNG); covers become JPEG — see utils/imageFile.js.
+  const pickImage = (field, maxSide) => async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // picking the same file again still fires
+    if (!file) return;
+    try {
+      const image = await prepareImage(file, { maxSide });
+      setFormData((prev) => ({ ...prev, [field]: image }));
+    } catch (err) {
+      toast.error(err.message || "Couldn't read that image.");
     }
   };
-
-  const handleDefaultTripImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, defaultTripImage: reader.result }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const handleLogoChange = pickImage("logo", 800);
+  const handleDefaultTripImageChange = pickImage("defaultTripImage", 1600);
 
   const handleBulkImport = async (e) => {
     const file = e.target.files[0];
@@ -235,7 +234,15 @@ const AgencySettings = () => {
 
     try {
       setSaving(true);
-      await updateSettings(token, formData);
+      const saved = await updateSettings(token, formData);
+      // The write-only key field empties once saved; the voice shows as its ID.
+      setFormData((prev) => ({
+        ...prev,
+        elevenlabsApiKey: "",
+        chingVoiceId: saved?.chingVoiceId ?? prev.chingVoiceId,
+        hasElevenlabsKey: saved?.hasElevenlabsKey ?? prev.hasElevenlabsKey,
+      }));
+      resetChingVoice();
       toast.success("Settings saved successfully!");
     } catch (err) {
       console.error("Save failed:", err);
@@ -614,6 +621,9 @@ const AgencySettings = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Ching voice (ElevenLabs) */}
+              <ChingVoiceSettings formData={formData} setFormData={setFormData} handleInputChange={handleInputChange} token={token} />
 
               {/* Itinerary Generator Section */}
               <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-col">
