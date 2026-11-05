@@ -32,6 +32,8 @@ import {
   Image as ImageIcon,
   PenTool,
   Tag,
+  MessageCircle,
+  ArrowRightLeft,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import InstallAppButton from "../common/InstallAppButton";
@@ -85,6 +87,7 @@ const NAV_TREE = [
       { label: "Trips", icon: FileText, to: "/my-trips" },
       { label: "Daily Ops", icon: CalendarClock, to: "/operations" },
       { label: "Packages", icon: Package, to: "/packages" },
+      { label: "WhatsApp Itinerary", icon: MessageCircle, to: "/whatsapp-itinerary" },
       {
         label: "Lead Inquiries",
         icon: Inbox,
@@ -137,6 +140,7 @@ const NAV_TREE = [
       { label: "General Settings", icon: SettingsIcon, to: "/settings" },
       { label: "Branding", icon: Type, to: "/typography" },
       { label: "Email Connect", icon: KeyRound, to: "/settings/email-connect" },
+      { label: "Import Account", icon: ArrowRightLeft, to: "/settings/import" },
     ],
   },
 ];

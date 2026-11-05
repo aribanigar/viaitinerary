@@ -4,6 +4,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url'
 const ROOT = fileURLToPath(new URL('../', import.meta.url))
 export async function resolve(spec, ctx, next) {
   if (spec.startsWith('@/')) return next(pathToFileURL(ROOT + spec.slice(2) + (spec.endsWith('.js') ? '' : '.js')).href, ctx)
+  if (spec === 'next/server' || spec === 'next/headers') return next(spec + '.js', ctx) // plain node needs the file name
   return next(spec, ctx)
 }
 export async function load(url, ctx, next) {

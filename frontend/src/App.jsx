@@ -30,6 +30,8 @@ const MyTrips = lazy(() => import("./components/dashboard/MyTrips"));
 const AIAssistant = lazy(() => import("./pages/assistant/AIAssistant"));
 const ChingInsights = lazy(() => import("./pages/assistant/ChingInsights"));
 const Packages = lazy(() => import("./components/dashboard/Packages"));
+const WhatsAppItinerary = lazy(() => import("./components/dashboard/WhatsAppItinerary"));
+const ImportAccount = lazy(() => import("./components/dashboard/ImportAccount"));
 const SsoLogin = lazy(() => import("./pages/SsoLogin"));
 const AgencySettings = lazy(
   () => import("./components/dashboard/AgencySettings"),
@@ -398,6 +400,7 @@ function App() {
                     <Route path="/assistant" element={<AIAssistant />} />
                     <Route path="/assistant/insights" element={<ChingInsights />} />
                     <Route path="/packages" element={<Packages />} />
+                    <Route path="/whatsapp-itinerary" element={<WhatsAppItinerary />} />
                     <Route path="/package-builder" element={<TripBuilder mode="package" />} />
                     <Route
                       path="/package-builder/:tripId"
@@ -467,6 +470,7 @@ function App() {
                       path="/settings/email-connect"
                       element={<GmailSmtpSettings />}
                     />
+                    <Route path="/settings/import" element={<ImportAccount />} />
                     <Route
                       path="/payment-details"
                       element={<PaymentDetails />}

@@ -29,6 +29,7 @@ import { getTeams } from "../../api/teams";
 import Loader from "../common/Loader";
 import Modal from "../common/Modal";
 import SalesPipeline from "./SalesPipeline";
+import ItineraryLimitNotice from "../common/ItineraryLimitNotice";
 // Lazy: it's the only thing here that pulls in the charts library, and only
 // super admins ever see it — agency admins shouldn't download it.
 const SuperAdminDashboard = lazy(() => import("./SuperAdminDashboard"));
@@ -209,6 +210,7 @@ const DashboardMain = () => {
     >
       <div className="h-full overflow-y-auto p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
+          <ItineraryLimitNotice />
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-[#181c22] leading-tight">
               {getGreeting()}, {user?.name || "there"}

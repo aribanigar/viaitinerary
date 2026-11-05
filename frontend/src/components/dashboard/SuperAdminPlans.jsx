@@ -18,6 +18,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import DateInput from "../common/DateInput";
+import SuperAdminItineraryLimit from "./SuperAdminItineraryLimit";
 
 const SuperAdminPlans = () => {
   const { token } = useAuth();
@@ -421,6 +422,8 @@ const SuperAdminPlans = () => {
             <span>Add New Plan</span>
           </button>
         </div>
+
+        <SuperAdminItineraryLimit />
 
         {/* Plans Grid */}
         {loading ? (

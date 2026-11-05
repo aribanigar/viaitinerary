@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { generateInquiryId, toInt, toAmount, toDate } from "@/lib/leads";
 import { rateLimit, rateLimitedResponse, clientIp } from "@/lib/rateLimit";
 import { notify } from "@/lib/notify";
+import { mailerForAdminId, sendMail, publicLeadAdminHtml, publicLeadCustomerHtml } from "@/lib/mailer";
 
 export const dynamic = "force-dynamic";
 
@@ -55,5 +56,45 @@ export async function POST(request) {
     });
   }
 
+  // Email the platform admin and a receipt to the traveller. The lead is
+  // already saved, so a mail failure only gets logged.
+  await emailPublicLead(lead, superAdmin);
+
   return NextResponse.json({ message: "Your inquiry has been submitted successfully!", inquiry_id: lead.inquiryId }, { status: 201 });
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+async function emailPublicLead(lead, superAdmin) {
+  try {
+    const { mailer } = await mailerForAdminId(superAdmin?.id);
+    if (!mailer) return;
+    const adminTo = process.env.ADMIN_ALERT_EMAIL || superAdmin?.email;
+    const sends = [];
+    if (adminTo) {
+      sends.push(
+        sendMail(mailer, {
+          to: adminTo,
+          ...(lead.clientEmail && EMAIL_RE.test(lead.clientEmail) ? { replyTo: lead.clientEmail } : {}),
+          subject: `New lead ${lead.inquiryId}: ${lead.clientName}${lead.destination ? ` (${lead.destination})` : ""}`,
+          html: publicLeadAdminHtml(lead),
+        }),
+      );
+    }
+    if (lead.clientEmail && EMAIL_RE.test(lead.clientEmail)) {
+      sends.push(
+        sendMail(mailer, {
+          to: lead.clientEmail,
+          subject: `We have your trip request (${lead.inquiryId})`,
+          html: publicLeadCustomerHtml(lead, mailer.fromName),
+        }),
+      );
+    }
+    const results = await Promise.allSettled(sends);
+    results.forEach((r) => {
+      if (r.status === "rejected") console.error("public lead email failed:", r.reason?.message || r.reason);
+    });
+  } catch (e) {
+    console.error("public lead email failed:", e?.message || e);
+  }
 }
