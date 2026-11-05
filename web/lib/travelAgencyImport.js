@@ -358,7 +358,7 @@ async function stepSettings(ctx) {
 }
 
 const PER_PAGE = 50;
-const TRIPS_PER_STEP = 10;
+const TRIPS_PER_STEP = 5; // each trip: one read + its photos copied
 
 async function stepDestinations(ctx, page) {
   const stats = newStats();

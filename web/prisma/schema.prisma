@@ -1024,3 +1024,52 @@ model ImportLink {
   @@index([userId, source, kind])
   @@map("import_links")
 }
+
+// Landing-page showcase cards (super admin → /admin/showcase, public GET /api/showcase-items).
+model ShowcaseItem {
+  id             Int      @id @default(autoincrement())
+  city           String
+  title          String
+  agencyName     String?  @map("agency_name")
+  whatsappNumber String?  @map("whatsapp_number")
+  price          Decimal  @default(0) @db.Decimal(12, 2)
+  image          String?
+  isActive       Boolean  @default(true) @map("is_active")
+  sortOrder      Int      @default(0) @map("sort_order")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive, sortOrder])
+  @@map("showcase_items")
+}
+
+// "Trusted by" logos on the landing page (super admin → /admin/trusted-companies).
+model TrustedCompany {
+  id        Int      @id @default(autoincrement())
+  name      String
+  logoPath  String?  @map("logo_path")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("trusted_companies")
+}
+
+// An agency's connected lead source (lib/integrations.js): Meta (Facebook /
+// Instagram lead ads, or a Google Sheet of them) and Google Ads.
+model Integration {
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id") // agency (tenant) id
+  platform     String // facebook | google
+  platformId   String?   @map("platform_id")
+  accessToken  String    @default("") @map("access_token")
+  refreshToken String?   @map("refresh_token")
+  expiresAt    DateTime? @map("expires_at")
+  settings     Json?
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@unique([userId, platform], name: "user_platform")
+  @@map("integrations")
+}

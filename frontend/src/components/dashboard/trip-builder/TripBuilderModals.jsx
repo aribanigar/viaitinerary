@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { shiftDateString } from "../../../utils/dateShift";
+import { toast } from "react-toastify";
+import { warnIfOutsidePlan } from "../../../utils/planWindow";
 import { Minus, Plus, AlertTriangle, Ban, X, Trash2, Layers } from "lucide-react";
 import Modal from "../../common/Modal";
 import { packageNamesOf } from "../../../utils/hotelOptions";
@@ -561,6 +563,7 @@ export const HotelModal = ({
                 // Re-resolve prices against the new date so season-based
                 // rate sheets (valid_from/valid_to) apply — optional hotels too.
                 setHotelForm(repriceForm({ ...hotelForm, checkIn: dateString }));
+                warnIfOutsidePlan(dateString, tripInfo, toast.warning);
               }}
               className="w-full"
               options={{
@@ -592,6 +595,7 @@ export const HotelModal = ({
               value={hotelForm.checkOut}
               onChange={(dateString) => {
                 setHotelForm({ ...hotelForm, checkOut: dateString });
+                warnIfOutsidePlan(dateString, tripInfo, toast.warning);
               }}
               className="w-full"
               options={{
@@ -945,6 +949,7 @@ export const TransportModal = ({
                   ...transportForm,
                   date: dateString,
                 });
+                warnIfOutsidePlan(dateString, tripInfo, toast.warning);
               }}
               className="w-full"
               options={{

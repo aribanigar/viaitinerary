@@ -181,3 +181,39 @@ export function publicLeadCustomerHtml(lead, fromName) {
     fromName,
   );
 }
+
+// ── Demo requests (public "Schedule a demo" form) ──────────────────────────
+function demoRows(d) {
+  const list = Array.isArray(d.processes) ? d.processes.join(", ") : d.processes;
+  return [
+    row("Name", d.name),
+    row("Email", d.email),
+    row("Phone", d.contactNumber),
+    row("Company", d.companyName),
+    row("Employees", d.noOfEmployees),
+    row("Agency type", d.agencyType),
+    row("Destinations", d.destinations),
+    list ? row("Processes", list) : "",
+    row("Office", d.officeLocation),
+    row("Heard about us", d.referralSource),
+    d.scheduledAt ? row("Preferred time", new Date(d.scheduledAt).toISOString().slice(0, 16).replace("T", " ")) : "",
+    d.inviteGuests ? row("Guests", d.inviteGuests) : "",
+  ].join("");
+}
+
+export function demoRequestAdminHtml(d) {
+  return shell(
+    `Demo request: ${d.companyName || d.name}`,
+    `<table style="width:100%;border-collapse:collapse;font-size:14px">${demoRows(d)}</table>`,
+  );
+}
+
+export function demoRequestCustomerHtml(d, fromName) {
+  return shell(
+    "We have your demo request",
+    `<p style="margin:0 0 12px">Hi ${esc(d.name)},</p>
+     <p style="margin:0 0 12px">Thanks for booking a demo. Our team will contact you shortly to confirm the time.</p>
+     <table style="width:100%;border-collapse:collapse;font-size:14px">${demoRows(d)}</table>`,
+    fromName,
+  );
+}
