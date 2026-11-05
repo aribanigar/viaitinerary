@@ -31,13 +31,7 @@
     <title>
       ViaItinerary: Travel CRM, Itinerary Builder & Lead Management Software
     </title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Brand fonts: Urbanist (primary) + Manrope/Noto Serif fallbacks -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&family=Manrope:wght@300;400;500;600;700&family=Noto+Serif:ital,wght@0,300..700;1,300..700&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Brand fonts are self-hosted (src/fonts.css); the main one is preloaded at build time. -->
     <script type="application/ld+json">
       {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://viaitinerary.in/#organization","name":"ViaItinerary","url":"https://viaitinerary.in","email":"contact@viakashmir.in","sameAs":["https://www.instagram.com/viaitinerary_official/","https://www.youtube.com/@ViaItinerary_official"],"contactPoint":{"@type":"ContactPoint","telephone":"+91 9186051499","email":"contact@viakashmir.in","contactType":"customer support","areaServed":"IN"}},{"@type":"WebSite","@id":"https://viaitinerary.in/#website","url":"https://viaitinerary.in","name":"ViaItinerary","publisher":{"@id":"https://viaitinerary.in/#organization"}}]}
     </script>
@@ -144,11 +138,19 @@
           }
         };
 
-        if ("requestIdleCallback" in window) {
-          window.requestIdleCallback(run, { timeout: 2000 });
-        } else {
-          window.setTimeout(run, 1500);
-        }
+        // Only after the page itself has loaded: on a slow phone these five
+        // scripts used to download alongside the app's own code. Signed-in
+        // screens (anything but the public site) wait a little longer still.
+        var publicPage = /^\/($|about-us|solutions|schedule-demo|lead-inquiry|privacy-policy|refund-policy|terms-of-service|login|signup)/.test(location.pathname);
+        var later = function () {
+          var idle = function () {
+            if ("requestIdleCallback" in window) window.requestIdleCallback(run, { timeout: 3000 });
+            else run();
+          };
+          window.setTimeout(idle, publicPage ? 0 : 3000);
+        };
+        if (document.readyState === "complete") later();
+        else window.addEventListener("load", later, { once: true });
       })();
     </script>
   </body>

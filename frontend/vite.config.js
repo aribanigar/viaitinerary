@@ -4,6 +4,8 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import routePreload from "./vite.routePreload.js";
 
 // The commit this bundle was built from (Vercel sets VERCEL_GIT_COMMIT_SHA at
 // build time) — shown in Settings so a stale cached app is easy to spot.
@@ -21,6 +23,10 @@ export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(appVersion) },
   plugins: [
     react(),
+    routePreload({
+      appFile: fileURLToPath(new URL("./src/App.jsx", import.meta.url)),
+      fontPattern: /urbanist-latin-wght-normal[^/]*\.woff2$/,
+    }),
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",

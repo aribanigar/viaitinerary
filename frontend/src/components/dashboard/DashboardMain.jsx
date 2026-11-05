@@ -24,7 +24,7 @@ import {
   Type,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { fetchTrips } from "../../api/trips";
+import { fetchTrips, fetchTripsSummary } from "../../api/trips";
 import { getTeams } from "../../api/teams";
 import Loader from "../common/Loader";
 import Modal from "../common/Modal";
@@ -60,7 +60,10 @@ function getGreeting() {
 
 const DashboardMain = () => {
   const { token, user } = useAuth();
+  // Trips starting around today (the "today" / "next 7 days" lists) and the
+  // agency-wide numbers, from GET /api/trips/summary.
   const [trips, setTrips] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showOffer, setShowOffer] = useState(false);
@@ -96,11 +99,23 @@ const DashboardMain = () => {
   useEffect(() => {
     async function loadDashboardData() {
       try {
-        const [tripsResp, teamsResp] = await Promise.all([
-          fetchTrips(token, { per_page: 1000 }),
-          getTeams(token),
-        ]);
-        setTrips(tripsResp.data || []);
+        // Only the numbers and the trips near today — not every trip (this
+        // used to download up to 1000 trips just to count them).
+        const day = (offset) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+        const loadSummary = () =>
+          fetchTripsSummary(token, { from: day(-1), to: day(9) }).catch(async () => {
+            // Server without the summary route (mid-deploy): the old way.
+            const all = await fetchTrips(token, { per_page: 1000 });
+            return { fallback: all.data || [] };
+          });
+        const [summaryResp, teamsResp] = await Promise.all([loadSummary(), getTeams(token)]);
+        if (summaryResp.fallback) {
+          setTrips(summaryResp.fallback);
+          setSummary(null);
+        } else {
+          setTrips(summaryResp.trips || []);
+          setSummary(summaryResp);
+        }
         setTeamMembers(teamsResp || []);
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
@@ -111,19 +126,18 @@ const DashboardMain = () => {
     if (token) loadDashboardData();
   }, [token]);
 
-  const totalTrips = trips.length;
   // Total Revenue = sum of paid_amount across all itineraries/trips (regardless of status)
-  const totalRevenue = trips.reduce(
-    (sum, t) => sum + (parseFloat(t.paid_amount) || 0),
-    0,
-  );
+  const totalTrips = summary ? Number(summary.total) || 0 : trips.length;
+  const totalRevenue = summary
+    ? Number(summary.paid_total) || 0
+    : trips.reduce((sum, t) => sum + (parseFloat(t.paid_amount) || 0), 0);
   const totalTeam = teamMembers.length;
-  const confirmedTrips = trips.filter(
-    (t) => t.status?.toLowerCase() === "confirmed",
-  ).length;
-  const completedTrips = trips.filter(
-    (t) => t.status?.toLowerCase() === "completed",
-  ).length;
+  const confirmedTrips = summary
+    ? summary.status?.confirmed || 0
+    : trips.filter((t) => t.status?.toLowerCase() === "confirmed").length;
+  const completedTrips = summary
+    ? summary.status?.completed || 0
+    : trips.filter((t) => t.status?.toLowerCase() === "completed").length;
 
   const stats = [
     {

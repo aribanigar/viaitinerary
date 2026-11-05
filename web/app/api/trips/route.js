@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { LIST_COLUMNS, listRows } from "@/lib/tripList";
 import prisma from "@/lib/prisma";
 import { userFromRequest } from "@/lib/auth";
 import { adminIdOf, teamIdOf } from "@/lib/scope";
-import { serializeTrip, currencySymbol } from "@/lib/serialize";
+import { serializeTrip } from "@/lib/serialize";
 import { buildTripScalars, syncTripRelations, TRIP_INCLUDE } from "@/lib/trips";
 import { canCreateTrip, incrementTripsUsed } from "@/lib/subscription";
 import { pushDmcItinerary } from "@/lib/dmcBridge";
@@ -20,11 +21,6 @@ const rand = () => Math.random().toString(36).slice(2, 8);
 
 // The columns the list below sends — a trip row has ~55 (JSON lists, proposal
 // and reminder bookkeeping…), and the dashboard asks for up to 1000 trips.
-const LIST_COLUMNS = {
-  id: true, userId: true, tripId: true, tripTitle: true, clientName: true, clientPhone: true, startDate: true,
-  duration: true, cost: true, paidAmount: true, refundedAmount: true, currency: true, imagePath: true, status: true,
-  proposalResponse: true, proposalMessage: true, proposalViewedAt: true, updatedAt: true, createdAt: true,
-};
 
 // My Trips column sorting (?sort=…&dir=asc|desc). Nights is a text column, so
 // it isn't sortable in SQL; everything else is. Ties: newest first.
@@ -153,37 +149,7 @@ export async function GET(request) {
     }),
   ]);
 
-  // Resolve "created_by" labels (no joins).
-  const ownerIds = [...new Set(trips.map((t) => t.userId))];
-  const owners = await prisma.user.findMany({
-    where: { id: { in: ownerIds } },
-    select: { id: true, name: true },
-  });
-  const ownerName = new Map(owners.map((o) => [o.id, o.name]));
-
-  const data = trips.map((t) => ({
-    id: t.id,
-    trip_id: t.tripId,
-    trip_title: t.tripTitle,
-    client_name: t.clientName,
-    client_phone: t.clientPhone,
-    start_date: t.startDate ? new Date(t.startDate).toISOString().slice(0, 10) : null,
-    duration: t.duration,
-    cost: t.cost == null ? null : Number(t.cost),
-    paid_amount: Number(t.paidAmount),
-    refunded_amount: Number(t.refundedAmount),
-    currency: t.currency,
-    currency_symbol: currencySymbol(t.currency),
-    image_path: t.imagePath,
-    image_url: t.imagePath,
-    status: t.status,
-    proposal_response: t.proposalResponse ?? null,
-    proposal_message: t.proposalMessage ?? null,
-    proposal_viewed_at: t.proposalViewedAt ? t.proposalViewedAt.toISOString() : null,
-    updated_at: t.updatedAt,
-    created_at: t.createdAt,
-    created_by: t.userId === user.id ? "You" : ownerName.get(t.userId) || "—",
-  }));
+  const data = await listRows(trips, user);
 
   return NextResponse.json({
     data,

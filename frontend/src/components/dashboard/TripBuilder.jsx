@@ -77,11 +77,7 @@ import { priceBreakdown } from "../../utils/ching/pricing";
 import TripInfoTab from "./trip-builder/TripInfoTab";
 import { registerChingEditor } from "../../utils/ching/editorBridge";
 import { getChingMemory, invalidateChingMemory } from "../../utils/ching/memoryStore";
-import { cheaperPlan, addOnSuggestions } from "../../utils/ching/optimize";
 import { formatTripImageUrl, normalizeAccommodation } from "../../utils/tripView";
-import { applyEditActions, buildEditContext } from "../../utils/ching/editTrip";
-import { buildTripDraft } from "../../utils/ching/tripDraft";
-import { planLive, isBlankTrip } from "../../utils/ching/liveFill";
 import { tripChecklist, pendingByTab } from "../../utils/tripChecklist";
 import { optionSupplement, hotelPackages } from "../../utils/hotelOptions";
 import { TIERS, tierAccommodations, tierFileName, tierTitle } from "../../utils/tierExport";
@@ -90,6 +86,7 @@ import {
   useTripBuilderData,
 } from "./trip-builder/useTripBuilderData";
 import { useUndoHistory, useUndoShortcuts } from "./trip-builder/useUndoHistory";
+import { afterLoad } from "../../utils/afterLoad";
 
 const TRIGGER_LABELS = {
   export: "PDF Export",
@@ -101,10 +98,43 @@ const TRIGGER_LABELS = {
 // Trips, so earlier ones aren't kept open (the old remembered list is dropped).
 const TABS_KEY = "builder_open_tabs";
 
+// Ching's trip-editing engine (planners + parsers, ~40 KB compressed) loads
+// after the builder has rendered — see useBuilderEngine below.
+const loadBuilderEngine = () => import("../../utils/ching/builderEngine.js");
+let builderEngine = null;
+function useBuilderEngine(now = false) {
+  const [engine, setEngine] = useState(builderEngine);
+  useEffect(() => {
+    if (engine) return undefined;
+    let alive = true;
+    const go = () =>
+      loadBuilderEngine()
+        .then((m) => {
+          builderEngine = m;
+          if (alive) setEngine(m);
+        })
+        .catch(() => {});
+    // Embedded in the AI Assistant, Ching is already listening: load at once.
+    if (now) {
+      go();
+      return () => {
+        alive = false;
+      };
+    }
+    const cancel = afterLoad(go, { timeout: 2000 });
+    return () => {
+      alive = false;
+      cancel();
+    };
+  }, [engine, now]);
+  return engine;
+}
+
 // embedded: rendered inside another page (the AI Assistant's live builder)
 // instead of as its own route — no page frame, the trip id comes from the host
 // (embeddedTripId) and a new trip's first save stays on that page.
 const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
+  const chingEngine = useBuilderEngine(embedded);
   const isPackageMode = mode === "package";
   const { token } = useAuth();
   const { tripId: routeTripId } = useParams();
@@ -1801,7 +1831,9 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   // night(s), cabs and activities, and every date is laid out again from the
   // start date (editTrip.js MOVE_DAY) — so the Logistics tab and the PDF stay
   // in step with the new day order.
-  const moveDay = (from, to) => {
+  const moveDay = async (from, to) => {
+    // The engine is normally loaded by now; a very early drag waits for it.
+    const { applyEditActions } = builderEngine || (await loadBuilderEngine());
     const { snapshot, catalog, settings } = chingState.current;
     const { snapshot: next, warnings } = applyEditActions(snapshot, [{ type: "MOVE_DAY", from, to }], { catalog, settings });
     if (warnings.length) toast.warn(warnings[0]);
@@ -1867,7 +1899,9 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   });
   useUndoShortcuts({ undo: history.undo, redo: history.redo });
   useEffect(() => {
-    if (loading || !dataIsCurrent) return undefined;
+    // Ching can edit this trip once its engine has loaded (useBuilderEngine).
+    if (loading || !dataIsCurrent || !chingEngine) return undefined;
+    const { applyEditActions, buildEditContext, buildTripDraft, planLive, isBlankTrip, cheaperPlan, addOnSuggestions } = chingEngine;
     chingUndo.current = []; // undo history belongs to the trip it was made on
     chingLive.current = null;
     chingDraft.current = null;
@@ -2090,7 +2124,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
       },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, dataIsCurrent]);
+  }, [loading, dataIsCurrent, chingEngine]);
 
   const openAmendments = async () => {
     setAmendmentsOpen(true);

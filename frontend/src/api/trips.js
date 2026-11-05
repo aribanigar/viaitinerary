@@ -5,6 +5,12 @@ export async function fetchTrips(token, params = {}) {
   return request(`/trips?${query}`, { token });
 }
 
+// Dashboard numbers + the trips starting between from and to (YYYY-MM-DD).
+export async function fetchTripsSummary(token, params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return request(`/trips/summary${query ? `?${query}` : ""}`, { token });
+}
+
 export async function fetchTrip(token, id) {
   return request(`/trips/${id}`, { token });
 }

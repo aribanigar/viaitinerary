@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
 import {
@@ -16,16 +16,6 @@ import {
   BarChart3,
   Table2,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext";
 import { fetchAccountingReport } from "../../api/accounting";
@@ -36,7 +26,9 @@ import CompactDataTable from "../common/CompactDataTable";
 import DateRangePicker from "./DateRangePicker";
 
 // Validated categorical pair (blue / aqua) — see the dataviz palette check.
-const SERIES = { sales: "#2a78d6", profit: "#1baf7a" };
+// The chart library (recharts, ~90 KB compressed) loads after the figures and
+// tables are on screen, not before the page can draw.
+const ReportTrendChart = lazy(() => import("./ReportTrendChart"));
 
 const pad = (n) => String(n).padStart(2, "0");
 const toDay = (d) => (d ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` : "");
@@ -365,32 +357,9 @@ const AccountingSummary = () => {
                 <div className="py-14 text-center text-xs text-slate-400 font-semibold">No booked trips in this range.</div>
               ) : trendView === "chart" ? (
                 <div className="h-72 px-2 py-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={months} barGap={2} margin={{ top: 8, right: 16, left: 4, bottom: 0 }}>
-                      <CartesianGrid vertical={false} stroke="#eef0f3" />
-                      <XAxis dataKey="label" tickLine={false} axisLine={{ stroke: "#e2e8f0" }} tick={{ fontSize: 11, fill: "#64748b" }} />
-                      <YAxis
-                        tickLine={false}
-                        axisLine={false}
-                        width={56}
-                        tick={{ fontSize: 11, fill: "#64748b" }}
-                        tickFormatter={(v) => compact(sym, v)}
-                      />
-                      <Tooltip
-                        cursor={{ fill: "rgba(15,23,42,0.04)" }}
-                        formatter={(v, name) => [money(sym, v), name]}
-                        labelStyle={{ fontWeight: 700, color: "#0f172a" }}
-                        contentStyle={{ borderRadius: 12, border: "1px solid #e2e8f0", fontSize: 12 }}
-                      />
-                      <Legend
-                        iconType="circle"
-                        wrapperStyle={{ fontSize: 12 }}
-                        formatter={(value) => <span style={{ color: "#334155", fontWeight: 600 }}>{value}</span>}
-                      />
-                      <Bar dataKey="sales" name="Sales" fill={SERIES.sales} radius={[4, 4, 0, 0]} maxBarSize={36} />
-                      <Bar dataKey="profit" name="Gross profit" fill={SERIES.profit} radius={[4, 4, 0, 0]} maxBarSize={36} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <Suspense fallback={<div className="h-full grid place-items-center text-xs text-slate-400 font-semibold">Loading chart…</div>}>
+                    <ReportTrendChart months={months} money={(v) => money(sym, v)} compact={(v) => compact(sym, v)} />
+                  </Suspense>
                 </div>
               ) : (
                 <div className="overflow-x-auto">

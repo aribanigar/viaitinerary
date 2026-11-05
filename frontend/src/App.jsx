@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Suspense } from "react";
 import lazy from "./utils/lazyWithReload";
+import { afterLoad } from "./utils/afterLoad";
 import {
   BrowserRouter as Router,
   Routes,
@@ -248,10 +249,53 @@ const PORTAL_ROUTE_PREFIXES = [
 const isPortalPath = (pathname) =>
   PORTAL_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
+// Ching's code (~90 KB compressed with its planners) is fetched once the page
+// itself has loaded and the browser is idle — not alongside the page, where it
+// competed with the screen the agent opened (slow on phones). The AI Assistant
+// page talks to Ching directly, so there it mounts at once; Alt+C also loads it.
+let chingWanted = false;
+function useChingReady(pathname) {
+  const immediate = pathname.startsWith("/assistant");
+  const [ready, setReady] = useState(() => chingWanted || immediate);
+  useEffect(() => {
+    if (ready) return undefined;
+    if (immediate) {
+      chingWanted = true;
+      setReady(true);
+      return undefined;
+    }
+    let alive = true;
+    const go = () => {
+      // On the Trip Builder, Ching edits the open trip through the builder's
+      // engine — load that first so Ching never mistakes it for "no trip open".
+      const first = /^\/(trip-builder|package-builder)/.test(window.location.pathname)
+        ? import("./utils/ching/builderEngine.js").catch(() => null)
+        : Promise.resolve();
+      first.then(() => {
+        if (!alive) return;
+        chingWanted = true;
+        setReady(true);
+      });
+    };
+    const onKey = (e) => {
+      if (e.altKey && (e.key === "c" || e.key === "C")) go();
+    };
+    window.addEventListener("keydown", onKey);
+    const cancel = afterLoad(go);
+    return () => {
+      alive = false;
+      window.removeEventListener("keydown", onKey);
+      cancel();
+    };
+  }, [ready, immediate]);
+  return ready;
+}
+
 const PortalChing = () => {
   const { token, passwordUpdateRequired } = useAuth();
   const { pathname } = useLocation();
-  if (!token || passwordUpdateRequired || !isPortalPath(pathname)) return null;
+  const ready = useChingReady(pathname);
+  if (!ready || !token || passwordUpdateRequired || !isPortalPath(pathname)) return null;
   return (
     <Suspense fallback={null}>
       <ChingWidget />

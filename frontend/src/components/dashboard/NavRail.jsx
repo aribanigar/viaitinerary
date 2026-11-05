@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   CalendarClock,
   Home,
@@ -37,6 +36,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import InstallAppButton from "../common/InstallAppButton";
 import { prefetchBuilderInit } from "../../api/builderInit";
+import { afterLoad } from "../../utils/afterLoad";
 
 const INK = "#181c22";
 const PIN_KEY = "nav_rail_pinned";
@@ -179,14 +179,9 @@ function Row({ icon: Icon, label, to, active, expanded, onNavigate, onWarm }) {
     >
       <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
       {expanded && (
-        <motion.span
-          initial={{ opacity: 0, x: -4 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.16, delay: 0.04 }}
-          className="text-[13px] font-semibold overflow-hidden text-ellipsis"
-        >
+        <span className="nav-fade-in nav-slide-in text-[13px] font-semibold overflow-hidden text-ellipsis">
           {label}
-        </motion.span>
+        </span>
       )}
     </Link>
   );
@@ -206,14 +201,9 @@ function GroupHeader({ label, icon, open, active, onToggle }) {
       }`}
     >
       <Icon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.16, delay: 0.04 }}
-        className="flex-1 text-left text-[13px] font-semibold"
-      >
+      <span className="nav-fade-in flex-1 text-left text-[13px] font-semibold">
         {label}
-      </motion.span>
+      </span>
       <ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
     </button>
   );
@@ -237,13 +227,8 @@ const NavRail = () => {
   const buildsTrips = user?.role === "admin" || user?.role === "team";
   useEffect(() => {
     if (!buildsTrips || !token) return undefined;
-    const run = () => prefetchBuilderInit(token);
-    if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(run, { timeout: 4000 });
-      return () => window.cancelIdleCallback?.(id);
-    }
-    const t = setTimeout(run, 1500);
-    return () => clearTimeout(t);
+    // After the page itself has loaded — not alongside it.
+    return afterLoad(() => prefetchBuilderInit(token), { timeout: 4000 });
   }, [buildsTrips, token]);
   const warmBuilder = (to) =>
     buildsTrips && token && (to === "/trip-builder" || to === "/assistant")
@@ -277,12 +262,13 @@ const NavRail = () => {
     .slice(0, 2);
 
   return (
-    <motion.aside
+    // Width, labels and folding sections animate in CSS (index.css "nav-*"):
+    // framer-motion here put ~34 KB on every signed-in page's first load.
+    <aside
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      animate={{ width: expanded ? 272 : 80 }}
-      transition={{ type: "spring", stiffness: 420, damping: 38 }}
-      className="hidden lg:flex shrink-0 flex-col py-6 overflow-hidden"
+      style={{ width: expanded ? 272 : 80 }}
+      className="nav-rail hidden lg:flex shrink-0 flex-col py-6 overflow-hidden"
     >
       <div
         className={`flex items-center gap-2 mb-8 ${expanded ? "px-5 justify-between" : "px-0 justify-center"}`}
@@ -291,19 +277,17 @@ const NavRail = () => {
           <Mark className="w-8 h-8" />
         </Link>
         {expanded && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+          <button
             onClick={() => setPinned((p) => !p)}
             title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
-            className="grid place-items-center w-8 h-8 rounded-full text-[#181c22]/40 hover:text-[#181c22] hover:bg-black/5 transition-colors"
+            className="nav-fade-in grid place-items-center w-8 h-8 rounded-full text-[#181c22]/40 hover:text-[#181c22] hover:bg-black/5 transition-colors"
           >
             {pinned ? (
               <ChevronsLeft className="w-4 h-4" />
             ) : (
               <ChevronsRight className="w-4 h-4" />
             )}
-          </motion.button>
+          </button>
         )}
       </div>
 
@@ -319,15 +303,14 @@ const NavRail = () => {
                   active={activeGroup === item.label}
                   onToggle={() => setOpenGroup((g) => (g === item.label ? null : item.label))}
                 />
-                <AnimatePresence initial={false}>
-                  {openGroup === item.label && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.18 }}
-                      className="overflow-hidden pl-3 space-y-0.5"
-                    >
+                {/* Folds open and shut in CSS (grid rows 0fr ↔ 1fr); a shut
+                    section is inert, so its links aren't tabbable. */}
+                <div
+                  className={`nav-fold ${openGroup === item.label ? "nav-fold-open" : ""}`}
+                  inert={openGroup !== item.label}
+                >
+                  <div className="overflow-hidden min-h-0">
+                    <div className="pl-3 space-y-0.5">
                       {item.children.map((child) => (
                         <Row
                           key={child.to}
@@ -338,9 +321,9 @@ const NavRail = () => {
                           expanded={expanded}
                         />
                       ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <Row
@@ -395,23 +378,18 @@ const NavRail = () => {
             {initials}
           </div>
           {expanded && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.16, delay: 0.04 }}
-              className="min-w-0 text-left"
-            >
+            <div className="nav-fade-in min-w-0 text-left">
               <p className="text-[12px] font-bold text-[#181c22] truncate leading-tight">
                 {user?.name || "User"}
               </p>
               <p className="text-[10px] text-[#9aa3b2] truncate leading-tight">
                 {user?.email || "Admin"}
               </p>
-            </motion.div>
+            </div>
           )}
         </button>
       </div>
-    </motion.aside>
+    </aside>
   );
 };
 
