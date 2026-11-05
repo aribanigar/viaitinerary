@@ -996,3 +996,31 @@ model ChingMemory {
   @@index([userId])
   @@map("ching_memories")
 }
+
+// Platform-wide settings managed by the super admin (key → value), e.g. the
+// itinerary limit (lib/itineraryLimit.js). Read with defaults, so a missing
+// table or row never breaks a request.
+model PlatformSetting {
+  key       String   @id
+  value     String?
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_settings")
+}
+
+// One row per record brought in by an account import (lib/travelAgencyImport.js):
+// which source row became which local row, so running the import again skips
+// what is already here instead of copying it twice.
+model ImportLink {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id") // agency (tenant) id
+  source     String // "travel-agency"
+  kind       String // settings | destination | hotel | vehicle | lead | trip | package
+  externalId String   @map("external_id")
+  localId    Int      @map("local_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, source, kind, externalId], name: "import_link")
+  @@index([userId, source, kind])
+  @@map("import_links")
+}

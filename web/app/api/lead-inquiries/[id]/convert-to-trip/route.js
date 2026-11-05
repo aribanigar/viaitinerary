@@ -5,6 +5,7 @@ import { adminIdOf, teamIdOf } from "@/lib/scope";
 import { serializeTrip } from "@/lib/serialize";
 import { TRIP_INCLUDE } from "@/lib/trips";
 import { logLeadActivity } from "@/lib/leads";
+import { canCreateItinerary } from "@/lib/itineraryLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,9 @@ export async function POST(request, { params }) {
   if (lead.status === "converted") {
     return NextResponse.json({ message: "This inquiry has already been converted to a trip." }, { status: 400 });
   }
+
+  const limit = await canCreateItinerary(adminId);
+  if (!limit.allowed) return NextResponse.json({ message: limit.reason }, { status: limit.status });
 
   let tripId;
   do {

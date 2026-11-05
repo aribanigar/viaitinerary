@@ -143,3 +143,41 @@ export function confirmationHtml(message, agencyName, { heroUrl } = {}) {
   const body = `${hero}<div style="white-space:pre-wrap;font-size:14px;line-height:1.6">${esc(message)}</div>`;
   return shell(`${agencyName} — Booking Confirmation`, body, agencyName);
 }
+
+// ── Public enquiry form (no agency): alert to the platform, receipt to the traveller ──
+function leadRows(lead) {
+  const kids = (lead.kidsCnb || 0) + (lead.kids5to12 || 0);
+  return [
+    row("Enquiry ID", lead.inquiryId),
+    row("Name", lead.clientName),
+    lead.clientEmail ? row("Email", lead.clientEmail) : "",
+    lead.clientPhone ? row("Phone", lead.clientPhone) : "",
+    lead.destination ? row("Destination", lead.destination) : "",
+    lead.startDate ? row("Travel date", fmtDate(lead.startDate)) : "",
+    lead.duration ? row("Nights", lead.duration) : "",
+    row("Travellers", `${lead.adults || 0} adult(s)${kids ? `, ${kids} child(ren)` : ""}`),
+    lead.approximateBudget != null ? row("Budget", `${lead.currency || ""} ${Number(lead.approximateBudget)}`.trim()) : "",
+  ].join("");
+}
+
+export function publicLeadAdminHtml(lead, source = "Public Inquiry") {
+  const notes = lead.specialRequests
+    ? `<p style="margin:16px 0 0;color:#374151;white-space:pre-wrap">${esc(lead.specialRequests)}</p>`
+    : "";
+  return shell(
+    `New lead: ${lead.clientName || "Traveller"}`,
+    `<p style="margin:0 0 12px">A new enquiry came in from the ${esc(source)} form.</p>
+     <table style="width:100%;border-collapse:collapse;font-size:14px">${leadRows(lead)}</table>${notes}`,
+  );
+}
+
+export function publicLeadCustomerHtml(lead, fromName) {
+  return shell(
+    "We have your trip request",
+    `<p style="margin:0 0 12px">Dear ${esc(lead.clientName || "Traveller")},</p>
+     <p style="margin:0 0 12px">Thank you for your enquiry. A travel expert will contact you shortly with an itinerary and price.
+     Your reference is <b>${esc(lead.inquiryId)}</b>.</p>
+     <table style="width:100%;border-collapse:collapse;font-size:14px">${leadRows(lead)}</table>`,
+    fromName,
+  );
+}

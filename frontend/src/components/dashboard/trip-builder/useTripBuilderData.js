@@ -5,6 +5,51 @@ import { mapAgencySettings, mapPolicies, mapSavedTrip } from "../../../utils/tri
 
 export const DRAFT_KEY = "trip_builder_draft";
 
+// The inclusions/exclusions last added or edited on a trip. New trips start
+// with the agency defaults from the Policies page plus any other items kept
+// from this list, so the defaults are never lost.
+const LAST_INC_EXC_KEY = "trip_builder_last_inc_exc";
+
+const toContents = (items) =>
+  (Array.isArray(items) ? items : [])
+    .map((item) => (typeof item === "string" ? item : item?.content))
+    .filter((c) => typeof c === "string" && c.trim() !== "")
+    .map((c) => c.trim());
+
+export const rememberIncExc = (inclusions, exclusions) => {
+  try {
+    localStorage.setItem(
+      LAST_INC_EXC_KEY,
+      JSON.stringify({ inclusions: toContents(inclusions), exclusions: toContents(exclusions) }),
+    );
+  } catch (e) {
+    console.warn("Failed to remember inclusions/exclusions:", e);
+  }
+};
+
+function readRememberedIncExc() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(LAST_INC_EXC_KEY));
+    if (saved && Array.isArray(saved.inclusions)) {
+      return { inclusions: toContents(saved.inclusions), exclusions: toContents(saved.exclusions) };
+    }
+  } catch (e) {
+    console.warn("Failed to read remembered inclusions/exclusions:", e);
+  }
+  return null;
+}
+
+// Starting inclusions/exclusions for a new or cleared trip.
+export const startingIncExc = (defaultInclusions, defaultExclusions) => {
+  const remembered = readRememberedIncExc();
+  const merge = (defaults, kept) =>
+    [...new Set([...toContents(defaults), ...(kept || [])])].map((c) => ({ content: c }));
+  return {
+    inclusions: merge(defaultInclusions, remembered?.inclusions),
+    exclusions: merge(defaultExclusions, remembered?.exclusions),
+  };
+};
+
 export const useTripBuilderData = ({
   token,
   urlTripId,
@@ -243,20 +288,12 @@ export const useTripBuilderData = ({
         setAccommodations([]);
         setTransportation([]);
         setTripActivities([]);
-        setInclusions(
-          Array.isArray(initData.policies?.default_inclusions)
-            ? initData.policies.default_inclusions
-                .filter((i) => i.trim() !== "")
-                .map((c) => ({ content: c }))
-            : [],
+        const start = startingIncExc(
+          initData.policies?.default_inclusions,
+          initData.policies?.default_exclusions,
         );
-        setExclusions(
-          Array.isArray(initData.policies?.default_exclusions)
-            ? initData.policies.default_exclusions
-                .filter((i) => i.trim() !== "")
-                .map((c) => ({ content: c }))
-            : [],
-        );
+        setInclusions(start.inclusions);
+        setExclusions(start.exclusions);
       }
     };
 

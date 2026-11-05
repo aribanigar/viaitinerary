@@ -1,4 +1,5 @@
 import prisma from "@/lib/prisma";
+import { canCreateItinerary } from "@/lib/itineraryLimit";
 
 // --- status helpers (mirror App\Models\Subscription) ---
 export const isTrial = (s) => !!s && s.planKey === "trial" && s.status === "trialing";
@@ -78,6 +79,11 @@ export async function canCreateTrip(user) {
   const adminId = await resolveAdminId(user);
   const admin = await prisma.user.findUnique({ where: { id: adminId } });
   if (!admin) return { allowed: false, reason: "Cannot resolve admin.", status: 403 };
+
+  // Itinerary storage cap (platform setting) applies to every agency.
+  const limit = await canCreateItinerary(admin.id);
+  if (!limit.allowed) return { allowed: false, reason: limit.reason, status: limit.status };
+
   if (admin.bypassSubscription) return { allowed: true, status: 200 };
 
   const sub = await prisma.subscription.findUnique({ where: { userId: adminId } });

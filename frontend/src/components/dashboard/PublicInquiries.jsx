@@ -20,10 +20,13 @@ import { useAuth } from "../../context/AuthContext";
 import {
   fetchPublicInquiries,
   assignInquiry,
+  deletePublicInquiry,
   fetchSuperAdminBusinesses,
 } from "../../api/superAdmin";
 import { toast } from "react-toastify";
 import CompactDataTable from "../common/CompactDataTable";
+import { SelectAllBox, RowSelectCell, BulkActionBar } from "../common/tableTools";
+import { useSelection, deleteEach } from "../common/tableHooks";
 
 const PublicInquiries = () => {
   const { token } = useAuth();
@@ -62,6 +65,23 @@ const PublicInquiries = () => {
   useEffect(() => {
     if (token) fetchData(tablePage);
   }, [token, filters, searchQuery, tablePage, pageSize]);
+
+  const selection = useSelection(inquiries.map((x) => x.id));
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const handleBulkDelete = async (ids) => {
+    setBulkDeleting(true);
+    const { ok, failed } = await deleteEach(ids, (id) => deletePublicInquiry(token, id));
+    setBulkDeleting(false);
+    if (failed.length) {
+      toast.error(
+        `${failed.length} of ${ids.length} couldn't be deleted${failed[0].error?.message ? `: ${failed[0].error.message}` : ""}`,
+      );
+    } else {
+      toast.success(`${ok.length} lead${ok.length === 1 ? "" : "s"} deleted`);
+    }
+    // Refill the page from the server so counts and paging stay right.
+    if (ok.length) fetchData(tablePage);
+  };
 
   const fetchData = async (page = 1) => {
     try {
@@ -232,8 +252,15 @@ const PublicInquiries = () => {
           </div>
         )}
 
+        <BulkActionBar
+          selection={selection}
+          noun="lead"
+          onDelete={handleBulkDelete}
+          deleting={bulkDeleting}
+        />
         <CompactDataTable
           headers={[
+            { label: <SelectAllBox pageIds={inquiries.map((x) => x.id)} selection={selection} />, className: "w-10 !pr-0" },
             { label: "Client Details", className: "whitespace-nowrap" },
             { label: "Destination & Trip", className: "whitespace-nowrap" },
             {
@@ -261,7 +288,8 @@ const PublicInquiries = () => {
         >
           {inquiries.map((inquiry) => (
             <React.Fragment key={inquiry.id}>
-              <tr className="hover:bg-slate-50/50 group transition-colors">
+              <tr className={`hover:bg-slate-50/50 group transition-colors ${selection.has(inquiry.id) ? "bg-slate-50" : ""}`}>
+                <RowSelectCell id={inquiry.id} selection={selection} />
                 <td>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
@@ -340,7 +368,7 @@ const PublicInquiries = () => {
               </tr>
               {inquiry.special_requests && (
                 <tr className="bg-slate-50/30">
-                  <td colSpan="5" className="px-6 py-3">
+                  <td colSpan="6" className="px-6 py-3">
                     <div className="flex items-start gap-3 bg-white/50 border border-slate-100 rounded-xl p-3">
                       <MessageSquare className="w-4 h-4 text-slate-300 mt-0.5 shrink-0" />
                       <p className="text-xs text-slate-500 font-medium leading-relaxed">

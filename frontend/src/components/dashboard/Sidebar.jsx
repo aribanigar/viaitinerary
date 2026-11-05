@@ -28,6 +28,8 @@ import {
   ChevronRight,
   PenTool,
   Tag,
+  MessageCircle,
+  ArrowRightLeft,
   Wallet,
   KeyRound,
   Gift,
@@ -358,6 +360,19 @@ const Sidebar = ({ isOpen, onClose }) => {
                       <span>Packages</span>
                     </Link>
 
+                    <Link
+                      to="/whatsapp-itinerary"
+                      onClick={onClose}
+                      className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                        isActive("/whatsapp-itinerary")
+                          ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
+                          : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                      }`}
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      <span>WhatsApp Itinerary</span>
+                    </Link>
+
                     {(user?.role === "admin" || user?.role === "team") && (
                       <Link
                         to="/lead-inquiries"
@@ -677,6 +692,19 @@ const Sidebar = ({ isOpen, onClose }) => {
                       >
                         <KeyRound className="w-5 h-5" />
                         <span>Email Connect</span>
+                      </Link>
+
+                      <Link
+                        to="/settings/import"
+                        onClick={onClose}
+                        className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all cursor-pointer ${
+                          isActive("/settings/import")
+                            ? "bg-[#181c22] text-white shadow-lg shadow-black/20 font-semibold"
+                            : "hover:bg-black/[0.04] hover:text-[#181c22] font-medium text-[#5b6472]"
+                        }`}
+                      >
+                        <ArrowRightLeft className="w-5 h-5" />
+                        <span>Import Account</span>
                       </Link>
                     </div>
                   )}
