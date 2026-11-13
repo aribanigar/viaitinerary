@@ -48,6 +48,7 @@ const Destinations = () => {
       setFillingPhotos(true);
       const resp = await fillDestinationPhotos(token);
       toast.success(resp.message || "Photos updated.");
+      if (resp.warning) toast.warn(resp.warning);
       await loadDestinations();
     } catch (error) {
       toast.error(error.message || "Failed to fill destination photos");

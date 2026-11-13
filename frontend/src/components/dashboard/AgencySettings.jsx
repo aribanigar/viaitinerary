@@ -37,7 +37,6 @@ import {
 import Loader from "../common/Loader";
 import { CURRENCY_OPTIONS } from "../../constants/currencies";
 import { toast } from "react-toastify";
-import * as XLSX from "xlsx";
 import { prepareImage } from "../../utils/imageFile";
 import ChingVoiceSettings from "./settings/ChingVoiceSettings";
 import { resetChingVoice } from "../../utils/ching/voice";
@@ -77,6 +76,7 @@ const AgencySettings = () => {
   const [importing, setImporting] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   useEffect(() => {
     async function loadSettings() {
@@ -114,19 +114,33 @@ const AgencySettings = () => {
   const handleLogoChange = pickImage("logo", 800);
   const handleDefaultTripImageChange = pickImage("defaultTripImage", 1600);
 
+  const saveBlob = (blob, fileName) => {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleBulkImport = async (e) => {
     const file = e.target.files[0];
+    // Reset at once so picking the same file again (after fixing it) re-imports.
+    e.target.value = "";
     if (!file) return;
 
     try {
       setImporting(true);
-      await bulkImport(token, file);
-      toast.success("Bulk data imported successfully!");
-      // Reset the file input
-      e.target.value = "";
+      setImportResult(null);
+      const result = await bulkImport(token, file);
+      setImportResult(result);
+      if (result?.skipped?.length) toast.warn(result.message);
+      else toast.success(result?.message || "Import finished.");
     } catch (err) {
       console.error("Import failed:", err);
-      toast.error(err.message || "Failed to import bulk data.");
+      toast.error(err.message || "Failed to import the file.");
     } finally {
       setImporting(false);
     }
@@ -135,67 +149,11 @@ const AgencySettings = () => {
   const handleDownloadTemplate = async () => {
     try {
       setDownloading(true);
-
-      // Create a new workbook
-      const wb = XLSX.utils.book_new();
-
-      // Sheet 1: Transportation
-      const transportationData = [
-        ["Car Name", "Vehicle Email", "Vehicle Phone", "Price (INR)"],
-        ["Sedan (Dzire/Etios)", "driver@example.com", "9876543210", 2500],
-        ["SUV (Innova/Xylo)", "innova@example.com", "9876543211", 3500],
-        ["Tempo Traveler", "tempo@example.com", "9876543212", 5500],
-      ];
-      const wsTrans = XLSX.utils.aoa_to_sheet(transportationData);
-      XLSX.utils.book_append_sheet(wb, wsTrans, "Transportation");
-
-      // Sheet 2: Accommodation
-      const accommodationData = [
-        [
-          "Hotel Name",
-          "City",
-          "Hotel Email",
-          "Hotel Phone",
-          "Price Sections (JSON)",
-        ],
-        [
-          "Grand Plaza Hotel",
-          "Paris",
-          "grand@example.com",
-          "9876543220",
-          '[{"room_type":"deluxe","meal_plan":"room_only","price":4500,"cnb":500,"upto_5":1500,"above_12":2000},{"room_type":"super_deluxe","meal_plan":"room_only","price":5500,"cnb":800,"upto_5":1800,"above_12":2500}]',
-        ],
-        [
-          "Riverside Inn",
-          "Rome",
-          "pine@example.com",
-          "9876543221",
-          '[{"room_type":"deluxe","meal_plan":"room_only","price":6500,"cnb":800,"upto_5":2000,"above_12":2500},{"room_type":"suite","meal_plan":"room_only","price":12000,"cnb":1500,"upto_5":3500,"above_12":4500}]',
-        ],
-      ];
-      const wsAcc = XLSX.utils.aoa_to_sheet(accommodationData);
-      XLSX.utils.book_append_sheet(wb, wsAcc, "Accommodation");
-
-      // Sheet 3: Destinations
-      const destinationsData = [
-        ["Destination Name", "Activities"],
-        [
-          "Paris",
-          "City Sightseeing Tour, Local Museum, Historic Landmark",
-        ],
-        ["Rome", "Old Town Walk, Riverside Promenade, Local Market"],
-        ["Bali", "Cable Car Ride, Hiking Trail, Local Cuisine Tour"],
-      ];
-      const wsDest = XLSX.utils.aoa_to_sheet(destinationsData);
-      XLSX.utils.book_append_sheet(wb, wsDest, "Destinations");
-
-      // Export the file
-      XLSX.writeFile(wb, "bulk_import_template.xlsx");
-
-      toast.success("Template downloaded successfully!");
+      const blob = await downloadBulkTemplate(token);
+      saveBlob(blob, "catalog_import_sample.csv");
     } catch (err) {
       console.error("Download failed:", err);
-      toast.error("Failed to generate template. Please try again.");
+      toast.error("Failed to download the sample file. Please try again.");
     } finally {
       setDownloading(false);
     }
@@ -205,15 +163,8 @@ const AgencySettings = () => {
     try {
       setExporting(true);
       const blob = await bulkExport(token);
-      const url = window.URL.createObjectURL(new Blob([blob]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "agency_data_export.xlsx");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      toast.success("Data exported successfully!");
+      saveBlob(blob, "catalog_export.csv");
+      toast.success("Catalog exported.");
     } catch (err) {
       console.error("Export failed:", err);
       toast.error("Failed to export data. Please try again.");
@@ -886,7 +837,7 @@ const AgencySettings = () => {
                       ) : (
                         <Download className="w-3 h-3" />
                       )}
-                      Sample Template
+                      Sample CSV
                     </button>
                     <button
                       onClick={handleBulkExport}
@@ -910,10 +861,10 @@ const AgencySettings = () => {
                         Import Data
                       </h3>
                       <p className="text-xs text-slate-400 font-medium leading-relaxed">
-                        Upload an Excel file (.xlsx) with sheets for{" "}
-                        <b>Transportation</b>, <b>Accommodation</b>, and{" "}
-                        <b>Destinations</b> to bulk import your agency's master
-                        data.
+                        Upload one CSV or Excel file with your{" "}
+                        <b>hotels</b>, <b>transport</b> and{" "}
+                        <b>destinations</b>. Existing entries with the same
+                        name are updated; blank cells leave them unchanged.
                       </p>
                     </div>
 
@@ -922,7 +873,7 @@ const AgencySettings = () => {
                         type="file"
                         id="bulkImportInput"
                         className="hidden"
-                        accept=".xlsx, .xls"
+                        accept=".csv,.xlsx,.xls"
                         onChange={handleBulkImport}
                         disabled={importing}
                       />
@@ -947,17 +898,33 @@ const AgencySettings = () => {
                               Click to upload or drag & drop
                             </span>
                             <span className="text-[10px] font-medium opacity-60">
-                              Support .xlsx, .xls (Max 10MB)
+                              .csv, .xlsx or .xls (max 4 MB)
                             </span>
                           </>
                         )}
                       </button>
                     </div>
+
+                    {importResult && (
+                      <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4 text-xs">
+                        <p className="font-bold text-slate-700">{importResult.message}</p>
+                        {importResult.skipped?.length > 0 && (
+                          <ul className="mt-2 max-h-48 overflow-y-auto space-y-1 text-[11px] text-amber-700">
+                            {importResult.skipped.map((s, i) => (
+                              <li key={i}>
+                                Row {s.row}
+                                {s.name ? ` (${s.name})` : ""}: {s.reason}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-slate-50/50 rounded-xl p-6 border border-slate-100">
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 block">
-                      Instructions & Sheet Structure
+                      How the file works
                     </h3>
                     <div className="space-y-5">
                       <div className="flex gap-3">
@@ -966,10 +933,12 @@ const AgencySettings = () => {
                         </div>
                         <div>
                           <p className="text-xs font-bold text-slate-700">
-                            Transportation
+                            One row per item, Type first
                           </p>
-                          <p className="text-[10px] font-medium text-slate-500">
-                            Car Name, Vehicle Email, Vehicle Phone, Price (INR)
+                          <p className="text-[10px] font-medium text-slate-500 leading-tight">
+                            Type is Hotel, Transport or Destination, then Name,
+                            City, State, Email, Phone. Download the Sample CSV
+                            and replace the example rows.
                           </p>
                         </div>
                       </div>
@@ -979,11 +948,13 @@ const AgencySettings = () => {
                         </div>
                         <div>
                           <p className="text-xs font-bold text-slate-700">
-                            Accommodation
+                            Hotels: one row per rate
                           </p>
                           <p className="text-[10px] font-medium text-slate-500 leading-tight">
-                            Hotel Name, City, Hotel Email, Hotel Phone, Price
-                            Sections (JSON)
+                            Star Rating, Room Type, Meal Plan (Room only, CP,
+                            MAP, AP), Room Price, extra-bed prices and an
+                            optional season (YYYY-MM-DD). More room types or
+                            seasons = more rows with the same Name + City.
                           </p>
                         </div>
                       </div>
@@ -993,10 +964,13 @@ const AgencySettings = () => {
                         </div>
                         <div>
                           <p className="text-xs font-bold text-slate-700">
-                            Destinations
+                            Transport and Destinations
                           </p>
-                          <p className="text-[10px] font-medium text-slate-500">
-                            Destination Name, Activities (comma separated)
+                          <p className="text-[10px] font-medium text-slate-500 leading-tight">
+                            Transport: Seats, Vehicle Type, Cab Price.
+                            Destinations: Activities separated by ";" with the
+                            price in brackets, e.g. Gondola Phase 1 (900);
+                            Snow Bike (1500).
                           </p>
                         </div>
                       </div>

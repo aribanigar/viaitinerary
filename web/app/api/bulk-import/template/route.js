@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
 import { userFromRequest } from "@/lib/auth";
-import { templateWorkbook, XLSX_CONTENT_TYPE } from "@/lib/excel";
+import { templateCsv, CSV_CONTENT_TYPE } from "@/lib/excel";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/bulk-import/template — download a blank import workbook (headers only).
+// GET /api/bulk-import/template — the sample CSV: example Hotel, Transport and
+// Destination rows in the layout /api/bulk-import reads.
 export async function GET(request) {
   const user = await userFromRequest(request);
-  if (!user) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+  if (!user) return NextResponse.json({ message: "Unauthenticated" }, { status: 401 });
 
-  const buffer = templateWorkbook();
-  return new Response(buffer, {
+  return new Response(templateCsv(), {
     headers: {
-      "Content-Type": XLSX_CONTENT_TYPE,
-      "Content-Disposition": 'attachment; filename="bulk_import_template.xlsx"',
+      "Content-Type": CSV_CONTENT_TYPE,
+      "Content-Disposition": 'attachment; filename="catalog_import_sample.csv"',
     },
   });
 }
