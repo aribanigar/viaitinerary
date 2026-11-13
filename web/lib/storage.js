@@ -47,13 +47,44 @@ export async function uploadBuffer(buffer, contentType, prefix = "uploads") {
 }
 
 /**
+ * Pixabay's API hands out `https://pixabay.com/get/…` image links that are only
+ * for showing search results: they stop working after a while, and Pixabay's
+ * terms say to download an image you use instead of hotlinking it. A photo
+ * picked from the Pixabay search is therefore copied into our own storage.
+ */
+export function isTemporaryPixabayUrl(value) {
+  return typeof value === "string" && /^https:\/\/pixabay\.com\/get\//i.test(value);
+}
+
+const MAX_REMOTE_IMAGE_BYTES = 10 * 1024 * 1024;
+
+/** Download an image (only call with URLs from a known host) and upload it. */
+export async function copyRemoteImage(url, prefix = "uploads") {
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!res.ok) throw new Error(`Image download failed (${res.status})`);
+  const type = (res.headers.get("content-type") || "").split(";")[0].trim();
+  if (!type.startsWith("image/")) throw new Error(`Not an image (${type || "unknown type"})`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  if (buffer.length > MAX_REMOTE_IMAGE_BYTES) throw new Error("Image is too large");
+  return uploadBuffer(buffer, type, prefix);
+}
+
+/**
  * Normalize an image value for saving: if it's a base64 data URL, offload it to
- * Supabase Storage and return the public URL; otherwise (http URL, null,
- * undefined) return it unchanged. Never throws — falls back to the raw value so
+ * Supabase Storage and return the public URL; a temporary Pixabay link is
+ * copied there too; otherwise (http URL, null, undefined) return it unchanged. Never throws — falls back to the raw value so
  * a storage hiccup can't break a save.
  */
 export async function persistImage(value, prefix = "uploads") {
   if (!value || typeof value !== "string") return value;
+  if (isTemporaryPixabayUrl(value)) {
+    if (!storageEnabled()) return value;
+    try {
+      return await copyRemoteImage(value, prefix);
+    } catch {
+      return value;
+    }
+  }
   if (!value.startsWith("data:")) return value; // already a URL or path
   if (!storageEnabled()) return value; // keep inline until configured
   const m = value.match(/^data:([^;]+);base64,(.*)$/s);
