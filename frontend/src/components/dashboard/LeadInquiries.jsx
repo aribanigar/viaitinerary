@@ -45,6 +45,8 @@ import {
   waNumber,
 } from "../../utils/leads";
 import * as XLSX from "xlsx";
+import { SelectAllBox, RowSelectCell, BulkActionBar } from "../common/tableTools";
+import { useSelection, deleteEach } from "../common/tableHooks";
 
 const TABS = [
   { key: "open", label: "Open" },
@@ -181,6 +183,26 @@ const LeadInquiries = () => {
     }
   };
 
+  const selection = useSelection(inquiries.map((x) => x.id));
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const handleBulkDelete = async (ids) => {
+    setBulkDeleting(true);
+    const { ok, failed } = await deleteEach(ids, (id) => deleteLeadInquiry(token, id));
+    setBulkDeleting(false);
+    if (failed.length) {
+      toast.error(
+        `${failed.length} of ${ids.length} couldn't be deleted${failed[0].error?.message ? `: ${failed[0].error.message}` : ""}`,
+      );
+    } else {
+      toast.success(`${ok.length} lead${ok.length === 1 ? "" : "s"} deleted`);
+    }
+    if (drawer && ok.includes(drawer.id)) closeLead();
+    if (!ok.length) return;
+    // A page emptied by the delete steps back one; otherwise refresh it.
+    if (ok.length === inquiries.length && tablePage > 1) setTablePage(tablePage - 1);
+    else fetchInquiries(tablePage, { quiet: true });
+  };
+
   const handleBulkImportLeads = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -290,6 +312,7 @@ const LeadInquiries = () => {
     "px-3 py-2.5 bg-slate-50 border-none rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-[#e7f63c]/40";
 
   const tableHeaders = [
+    { label: <SelectAllBox pageIds={inquiries.map((x) => x.id)} selection={selection} />, className: "w-10 !pr-0" },
     { label: "Lead" },
     { label: "Contact" },
     { label: "Trip" },
@@ -448,6 +471,12 @@ const LeadInquiries = () => {
           </button>
         </div>
 
+        <BulkActionBar
+          selection={selection}
+          noun="lead"
+          onDelete={handleBulkDelete}
+          deleting={bulkDeleting}
+        />
         <CompactDataTable
           headers={tableHeaders}
           tbodyClassName="divide-y divide-slate-100 text-xs [&_td]:!px-4 [&_td]:!py-2.5"
@@ -477,8 +506,9 @@ const LeadInquiries = () => {
               <tr
                 key={inquiry.id}
                 onClick={() => openLead(inquiry.id)}
-                className={`cursor-pointer hover:bg-slate-50/70 transition-colors ${drawer?.id === inquiry.id ? "bg-[#e7f63c]/10" : ""}`}
+                className={`cursor-pointer hover:bg-slate-50/70 transition-colors ${drawer?.id === inquiry.id ? "bg-[#e7f63c]/10" : selection.has(inquiry.id) ? "bg-slate-50" : ""}`}
               >
+                <RowSelectCell id={inquiry.id} selection={selection} />
                 <td>
                   <div className="min-w-40">
                     <div className="flex items-center gap-1.5">

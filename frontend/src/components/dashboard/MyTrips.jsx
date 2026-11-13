@@ -36,6 +36,22 @@ import Modal from "../common/Modal";
 import PageHeader from "../common/PageHeader";
 import { SortLabel, Checkbox, BulkActionBar } from "../common/tableTools";
 import { useSelection, deleteEach } from "../common/tableHooks";
+import ItineraryLimitNotice from "../common/ItineraryLimitNotice";
+
+// Travellers on a trip: the total, with adults / children underneath.
+const TripPax = ({ trip }) => {
+  const adults = Number(trip.adults) || 0;
+  const kids = (Number(trip.kids_cnb) || 0) + (Number(trip.kids_5_to_12) || 0);
+  if (!adults && !kids) return <span className="text-xs font-bold text-slate-300">-</span>;
+  return (
+    <div className="flex flex-col">
+      <span className="text-xs font-black text-slate-900">{adults + kids}</span>
+      <span className="text-[10px] font-bold text-slate-400">
+        {adults}A{kids ? ` · ${kids}C` : ""}
+      </span>
+    </div>
+  );
+};
 
 // Nights presets for the Duration filter.
 const NIGHT_RANGES = [
@@ -225,11 +241,14 @@ const MyTrips = () => {
     }
     loadTrips(pagination.currentPage);
     loadSubscription();
+    setLimitRefreshKey((k) => k + 1);
   };
   const listFilterCount =
     Object.values(listFilters).filter(Boolean).length + (statusFilter ? 1 : 0) + (createdByFilter ? 1 : 0);
   const pageIds = filteredTrips.map((t) => t.trip_id || t.tripId);
   const allOnPage = pageIds.length > 0 && pageIds.every((id) => selection.has(id));
+
+  const [limitRefreshKey, setLimitRefreshKey] = useState(0);
 
   const handleDelete = async (tripId) => {
     if (window.confirm("Are you sure you want to delete this trip?")) {
@@ -238,6 +257,7 @@ const MyTrips = () => {
         toast.success("Trip deleted successfully!");
         loadTrips(pagination.currentPage);
         loadSubscription(); // Refresh subscription usage
+        setLimitRefreshKey((k) => k + 1);
       } catch (err) {
         toast.error(err.message || "Failed to delete trip");
       }
@@ -289,6 +309,7 @@ const MyTrips = () => {
       toast.success("Trip duplicated successfully!");
       loadTrips(pagination.currentPage);
       loadSubscription(); // Update usage limits
+      setLimitRefreshKey((k) => k + 1);
     } catch (err) {
       toast.error(err.message || "Failed to duplicate trip");
     } finally {
@@ -402,6 +423,7 @@ const MyTrips = () => {
   return (
     <DashboardLayout>
       <SubscriptionBanner subscription={subscription} />
+      <ItineraryLimitNotice refreshKey={limitRefreshKey} showLink={false} />
 
       <PageHeader
         title={
@@ -594,6 +616,7 @@ const MyTrips = () => {
                   <SortLabel label="Status" sortKey="status" sort={sort} onSort={toggleSort} />
                 </th>
                 <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">Duration</th>
+                <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">Pax</th>
                 <th className="px-3 py-2.5 text-[9px] font-black uppercase tracking-wider text-slate-400">
                   <SortLabel label="Travel date" sortKey="start" sort={sort} onSort={toggleSort} />
                 </th>
@@ -610,7 +633,7 @@ const MyTrips = () => {
             <tbody className="divide-y divide-slate-50 text-xs font-medium">
               {loading ? (
                 <tr>
-                  <td colSpan="10" className="px-4 py-16 text-center">
+                  <td colSpan="11" className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-16 h-16 rounded-[2rem] bg-slate-50 flex items-center justify-center">
                         <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -693,6 +716,9 @@ const MyTrips = () => {
                         </span>
                       </div>
                     </td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <TripPax trip={trip} />
+                    </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-3.5 h-3.5 text-emerald-500" />
@@ -759,7 +785,7 @@ const MyTrips = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="10" className="px-4 py-16 text-center">
+                  <td colSpan="11" className="px-4 py-16 text-center">
                     <div className="flex flex-col items-center gap-4">
                       <div className="w-20 h-20 rounded-[2.5rem] bg-slate-50 flex items-center justify-center text-slate-300">
                         <FileText className="w-10 h-10" />

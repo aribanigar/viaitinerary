@@ -112,6 +112,13 @@ export const fetchPublicInquiries = async (token, filters = {}) => {
   return request(url, { token });
 };
 
+export const deletePublicInquiry = async (token, inquiryId) => {
+  return request(`/super-admin/public-inquiries/${inquiryId}`, {
+    method: "DELETE",
+    token,
+  });
+};
+
 export const assignInquiry = async (token, inquiryId, adminId) => {
   return request(`/super-admin/public-inquiries/${inquiryId}/assign`, {
     method: "POST",

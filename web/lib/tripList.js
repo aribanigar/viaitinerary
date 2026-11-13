@@ -5,7 +5,7 @@ import { currencySymbol } from "@/lib/serialize";
 // shape for GET /api/trips and GET /api/trips/summary.
 export const LIST_COLUMNS = {
   id: true, userId: true, tripId: true, tripTitle: true, clientName: true, clientPhone: true, startDate: true,
-  duration: true, cost: true, paidAmount: true, refundedAmount: true, currency: true, imagePath: true, status: true,
+  duration: true, adults: true, kidsCnb: true, kids5to12: true, cost: true, paidAmount: true, refundedAmount: true, currency: true, imagePath: true, status: true,
   proposalResponse: true, proposalMessage: true, proposalViewedAt: true, updatedAt: true, createdAt: true,
 };
 
@@ -26,6 +26,9 @@ export async function listRows(trips, user) {
     client_phone: t.clientPhone,
     start_date: t.startDate ? new Date(t.startDate).toISOString().slice(0, 10) : null,
     duration: t.duration,
+    adults: t.adults ?? 0,
+    kids_cnb: t.kidsCnb ?? 0,
+    kids_5_to_12: t.kids5to12 ?? 0,
     cost: t.cost == null ? null : Number(t.cost),
     paid_amount: Number(t.paidAmount),
     refunded_amount: Number(t.refundedAmount),

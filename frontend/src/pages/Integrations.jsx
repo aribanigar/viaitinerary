@@ -474,16 +474,15 @@ const Integrations = () => {
                                 token: token,
                               },
                             );
-                            // The endpoint should return a redirect URL
+                            // The endpoint returns the provider's sign-in URL.
                             if (response.url) {
                               window.location.href = response.url;
                             } else {
-                              // Fallback if it actually redirects directly (though request() might catch it)
-                              window.location.href = `https://viaitinerary.in/api/auth/${platform.db_key}/redirect?token=${token}`;
+                              toast.error("Could not start the sign-in. Please try again.");
                             }
                           } catch (err) {
-                            // Fallback: Use direct link with token if the request() wrapper behaves unexpectedly
-                            window.location.href = `https://viaitinerary.in/api/auth/${platform.db_key}/redirect?token=${token}`;
+                            // Never put the session token in a URL; say what went wrong.
+                            toast.error(err.message || "Could not start the sign-in. Please try again.");
                           }
                         }}
                         className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg font-bold text-sm text-white transition-all"

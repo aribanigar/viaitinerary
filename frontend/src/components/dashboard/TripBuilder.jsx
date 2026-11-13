@@ -78,12 +78,15 @@ import TripInfoTab from "./trip-builder/TripInfoTab";
 import { registerChingEditor } from "../../utils/ching/editorBridge";
 import { getChingMemory, invalidateChingMemory } from "../../utils/ching/memoryStore";
 import { formatTripImageUrl, normalizeAccommodation } from "../../utils/tripView";
+import ItineraryLimitNotice from "../common/ItineraryLimitNotice";
 import { tripChecklist, pendingByTab } from "../../utils/tripChecklist";
 import { optionSupplement, hotelPackages } from "../../utils/hotelOptions";
 import { TIERS, tierAccommodations, tierFileName, tierTitle } from "../../utils/tierExport";
 import {
   DRAFT_KEY,
   useTripBuilderData,
+  rememberIncExc,
+  startingIncExc,
 } from "./trip-builder/useTripBuilderData";
 import { useUndoHistory, useUndoShortcuts } from "./trip-builder/useUndoHistory";
 import { afterLoad } from "../../utils/afterLoad";
@@ -411,15 +414,26 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   const [editingExclusionIndex, setEditingExclusionIndex] = useState(null);
   const [editingExclusionValue, setEditingExclusionValue] = useState("");
 
+  // Edits made by the agent also become the starting list for new trips
+  // (not from packages, which keep their own lists).
+  const editInclusions = (next) => {
+    setInclusions(next);
+    if (!isPackageMode) rememberIncExc(next, exclusions);
+  };
+  const editExclusions = (next) => {
+    setExclusions(next);
+    if (!isPackageMode) rememberIncExc(inclusions, next);
+  };
+
   const addInclusion = () => {
     if (newInclusion.trim()) {
-      setInclusions([...inclusions, { content: newInclusion.trim() }]);
+      editInclusions([...inclusions, { content: newInclusion.trim() }]);
       setNewInclusion("");
     }
   };
 
   const removeInclusion = (index) => {
-    setInclusions(inclusions.filter((_, i) => i !== index));
+    editInclusions(inclusions.filter((_, i) => i !== index));
   };
 
   const saveInclusionEdit = (index) => {
@@ -429,20 +443,20 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         ...updated[index],
         content: editingInclusionValue.trim(),
       };
-      setInclusions(updated);
+      editInclusions(updated);
     }
     setEditingInclusionIndex(null);
   };
 
   const addExclusion = () => {
     if (newExclusion.trim()) {
-      setExclusions([...exclusions, { content: newExclusion.trim() }]);
+      editExclusions([...exclusions, { content: newExclusion.trim() }]);
       setNewExclusion("");
     }
   };
 
   const removeExclusion = (index) => {
-    setExclusions(exclusions.filter((_, i) => i !== index));
+    editExclusions(exclusions.filter((_, i) => i !== index));
   };
 
   const saveExclusionEdit = (index) => {
@@ -452,7 +466,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
         ...updated[index],
         content: editingExclusionValue.trim(),
       };
-      setExclusions(updated);
+      editExclusions(updated);
     }
     setEditingExclusionIndex(null);
   };
@@ -1396,7 +1410,8 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     await new Promise((r) => setTimeout(r, 700));
   };
 
-  const handleTierExport = async (picks) => {
+  // `only` limits the export to some tiers (e.g. ["premium"]); default both.
+  const handleTierExport = async (picks, only = null) => {
     setTierPicker(false);
     const savedAccs = accommodations;
     const savedInfo = tripInfo;
@@ -1405,7 +1420,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     const done = [];
     try {
       const { exportPreviewToPdf } = await import("../../utils/exportPdf");
-      for (const tier of TIERS) {
+      for (const tier of TIERS.filter((t) => !only || only.includes(t.key))) {
         const accs = tierAccommodations(savedAccs, picks[tier.key], masterHotels);
         setAccommodations(accs);
         setTripInfo({
@@ -2232,19 +2247,15 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
     setAccommodations([]);
     setTransportation([]);
     setTripActivities([]);
-    setInclusions([]);
-    setExclusions([]);
+    // Inclusions/exclusions and policies come from the Policies page, so
+    // clearing the trip keeps them.
+    const start = startingIncExc(policies.defaultInclusions, policies.defaultExclusions);
+    setInclusions(start.inclusions);
+    setExclusions(start.exclusions);
     setOtherCosts([]);
     setIncludeGST(true);
     setGstPercentage(0);
     setProfitMarginPercentage(0);
-    setPolicies({
-      termsConditions: "",
-      mustHaves: "",
-      rolesResponsibilities: "",
-      cancellationPolicy: "",
-      additionalExpenses: "",
-    });
 
     setActiveTab("Trip Info");
     toast.info("Draft cleared and form reset");
@@ -2688,6 +2699,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
             {/* Left Form — builder panel */}
             <div className="w-full lg:w-[45%] lg:h-full flex flex-col bg-white rounded-[20px] border border-black/5 shadow-sm overflow-hidden shrink-0 lg:shrink">
               <div className="p-4 sm:p-5 pb-0 sm:pb-0 shrink-0">
+                {!urlTripId && !isPackageMode && <ItineraryLimitNotice compact />}
                 <div className="flex flex-wrap items-center gap-1.5 mb-4 sm:mb-5">
                   {[
                     { tab: "Trip Info", icon: SettingsIcon },
@@ -2799,7 +2811,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                         navigate={navigate}
                         standardInclusions={standardInclusions}
                         inclusions={inclusions}
-                        setInclusions={setInclusions}
+                        setInclusions={editInclusions}
                         newInclusion={newInclusion}
                         setNewInclusion={setNewInclusion}
                         addInclusion={addInclusion}
@@ -2811,7 +2823,7 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
                         removeInclusion={removeInclusion}
                         standardExclusions={standardExclusions}
                         exclusions={exclusions}
-                        setExclusions={setExclusions}
+                        setExclusions={editExclusions}
                         newExclusion={newExclusion}
                         setNewExclusion={setNewExclusion}
                         addExclusion={addExclusion}
