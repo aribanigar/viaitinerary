@@ -10,6 +10,7 @@ import {
   updateDestination,
   searchDestinationPhotos,
 } from "../../api/destinations";
+import { prepareImage } from "../../utils/imageFile";
 import {
   MapPin,
   ListChecks,
@@ -18,6 +19,7 @@ import {
   Loader2,
   CheckCircle2,
   ImageOff,
+  Upload,
 } from "lucide-react";
 
 const SEARCH_DEBOUNCE_MS = 500;
@@ -108,6 +110,23 @@ const DestinationForm = () => {
     } finally {
       setPhotoSearching(false);
       setPhotoSearched(true);
+    }
+  };
+
+  const fileRef = useRef(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      setPhotoUploading(true);
+      const photo = await prepareImage(file, { maxSide: 1600 });
+      setFormData((prev) => ({ ...prev, photo }));
+    } catch (err) {
+      toast.error(err.message || "Couldn't read that image.");
+    } finally {
+      setPhotoUploading(false);
     }
   };
 
@@ -252,10 +271,30 @@ const DestinationForm = () => {
                   Photo
                 </h3>
               </div>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                Powered by Pixabay
-              </span>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={photoUploading}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#181c22] text-white text-[11px] font-bold hover:bg-black transition-colors disabled:opacity-60"
+              >
+                {photoUploading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5" />
+                )}
+                Upload photo
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.webp,.heic,.heif"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
             </div>
+            <p className="text-[11px] font-medium text-slate-500 -mt-1">
+              Upload your own photo (JPG, PNG or WebP), or search free Pixabay photos below.
+            </p>
 
             {formData.photo && (
               <div className="relative w-full h-40 rounded-2xl bg-slate-100 overflow-hidden">
