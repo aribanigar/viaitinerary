@@ -16,8 +16,16 @@ import { getStays, nightsOf, sortDays } from './editTripUtil.js'
 import { isIncludedCab } from './cabPlan.js'
 import { isRoadCab } from './buildTrip.js'
 import { tripActivityTotal } from '../activityRates.js'
+import { hotelRoomTypes, findRateSection } from '../hotelRates.js'
 
-const firstPrice = (h) => Number((h?.price_sections || [])[0]?.price) || 0
+// A hotel's cheapest room rate for this stay: same meal plan and check-in date
+// (comparing against another meal plan's or season's row made "cheaper" wrong).
+const stayRate = (h, acc) => {
+  const prices = hotelRoomTypes(h)
+    .map((t) => Number(findRateSection(h, t, acc.checkIn, acc.mealPlan).price) || 0)
+    .filter((p) => p > 0)
+  return prices.length ? Math.min(...prices) : 0
+}
 const stars = (v) => Number(String(v || '').match(/\d/)?.[0]) || 0
 const money = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`
 const MIN_SAVING_PER_NIGHT = 300
@@ -42,6 +50,11 @@ export function cheaperPlan(snapshot, catalog = {}) {
     const now = Number(acc.pricePerRoom) || 0
     if (!now) return
     const myStars = stars(acc.category)
+    const rateOf = new Map()
+    const firstPrice = (h) => {
+      if (!rateOf.has(h.id)) rateOf.set(h.id, stayRate(h, acc))
+      return rateOf.get(h.id)
+    }
     const pool = hotels.filter(
       (h) =>
         String(h.id) !== String(acc.hotelId) &&
@@ -74,7 +87,9 @@ export function cheaperPlan(snapshot, catalog = {}) {
     const current = priced[0] ? vehicles.find((v) => String(v.id) === String(priced[0].vehicleId)) : null
     if (current) {
       const days = cabs.length
-      const costOf = (v) => (v.rate_type === 'per_trip' ? Number(v.price) || 0 : (Number(v.price) || 0) * days)
+      // Per-km cabs: rate × minimum km per day, as the Trip Builder costs them.
+      const daily = (v) => (Number(v.price) || 0) * (v.rate_type === 'per_km' ? Number(v.min_km_per_day) || 1 : 1)
+      const costOf = (v) => (v.rate_type === 'per_trip' ? Number(v.price) || 0 : daily(v) * days)
       const now = costOf(current)
       const better = vehicles
         .filter((v) => String(v.id) !== String(current.id) && v.is_available !== false && Number(v.price) > 0 && isRoadCab(v))

@@ -903,8 +903,11 @@ const TripBuilder = ({ mode, embedded = false, embeddedTripId = null }) => {
   const calculateVehicleCost = (item) => {
     const vehicle = availableVehicles.find((v) => v.id === item.vehicleId);
     if (!vehicle) return 0;
-    const price = parseFloat(vehicle.price || 0);
-    return price * (item.quantity || 1);
+    // Per-km cabs: the rate is per km, so a day booked costs rate × the cab's
+    // minimum km per day (without that, only one km was counted).
+    const perKm = vehicle.rate_type === "per_km" ? Number(vehicle.min_km_per_day) || 1 : 1;
+    const price = parseFloat(vehicle.price || 0) * perKm;
+    return price * (parseInt(item.quantity, 10) || 1);
   };
 
   const calculateActivityCost = (item) => tripActivityTotal(item);

@@ -9,18 +9,19 @@
 import { pickHotel } from './buildTrip.js'
 import { matchHotel as meets, hasHotelWishes } from './meaning.js'
 import { hotelInCity } from './places.js'
-import { hotelRoomTypes, findRoomTypeSection, toRoomTypeSlug } from '../hotelRates.js'
+import { hotelRoomTypes, findRateSection, toRoomTypeSlug } from '../hotelRates.js'
 
 const starOf = (h) => Number(/^[1-7]/.exec(String(h?.category || ''))?.[0] || 0)
 const rupees = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`
 const MIN_GAP = 300 // a difference smaller than this isn't worth offering
 
-/** A hotel's room rate for a night: the room type asked (or its first), on that date. */
-export function nightRate(hotel, { roomType = '', date = '' } = {}) {
+/** A hotel's room rate for a night: the room type asked (or its first), meal plan, on that date. */
+export function nightRate(hotel, { roomType = '', date = '', mealPlan = '' } = {}) {
   const types = hotelRoomTypes(hotel)
   const type = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(roomType)) || types[0] || ''
-  const section = type ? findRoomTypeSection(hotel, type, date) : null
-  return Number(section?.price) || Number((hotel?.price_sections || [])[0]?.price) || 0
+  const section = type ? findRateSection(hotel, type, date, mealPlan) : null
+  // With a meal plan, never another plan's row: no rate → 0.
+  return Number(section?.price) || (mealPlan ? 0 : Number((hotel?.price_sections || [])[0]?.price) || 0)
 }
 
 /**
@@ -28,10 +29,10 @@ export function nightRate(hotel, { roomType = '', date = '' } = {}) {
  *      label, met: [wish labels], why, delta }] — at most `max`, recommended first.
  * pref = hotelPreference(…) (+ softStars); `current` = the hotel id already on the stay.
  */
-export function stayOptions(city, hotels, pref = {}, memory = null, { current = null, roomType = '', date = '', max = 3 } = {}) {
+export function stayOptions(city, hotels, pref = {}, memory = null, { current = null, roomType = '', date = '', mealPlan = '', max = 3 } = {}) {
   const pool = (hotels || []).filter((h) => hotelInCity(h, city) && h.is_available !== false)
   if (!pool.length) return []
-  const rate = (h) => nightRate(h, { roomType, date })
+  const rate = (h) => nightRate(h, { roomType, date, mealPlan })
   const wishes = pref.wishes
   const wished = hasHotelWishes(wishes)
   const score = (h) => (wished ? meets(h, wishes, memory?.hotelTags || null) : { score: 0, met: [] })

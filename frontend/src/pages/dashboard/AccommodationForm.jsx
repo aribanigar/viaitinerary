@@ -915,6 +915,7 @@ const AccommodationForm = () => {
                       }
                       className="w-full pl-3 pr-2 py-2 bg-white md:bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-900 shadow-sm md:shadow-none"
                     >
+                      <option value="">Any meal plan</option>
                       <option value="room_only">Room only</option>
                       <option value="breakfast_only">Breakfast only</option>
                       <option value="breakfast_dinner">

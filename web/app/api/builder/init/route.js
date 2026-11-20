@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 // The columns the lite serializers read — nothing else is fetched or sent.
 const HOTEL_LITE = { id: true, name: true, city: true, category: true, isAvailable: true, latitude: true, longitude: true, priceSections: true, imagePath: true };
-const VEHICLE_LITE = { id: true, name: true, price: true, rateType: true, seatingCapacity: true, vehicleType: true, isAvailable: true };
+const VEHICLE_LITE = { id: true, name: true, price: true, rateType: true, minKmPerDay: true, seatingCapacity: true, vehicleType: true, isAvailable: true };
 const DESTINATION_LITE = { id: true, name: true, activities: true, country: true, state: true, city: true, imagePath: true };
 const ACTIVITY_LITE = {
   id: true, name: true, destinationId: true, sellingPrice: true, durationHours: true, cost: true, childPrice: true,

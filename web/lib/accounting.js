@@ -60,7 +60,9 @@ function accommodationCost(acc) {
 }
 
 function transportationCost(trans) {
-  const price = num(trans.vehicle?.price);
+  // Per-km cabs: rate × minimum km per day for each day booked (same as the Trip Builder).
+  const perKm = trans.vehicle?.rateType === "per_km" ? num(trans.vehicle?.minKmPerDay) || 1 : 1;
+  const price = num(trans.vehicle?.price) * perKm;
   let qty = num(trans.quantity) || 1;
   if (qty <= 0) qty = 1;
   return Math.max(0, price * qty);

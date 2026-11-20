@@ -613,7 +613,7 @@ function optionsForStay(stay, ctx) {
     acc = null;
   }
   const stars = /[1-7]/.exec(String(acc?.category || ""))?.[0] || null;
-  return stayOptions(stay.city, hotels, { softStars: stars }, memory, { current: stay.hotelId, roomType: acc?.roomType || "", date: acc?.checkIn || stay.checkIn || "" });
+  return stayOptions(stay.city, hotels, { softStars: stars }, memory, { current: stay.hotelId, roomType: acc?.roomType || "", date: acc?.checkIn || stay.checkIn || "", mealPlan: acc?.mealPlan || "" });
 }
 async function doStayOptions(ask, ctx) {
   if (!ctx.editor) {

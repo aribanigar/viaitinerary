@@ -238,8 +238,9 @@ const cityOfDay = (st, day, n) => {
 function repriceForDates(st, acc, oldCheckIn) {
   const hotel = findById(st.catalog.hotels, acc.hotelId)
   if (!hotel || !acc.roomType || !acc.checkIn) return
-  const oldSection = findRoomTypeSection(hotel, acc.roomType, oldCheckIn)
-  const section = findRoomTypeSection(hotel, acc.roomType, acc.checkIn)
+  // Same meal plan as the stay: room only and breakfast + dinner are different rows.
+  const oldSection = findRateSection(hotel, acc.roomType, oldCheckIn, acc.mealPlan)
+  const section = findRateSection(hotel, acc.roomType, acc.checkIn, acc.mealPlan)
   if (section.price == null) return
   const current = Number(acc.pricePerRoom) || 0
   if ((Number(oldSection.price) || 0) !== current) return // hand-edited price: leave it alone
@@ -363,8 +364,9 @@ function pricedStay(st, hotel, checkIn, nights, neighbour, opts = {}) {
   const mealSaid = opts.mealPlan || neighbour?.mealPlan || ''
   const usual = st.catalog.memory?.mealPlan || ''
   const mealKey = Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === mealSaid) || ''
-  const rated = mealKey ? findRateSection(hotel, roomType, checkIn, mealKey) : {}
-  const section = rated.price ? rated : findRoomTypeSection(hotel, roomType, checkIn)
+  // A meal plan said: only that plan's rate, never another plan's price.
+  const section = mealKey ? findRateSection(hotel, roomType, checkIn, mealKey) : findRoomTypeSection(hotel, roomType, checkIn)
+  if (mealKey && !section.price) st.warnings.push(`${hotel.name} has no ${mealSaid} rate for ${roomType} — room price not set`)
   // No meal plan said: the plan of the rate row the price came from.
   const mealPlan = mealSaid || (section.meal_plan ? MEAL_PLAN_LABEL[section.meal_plan] || '' : '') || usual
   const adults = Number(st.s.tripInfo.adults) || 1
@@ -805,7 +807,8 @@ const HANDLERS = {
     const types = hotelRoomTypes(hotel)
     const wanted = a.roomType || acc.roomType
     const roomType = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(wanted)) || types[0] || acc.roomType || 'Deluxe'
-    const section = findRateSection(hotel, roomType, acc.checkIn, a.mealPlan)
+    // The meal plan said, else the stay's own: never another plan's price.
+    const section = findRateSection(hotel, roomType, acc.checkIn, a.mealPlan || acc.mealPlan)
     const seq = staySequence(st)
     Object.assign(acc, {
       hotelId: hotel.id,
@@ -847,7 +850,7 @@ const HANDLERS = {
       .map((hotel) => {
         const types = hotelRoomTypes(hotel)
         const roomType = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(acc.roomType)) || types[0] || acc.roomType || 'Deluxe'
-        const section = findRateSection(hotel, roomType, acc.checkIn)
+        const section = findRateSection(hotel, roomType, acc.checkIn, acc.mealPlan)
         return { hotel_id: hotel.id, name: hotel.name, category: hotelCategoryLabel(hotel.category) || '', room_type: roomType, price: section.price || '', photo: hotel.image_url || hotel.image_path || '', package: 0 }
       })
     const had = (acc.alternateOptions || []).filter((o) => String(o?.name || '').trim()).length

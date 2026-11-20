@@ -127,7 +127,7 @@ export function stayOptionsFor(snapshot, text, command, catalog) {
     const k = draftCityKey(a.city); // the key the Trip Draft groups stays by (tripDraft.js cityKey)
     if (!k || out[k] || a.cancelled) continue;
     const stars = /[1-7]/.exec(String(a.category || ""))?.[0] || null;
-    const opts = stayOptions(a.city, catalog?.hotels || [], { ...base, wishes, softStars: stars }, catalog?.memory || null, { current: a.hotelId, roomType: a.roomType, date: a.checkIn });
+    const opts = stayOptions(a.city, catalog?.hotels || [], { ...base, wishes, softStars: stars }, catalog?.memory || null, { current: a.hotelId, roomType: a.roomType, date: a.checkIn, mealPlan: a.mealPlan });
     if (opts.length > 1) out[k] = opts;
   }
   return out;
@@ -261,6 +261,7 @@ function planFill(base, rawText, { catalog, settings, today }) {
     return !(m && stayCities.includes(placeKey(m[1])));
   });
   warnings.push(...wishNotes);
+  warnings.push(...(parts.unratedStays || []));
   (parts.missingHotels || []).forEach((city) =>
     warnings.push(`No hotel in ${city} in your catalog — add one in Logistics (or to Accommodation)`),
   );

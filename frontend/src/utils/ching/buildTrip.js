@@ -446,6 +446,7 @@ export function buildChingTripParts(command, catalog) {
 
   // ── Hotels: one stay per hotel, back to back from the start date.
   const accommodations = [];
+  const unrated = [];
   if (start) {
     let cursor = start;
     for (const stay of command.stays || []) {
@@ -457,8 +458,10 @@ export function buildChingTripParts(command, catalog) {
         const spoken = command.roomType ? types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(command.roomType)) : null;
         const roomType = spoken || types[0] || "Deluxe";
         const mealKey = Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === mealPlan) || "";
-        const rated = mealKey ? findRateSection(hotel, roomType, cursor, mealKey) : {};
-        const section = rated.price ? rated : findRoomTypeSection(hotel, roomType, cursor);
+        // A meal plan said: only that plan's rate (no rate → no price and a
+        // note), never another plan's price under this plan's name.
+        const section = mealKey ? findRateSection(hotel, roomType, cursor, mealKey) : findRoomTypeSection(hotel, roomType, cursor);
+        if (mealKey && !section.price) unrated.push(`${hotel.name} has no ${mealPlan} rate for ${roomType} — room price not set; add it in Logistics`);
         accommodations.push({
           id: newId(),
           hotelId: hotel.id,
@@ -588,6 +591,7 @@ export function buildChingTripParts(command, catalog) {
     autoPicked,
     remembered,
     missingHotels: resolved.missing,
+    unratedStays: unrated,
     budget: resolved.pref.maxPrice,
   };
 }

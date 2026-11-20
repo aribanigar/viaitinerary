@@ -236,6 +236,8 @@ export function serializeHotel(h) {
 export function serializeVehicle(v) {
   return {
     id: v.id, name: v.name, price: num(v.price), rate_type: v.rateType ?? null,
+    // Per-km cabs are costed at rate × minimum km for each day booked.
+    min_km_per_day: v.minKmPerDay ?? null,
     // For Ching's auto-pick (smallest available cab that seats the group).
     seating_capacity: v.seatingCapacity ?? null, vehicle_type: v.vehicleType ?? null, is_available: v.isAvailable ?? true,
   };
