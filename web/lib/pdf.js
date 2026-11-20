@@ -16,6 +16,7 @@ import { POPPINS_REGULAR, POPPINS_SEMIBOLD } from "./pdf-assets.js";
 import { VIA_KASHMIR_LOGO, VIA_KASHMIR_LOGO_RATIO } from "./vk-logo.js";
 import prisma from "@/lib/prisma";
 import { nightsOf } from "@/lib/duration";
+import { pdfReadyImages } from "@/lib/pdfImages";
 
 // Server-side PDF generation (react-pdf, no Chromium). This is a faithful
 // reproduction of the in-app ModernTemplate live preview, so the exported PDF
@@ -918,9 +919,14 @@ export const renderItineraryPdf = async (trip, settings) => {
   // DMC partner itineraries carry the Via Kashmir mark; decided from the owning
   // agency's own flag so no caller (download, email, client proposal) can skip it.
   const owner = trip?.userId ? await prisma.user.findUnique({ where: { id: trip.userId }, select: { isDmcBridge: true } }) : null;
-  return renderToBuffer(h(ItineraryDoc, { trip, settings: { ...(settings || {}), _viaKashmirPowered: !!owner?.isDmcBridge } }));
+  const ready = await pdfReadyImages(trip, settings);
+  return renderToBuffer(h(ItineraryDoc, { trip: ready.trip, settings: { ...(ready.settings || {}), _viaKashmirPowered: !!owner?.isDmcBridge } }));
 };
-export const renderConfirmationPdf = (trip, settings, message) => renderToBuffer(h(ConfirmationDoc, { trip, settings, message }));
-export const renderReceiptPdf = (trip, settings, payments) => renderToBuffer(h(ReceiptDoc, { trip, settings, payments }));
-export const renderInvoicePdf = (trip, settings) => renderToBuffer(h(InvoiceDoc, { trip, settings }));
-export const renderVouchersPdf = (trip, settings) => renderToBuffer(h(VouchersDoc, { trip, settings }));
+const withPdfImages = (Doc, extra = {}) => async (trip, settings, ...rest) => {
+  const ready = await pdfReadyImages(trip, settings);
+  return renderToBuffer(h(Doc, { trip: ready.trip, settings: ready.settings, ...extra(rest) }));
+};
+export const renderConfirmationPdf = withPdfImages(ConfirmationDoc, ([message]) => ({ message }));
+export const renderReceiptPdf = withPdfImages(ReceiptDoc, ([payments]) => ({ payments }));
+export const renderInvoicePdf = withPdfImages(InvoiceDoc, () => ({}));
+export const renderVouchersPdf = withPdfImages(VouchersDoc, () => ({}));
