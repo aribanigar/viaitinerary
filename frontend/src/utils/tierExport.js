@@ -8,7 +8,7 @@
 import {
   hotelRoomTypes,
   toRoomTypeSlug,
-  rateSectionFor,
+  stayRateFor,
   bedPricesFromSection,
   hotelCategoryLabel,
 } from "./hotelRates.js";
@@ -56,7 +56,7 @@ export const hotelsForStay = (stay, hotels) => {
 export const roomRate = (stay, hotel) => {
   const types = hotelRoomTypes(hotel);
   const roomType = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(stay.roomType)) || types[0] || stay.roomType;
-  return Number(rateSectionFor(hotel, roomType, isoDate(stay.checkIn), stay.mealPlan).price) || 0;
+  return Number(stayRateFor(hotel, roomType, isoDate(stay.checkIn), isoDate(stay.checkOut), stay.mealPlan).price) || 0;
 };
 
 /**
@@ -69,7 +69,7 @@ export const swapStayHotel = (stay, hotel) => {
   if (!hotel || String(hotel.id) === String(hotelIdOf(stay))) return { ...stay, alternateOptions: [] };
   const types = hotelRoomTypes(hotel);
   const roomType = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(stay.roomType)) || types[0] || stay.roomType;
-  const section = rateSectionFor(hotel, roomType, isoDate(stay.checkIn), stay.mealPlan);
+  const section = stayRateFor(hotel, roomType, isoDate(stay.checkIn), isoDate(stay.checkOut), stay.mealPlan);
   return {
     ...stay,
     hotelId: hotel.id,

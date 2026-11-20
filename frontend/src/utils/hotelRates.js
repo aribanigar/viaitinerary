@@ -128,3 +128,47 @@ export const rateSectionFor = (hotel, roomTypeValue, dateStr, mealPlan) =>
 
 /** Builder label of a rate row's meal plan ("Breakfast + Dinner"), or "". */
 export const mealPlanLabelOf = (section) => MEAL_PLAN_LABEL[section?.meal_plan] || "";
+
+// The nights of a stay as "YYYY-MM-DD": check-in up to the night before
+// check-out. No (or a bad) check-out → just the check-in night.
+export const stayNights = (checkIn, checkOut) => {
+  const a = isoDay(checkIn);
+  if (!a) return [];
+  const b = isoDay(checkOut);
+  if (!b || b <= a) return [a];
+  const out = [];
+  const end = Date.parse(`${b}T00:00:00Z`);
+  for (let t = Date.parse(`${a}T00:00:00Z`); t < end && out.length < 90; t += 864e5) {
+    out.push(new Date(t).toISOString().slice(0, 10));
+  }
+  return out;
+};
+
+const RATE_KEYS = ["price", "cnb", "upto_5", "above_12", "extra_adult"];
+const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
+
+/**
+ * The rate for a whole stay, night by night: each night is priced from the
+ * season that covers it (room type + meal plan). Returns a rate-row-shaped
+ * object (so bedPricesFromSection works) plus:
+ *   nights:  [{ date, price }] — each night's room rate,
+ *   missing: dates with no rate (then price is unset),
+ *   mixed:   true when the nights fall in different seasons; price and the
+ *            extra-bed rates are then the average per night, so
+ *            price × nights is exactly the night-by-night total.
+ */
+export const stayRateFor = (hotel, roomTypeValue, checkIn, checkOut, mealPlan) => {
+  const dates = stayNights(checkIn, checkOut);
+  if (!dates.length) {
+    const row = rateSectionFor(hotel, roomTypeValue, checkIn, mealPlan);
+    return { ...row, nights: [], missing: [], mixed: false };
+  }
+  const rows = dates.map((d) => rateSectionFor(hotel, roomTypeValue, d, mealPlan));
+  const nights = dates.map((date, i) => ({ date, price: Number(rows[i].price) || 0 }));
+  const missing = dates.filter((_, i) => !rows[i].price);
+  if (missing.length) return { nights, missing, mixed: false };
+  if (rows.every((r) => r === rows[0])) return { ...rows[0], nights, missing: [], mixed: false };
+  const avg = {};
+  for (const key of RATE_KEYS) avg[key] = round2(rows.reduce((sum, r) => sum + (Number(r[key]) || 0), 0) / rows.length);
+  return { ...rows[0], ...avg, valid_from: null, valid_to: null, nights, missing: [], mixed: true };
+};

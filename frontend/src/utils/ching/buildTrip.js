@@ -5,10 +5,9 @@
 // items), and the agent presses Save / Export when happy.
 import {
   hotelRoomTypes,
-  findRoomTypeSection,
   bedPricesFromSection,
   hotelCategoryLabel,
-  findRateSection,
+  stayRateFor,
   MEAL_PLAN_LABEL,
   toRoomTypeSlug,
 } from "../hotelRates.js";
@@ -460,7 +459,8 @@ export function buildChingTripParts(command, catalog) {
         const mealKey = Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === mealPlan) || "";
         // A meal plan said: only that plan's rate (no rate → no price and a
         // note), never another plan's price under this plan's name.
-        const section = mealKey ? findRateSection(hotel, roomType, cursor, mealKey) : findRoomTypeSection(hotel, roomType, cursor);
+        // Night by night: a stay can cross seasons.
+        const section = stayRateFor(hotel, roomType, cursor, addDays(cursor, stay.nights), mealKey);
         if (mealKey && !section.price) unrated.push(`${hotel.name} has no ${mealPlan} rate for ${roomType} — room price not set; add it in Logistics`);
         accommodations.push({
           id: newId(),
@@ -503,7 +503,7 @@ export function buildChingTripParts(command, catalog) {
         if (acc.mealPlan) continue;
         acc.mealPlan = tripPlan;
         const hotel = hotels.find((h) => String(h.id) === String(acc.hotelId));
-        const rated = key && hotel ? findRateSection(hotel, acc.roomType, acc.checkIn, key) : {};
+        const rated = key && hotel ? stayRateFor(hotel, acc.roomType, acc.checkIn, acc.checkOut, key) : {};
         if (rated.price && rated.meal_plan === key) {
           acc.pricePerRoom = rated.price;
           acc.bedPrices = bedPricesFromSection(rated);

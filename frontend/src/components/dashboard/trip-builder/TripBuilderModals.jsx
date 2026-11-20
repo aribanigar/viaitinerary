@@ -16,7 +16,7 @@ import {
   normalizeRoomTypeValue,
   hotelCategoryLabel,
   hotelRoomTypes,
-  rateSectionFor,
+  stayRateFor,
   bedPricesFromSection,
   mealPlanLabelOf,
 } from "../../../utils/hotelRates";
@@ -137,7 +137,7 @@ export const HotelModal = ({
       if (roomType) {
         // No rate on the sheet for this room + meal plan + date: no price
         // (the window says so) rather than keeping the previous plan's price.
-        const section = rateSectionFor(primary, roomType, form.checkIn, form.mealPlan);
+        const section = stayRateFor(primary, roomType, form.checkIn, form.checkOut, form.mealPlan);
         next = {
           ...next,
           pricePerRoom: section.price || 0,
@@ -149,7 +149,7 @@ export const HotelModal = ({
     const alternateOptions = (form.alternateOptions || []).map((opt) => {
       const altHotel = masterHotels.find((h) => String(h.id) === String(opt.hotel_id));
       if (!altHotel || !opt.room_type) return opt;
-      const section = rateSectionFor(altHotel, opt.room_type, form.checkIn, form.mealPlan);
+      const section = stayRateFor(altHotel, opt.room_type, form.checkIn, form.checkOut, form.mealPlan);
       return section.price ? { ...opt, price: section.price } : opt;
     });
     return { ...next, alternateOptions };
@@ -245,12 +245,7 @@ export const HotelModal = ({
                     ? hotelForm.roomType
                     : availableRoomTypes[0] || "";
 
-                  const section = rateSectionFor(
-                    selectedHotel,
-                    initialRoomType,
-                    hotelForm.checkIn,
-                    hotelForm.mealPlan,
-                  );
+                  const section = stayRateFor(selectedHotel, initialRoomType, hotelForm.checkIn, hotelForm.checkOut, hotelForm.mealPlan);
 
                   const initialPrice = section.price || 0;
 
@@ -307,12 +302,7 @@ export const HotelModal = ({
                     (h) => h.id === hotelForm.hotelId,
                   );
                   if (selectedHotel) {
-                    const section = rateSectionFor(
-                      selectedHotel,
-                      newRoomType,
-                      hotelForm.checkIn,
-                      hotelForm.mealPlan,
-                    );
+                    const section = stayRateFor(selectedHotel, newRoomType, hotelForm.checkIn, hotelForm.checkOut, hotelForm.mealPlan);
 
                     updatedPrice = section.price || 0;
                     updatedMealPlan = hotelForm.mealPlan || mealPlanLabelOf(section);
@@ -562,23 +552,46 @@ export const HotelModal = ({
             </option>
           </select>
           {selectedHotel && resolvedRoomType && (() => {
-            const rate = rateSectionFor(selectedHotel, resolvedRoomType, hotelForm.checkIn, hotelForm.mealPlan);
+            const rate = stayRateFor(selectedHotel, resolvedRoomType, hotelForm.checkIn, hotelForm.checkOut, hotelForm.mealPlan);
             const plan = hotelForm.mealPlan || mealPlanLabelOf(rate) || "any meal plan";
-            return rate.price ? (
-              <p className="mt-1.5 text-[11px] font-semibold text-ink/55">
-                Sheet rate: ₹{Number(rate.price).toLocaleString("en-IN")} / room / night
-                {" "}({formatRoomTypeLabel(resolvedRoomType)}, {plan}
-                {rate.valid_from || rate.valid_to
-                  ? `, season ${String(rate.valid_from || "").slice(0, 10) || "…"} to ${String(rate.valid_to || "").slice(0, 10) || "…"}`
-                  : ""}
-                )
-              </p>
-            ) : (
+            const inr = (n) => `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+            const dmy = (iso) => iso.split("-").reverse().join("-");
+            if (rate.price) {
+              // Nights grouped by rate, in order: "2 nights × ₹5,000 + 1 night × ₹4,000".
+              const groups = [];
+              for (const n of rate.nights || []) {
+                const last = groups[groups.length - 1];
+                if (last && last.price === n.price) last.count += 1;
+                else groups.push({ price: n.price, count: 1 });
+              }
+              return (
+                <p className="mt-1.5 text-[11px] font-semibold text-ink/55">
+                  Sheet rate ({formatRoomTypeLabel(resolvedRoomType)}, {plan}):{" "}
+                  {rate.mixed ? (
+                    <>
+                      {groups.map((g) => `${g.count} night${g.count > 1 ? "s" : ""} × ${inr(g.price)}`).join(" + ")}
+                      {" "}= {inr(rate.price)} / room / night on average (the stay crosses seasons)
+                    </>
+                  ) : (
+                    <>
+                      {inr(rate.price)} / room / night
+                      {rate.valid_from || rate.valid_to
+                        ? `, season ${String(rate.valid_from || "").slice(0, 10) || "…"} to ${String(rate.valid_to || "").slice(0, 10) || "…"}`
+                        : ""}
+                    </>
+                  )}
+                </p>
+              );
+            }
+            const gaps = rate.missing || [];
+            return (
               <p className="mt-1.5 flex items-start gap-1.5 text-[11px] font-bold text-amber-600">
                 <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
                 No rate on {selectedHotel.name}'s sheet for {formatRoomTypeLabel(resolvedRoomType)}, {plan}
-                {hotelForm.checkIn ? ` on ${hotelForm.checkIn}` : ""}. The room price is ₹0 until it is added
-                to the hotel's rates (Hotels) or another room type / meal plan is picked.
+                {gaps.length
+                  ? ` on ${gaps.slice(0, 4).map(dmy).join(", ")}${gaps.length > 4 ? ` and ${gaps.length - 4} more` : ""}`
+                  : hotelForm.checkIn ? ` on ${hotelForm.checkIn}` : ""}
+                . The room price is ₹0 until it is added to the hotel's rates (Hotels) or another room type / meal plan is picked.
               </p>
             );
           })()}
@@ -625,7 +638,8 @@ export const HotelModal = ({
             <DatePicker
               value={hotelForm.checkOut}
               onChange={(dateString) => {
-                setHotelForm({ ...hotelForm, checkOut: dateString });
+                // Nights are priced one by one (a stay can cross seasons).
+                setHotelForm(repriceForm({ ...hotelForm, checkOut: dateString }));
               }}
               className="w-full"
               options={{
@@ -751,7 +765,7 @@ export const HotelModal = ({
                       const roomType = roomTypes.includes(hotelForm.roomType)
                         ? hotelForm.roomType
                         : roomTypes[0] || "";
-                      const section = rateSectionFor(picked, roomType, hotelForm.checkIn, hotelForm.mealPlan);
+                      const section = stayRateFor(picked, roomType, hotelForm.checkIn, hotelForm.checkOut, hotelForm.mealPlan);
                       updateAlt({
                         hotel_id: picked.id,
                         name: picked.name,
@@ -785,7 +799,7 @@ export const HotelModal = ({
                       value={altRoomTypes.includes(opt.room_type) ? opt.room_type : ""}
                       onChange={(e) => {
                         const roomType = e.target.value;
-                        const section = rateSectionFor(altHotel, roomType, hotelForm.checkIn, hotelForm.mealPlan);
+                        const section = stayRateFor(altHotel, roomType, hotelForm.checkIn, hotelForm.checkOut, hotelForm.mealPlan);
                         updateAlt({
                           room_type: roomType,
                           ...(section.price ? { price: section.price } : {}),

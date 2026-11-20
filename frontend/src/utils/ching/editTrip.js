@@ -15,11 +15,10 @@
 // parser can emit several actions from one context without re-indexing.
 import {
   hotelRoomTypes,
-  findRoomTypeSection,
   bedPricesFromSection,
   hotelCategoryLabel,
   toRoomTypeSlug,
-  findRateSection,
+  stayRateFor,
   MEAL_PLAN_LABEL,
 } from '../hotelRates.js'
 import {
@@ -239,8 +238,10 @@ function repriceForDates(st, acc, oldCheckIn) {
   const hotel = findById(st.catalog.hotels, acc.hotelId)
   if (!hotel || !acc.roomType || !acc.checkIn) return
   // Same meal plan as the stay: room only and breakfast + dinner are different rows.
-  const oldSection = findRateSection(hotel, acc.roomType, oldCheckIn, acc.mealPlan)
-  const section = findRateSection(hotel, acc.roomType, acc.checkIn, acc.mealPlan)
+  // Night by night over the stay (it can cross seasons), old dates vs new.
+  const n = Math.max(1, nightsOf(acc) || 1)
+  const oldSection = stayRateFor(hotel, acc.roomType, oldCheckIn, addDays(oldCheckIn, n), acc.mealPlan)
+  const section = stayRateFor(hotel, acc.roomType, acc.checkIn, acc.checkOut || addDays(acc.checkIn, n), acc.mealPlan)
   if (section.price == null) return
   const current = Number(acc.pricePerRoom) || 0
   if ((Number(oldSection.price) || 0) !== current) return // hand-edited price: leave it alone
@@ -365,7 +366,7 @@ function pricedStay(st, hotel, checkIn, nights, neighbour, opts = {}) {
   const usual = st.catalog.memory?.mealPlan || ''
   const mealKey = Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === mealSaid) || ''
   // A meal plan said: only that plan's rate, never another plan's price.
-  const section = mealKey ? findRateSection(hotel, roomType, checkIn, mealKey) : findRoomTypeSection(hotel, roomType, checkIn)
+  const section = stayRateFor(hotel, roomType, checkIn, addDays(checkIn, nights), mealKey)
   if (mealKey && !section.price) st.warnings.push(`${hotel.name} has no ${mealSaid} rate for ${roomType} — room price not set`)
   // No meal plan said: the plan of the rate row the price came from.
   const mealPlan = mealSaid || (section.meal_plan ? MEAL_PLAN_LABEL[section.meal_plan] || '' : '') || usual
@@ -808,7 +809,7 @@ const HANDLERS = {
     const wanted = a.roomType || acc.roomType
     const roomType = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(wanted)) || types[0] || acc.roomType || 'Deluxe'
     // The meal plan said, else the stay's own: never another plan's price.
-    const section = findRateSection(hotel, roomType, acc.checkIn, a.mealPlan || acc.mealPlan)
+    const section = stayRateFor(hotel, roomType, acc.checkIn, acc.checkOut, a.mealPlan || acc.mealPlan)
     const seq = staySequence(st)
     Object.assign(acc, {
       hotelId: hotel.id,
@@ -850,7 +851,7 @@ const HANDLERS = {
       .map((hotel) => {
         const types = hotelRoomTypes(hotel)
         const roomType = types.find((t) => toRoomTypeSlug(t) === toRoomTypeSlug(acc.roomType)) || types[0] || acc.roomType || 'Deluxe'
-        const section = findRateSection(hotel, roomType, acc.checkIn, acc.mealPlan)
+        const section = stayRateFor(hotel, roomType, acc.checkIn, acc.checkOut, acc.mealPlan)
         return { hotel_id: hotel.id, name: hotel.name, category: hotelCategoryLabel(hotel.category) || '', room_type: roomType, price: section.price || '', photo: hotel.image_url || hotel.image_path || '', package: 0 }
       })
     const had = (acc.alternateOptions || []).filter((o) => String(o?.name || '').trim()).length
@@ -1038,7 +1039,7 @@ const HANDLERS = {
       const hotel = findById(st.catalog.hotels, acc.hotelId)
       const key = Object.keys(MEAL_PLAN_LABEL).find((k) => MEAL_PLAN_LABEL[k] === acc.mealPlan)
       if (!hotel || !key || !(hotel.price_sections || []).some((s) => s.meal_plan === key)) return
-      const section = findRateSection(hotel, acc.roomType, acc.checkIn, key)
+      const section = stayRateFor(hotel, acc.roomType, acc.checkIn, acc.checkOut, key)
       if (section.price) {
         acc.pricePerRoom = section.price
         acc.bedPrices = bedPricesFromSection(section)
